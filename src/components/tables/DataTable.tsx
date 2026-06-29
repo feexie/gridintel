@@ -3,12 +3,12 @@ type Column<T> = {
   accessorKey: keyof T;
 };
 
-type DataTableProps<T extends Record<string, string | number>> = {
+type DataTableProps<T> = {
   columns: Column<T>[];
   data: T[];
 };
 
-export default function DataTable<T extends Record<string, string | number>>({
+export default function DataTable<T>({
   columns,
   data,
 }: DataTableProps<T>) {
@@ -30,7 +30,7 @@ export default function DataTable<T extends Record<string, string | number>>({
             <tr key={rowIndex} className="hover:bg-white/[0.02]">
               {columns.map((column) => (
                 <td key={column.header} className="px-5 py-4">
-                  {row[column.accessorKey]}
+                  {String(row[column.accessorKey] ?? "")}
                 </td>
               ))}
             </tr>
