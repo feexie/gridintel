@@ -1,12 +1,16 @@
 import PageHeader from "@/components/shared/PageHeader";
+import NetworkOverview from "@/components/utility/overview/NetworkOverview";
 
 export default function NetworkPage() {
   return (
-    <div>
+    <div className="space-y-8">
       <PageHeader
-        title="Network Operations"
-        description="Testing"
+        eyebrow="Network Operations"
+        title="Distribution Network Control"
+        description="Monitor feeders, substations, transformers, meters and operational alarms across the utility network."
       />
+
+      <NetworkOverview />
     </div>
   );
 }

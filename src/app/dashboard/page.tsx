@@ -1,77 +1,57 @@
-import ModuleCard from "@/components/cards/ModuleCard";
 import PageHeader from "@/components/shared/PageHeader";
+import ModuleCard from "@/components/cards/ModuleCard";
 
-export default function DashboardPage() {
+export default function UtilityPage() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <PageHeader
-        eyebrow="GridIntel Platform"
-        title="Energy Intelligence Command Center"
-        description="Select a workspace to manage utility operations, distributed energy resources, planning studies, GIS intelligence, and AI-driven analytics."
+        eyebrow="Utility Workspace"
+        title="Utility Operations Center"
+        description="Monitor assets, network operations, outages, revenue assurance, and advanced metering intelligence."
       />
 
-      <section>
-        <h2 className="mb-4 text-xl font-semibold text-white">
-          Operational Workspaces
-        </h2>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <ModuleCard
+          title="Network Operations"
+          description="Monitor feeders, transformers, substations and network health."
+          href="/dashboard/utility/network"
+        />
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <ModuleCard
-            title="Utility Workspace"
-            description="Distribution operations, meters, outages, revenue, and assets."
-            href="/dashboard/utility"
-          />
+        <ModuleCard
+          title="Asset Registry"
+          description="Manage substations, feeders, transformers and meters."
+          href="/dashboard/utility/assets"
+          accent="#10b981"
+        />
 
-          <ModuleCard
-            title="MiniGrid Workspace"
-            description="Manage hybrid mini-grid assets and performance."
-            href="/dashboard/minigrid"
-            accent="#10b981"
-          />
+        <ModuleCard
+          title="Control Room"
+          description="Real-time operational monitoring and dispatch."
+          href="/dashboard/utility/control-room"
+          accent="#f59e0b"
+        />
 
-          <ModuleCard
-            title="DER Workspace"
-            description="Distributed energy resources and flexibility management."
-            href="/dashboard/der"
-            accent="#f59e0b"
-          />
+        <ModuleCard
+          title="Outage Management"
+          description="Track faults, outages and restoration activities."
+          href="/dashboard/utility/outages"
+          accent="#ef4444"
+        />
 
-          <ModuleCard
-            title="Planning Workspace"
-            description="Network planning, forecasting, and expansion studies."
-            href="/dashboard/planning"
-            accent="#8b5cf6"
-          />
-        </div>
-      </section>
+        <ModuleCard
+          title="Revenue Assurance"
+          description="Revenue collection, losses and commercial analytics."
+          href="/dashboard/utility/revenue"
+          accent="#8b5cf6"
+        />
 
-      <section>
-        <h2 className="mb-4 text-xl font-semibold text-white">
-          Intelligence Services
-        </h2>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <ModuleCard
-            title="GIS Intelligence"
-            description="Spatial network visibility and geospatial analytics."
-            href="/dashboard/intelligence/gis"
-          />
-
-          <ModuleCard
-            title="AI Copilot"
-            description="Operational insights, recommendations, and anomaly detection."
-            href="/dashboard/intelligence/ai"
-            accent="#ec4899"
-          />
-
-          <ModuleCard
-            title="Enterprise Analytics"
-            description="Executive reporting and business intelligence."
-            href="/dashboard/intelligence/analytics"
-            accent="#06b6d4"
-          />
-        </div>
-      </section>
+        <ModuleCard
+          title="Meter Intelligence"
+          description="AMI analytics, smart meter health and anomaly detection."
+          href="/dashboard/utility/assets/meters"
+          accent="#06b6d4"
+        />
+      </div>
     </div>
   );
 }
