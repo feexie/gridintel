@@ -11,81 +11,38 @@ export type NavigationGroup = {
 
 export const navigationGroups: NavigationGroup[] = [
   {
-    label: "Command Center",
+    label: "Platform",
     items: [
       {
-        label: "Platform Overview",
+        label: "Dashboard",
         href: "/dashboard",
+        description: "GridIntel platform home",
       },
     ],
   },
 
   {
-    label: "Utility Workspace",
+    label: "Sector Suites",
     items: [
       {
-        label: "Operations Overview",
+        label: "Utility Intelligence",
         href: "/dashboard/utility",
+        description: "Distribution utility operations and analytics",
       },
       {
-        label: "Network Operations",
-        href: "/dashboard/utility/network",
-      },
-      {
-        label: "Asset Intelligence",
-        href: "/dashboard/utility/assets",
-      },
-      {
-        label: "Revenue Intelligence",
-        href: "/dashboard/utility/revenue",
-      },
-      {
-        label: "Outage Management",
-        href: "/dashboard/utility/outages",
-      },
-      {
-        label: "Control Room",
-        href: "/dashboard/utility/control-room",
-      },
-      {
-        label: "Alarms",
-        href: "/dashboard/utility/alarms",
-      },
-    ],
-  },
-
-  {
-    label: "Energy Platforms",
-    items: [
-      {
-        label: "DER Workspace",
+        label: "DER Intelligence",
         href: "/dashboard/der",
+        description: "Distributed energy resource management",
       },
       {
-        label: "MiniGrid Workspace",
+        label: "MiniGrid Intelligence",
         href: "/dashboard/minigrid",
+        description: "Mini-grid operations and commercial intelligence",
       },
       {
-        label: "Planning Workspace",
+        label: "Planning Intelligence",
         href: "/dashboard/planning",
-      },
-    ],
-  },
-
-  {
-    label: "Intelligence Services",
-    items: [
-      {
-        label: "GIS Intelligence",
-        href: "/dashboard/intelligence/gis",
-      },
-      {
-        label: "AI Copilot",
-        href: "/dashboard/intelligence/ai",
-      },
-      {
-        label: "Enterprise Analytics",
-        href: "/dashboard/intelligence/analytics",
+        description: "Planning and forecasting workspace",
       },
     ],
   },

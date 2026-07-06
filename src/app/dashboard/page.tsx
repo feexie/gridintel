@@ -1,57 +1,56 @@
 import PageHeader from "@/components/shared/PageHeader";
 import ModuleCard from "@/components/cards/ModuleCard";
 
-export default function UtilityPage() {
+export default function DashboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <PageHeader
-        eyebrow="Utility Workspace"
-        title="Utility Operations Center"
-        description="Monitor assets, network operations, outages, revenue assurance, and advanced metering intelligence."
+        eyebrow="GridIntel"
+        title="Energy Intelligence for Utility and Distributed Energy Operations"
+        description="Access operational, commercial, and planning intelligence across utility networks, distributed energy resources, mini-grid portfolios, and power system planning environments."
       />
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <ModuleCard
-          title="Network Operations"
-          description="Monitor feeders, transformers, substations and network health."
-          href="/dashboard/utility/network"
-        />
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-white">
+            Sector Suites
+          </h2>
 
-        <ModuleCard
-          title="Asset Registry"
-          description="Manage substations, feeders, transformers and meters."
-          href="/dashboard/utility/assets"
-          accent="#10b981"
-        />
+          <p className="text-sm text-slate-400">
+            Select a sector workspace to access specialized operational,
+            commercial, planning, and decision-support capabilities.
+          </p>
+        </div>
 
-        <ModuleCard
-          title="Control Room"
-          description="Real-time operational monitoring and dispatch."
-          href="/dashboard/utility/control-room"
-          accent="#f59e0b"
-        />
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <ModuleCard
+            title="Utility Intelligence"
+            description="Operational visibility, asset intelligence, network performance, and revenue management for electricity distribution utilities."
+            href="/dashboard/utility"
+          />
 
-        <ModuleCard
-          title="Outage Management"
-          description="Track faults, outages and restoration activities."
-          href="/dashboard/utility/outages"
-          accent="#ef4444"
-        />
+          <ModuleCard
+            title="DER Intelligence"
+            description="Monitoring, analytics, forecasting, and performance management for distributed energy resource portfolios."
+            href="/dashboard/der"
+            accent="#10b981"
+          />
 
-        <ModuleCard
-          title="Revenue Assurance"
-          description="Revenue collection, losses and commercial analytics."
-          href="/dashboard/utility/revenue"
-          accent="#8b5cf6"
-        />
+          <ModuleCard
+            title="MiniGrid Intelligence"
+            description="Operational, technical, and commercial intelligence for mini-grid operators and developers."
+            href="/dashboard/minigrid"
+            accent="#f59e0b"
+          />
 
-        <ModuleCard
-          title="Meter Intelligence"
-          description="AMI analytics, smart meter health and anomaly detection."
-          href="/dashboard/utility/assets/meters"
-          accent="#06b6d4"
-        />
-      </div>
+          <ModuleCard
+            title="Planning Intelligence"
+            description="Network planning, forecasting, expansion analysis, electrification studies, and investment planning."
+            href="/dashboard/planning"
+            accent="#8b5cf6"
+          />
+        </div>
+      </section>
     </div>
   );
 }
