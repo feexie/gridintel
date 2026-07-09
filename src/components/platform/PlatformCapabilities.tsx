@@ -13,7 +13,7 @@ export default function PlatformCapabilities() {
       <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         {platformCapabilities.map((capability) => (
           <CapabilityCard
-            key={capability.title}
+            key={capability.id}
             capability={capability}
           />
         ))}

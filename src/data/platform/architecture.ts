@@ -2,37 +2,31 @@ import type { ArchitectureStep } from "@/types/platform";
 
 export const architecture: ArchitectureStep[] = [
   {
-    id: "edge",
-    title: "Intelligent Edge",
+    id: 1,
+    title: "Edge Devices",
     description:
-      "Smart meters, feeder monitors, transformer sensors, RTUs and IoT devices continuously capture operational data across the electricity network.",
+      "Smart meters, sensors, relays, transformers and field IoT devices continuously collect operational data.",
+    image: "/images/platform/edge.jpg",
   },
-
   {
-    id: "cloud",
-    title: "Cloud Platform",
+    id: 2,
+    title: "Secure Cloud Platform",
     description:
-      "Operational data is securely transmitted to the GridIntel cloud for ingestion, storage, synchronization and event processing.",
+      "Operational data is securely synchronized to the GridIntel cloud for processing and storage.",
+    image: "/images/platform/cloud.jpg",
   },
-
   {
-    id: "intelligence",
-    title: "Intelligence Engine",
+    id: 3,
+    title: "AI Intelligence",
     description:
-      "Artificial Intelligence, GIS, analytics and forecasting transform raw telemetry into actionable operational intelligence.",
+      "Machine learning detects anomalies, predicts failures and generates recommendations.",
+    image: "/images/platform/ai.jpg",
   },
-
   {
-    id: "sector",
-    title: "Sector Intelligence",
-    description:
-      "Each industry sector receives specialized dashboards, workflows and operational tools tailored to its business processes.",
-  },
-
-  {
-    id: "decision",
+    id: 4,
     title: "Decision Support",
     description:
-      "Executives, engineers and operators receive real-time insights, alerts and recommendations for faster decision making.",
+      "Executives and operators access actionable insights through role-based dashboards.",
+    image: "/images/platform/utility.jpg",
   },
 ];
