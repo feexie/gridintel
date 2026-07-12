@@ -1,7 +1,5 @@
+import OperationsDashboard from "@/components/utility/operations/OperationsDashboard";
+
 export default function OperationsCenterPage() {
-  return (
-    <div>
-      <h1>Operations Center</h1>
-    </div>
-  );
+  return <OperationsDashboard />;
 }

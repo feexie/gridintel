@@ -2,27 +2,47 @@ import type { Substation } from "@/types/utility";
 
 export const substations: Substation[] = [
   {
-    id: "sub-001",
-    name: "North Grid Substation",
+    id: "ADM-SS-001",
+
+    regionId: "adamawa",
+
+    name: "Jimeta 132/33kV Injection Substation",
+
     status: "online",
-    location: { latitude: 6.5244, longitude: 3.3792 },
+
+    location: {
+      latitude: 9.3265,
+      longitude: 12.4448,
+    },
+
+    voltageLevel: "132/33kV",
+
+    installedCapacityMva: 90,
+
+    availableCapacityMva: 74,
+
+    currentLoadMw: 56.8,
+
     transformers: 4,
-    feeders: 6,
-  },
-  {
-    id: "sub-002",
-    name: "Central Utility Hub",
-    status: "warning",
-    location: { latitude: 6.5431, longitude: 3.3935 },
-    transformers: 5,
-    feeders: 8,
-  },
-  {
-    id: "sub-003",
-    name: "South Service Node",
-    status: "online",
-    location: { latitude: 6.4698, longitude: 3.5852 },
-    transformers: 3,
-    feeders: 4,
+
+    feeders: 12,
+
+    voltageKv: 33,
+
+    currentAmp: 1210,
+
+    frequencyHz: 50,
+
+    powerFactor: 0.96,
+
+    communicationStatus: "online",
+
+    edgeDeviceOnline: true,
+
+    createdAt: "2026-01-01",
+
+    updatedAt: "2026-07-10T09:00:00Z",
+
+    lastSeen: "2026-07-10T11:52:00Z",
   },
 ];
