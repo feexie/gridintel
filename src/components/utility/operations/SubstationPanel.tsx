@@ -1,54 +1,34 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { substations } from "@/data/utility/substations";
 
+import { useOperations } from "@/context/OperationsContext";
+
 import SubstationCard from "./SubstationCard";
 
-type SubstationPanelProps = {
-  regionId: string;
-  onSubstationChange?: (substationId: string) => void;
-};
+export default function SubstationPanel() {
+  const {
+    selection,
+    selectSubstation,
+  } = useOperations();
 
-export default function SubstationPanel({
-  regionId,
-  onSubstationChange,
-}: SubstationPanelProps) {
+  const region = selection.region;
+
   const regionSubstations = useMemo(() => {
+    if (!region) return [];
+
     return substations.filter(
-      (substation) => substation.regionId === regionId
+      (substation) => substation.regionId === region.id
     );
-  }, [regionId]);
+  }, [region]);
 
-  const [selectedSubstation, setSelectedSubstation] = useState("");
-
-  useEffect(() => {
-    if (regionSubstations.length === 0) {
-      setSelectedSubstation("");
-      return;
-    }
-
-    setSelectedSubstation(regionSubstations[0].id);
-
-    onSubstationChange?.(regionSubstations[0].id);
-  }, [regionSubstations, onSubstationChange]);
-
-  function handleSelect(id: string) {
-    setSelectedSubstation(id);
-
-    onSubstationChange?.(id);
-  }
-
-  if (regionSubstations.length === 0) {
+  if (!region) {
     return (
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="text-lg font-semibold text-white">
-          Substations
-        </h2>
-
-        <p className="mt-3 text-slate-400">
-          No substations available for this region.
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <p className="text-slate-400">
+          Select a region to view its substations.
         </p>
       </section>
     );
@@ -62,7 +42,7 @@ export default function SubstationPanel({
         </h2>
 
         <p className="text-sm text-slate-400">
-          Select a substation to continue drilling into the network.
+          {region.name} Distribution Region
         </p>
       </div>
 
@@ -71,8 +51,10 @@ export default function SubstationPanel({
           <SubstationCard
             key={substation.id}
             substation={substation}
-            selected={selectedSubstation === substation.id}
-            onSelect={handleSelect}
+            selected={
+              selection.substation?.id === substation.id
+            }
+            onClick={() => selectSubstation(substation)}
           />
         ))}
       </div>

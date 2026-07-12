@@ -1,54 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { feeders } from "@/data/utility/feeders";
 
+import { useOperations } from "@/context/OperationsContext";
+
 import FeederCard from "./FeederCard";
 
-type FeederPanelProps = {
-  substationId: string;
-  onFeederChange?: (feederId: string) => void;
-};
+export default function FeederPanel() {
+  const {
+    selection,
+    selectFeeder,
+  } = useOperations();
 
-export default function FeederPanel({
-  substationId,
-  onFeederChange,
-}: FeederPanelProps) {
-  const substationFeeders = useMemo(() => {
+  const substation = selection.substation;
+
+  const availableFeeders = useMemo(() => {
+    if (!substation) return [];
+
     return feeders.filter(
-      (feeder) => feeder.substationId === substationId
+      (feeder) =>
+        feeder.substationId === substation.id
     );
-  }, [substationId]);
+  }, [substation]);
 
-  const [selectedFeeder, setSelectedFeeder] = useState("");
-
-  useEffect(() => {
-    if (substationFeeders.length === 0) {
-      setSelectedFeeder("");
-      return;
-    }
-
-    setSelectedFeeder(substationFeeders[0].id);
-
-    onFeederChange?.(substationFeeders[0].id);
-  }, [substationFeeders, onFeederChange]);
-
-  function handleSelect(id: string) {
-    setSelectedFeeder(id);
-
-    onFeederChange?.(id);
-  }
-
-  if (substationFeeders.length === 0) {
+  if (!substation) {
     return (
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="text-lg font-semibold text-white">
-          Feeders
-        </h2>
-
-        <p className="mt-3 text-slate-400">
-          No feeders available for this substation.
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <p className="text-slate-400">
+          Select a substation to view its feeders.
         </p>
       </section>
     );
@@ -62,18 +43,19 @@ export default function FeederPanel({
         </h2>
 
         <p className="text-sm text-slate-400">
-          Select a feeder to continue drilling into distribution
-          transformers.
+          {substation.name}
         </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {substationFeeders.map((feeder) => (
+        {availableFeeders.map((feeder) => (
           <FeederCard
             key={feeder.id}
             feeder={feeder}
-            selected={selectedFeeder === feeder.id}
-            onSelect={handleSelect}
+            selected={
+              selection.feeder?.id === feeder.id
+            }
+            onClick={() => selectFeeder(feeder)}
           />
         ))}
       </div>

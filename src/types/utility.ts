@@ -164,40 +164,23 @@ export interface Transformer extends Timestamp {
 export interface Meter extends Timestamp {
   id: string;
 
-  /*
-   * Where is this meter installed?
-   */
-  assetId: string;
+  serialNumber: string;
 
-  assetType:
+  customerName: string;
+
+  status: Status;
+
+  /*
+   * Installation Point
+   */
+
+  parentAssetType:
     | "substation"
     | "feeder"
     | "transformer"
-    | "customer"
-    | "md"
-    | "der"
-    | "generator"
-    | "battery";
+    | "customer";
 
-  /*
-   * Meter Information
-   */
-  serialNumber: string;
-
-  meterNumber: string;
-
-  manufacturer?: string;
-
-  model?: string;
-
-  /*
-   * Customer information
-   * Empty when meter belongs to feeder,
-   * transformer or substation.
-   */
-  customerName?: string;
-
-  customerAccount?: string;
+  parentAssetId: string;
 
   /*
    * Electrical Measurements
@@ -217,25 +200,24 @@ export interface Meter extends Timestamp {
 
   apparentPowerKva: number;
 
-  demandKw: number;
-
   energyKwh: number;
 
   /*
-   * Health
+   * Communication
    */
-
-  status: Status;
-
-  tamperDetected: boolean;
 
   signalStrength: number;
 
-  communicationStatus: Status;
+  lastReading: string;
 
   lastCommunication: string;
-}
-  
+
+  /*
+   * Meter Health
+   */
+
+  tamperDetected: boolean;
+}  
 
 /* ===========================================================
    ALARMS

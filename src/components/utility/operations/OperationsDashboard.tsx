@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
-import { regions } from "@/data/utility/regions";
+import { OperationsProvider } from "@/context/OperationsContext";
 
 import GridSummary from "./GridSummary";
 import ReliabilityOverview from "./ReliabilityOverview";
@@ -17,17 +15,7 @@ import FeederPanel from "./FeederPanel";
 import TransformerPanel from "./TransformerPanel";
 import MeterPanel from "./MeterPanel";
 
-export default function OperationsDashboard() {
-  const [selectedRegion, setSelectedRegion] = useState(regions[0].id);
-
-  const [selectedSubstation, setSelectedSubstation] =
-    useState("");
-
-  const [selectedFeeder, setSelectedFeeder] = useState("");
-
-  const [selectedTransformer, setSelectedTransformer] =
-    useState("");
-
+function OperationsWorkspace() {
   return (
     <div className="space-y-8">
       <header>
@@ -36,42 +24,22 @@ export default function OperationsDashboard() {
         </h1>
 
         <p className="mt-2 text-slate-400">
-          End-to-end operational visibility across the
+          End-to-end operational visibility across the electricity
           distribution network.
         </p>
       </header>
 
       <GridSummary />
 
-      <RegionSelector
-        selectedRegion={selectedRegion}
-        onRegionChange={setSelectedRegion}
-      />
+      <RegionSelector />
 
-      <SubstationPanel
-        regionId={selectedRegion}
-        onSubstationChange={setSelectedSubstation}
-      />
+      <SubstationPanel />
 
-      {selectedSubstation && (
-        <FeederPanel
-          substationId={selectedSubstation}
-          onFeederChange={setSelectedFeeder}
-        />
-      )}
+      <FeederPanel />
 
-      {selectedFeeder && (
-        <TransformerPanel
-          feederId={selectedFeeder}
-          onTransformerChange={setSelectedTransformer}
-        />
-      )}
+      <TransformerPanel />
 
-      {selectedTransformer && (
-        <MeterPanel
-          transformerId={selectedTransformer}
-        />
-      )}
+      <MeterPanel />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ReliabilityOverview />
@@ -85,5 +53,13 @@ export default function OperationsDashboard() {
 
       <EdgeDeviceStatus />
     </div>
+  );
+}
+
+export default function OperationsDashboard() {
+  return (
+    <OperationsProvider>
+      <OperationsWorkspace />
+    </OperationsProvider>
   );
 }

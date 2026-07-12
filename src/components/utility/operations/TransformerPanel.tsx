@@ -1,55 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { transformers } from "@/data/utility/transformers";
 
+import { useOperations } from "@/context/OperationsContext";
+
 import TransformerCard from "./TransformerCard";
 
-type TransformerPanelProps = {
-  feederId: string;
-  onTransformerChange?: (transformerId: string) => void;
-};
+export default function TransformerPanel() {
+  const {
+    selection,
+    selectTransformer,
+  } = useOperations();
 
-export default function TransformerPanel({
-  feederId,
-  onTransformerChange,
-}: TransformerPanelProps) {
-  const feederTransformers = useMemo(() => {
+  const feeder = selection.feeder;
+
+  const availableTransformers = useMemo(() => {
+    if (!feeder) return [];
+
     return transformers.filter(
-      (transformer) => transformer.feederId === feederId
+      (transformer) =>
+        transformer.feederId === feeder.id
     );
-  }, [feederId]);
+  }, [feeder]);
 
-  const [selectedTransformer, setSelectedTransformer] =
-    useState("");
-
-  useEffect(() => {
-    if (feederTransformers.length === 0) {
-      setSelectedTransformer("");
-      return;
-    }
-
-    setSelectedTransformer(feederTransformers[0].id);
-
-    onTransformerChange?.(feederTransformers[0].id);
-  }, [feederTransformers, onTransformerChange]);
-
-  function handleSelect(id: string) {
-    setSelectedTransformer(id);
-
-    onTransformerChange?.(id);
-  }
-
-  if (feederTransformers.length === 0) {
+  if (!feeder) {
     return (
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="text-lg font-semibold text-white">
-          Distribution Transformers
-        </h2>
-
-        <p className="mt-3 text-slate-400">
-          No transformers found for this feeder.
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <p className="text-slate-400">
+          Select a feeder to view its transformers.
         </p>
       </section>
     );
@@ -57,29 +37,31 @@ export default function TransformerPanel({
 
   return (
     <section className="space-y-4">
-
       <div>
         <h2 className="text-xl font-semibold text-white">
           Distribution Transformers
         </h2>
 
         <p className="text-sm text-slate-400">
-          Select a transformer to inspect connected smart meters
-          and equipment health.
+          {feeder.name}
         </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {feederTransformers.map((transformer) => (
+        {availableTransformers.map((transformer) => (
           <TransformerCard
             key={transformer.id}
             transformer={transformer}
-            selected={selectedTransformer === transformer.id}
-            onSelect={handleSelect}
+            selected={
+              selection.transformer?.id ===
+              transformer.id
+            }
+            onClick={() =>
+              selectTransformer(transformer)
+            }
           />
         ))}
       </div>
-
     </section>
   );
 }

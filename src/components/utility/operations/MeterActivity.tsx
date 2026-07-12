@@ -36,7 +36,7 @@ export default function MeterActivity({
               </p>
 
               <p className="text-xs text-cyan-400 uppercase">
-                {meter.assetType}
+               {meter.parentAssetType} • {meter.parentAssetId}
               </p>
             </div>
 

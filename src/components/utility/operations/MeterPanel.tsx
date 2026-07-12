@@ -4,40 +4,62 @@ import { useMemo } from "react";
 
 import { meters } from "@/data/utility/meters";
 
-import MeterActivity from "./MeterActivity";
+import { useOperations } from "@/context/OperationsContext";
 
-type MeterPanelProps = {
-  transformerId: string;
-};
+import MeterCard from "./MeterCard";
 
-export default function MeterPanel({
-  transformerId,
-}: MeterPanelProps) {
-  const transformerMeters = useMemo(() => {
-    return meters.filter((meter) => {
-      return (
-        meter.assetType === "transformer" &&
-        meter.assetId === transformerId
-      );
-    });
-  }, [transformerId]);
+export default function MeterPanel() {
+  const {
+    selection,
+    selectMeter,
+  } = useOperations();
+
+  const transformer = selection.transformer;
+
+  const availableMeters = useMemo(() => {
+    if (!transformer) return [];
+
+    return meters.filter(
+      (meter) =>
+        meter.parentAssetType === "transformer" &&
+        meter.parentAssetId === transformer.id
+    );
+  }, [transformer]);
+
+  if (!transformer) {
+    return (
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <p className="text-slate-400">
+          Select a transformer to view connected smart meters.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-4">
-
       <div>
         <h2 className="text-xl font-semibold text-white">
-          Smart Meter Fleet
+          Smart Meters
         </h2>
 
         <p className="text-sm text-slate-400">
-          Real-time telemetry from all smart meters connected to the selected
-          transformer.
+          {transformer.name}
         </p>
       </div>
 
-      <MeterActivity meters={transformerMeters} />
-
+      <div className="grid gap-4 lg:grid-cols-2">
+        {availableMeters.map((meter) => (
+          <MeterCard
+            key={meter.id}
+            meter={meter}
+            selected={
+              selection.meter?.id === meter.id
+            }
+            onClick={() => selectMeter(meter)}
+          />
+        ))}
+      </div>
     </section>
   );
 }

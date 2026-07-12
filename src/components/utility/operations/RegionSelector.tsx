@@ -2,17 +2,16 @@
 
 import { regions } from "@/data/utility/regions";
 
+import { useOperations } from "@/context/OperationsContext";
+
 import RegionCard from "./RegionCard";
 
-type RegionSelectorProps = {
-  selectedRegion: string;
-  onRegionChange: (regionId: string) => void;
-};
+export default function RegionSelector() {
+  const {
+    selection,
+    selectRegion,
+  } = useOperations();
 
-export default function RegionSelector({
-  selectedRegion,
-  onRegionChange,
-}: RegionSelectorProps) {
   return (
     <section className="space-y-4">
       <div>
@@ -21,8 +20,7 @@ export default function RegionSelector({
         </h2>
 
         <p className="text-sm text-slate-400">
-          Select a region to drill down through substations, feeders,
-          transformers and smart meters.
+          Select a region to begin exploring the network hierarchy.
         </p>
       </div>
 
@@ -31,8 +29,8 @@ export default function RegionSelector({
           <RegionCard
             key={region.id}
             region={region}
-            selected={selectedRegion === region.id}
-            onClick={() => onRegionChange(region.id)}
+            selected={selection.region?.id === region.id}
+            onClick={() => selectRegion(region)}
           />
         ))}
       </div>
