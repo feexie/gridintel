@@ -1,0 +1,120 @@
+import type { IsoDate, IsoTimestamp, Period } from "./primitives";
+import type { Provenance } from "./provenance";
+import type { ScopeRef, UnresolvedRef } from "./refs";
+
+/* ==========================================================
+   GRIDINTEL DOMAIN — REPORTED FIGURES
+
+   A ReportedKpi is a figure as someone else published it: a
+   regulator, a utility, a partner, or GridIntel's own mock data.
+   It is stored exactly as stated.
+
+   Reported figures are never treated as observations, never
+   overwrite calculated values, and are never overwritten by them.
+   Analytics compare the two side by side and explain differences.
+========================================================== */
+
+/**
+ * Metric identifiers. Transformer counts are split by type, because
+ * "transformers" is used for both power and distribution transformers
+ * in source data; use `transformer_count_unspecified` when the source
+ * does not say which.
+ */
+export type KpiKey =
+  | "atcc"
+  | "technical_loss"
+  | "commercial_loss"
+  | "billing_efficiency"
+  | "collection_efficiency"
+  | "saidi"
+  | "saifi"
+  | "caidi"
+  | "asai"
+  | "availability"
+  | "revenue_billed"
+  | "revenue_collected"
+  | "energy_received"
+  | "energy_billed"
+  | "customer_count"
+  | "meter_count"
+  | "prepaid_meter_count"
+  | "postpaid_meter_count"
+  | "substation_count"
+  | "feeder_count"
+  | "power_transformer_count"
+  | "distribution_transformer_count"
+  | "transformer_count_unspecified"
+  | "active_outage_count"
+  | "active_alarm_count"
+  | "outage_count"
+  | "outage_hours"
+  | "transformer_loading"
+  | "installed_capacity"
+  | "available_capacity"
+  | "load_allocation";
+
+/** "percent" is 0–100 as published; "fraction" is 0–1. */
+export type KpiUnit =
+  | "percent"
+  | "fraction"
+  | "kWh"
+  | "MWh"
+  | "kW"
+  | "MW"
+  | "kVA"
+  | "MVA"
+  | "hours"
+  | "minutes"
+  | "interruptions_per_customer"
+  | "count"
+  | "currency";
+
+/**
+ * A figure exactly as a source reported it.
+ *
+ * `period`, `asOf`, `document`, `methodology` and `reportedAt` are
+ * `| null` rather than optional, so every record states explicitly when
+ * something is unknown. A rate (ATC&C, SAIDI…) needs a period and a
+ * point-in-time count needs `asOf` before it can be compared with
+ * anything.
+ */
+export interface ReportedKpi {
+  id: string;
+  metric: KpiKey;
+  /** What the figure is for. An unresolved name when the source's scope is not in the registry. */
+  scope: ScopeRef | UnresolvedRef;
+  period: Period | null;
+  asOf: IsoTimestamp | null;
+  /** The value as the source states it, in `unit`. */
+  value: number;
+  unit: KpiUnit;
+  /** ISO 4217 code; required in practice when `unit` is "currency". */
+  currency?: string;
+  source: {
+    name: string;
+    kind:
+      | "regulator"
+      | "utility"
+      | "government"
+      | "development_partner"
+      | "gridintel_mock"
+      | "other";
+    organizationId?: string;
+  };
+  document: {
+    title: string;
+    reference?: string;
+    url?: string;
+    page?: string;
+    publishedAt?: IsoDate;
+  } | null;
+  /** The methodology as the source describes it; not a GridIntel methodology. */
+  methodology: {
+    name: string;
+    version?: string;
+    description?: string;
+  } | null;
+  reportedAt: IsoTimestamp | null;
+  notes?: string;
+  provenance: Provenance;
+}
