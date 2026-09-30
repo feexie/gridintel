@@ -1,12 +1,12 @@
 import type { UtilityRegion } from "@/types/executive";
 
-type RegionCardProps = {
+type ExecutiveRegionCardProps = {
   region: UtilityRegion;
 };
 
-export default function RegionCard({
+export default function ExecutiveRegionCard({
   region,
-}: RegionCardProps) {
+}: ExecutiveRegionCardProps) {
   const collectionEfficiency =
     (region.revenueCollected / region.revenueBilled) * 100;
 

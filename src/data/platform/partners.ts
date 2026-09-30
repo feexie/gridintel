@@ -1,9 +1,4 @@
-export interface Partner {
-  id: string;
-  name: string;
-  logo: string;
-  website?: string;
-}
+import type { Partner } from "@/types/platform";
 
 export const partners: Partner[] = [
   {

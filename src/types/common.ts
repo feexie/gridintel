@@ -55,19 +55,3 @@ export interface Communication {
 
   lastHeartbeat?: string;
 }
-
-/* ==========================================================
-   EDGE DEVICE
-========================================================== */
-
-export interface EdgeDevice {
-  id: string;
-
-  online: boolean;
-
-  firmwareVersion: string;
-
-  serialNumber: string;
-
-  manufacturer?: string;
-}

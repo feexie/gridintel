@@ -6,14 +6,12 @@ export const architecture: ArchitectureStep[] = [
     title: "Edge Devices",
     description:
       "Smart meters, sensors, relays, transformers and field IoT devices continuously collect operational data.",
-    image: "/images/platform/edge.jpg",
   },
   {
     id: 2,
     title: "Secure Cloud Platform",
     description:
       "Operational data is securely synchronized to the GridIntel cloud for processing and storage.",
-    image: "/images/platform/cloud.jpg",
   },
   {
     id: 3,

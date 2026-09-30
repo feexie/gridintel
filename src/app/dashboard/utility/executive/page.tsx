@@ -2,7 +2,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import SectionHeader from "@/components/shared/SectionHeader";
 import KPICard from "@/components/cards/KPICard";
 
-import RegionCard from "@/components/utility/executive/RegionCard";
+import ExecutiveRegionCard from "@/components/utility/executive/ExecutiveRegionCard";
 
 import {
   utilityRegions,
@@ -90,7 +90,7 @@ export default function ExecutiveDashboardPage() {
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {utilityRegions.map((region) => (
-            <RegionCard
+            <ExecutiveRegionCard
               key={region.id}
               region={region}
             />

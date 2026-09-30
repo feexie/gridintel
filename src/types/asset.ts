@@ -1,10 +1,10 @@
 import type {
   Communication,
   Coordinates,
-  EdgeDevice,
   Status,
   Timestamp,
 } from "./common";
+import type { EdgeDevice } from "./utility";
 
 /* ==========================================================
    BASE ASSET

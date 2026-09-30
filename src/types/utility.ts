@@ -324,6 +324,10 @@ export interface EdgeDevice {
 
   firmwareVersion: string;
 
+  serialNumber?: string;
+
+  manufacturer?: string;
+
   signalStrength: number;
 
   latencyMs: number;
