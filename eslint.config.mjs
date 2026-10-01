@@ -32,6 +32,16 @@ const importBoundaries = [
     reaching("mock|analytics|data|types|services|components|app|context|constants|lib",
       "The in-memory adapter may import only the domain and the ports."),
   ]),
+  boundary(["src/repositories/demo/**"], [
+    OUTSIDE_DOMAIN,
+    reaching("mock|analytics|data|types|services|composition|components|app|context|constants|lib",
+      "The demo adapter may import only the domain, the ports and the in-memory adapter."),
+  ]),
+  boundary(["src/composition/**"], [
+    OUTSIDE_DOMAIN,
+    { regex: "^(\\.\\./)+repositories/mock(/|$)", message: "The application does not run on the legacy mock adapter." },
+    reaching("data|types|components|app|context", "The composition root wires repositories and services only."),
+  ]),
   boundary(["src/repositories/mock/**"], [
     { ...OUTSIDE_DOMAIN, message: "Legacy data and types are read only through ./legacy.ts." },
     reaching("analytics|data|types|services|components|app|context|constants|lib",
@@ -56,8 +66,8 @@ const importBoundaries = [
   },
   boundary(["src/services/**"], [
     OUTSIDE_DOMAIN,
-    { regex: "^(\\.\\./)+repositories/(memory|mock)(/|$)", message: "Services receive repositories; they do not choose an adapter." },
-    reaching("data|types|components|app|context", "Services use the ports, not legacy data."),
+    { regex: "^(\\.\\./)+repositories/(memory|mock|demo)(/|$)", message: "Services receive repositories; they do not choose an adapter." },
+    reaching("data|types|composition|components|app|context", "Services use the ports, not legacy data."),
   ], { ignores: ["src/services/**/*.test.ts"] }),
   boundary(["src/data/**"], [
     { regex: "^@/(?!types(/|$))", message: "Mock data may import only legacy types." },

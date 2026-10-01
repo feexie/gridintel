@@ -1,5 +1,5 @@
 import type { IsoTimestamp } from "@/domain";
-import type { RegistryCoverage, RegistryRepository } from "../../repositories/ports/index.ts";
+import type { NetworkRegistrySnapshot, RegistryCoverage, RegistryRepository } from "../../repositories/ports/index.ts";
 import type { Registry, TopologyIndex } from "../../analytics/index.ts";
 import { buildTopologyIndex } from "../../analytics/index.ts";
 
@@ -14,6 +14,8 @@ import { buildTopologyIndex } from "../../analytics/index.ts";
 
 export interface LoadedTopology {
   index: TopologyIndex;
+  /** The registry records the index was built from. */
+  snapshot: NetworkRegistrySnapshot;
   topologyBasis: "current_only";
   coverage: RegistryCoverage;
 }
@@ -24,6 +26,7 @@ export async function loadTopology(registry: RegistryRepository, asOf: IsoTimest
   const records: Registry = result.snapshot;
   return {
     index: buildTopologyIndex(records),
+    snapshot: result.snapshot,
     topologyBasis: result.topologyBasis,
     coverage: result.coverage,
   };

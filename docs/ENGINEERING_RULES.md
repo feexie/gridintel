@@ -52,7 +52,7 @@ Analytics (src/analytics)  →  Domain (src/domain)
   ↓
 Repository ports (src/repositories/ports)
   ↑
-Adapters (memory, mock; later database, API, telemetry)
+Adapters (memory, demo, mock; later database, API, telemetry)
 ```
 
 - `src/domain` imports nothing outside itself.
@@ -61,7 +61,9 @@ Adapters (memory, mock; later database, API, telemetry)
 - Ports import only domain types. Repositories retrieve records; they never
   aggregate, calculate, pick a "latest" value or read the clock.
 - Services receive repositories; they never choose an adapter. One
-  composition root selects the adapter.
+  composition root (`src/composition`) selects the adapter.
+- Every service returns its result with `sourcing`; a result built on any
+  synthetic record is marked synthetic and shown as such.
 - The UI imports services and view-model types only. It does not import
   `src/data`, legacy types, adapters or analytics internals.
 - The boundaries are enforced in `eslint.config.mjs`. Extend the rules when a
