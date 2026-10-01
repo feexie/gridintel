@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { ScopeRef } from "@/domain";
-import { compareKpi } from "../../analytics/index.ts";
+import { compareKpi, compareOnBasis, reliabilityOnBasis } from "../../analytics/index.ts";
 import { DEMO_CLOCK, DEMO_PERIOD, DEMO_REGION_ID, createDemoRepositories } from "../../repositories/demo/index.ts";
 import { createMockRepositories } from "../../repositories/mock/index.ts";
 import { scopeCollection } from "./billing.ts";
@@ -139,7 +139,22 @@ describe("energy account and losses", () => {
     assert.equal(reported.length, 1);
     const comparison = compareKpi(reported[0], result.atcc.atcc);
     assert.equal(comparison.reported.value, 48);
+    assert.equal(comparison.sameBasis, true);
     assert.ok((comparison.variance.absolute as number) > 5);
+  });
+
+  it("refuses to compare collection efficiency across cash and accrual bases", async () => {
+    const { result } = await sectionLosses({ repos, scope: feeder("FD-OLD"), period, context });
+    const reported = (await repos.reported.listReportedKpis({ metrics: ["collection_efficiency"], scopes: [feeder("FD-OLD")] })).records;
+    const comparison = compareKpi(reported[0], result.atcc.collectionEfficiency);
+    assert.equal(comparison.comparable, false);
+    assert.equal(comparison.sameBasis, false);
+    assert.equal(comparison.variance.absolute, null);
+    assert.ok(comparison.issues.some((issue) => issue.code === "BASIS_MISMATCH" && issue.blocking));
+
+    const market = (await sectionLosses({ repos, scope: feeder("FD-MKT"), period, context })).result;
+    const marketReported = (await repos.reported.listReportedKpis({ metrics: ["collection_efficiency"], scopes: [feeder("FD-MKT")] })).records;
+    assert.equal(compareKpi(marketReported[0], market.atcc.collectionEfficiency).sameBasis, true);
   });
 
   it("without billing records, gives energy input but no ATC&C", async () => {
@@ -223,6 +238,30 @@ describe("reliability", () => {
     assert.equal(result.reliability.components.momentary.exposures, 4);
     assert.equal(result.reliability.components.excludedForData, 1);
     assert.ok(result.reliability.saidi.warnings.some((w) => w.code === "EXPOSURES_EXCLUDED"));
+  });
+
+  it("compares a reported network-only SAIDI with the network-only calculation, never with the total", async () => {
+    const { reliability } = (await scopeReliability({ repos, scope: SUBSTATION, period, context })).result;
+    const reported = (await repos.reported.listReportedKpis({ metrics: ["saidi"], scopes: [SUBSTATION] })).records[0];
+
+    const againstTotal = compareKpi(reported, reliability.saidi);
+    assert.equal(againstTotal.comparable, false);
+    assert.equal(againstTotal.variance.absolute, null);
+    assert.ok(againstTotal.issues.some((issue) => issue.code === "BASIS_MISMATCH"));
+
+    const matched = compareOnBasis(reported, [reliability.saidi, reliabilityOnBasis(reliability, ["network"]).saidi]);
+    assert.equal(matched.sameBasis, true);
+    assert.equal(matched.comparable, true);
+    assert.deepEqual(matched.calculated.basis.interruptionClasses, ["network"]);
+    // Reported 5.1 h against about 5.7 h calculated, not against 216 h.
+    assert.ok(Math.abs((matched.variance.absolute as number) - 0.56) < 0.1);
+  });
+
+  it("derives customer counts from the network model without calling the indices estimated", async () => {
+    const { reliability } = (await scopeReliability({ repos, scope: SUBSTATION, period, context })).result;
+    assert.equal(reliability.saidi.status, "ok");
+    assert.equal(reliability.saidi.quality, "measured");
+    assert.ok(reliability.saidi.warnings.some((w) => w.code === "CUSTOMER_COUNTS_TOPOLOGY_DERIVED"));
   });
 
   it("shows that load shedding, not faults, drives the indices", async () => {

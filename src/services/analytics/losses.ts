@@ -118,7 +118,12 @@ export async function sectionLosses(params: {
     },
     computedAt: context.computedAt,
   });
-  const atcc = calculateAtcc({ scope, period, inputs: atccInputsFromAccount(account), context });
+  const atcc = calculateAtcc({
+    scope,
+    period,
+    inputs: { ...atccInputsFromAccount(account), collectionBasis: billing.collectionBasis },
+    context,
+  });
   const split = calculateLossSplit({ account, context });
 
   return {

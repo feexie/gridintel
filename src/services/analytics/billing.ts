@@ -73,6 +73,7 @@ export async function scopeCollection(params: {
     period,
     revenueBilled: billing.revenueBilled,
     revenueCollected: billing.revenueCollected,
+    collectionBasis: billing.collectionBasis,
     context,
   });
   return { result: { billing, collectionEfficiency }, sourcing: await trail.resolve(repos.sources) };

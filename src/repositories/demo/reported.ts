@@ -1,4 +1,4 @@
-import type { KpiKey, KpiUnit, ReportedKpi, ScopeRef } from "@/domain";
+import type { KpiBasis, KpiKey, KpiUnit, ReportedKpi, ScopeRef } from "@/domain";
 import { DEMO_CLOCK, DEMO_PERIOD } from "./clock.ts";
 import { DEMO_REGION_ID, DEMO_SUBSTATION_ID } from "./network.ts";
 import { DEMO_ORGANIZATION_ID, REPORT_SOURCE, demoProvenance } from "./sources.ts";
@@ -12,7 +12,13 @@ import { DEMO_ORGANIZATION_ID, REPORT_SOURCE, demoProvenance } from "./sources.t
      the energy account takes it from this study as a reported input;
    - the utility's own monthly report, with headline figures that
      were written to differ from what the records support, so that
-     reported and calculated values can be compared.
+     reported and calculated values can be compared. The report
+     states the basis of each figure: its reliability figures count
+     network interruptions only (no load shedding, no loss of upstream
+     supply); its losses are a fraction of energy input; collection is
+     on a cash basis, except for Old Town, whose collection efficiency
+     is on an accrual basis and so cannot be compared with the
+     calculated cash-basis figure.
 ========================================================== */
 
 const STUDY = {
@@ -27,27 +33,43 @@ const MONTHLY_REPORT = {
   title: "Monthly operations report, September 2026 (synthetic)",
   methodology: {
     name: "Utility internal reporting (synthetic)",
-    description: "The utility's own basis. Its reliability figures exclude load shedding and loss of upstream supply.",
+    description: "The utility's own reporting. Each figure states its basis.",
   },
 };
 
 /** Headline figures as the synthetic monthly report states them. */
-const REPORTED_HEADLINES: readonly { scope: ScopeRef; metric: KpiKey; value: number; unit: KpiUnit }[] = [
+interface Headline {
+  scope: ScopeRef;
+  metric: KpiKey;
+  value: number;
+  unit: KpiUnit;
+  basis: KpiBasis;
+}
+
+const LOSS_BASIS = "energy_input_net_of_transfers_out" as const;
+const NETWORK_ONLY: KpiBasis = { interruptionClasses: ["network"], plannedInterruptions: "included" };
+
+const REPORTED_HEADLINES: readonly Headline[] = [
   ...headlines({ kind: "region", id: DEMO_REGION_ID }, { atcc: 18.5, collection: 95.0 }),
   ...headlines({ kind: "substation", id: DEMO_SUBSTATION_ID }, { atcc: 18.5, collection: 95.0, saidiHours: 5.1, saifi: 1.1 }),
   ...headlines({ kind: "feeder", id: "FD-MKT" }, { atcc: 11.0, collection: 96.0, saidiHours: 1.8, saifi: 0.4 }),
-  ...headlines({ kind: "feeder", id: "FD-OLD" }, { atcc: 48.0, collection: 72.0, saidiHours: 7.2, saifi: 1.5 }),
+  ...headlines({ kind: "feeder", id: "FD-OLD" }, { atcc: 48.0, collection: 72.0, saidiHours: 7.2, saifi: 1.5 }, "accrual"),
 ];
 
 function headlines(
   scope: ScopeRef,
   figures: { atcc: number; collection: number; saidiHours?: number; saifi?: number },
-): { scope: ScopeRef; metric: KpiKey; value: number; unit: KpiUnit }[] {
+  collectionEfficiencyBasis: "cash" | "accrual" = "cash",
+): Headline[] {
   return [
-    { scope, metric: "atcc", value: figures.atcc, unit: "percent" },
-    { scope, metric: "collection_efficiency", value: figures.collection, unit: "percent" },
-    ...(figures.saidiHours === undefined ? [] : [{ scope, metric: "saidi" as const, value: figures.saidiHours, unit: "hours" as const }]),
-    ...(figures.saifi === undefined ? [] : [{ scope, metric: "saifi" as const, value: figures.saifi, unit: "interruptions_per_customer" as const }]),
+    { scope, metric: "atcc", value: figures.atcc, unit: "percent", basis: { lossBasis: LOSS_BASIS, collection: "cash" } },
+    { scope, metric: "collection_efficiency", value: figures.collection, unit: "percent", basis: { collection: collectionEfficiencyBasis } },
+    ...(figures.saidiHours === undefined
+      ? []
+      : [{ scope, metric: "saidi" as const, value: figures.saidiHours, unit: "hours" as const, basis: NETWORK_ONLY }]),
+    ...(figures.saifi === undefined
+      ? []
+      : [{ scope, metric: "saifi" as const, value: figures.saifi, unit: "interruptions_per_customer" as const, basis: NETWORK_ONLY }]),
   ];
 }
 
@@ -57,6 +79,7 @@ function reported(
   value: number,
   unit: KpiUnit,
   document: typeof STUDY | typeof MONTHLY_REPORT,
+  basis: KpiBasis,
 ): ReportedKpi {
   const id = `rk:${REPORT_SOURCE.id}:${scope.kind}:${scope.id}:${metric}`;
   return {
@@ -69,6 +92,7 @@ function reported(
     unit,
     source: { name: "Savanna Electricity Distribution (synthetic)", kind: "gridintel_synthetic", organizationId: DEMO_ORGANIZATION_ID },
     document: { title: document.title },
+    basis,
     methodology: document.methodology,
     reportedAt: DEMO_CLOCK,
     provenance: demoProvenance(REPORT_SOURCE, id),
@@ -78,10 +102,10 @@ function reported(
 export function buildDemoReportedKpis(technicalLossKwh: ReadonlyMap<string, number>): ReportedKpi[] {
   const study = [...technicalLossKwh.entries()].map(([key, kwh]) => {
     const [kind, id] = key.split(":");
-    return reported({ kind: kind as ScopeRef["kind"], id }, "technical_loss", Math.round(kwh), "kWh", STUDY);
+    return reported({ kind: kind as ScopeRef["kind"], id }, "technical_loss", Math.round(kwh), "kWh", STUDY, { lossBasis: LOSS_BASIS });
   });
   const headlines = REPORTED_HEADLINES.map((figure) =>
-    reported(figure.scope, figure.metric, figure.value, figure.unit, MONTHLY_REPORT),
+    reported(figure.scope, figure.metric, figure.value, figure.unit, MONTHLY_REPORT, figure.basis),
   );
   return [...study, ...headlines].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }

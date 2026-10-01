@@ -2,6 +2,7 @@ import type {
   DataQuality,
   Fraction,
   IsoTimestamp,
+  KpiBasis,
   KpiKey,
   KpiUnit,
   MethodologyRef,
@@ -107,6 +108,8 @@ export interface CalculatedKpi {
   value: number | null;
   unit: KpiUnit;
   methodology: MethodologyRef;
+  /** What the value includes, in the same terms a reported figure states its basis. */
+  basis: KpiBasis;
   /** Every input used, with its origin and quality. */
   inputs: Record<string, InputValue>;
   missingInputs: string[];

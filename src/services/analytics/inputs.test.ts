@@ -14,6 +14,7 @@ function kpi(overrides: Partial<ReportedKpi>): ReportedKpi {
     unit: "percent",
     source: { name: "Test", kind: "gridintel_mock" },
     document: null,
+    basis: null,
     methodology: null,
     reportedAt: null,
     provenance: { sourceSystem: "test", ingestedAt: "2026-01-01T00:00:00Z" },

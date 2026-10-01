@@ -1,4 +1,4 @@
-import type { KpiKey, Period, ScopeRef } from "@/domain";
+import type { KpiBasis, KpiKey, Period, ScopeRef } from "@/domain";
 import type { AtccParameters, Methodology } from "../core/methodology.ts";
 import type { CalculatedKpi, CalculationContext, EstimatedInput, InputValue, MonetaryInput, ResultStatus, UnfinalizedKpi, Warning } from "../core/result.ts";
 import type { EnergyAccount, EnergyFigure } from "../energy/account.ts";
@@ -39,6 +39,8 @@ export interface AtccInputs {
   energyBilled: InputValue;
   revenueBilled: MonetaryInput;
   revenueCollected: MonetaryInput;
+  /** How the revenue inputs relate collection to billing; see KpiBasis. */
+  collectionBasis?: "cash" | "accrual";
 }
 
 function figureAsInput(figure: EnergyFigure, ref: string): InputValue {
@@ -81,8 +83,10 @@ function kpi(
   methodology: Methodology<AtccParameters>,
   inputs: Record<string, InputValue>,
   context: CalculationContext,
+  basis: KpiBasis = { lossBasis: methodology.parameters.lossBasis },
 ): Omit<UnfinalizedKpi, "status" | "value" | "missingInputs" | "warnings"> {
   return {
+    basis,
     kind: "calculated",
     metric,
     scope,
@@ -154,12 +158,21 @@ export function calculateAtcc(params: {
     period,
     revenueBilled: inputs.revenueBilled,
     revenueCollected: inputs.revenueCollected,
+    collectionBasis: inputs.collectionBasis,
     methodology,
     context,
   });
 
-  const allInputs: Record<string, InputValue> = { ...inputs };
-  const base = kpi("atcc", scope, period, methodology, allInputs, context);
+  const allInputs: Record<string, InputValue> = {
+    energyInput: inputs.energyInput,
+    energyBilled: inputs.energyBilled,
+    revenueBilled: inputs.revenueBilled,
+    revenueCollected: inputs.revenueCollected,
+  };
+  const base = kpi("atcc", scope, period, methodology, allInputs, context, {
+    lossBasis: methodology.parameters.lossBasis,
+    ...(inputs.collectionBasis === undefined ? {} : { collection: inputs.collectionBasis }),
+  });
   // Reported inputs are flagged once, across all four inputs.
   const warnings = [
     ...billingEfficiency.warnings.filter((w) => w.code !== "INPUTS_FROM_REPORTED"),

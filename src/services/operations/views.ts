@@ -85,13 +85,22 @@ export interface Crumb {
 export interface ReportedComparisonView {
   label: string;
   reported: MetricView;
+  /** The calculated figure on the reported figure's basis, when there is one. */
   calculated: MetricView;
-  /** calculated − reported, in the reported unit (percentage points for ratios). */
+  /** What the reported figure counts, in words; null when the source does not say. */
+  reportedBasis: string | null;
+  /** What the calculated figure counts, in words. */
+  calculatedBasis: string | null;
+  /** True only when both state their basis and the bases are equal. */
+  sameBasis: boolean;
+  comparable: boolean;
+  /** calculated − reported, in the reported unit (percentage points for ratios); null unless on the same basis. */
   variance: number | null;
   varianceUnit: string;
-  likeForLike: boolean;
-  /** Why the two figures may not be comparable. */
-  issues: string[];
+  /** Why the figures are not comparable. Empty when they are. */
+  reasons: string[];
+  /** Things to bear in mind that do not stop the comparison. */
+  caveats: string[];
   document: string | null;
 }
 

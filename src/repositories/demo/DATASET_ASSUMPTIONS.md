@@ -148,9 +148,14 @@ exact here; a real study would not.
   fault on DT-OLD-2 and a storm outage on DT-OLD-3.
 - One customer complaint with no restoration time, to show how an incomplete
   record is excluded from the indices rather than guessed at.
-- Every interruption is recorded per transformer, with the number of active
-  accounts on that transformer, held as a recorded count (as an outage
-  system would hold it).
+- Every interruption is recorded per transformer. Its customer count is the
+  number of active accounts connected under that transformer in the
+  registry, held as `topology_derived`. That is the realistic case for an
+  outage system with a network model, and it is what the dataset actually
+  does. A derived count is not an estimate, so it does not make the
+  reliability indices "calculated with estimates"; the indices carry a
+  warning that the counts come from the network model.
+- The one customer complaint has a count of 1, held as `recorded`.
 
 ## Deliberate data-quality cases
 
@@ -163,8 +168,16 @@ exact here; a real study would not.
 
 A synthetic monthly report states ATC&C, collection efficiency, SAIDI and
 SAIFI for the region, the substation and each feeder. They were written to
-differ from what the records support, and its reliability figures exclude
-load shedding, so that reported and calculated values can be compared.
+differ from what the records support, so that reported and calculated values
+can be compared. Each figure states its basis:
+
+- SAIDI and SAIFI count network interruptions only (no load shedding, no
+  loss of upstream supply), with planned work included. They are compared
+  with the network-attributable calculation, never with the total.
+- ATC&C is a fraction of energy input, with collection on a cash basis.
+- Collection efficiency is on a cash basis, except Old Town's, which is
+  deliberately on an accrual basis so that one comparison on the screens
+  shows the "not comparable" case.
 
 ## Not modelled
 

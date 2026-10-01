@@ -10,6 +10,12 @@ import { finalizeKpi, ratio, reportedInputWarnings } from "../core/result.ts";
 
    Collection efficiency = revenue collected ÷ revenue billed.
 
+   Whether the figure is on a cash or an accrual basis depends on
+   what the revenue inputs are, which only the caller knows. The
+   caller states it; when it does not, the result's basis says
+   nothing about collection and it cannot be compared with a
+   reported figure.
+
    Revenue is combined only when currency and scale match; there is
    no conversion between currencies or scales. Aggregation across
    scopes is always Σ collected ÷ Σ billed. Percentages are never
@@ -34,6 +40,8 @@ export function calculateCollectionEfficiency(params: {
   period: Period | null;
   revenueBilled: MonetaryInput;
   revenueCollected: MonetaryInput;
+  /** How the revenue inputs relate collection to billing; see KpiBasis. */
+  collectionBasis?: "cash" | "accrual";
   methodology?: Methodology<AtccParameters>;
   context: CalculationContext;
 }): CalculatedKpi {
@@ -48,6 +56,7 @@ export function calculateCollectionEfficiency(params: {
     asOf: null,
     unit: "fraction" as const,
     methodology: methodologyRef(methodology),
+    basis: params.collectionBasis === undefined ? {} : { collection: params.collectionBasis },
     inputs,
     coverage: null,
     quality: worstQuality([revenueBilled.quality, revenueCollected.quality]),
@@ -88,6 +97,7 @@ export function aggregateCollectionEfficiency(params: {
   scope: ScopeRef;
   period: Period | null;
   parts: readonly CollectionPart[];
+  collectionBasis?: "cash" | "accrual";
   methodology?: Methodology<AtccParameters>;
   context: CalculationContext;
 }): CalculatedKpi {
@@ -107,6 +117,7 @@ export function aggregateCollectionEfficiency(params: {
     asOf: null,
     unit: "fraction" as const,
     methodology: methodologyRef(methodology),
+    basis: params.collectionBasis === undefined ? {} : { collection: params.collectionBasis },
     inputs,
     coverage: null,
     quality: worstQuality(Object.values(inputs).map((input) => input.quality)),

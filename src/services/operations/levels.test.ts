@@ -115,6 +115,12 @@ describe("operations read models", () => {
     assert.equal(feeder.reliability.supply.days[0].date, "2026-09-01");
     assert.ok((feeder.reliability.supply.daysNonCompliant as number) > 0);
     assert.equal(feeder.reliability.reported.length, 2);
+    // The report counts network interruptions only, so it is set beside the network-only figure.
+    const saidi = feeder.reliability.reported[0];
+    assert.equal(saidi.sameBasis, true);
+    assert.match(saidi.reportedBasis ?? "", /network interruptions only/);
+    assert.ok((saidi.calculated.value as number) < 5);
+    assert.ok((feeder.reliability.saidi.value as number) > 50);
 
     const transformer = (await transformerView(runtime, "DT-MKT-1")) as NetworkLevelView;
     assert.equal(transformer.reliability.supply.band, null);
@@ -146,6 +152,17 @@ describe("operations read models", () => {
     assert.equal(view?.meter, null);
     assert.equal(view?.charges[0].estimated, true);
     assert.equal(view?.sourcing.synthetic, true);
+  });
+
+  it("mark a comparison across different bases as not comparable, with the reason and no difference", async () => {
+    const oldTown = (await feederView(runtime, "FD-OLD")) as NetworkLevelView;
+    const collection = oldTown.losses?.reported.find((row) => row.label === "Collection efficiency");
+    assert.equal(collection?.comparable, false);
+    assert.equal(collection?.sameBasis, false);
+    assert.equal(collection?.variance, null);
+    assert.match(collection?.reasons.join(" ") ?? "", /reported "accrual", calculated "cash"/);
+    const atcc = oldTown.losses?.reported.find((row) => row.label === "ATC&C");
+    assert.equal(atcc?.sameBasis, true);
   });
 
   it("always present alarms as not available", async () => {

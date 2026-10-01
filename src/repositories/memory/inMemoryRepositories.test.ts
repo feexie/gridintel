@@ -54,6 +54,7 @@ function kpi(id: string, metric: ReportedKpi["metric"], scope: ReportedKpi["scop
     unit: "count",
     source: { name: "test", kind: "other" },
     document: null,
+    basis: null,
     methodology: null,
     reportedAt: null,
     provenance: PROVENANCE,

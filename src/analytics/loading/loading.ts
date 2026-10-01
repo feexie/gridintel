@@ -264,6 +264,7 @@ export function transformerLoadingKpi(loading: LoadingResult): CalculatedKpi {
     value: loading.loadingFraction,
     unit: "fraction",
     methodology: loading.methodology,
+    basis: {},
     inputs: loadingKpiInputs(loading),
     missingInputs: loading.missingInputs,
     coverage: null,

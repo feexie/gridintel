@@ -191,7 +191,8 @@ export function buildDemoOutages(): Outage[] {
       (part): OutageExposure => ({
         affected: affected(part.supplyKey),
         customersAffected: activeAccounts(part.supplyKey),
-        customerCountBasis: "recorded",
+        // As an outage system with a network model holds it: the accounts connected under the transformer.
+        customerCountBasis: "topology_derived",
         interruptedAt: wat(part.startMs),
         restoredAt: wat(part.endMs),
         quality: "measured",

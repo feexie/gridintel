@@ -164,7 +164,7 @@ export function MetricTile({
 }
 
 /** A figure in a table row: value, a status mark, and the full trail on hover. */
-export function MetricCell({ metric }: { metric: MetricView | undefined }) {
+export function MetricCell({ metric, mark }: { metric: MetricView | undefined; mark?: string }) {
   if (!metric) return <span className="text-slate-600">—</span>;
   const hover = [
     `${metric.label}: ${formatMetric(metric)}`,
@@ -187,6 +187,7 @@ export function MetricCell({ metric }: { metric: MetricView | undefined }) {
         {STATUS_MARK[metric.status]}
       </span>
       {metric.value === null ? null : <span className="text-[9px] uppercase text-slate-500">{ORIGIN_LABEL[metric.origin].slice(0, 4)}</span>}
+      {mark ? <span className="font-sans text-[11px] text-amber-200">{mark}</span> : null}
     </span>
   );
 }

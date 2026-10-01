@@ -1,6 +1,6 @@
-import type { IsoTimestamp, Period, ScopeRef } from "@/domain";
+import type { IsoTimestamp, KpiBasis, Period, ScopeRef } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot, RegistryCoverage } from "../../repositories/ports/index.ts";
-import type { CalculationContext, TopologyIndex } from "../../analytics/index.ts";
+import type { CalculatedKpi, CalculationContext, TopologyIndex } from "../../analytics/index.ts";
 import type {
   ChildRow,
   ChildTable,
@@ -22,12 +22,13 @@ import {
   LOADING_REFERENCE,
   SUPPLY_HOURS_REFERENCE,
   billingByAccount,
-  compareKpi,
+  compareOnBasis,
   convertUnit,
   feedersOfSubstation,
   isComputed,
   metersWithRole,
   methodologyRef,
+  reliabilityOnBasis,
   servicePointsDirectOnFeeder,
   servicePointsOnTransformer,
   servicePointsUnder,
@@ -94,17 +95,47 @@ function timeZoneOf(snapshot: NetworkRegistrySnapshot): string | undefined {
 
 /* ---------------- Blocks ---------------- */
 
+const CLASS_WORDS: Record<string, string> = {
+  network: "network interruptions",
+  upstream_supply: "loss of upstream supply",
+  load_management: "load shedding",
+  other: "other and unattributed interruptions",
+};
+
+/** A basis in words, for the dimensions it states. */
+export function describeBasis(basis: KpiBasis | null): string | null {
+  if (basis === null) return null;
+  const parts: string[] = [];
+  if (basis.interruptionClasses !== undefined) {
+    const all = basis.interruptionClasses.length === Object.keys(CLASS_WORDS).length;
+    parts.push(all ? "all interruptions, whatever their cause" : `${basis.interruptionClasses.map((name) => CLASS_WORDS[name]).join(", ")} only`);
+  }
+  if (basis.plannedInterruptions !== undefined) parts.push(`planned work ${basis.plannedInterruptions}`);
+  if (basis.lossBasis !== undefined) parts.push(basis.lossBasis === "energy_input_gross" ? "fraction of gross energy input" : "fraction of energy input net of transfers out");
+  if (basis.collection !== undefined) parts.push(`collection on ${basis.collection === "cash" ? "a cash" : "an accrual"} basis`);
+  return parts.length === 0 ? null : parts.join("; ");
+}
+
+/**
+ * Reported figures beside calculated ones. `candidates` gives, for a
+ * reported figure, the calculated figures it could be matched with; the
+ * one on the reported figure's own basis is used.
+ */
 async function reportedComparisons(
   runtime: OperationsRuntime,
   scope: ScopeRef,
-  pairs: { metric: "atcc" | "collection_efficiency" | "saidi" | "saifi"; label: string; calculated: Parameters<typeof compareKpi>[1] }[],
+  pairs: {
+    metric: "atcc" | "collection_efficiency" | "saidi" | "saifi";
+    label: string;
+    candidates: (basis: KpiBasis | null) => CalculatedKpi[];
+  }[],
 ): Promise<ReportedComparisonView[]> {
   const reported = await runtime.repos.reported.listReportedKpis({ metrics: pairs.map((pair) => pair.metric), scopes: [scope] });
   return pairs.flatMap((pair) =>
     reported.records
       .filter((kpi) => kpi.metric === pair.metric)
       .map((kpi): ReportedComparisonView => {
-        const comparison = compareKpi(kpi, pair.calculated);
+        const comparison = compareOnBasis(kpi, pair.candidates(kpi.basis));
         const ratio = kpi.unit === "percent" || kpi.unit === "fraction";
         const reportedValue = kpi.unit === "percent" ? convertUnit(kpi.value, "percent", "fraction") : kpi.value;
         return {
@@ -122,13 +153,17 @@ async function reportedComparisons(
             estimatedInputs: [],
             missingInputs: [],
             warnings: [],
-            note: kpi.methodology?.description ?? null,
+            note: null,
           },
-          calculated: kpiMetric(`${pair.label} (calculated)`, pair.calculated),
+          calculated: kpiMetric(`${pair.label} (calculated)`, comparison.calculated),
+          reportedBasis: describeBasis(kpi.basis),
+          calculatedBasis: describeBasis(comparison.calculated.basis),
+          sameBasis: comparison.sameBasis,
+          comparable: comparison.comparable,
           variance: comparison.variance.absolute,
           varianceUnit: comparison.variance.absoluteUnit,
-          likeForLike: comparison.comparable,
-          issues: comparison.issues.map((issue) => issue.message),
+          reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
+          caveats: comparison.issues.filter((issue) => !issue.blocking).map((issue) => issue.message),
           document: kpi.document?.title ?? null,
         };
       }),
@@ -225,8 +260,8 @@ async function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef, scopeNot
     })),
     accounts: { inScope: billing.accountsInScope, billed: billing.accountsBilled },
     reported: await reportedComparisons(runtime, scope, [
-      { metric: "atcc", label: "ATC&C", calculated: atcc.atcc },
-      { metric: "collection_efficiency", label: "Collection efficiency", calculated: atcc.collectionEfficiency },
+      { metric: "atcc", label: "ATC&C", candidates: () => [atcc.atcc] },
+      { metric: "collection_efficiency", label: "Collection efficiency", candidates: () => [atcc.collectionEfficiency] },
     ]),
   };
 }
@@ -290,8 +325,23 @@ async function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, tim
       note: supply.band === null ? null : supplyMethod.disclaimer,
     },
     reported: await reportedComparisons(runtime, scope, [
-      { metric: "saidi", label: "SAIDI", calculated: reliability.saidi },
-      { metric: "saifi", label: "SAIFI", calculated: reliability.saifi },
+      // The total first, then the figure on the classes the reported figure says it counts.
+      {
+        metric: "saidi",
+        label: "SAIDI",
+        candidates: (basis) => [
+          reliability.saidi,
+          ...(basis?.interruptionClasses ? [reliabilityOnBasis(reliability, basis.interruptionClasses).saidi] : []),
+        ],
+      },
+      {
+        metric: "saifi",
+        label: "SAIFI",
+        candidates: (basis) => [
+          reliability.saifi,
+          ...(basis?.interruptionClasses ? [reliabilityOnBasis(reliability, basis.interruptionClasses).saifi] : []),
+        ],
+      },
     ]),
   };
 }

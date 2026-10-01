@@ -126,6 +126,8 @@ function mapRecord<T extends { id: string }>(
       ...(rule.currency === undefined ? {} : { currency: rule.currency }),
       source: { name: source.name, kind: "gridintel_mock", organizationId: MOCK_ORGANIZATION_ID },
       document: null,
+      // The legacy mock data states no basis for any figure.
+      basis: null,
       methodology: null,
       reportedAt: null,
       provenance: mockProvenance(source, record.id),

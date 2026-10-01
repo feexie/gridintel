@@ -67,7 +67,14 @@ function DecompositionBar({ losses }: { losses: LossesView }) {
   );
 }
 
-function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
+function formatVariance(row: ReportedComparisonView): string {
+  if (row.variance === null) return "—";
+  const unit = row.varianceUnit === "percentage_points" ? " pp" : row.varianceUnit === "hours" ? " h" : "";
+  return `${row.variance > 0 ? "+" : ""}${formatNumber(row.variance, 1)}${unit}`;
+}
+
+/** Reported figures beside the calculated figure on the same basis, or the reason there is none. */
+export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
   if (rows.length === 0) return null;
   return (
     <div>
@@ -77,9 +84,9 @@ function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
           <tr className="border-b border-slate-800 text-left text-[10px] uppercase tracking-wide text-slate-500">
             <th className="py-1 pr-2 font-normal">Figure</th>
             <th className="py-1 pr-2 text-right font-normal">Reported</th>
-            <th className="py-1 pr-2 text-right font-normal">Calculated</th>
+            <th className="py-1 pr-2 text-right font-normal">Calculated, same basis</th>
             <th className="py-1 pr-2 text-right font-normal">Difference</th>
-            <th className="py-1 font-normal">Like for like?</th>
+            <th className="py-1 font-normal">Basis</th>
           </tr>
         </thead>
         <tbody>
@@ -90,24 +97,35 @@ function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
                 <MetricCell metric={row.reported} />
               </td>
               <td className="py-1 pr-2 text-right">
-                <MetricCell metric={row.calculated} />
+                {row.sameBasis ? <MetricCell metric={row.calculated} /> : <span className="text-slate-500">none on this basis</span>}
               </td>
-              <td className="py-1 pr-2 text-right font-mono tabular-nums text-slate-100">
-                {row.variance === null
-                  ? "—"
-                  : `${row.variance > 0 ? "+" : ""}${formatNumber(row.variance, 1)} ${row.varianceUnit === "percentage_points" ? "pp" : row.varianceUnit === "interruptions_per_customer" ? "" : row.varianceUnit}`}
-              </td>
-              <td className="py-1 text-[11px] text-slate-400">
-                <span title={row.issues.join("\n")}>
-                  {row.likeForLike ? (row.issues.length > 0 ? `Yes, with caveats: ${row.issues[0]}` : "Yes") : `No: ${row.issues[0] ?? "not comparable"}`}
-                </span>
-                {row.reported.note ? <span className="block text-slate-500">Reported basis: {row.reported.note}</span> : null}
+              <td className="py-1 pr-2 text-right font-mono text-slate-100">{row.sameBasis ? formatVariance(row) : "—"}</td>
+              <td className="py-1 text-[11px] leading-snug">
+                {row.comparable ? (
+                  <span className="text-emerald-300">● Same basis</span>
+                ) : (
+                  <span className="text-rose-200">∅ Not comparable</span>
+                )}
+                <span className="block text-slate-300">Reported counts: {row.reportedBasis ?? "basis not stated"}.</span>
+                {row.reasons.map((reason) => (
+                  <span key={reason} className="block text-rose-100/90">
+                    {reason}
+                  </span>
+                ))}
+                {row.caveats.map((caveat) => (
+                  <span key={caveat} className="block text-slate-500">
+                    Note: {caveat}
+                  </span>
+                ))}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="mt-1 text-[10px] text-slate-500">Source of reported figures: {rows[0].document ?? "not stated"}. Reported figures are shown as published and never replace calculated ones.</p>
+      <p className="mt-1 text-[10px] text-slate-500">
+        Source of reported figures: {rows[0].document ?? "not stated"}. A reported figure is compared only with the calculated figure that counts the same things. Reported
+        figures are shown as published and never replace calculated ones.
+      </p>
     </div>
   );
 }
@@ -359,7 +377,21 @@ export function LoadingPanel({ loading }: { loading: LoadingView }) {
 
 /* ---------------- Children and not-available ---------------- */
 
+const FOOTNOTE_MARKS = ["†", "‡", "§", "¶", "‖", "#"];
+
 export function ChildrenTable({ table }: { table: ChildTable }) {
+  // Every caveat on a figure in the table is printed under it, with a marker on the figure,
+  // so that no caveat depends on hovering.
+  const notes: string[] = [];
+  for (const row of table.rows) {
+    for (const column of table.columns) {
+      const note = row.cells[column.key]?.note;
+      if (note && !notes.includes(note)) notes.push(note);
+    }
+  }
+  const markFor = (note: string | null | undefined) =>
+    note ? (FOOTNOTE_MARKS[notes.indexOf(note)] ?? `[${notes.indexOf(note) + 1}]`) : undefined;
+
   return (
     <Panel
       title={`${table.title} (${table.rows.length})`}
@@ -388,7 +420,7 @@ export function ChildrenTable({ table }: { table: ChildTable }) {
                 </td>
                 {table.columns.map((column) => (
                   <td key={column.key} className="py-1 pl-3 text-right">
-                    <MetricCell metric={row.cells[column.key]} />
+                    <MetricCell metric={row.cells[column.key]} mark={markFor(row.cells[column.key]?.note)} />
                   </td>
                 ))}
               </tr>
@@ -396,7 +428,19 @@ export function ChildrenTable({ table }: { table: ChildTable }) {
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-slate-500">Hover a figure for its status, origin, method and inputs. ● measured or fully calculated · ≈ estimated inputs · ! insufficient data · – not available.</p>
+      {notes.length > 0 ? (
+        <ul className="space-y-0.5 text-[11px] leading-snug text-amber-100/90">
+          {notes.map((note) => (
+            <li key={note}>
+              <span className="font-mono">{markFor(note)}</span> {note}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="text-[10px] text-slate-500">
+        ● measured or fully calculated · ≈ estimated inputs · ! insufficient data · – not available. The tag after each figure is its origin (MEAS, REPO, CALC, ESTI, DERI). Open a row for
+        source and method.
+      </p>
     </Panel>
   );
 }

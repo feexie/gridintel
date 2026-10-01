@@ -1,6 +1,7 @@
 import type { IsoDate, IsoTimestamp, Period } from "./primitives";
 import type { Provenance } from "./provenance";
 import type { ScopeRef, UnresolvedRef } from "./refs";
+import type { InterruptionClass } from "./events";
 
 /* ==========================================================
    GRIDINTEL DOMAIN — REPORTED FIGURES
@@ -70,6 +71,27 @@ export type KpiUnit =
   | "currency";
 
 /**
+ * What a figure includes: the definitions that change its value without
+ * changing its name. Two figures are like for like only when every
+ * dimension that matters for their metric is stated and equal. A
+ * dimension left out is "not stated", which is never assumed to match.
+ */
+export interface KpiBasis {
+  /** Reliability indices: the classes of interruption that are counted. */
+  interruptionClasses?: readonly InterruptionClass[];
+  /** Reliability indices: whether planned interruptions are counted. */
+  plannedInterruptions?: "included" | "excluded";
+  /**
+   * Collection figures: "cash" is money received in the period over
+   * charges raised in it; "accrual" is money received against the
+   * period's own charges, whenever it arrives.
+   */
+  collection?: "cash" | "accrual";
+  /** Loss figures: what energy the loss is a fraction of. */
+  lossBasis?: "energy_input_net_of_transfers_out" | "energy_input_gross";
+}
+
+/**
  * A figure exactly as a source reported it.
  *
  * `period`, `asOf`, `document`, `methodology` and `reportedAt` are
@@ -110,6 +132,12 @@ export interface ReportedKpi {
     page?: string;
     publishedAt?: IsoDate;
   } | null;
+  /**
+   * What the figure includes, as the source defines it. null when the
+   * source does not say, in which case it cannot be compared with a
+   * calculated figure.
+   */
+  basis: KpiBasis | null;
   /** The methodology as the source describes it; not a GridIntel methodology. */
   methodology: {
     name: string;

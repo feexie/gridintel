@@ -39,6 +39,19 @@ export type InterruptionCause =
   | "other"
   | "unknown";
 
+/**
+ * Who an interruption is attributed to, from its cause and responsible
+ * party. The classes are exclusive and cover every interruption, in this
+ * order of precedence:
+ * - load_management: load shedding, whoever ordered it;
+ * - upstream_supply: attributed to transmission or generation, or caused
+ *   by loss of upstream supply;
+ * - network: any other interruption the distribution business is
+ *   responsible for (faults, planned work, weather damage);
+ * - other: the customer, a third party, or not known.
+ */
+export type InterruptionClass = "network" | "upstream_supply" | "load_management" | "other";
+
 /** Which part of the power system the interruption is attributed to. */
 export type ResponsibleParty =
   | "distribution"
@@ -86,7 +99,13 @@ export interface OutageExposure {
   affected: EntityRef;
   /** null when not recorded; never 0 as a placeholder. */
   customersAffected: number | null;
-  /** How `customersAffected` was obtained. */
+  /**
+   * How `customersAffected` was obtained:
+   * - recorded: counted for this interruption and written down;
+   * - topology_derived: read from the network model, as the accounts
+   *   connected under the affected element. Derived, not estimated;
+   * - estimated: a judgement, with no count and no model behind it.
+   */
   customerCountBasis: "recorded" | "topology_derived" | "estimated";
   interruptedAt?: IsoTimestamp;
   restoredAt?: IsoTimestamp;

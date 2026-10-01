@@ -45,9 +45,14 @@ describe("regional collection efficiency from the mock data", () => {
       const codes = comparison.issues.map((issue) => issue.code);
       assert.ok(codes.includes("METHODOLOGY_UNSPECIFIED"));
       assert.ok(codes.includes("INPUTS_FROM_REPORTED"));
+      // The mock figures state no basis, so there is nothing like for like to compare with,
+      // and no difference is given.
+      assert.ok(codes.includes("BASIS_UNSPECIFIED"));
+      assert.equal(comparison.sameBasis, false);
+      assert.equal(comparison.variance.absolute, null);
     }
-    const executive = comparisons[1];
-    assert.ok(Math.abs((executive.variance.absolute as number) - ((710000000 / 820000000) * 100 - 86.6)) < 1e-9);
+    // The calculated value itself is unaffected.
+    assert.ok(Math.abs((comparisons[1].calculated.value as number) - 710000000 / 820000000) < 1e-12);
   });
 
   it("gives the same result as calling analytics directly with the same inputs", async () => {

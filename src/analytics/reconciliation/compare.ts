@@ -1,4 +1,4 @@
-import type { KpiKey, KpiUnit, Period, ReportedKpi, ScopeRef, UnresolvedRef } from "@/domain";
+import type { KpiBasis, KpiKey, KpiUnit, Period, ReportedKpi, ScopeRef, UnresolvedRef } from "@/domain";
 import type { CalculatedKpi } from "../core/result.ts";
 import { qualityRank } from "../core/quality.ts";
 import { isComputed } from "../core/result.ts";
@@ -21,6 +21,20 @@ import { convertUnit, dimensionOf } from "../core/units.ts";
    Every reason the two figures may not be like-for-like is listed.
    `comparable` is false if any blocking reason applies; the
    variance is still shown when the units allow it.
+
+   BASIS. Two figures with the same name can count different things:
+   SAIDI with or without load shedding, collection on a cash or an
+   accrual basis. Each metric has basis dimensions that matter for it
+   (`basisDimensions`). A reported figure is like for like with a
+   calculated one only when every such dimension is STATED on both
+   and EQUAL. A basis that is not stated is never assumed to match.
+   When the bases differ or are not stated the comparison is not
+   comparable and no variance is given: a difference between figures
+   that count different things means nothing.
+
+   `compareOnBasis` picks, from several calculated figures for the
+   same metric (e.g. total SAIDI and network-only SAIDI), the one on
+   the reported figure's basis.
 ========================================================== */
 
 export interface ComparabilityIssue {
@@ -33,6 +47,8 @@ export interface ComparabilityIssue {
     | "PERIOD_UNSPECIFIED"
     | "PERIOD_MISMATCH"
     | "AS_OF_MISMATCH"
+    | "BASIS_UNSPECIFIED"
+    | "BASIS_MISMATCH"
     | "METHODOLOGY_UNSPECIFIED"
     | "METHODOLOGY_NOT_VERIFIED"
     | "INPUTS_FROM_REPORTED"
@@ -60,7 +76,88 @@ export interface KpiComparison {
     relative: number | null;
   };
   comparable: boolean;
+  /** True when every basis dimension that matters for the metric is stated on both sides and equal. */
+  sameBasis: boolean;
   issues: ComparabilityIssue[];
+}
+
+type BasisDimension = keyof KpiBasis;
+
+const RELIABILITY_BASIS: BasisDimension[] = ["interruptionClasses", "plannedInterruptions"];
+
+/** The basis dimensions that change a metric's value. Metrics not listed have none. */
+export function basisDimensions(metric: KpiKey): BasisDimension[] {
+  switch (metric) {
+    case "saidi":
+    case "saifi":
+    case "caidi":
+    case "asai":
+    case "availability":
+      return RELIABILITY_BASIS;
+    case "collection_efficiency":
+      return ["collection"];
+    case "atcc":
+      return ["lossBasis", "collection"];
+    case "technical_loss":
+    case "commercial_loss":
+    case "billing_efficiency":
+      return ["lossBasis"];
+    default:
+      return [];
+  }
+}
+
+const DIMENSION_NAME: Record<BasisDimension, string> = {
+  interruptionClasses: "which interruptions are counted",
+  plannedInterruptions: "whether planned interruptions are counted",
+  collection: "the collection basis (cash or accrual)",
+  lossBasis: "what energy the loss is a fraction of",
+};
+
+function basisValue(value: KpiBasis[BasisDimension]): string | null {
+  if (value === undefined) return null;
+  return typeof value === "string" ? value : [...value].sort().join("+");
+}
+
+/** Every reason the two bases are not the same, for the dimensions that matter to the metric. */
+export function basisIssues(metric: KpiKey, reported: KpiBasis | null, calculated: KpiBasis): ComparabilityIssue[] {
+  const issues: ComparabilityIssue[] = [];
+  for (const dimension of basisDimensions(metric)) {
+    const stated = reported === null ? null : basisValue(reported[dimension]);
+    const computed = basisValue(calculated[dimension]);
+    if (stated === null) {
+      issues.push({
+        code: "BASIS_UNSPECIFIED",
+        message: `The reported figure does not state ${DIMENSION_NAME[dimension]}.`,
+        blocking: true,
+      });
+    } else if (computed === null) {
+      issues.push({
+        code: "BASIS_UNSPECIFIED",
+        message: `The calculated figure does not state ${DIMENSION_NAME[dimension]}.`,
+        blocking: true,
+      });
+    } else if (stated !== computed) {
+      issues.push({
+        code: "BASIS_MISMATCH",
+        message: `Different basis for ${DIMENSION_NAME[dimension]}: reported "${stated.replaceAll("_", " ")}", calculated "${computed.replaceAll("_", " ")}".`,
+        blocking: true,
+      });
+    }
+  }
+  return issues;
+}
+
+/**
+ * Compares a reported figure with the calculated figure that is on its
+ * basis. With none on its basis, it is compared with the first candidate
+ * and the result says the two are not comparable, and why.
+ */
+export function compareOnBasis(reported: ReportedKpi, candidates: readonly CalculatedKpi[]): KpiComparison {
+  const match = candidates.find(
+    (candidate) => candidate.metric === reported.metric && basisIssues(reported.metric, reported.basis, candidate.basis).length === 0,
+  );
+  return compareKpi(reported, match ?? candidates[0]);
 }
 
 function sameScope(reported: ScopeRef | UnresolvedRef, calculated: ScopeRef): boolean {
@@ -131,6 +228,10 @@ export function compareKpi(reported: ReportedKpi, calculated: CalculatedKpi): Kp
     });
   }
 
+  const basis = reported.metric === calculated.metric ? basisIssues(reported.metric, reported.basis, calculated.basis) : [];
+  issues.push(...basis);
+  const sameBasis = reported.metric === calculated.metric && basis.length === 0;
+
   if (reported.methodology === null) {
     issues.push({
       code: "METHODOLOGY_UNSPECIFIED",
@@ -165,7 +266,8 @@ export function compareKpi(reported: ReportedKpi, calculated: CalculatedKpi): Kp
   const isRatio = dimensionOf(reported.unit) === "ratio";
   let absolute: number | null = null;
   let relative: number | null = null;
-  if (calculatedInReportedUnit !== null) {
+  // A difference between figures on different bases means nothing, so none is given.
+  if (calculatedInReportedUnit !== null && sameBasis) {
     const difference = calculatedInReportedUnit - reported.value;
     absolute = isRatio ? (convertUnit(difference, reported.unit, "percent") as number) : difference;
     relative = reported.value === 0 ? null : difference / Math.abs(reported.value);
@@ -185,6 +287,7 @@ export function compareKpi(reported: ReportedKpi, calculated: CalculatedKpi): Kp
       relative,
     },
     comparable: !issues.some((issue) => issue.blocking),
+    sameBasis,
     issues,
   };
 }

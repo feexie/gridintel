@@ -2,6 +2,7 @@ import type {
   DataQuality,
   EntityRef,
   InterruptionCause,
+  InterruptionClass,
   IsoTimestamp,
   Outage,
   Period,
@@ -45,18 +46,8 @@ export type MethodologyExclusion =
   | "LOAD_SHEDDING"
   | "MAJOR_EVENT";
 
-/**
- * Who an interruption is attributed to, from the cause and responsible
- * party recorded on the outage. The classes are exclusive and cover every
- * exposure, in this order of precedence:
- * - load_management: load shedding, whoever ordered it;
- * - upstream_supply: attributed to transmission or generation, or caused
- *   by loss of upstream supply;
- * - network: any other interruption the distribution business is
- *   responsible for (faults, planned work, weather damage);
- * - other: the customer, a third party, or not known.
- */
-export type AttributionClass = "network" | "upstream_supply" | "load_management" | "other";
+/** The attribution classes are defined in the domain (`InterruptionClass`). */
+export type AttributionClass = InterruptionClass;
 
 export const ATTRIBUTION_CLASSES: readonly AttributionClass[] = ["network", "upstream_supply", "load_management", "other"];
 
@@ -80,6 +71,8 @@ export interface ClassifiedExposure {
   loadShedding: boolean;
   attribution: AttributionClass;
   majorEvent: boolean;
+  /** How the customer count was obtained, as recorded on the exposure. */
+  customerCountBasis: "recorded" | "topology_derived" | "estimated";
   /** Set when the data does not support using this exposure at all. */
   dataExclusion: ExclusionReason | null;
   /** Set when the methodology excludes a usable exposure. */
@@ -166,8 +159,10 @@ export function classifyExposures(params: {
         included &&
         (parameters.saifiCounting === "interruption_starts_in_period" ? startsInPeriod : minutesInPeriod > 0);
 
-      // A customer count that was not recorded directly is at best an estimate.
-      const basisQuality: DataQuality = exposure.customerCountBasis === "recorded" ? "measured" : "estimated";
+      // Only a count that is itself an estimate lowers the quality. A count derived from the
+      // network model is derived, not estimated: it is exact for the topology it was read
+      // from, and its limitation (current topology only) is reported as a warning instead.
+      const basisQuality: DataQuality = exposure.customerCountBasis === "estimated" ? "estimated" : "measured";
 
       result.push({
         outageId: outage.id,
@@ -186,6 +181,7 @@ export function classifyExposures(params: {
         loadShedding,
         attribution,
         majorEvent,
+        customerCountBasis: exposure.customerCountBasis,
         dataExclusion,
         methodologyExclusions,
         countsForSaidi: included && minutesInPeriod > 0,

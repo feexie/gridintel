@@ -1,4 +1,4 @@
-import type { DataQuality, Outage, Period, ScopeRef } from "@/domain";
+import type { DataQuality, KpiBasis, Outage, Period, ScopeRef } from "@/domain";
 import type { Methodology, ReliabilityParameters } from "../core/methodology.ts";
 import type { CalculatedKpi, CalculationContext, InputValue, UnfinalizedKpi, Warning } from "../core/result.ts";
 import type { AttributionClass, ClassifiedExposure } from "./exposure.ts";
@@ -6,7 +6,7 @@ import { RELIABILITY_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
 import { finalizeKpi, ratio } from "../core/result.ts";
 import { MS_PER_MINUTE, periodBounds } from "../core/time.ts";
-import { classifyExposures } from "./exposure.ts";
+import { ATTRIBUTION_CLASSES, classifyExposures } from "./exposure.ts";
 
 /* ==========================================================
    ANALYTICS — RELIABILITY INDICES
@@ -183,6 +183,19 @@ export function calculateReliability(params: {
   }
 
   const counted = components.exposures.filter((e) => e.countsForSaidi || e.countsForSaifi);
+  const derivedCounts = counted.filter((e) => e.customerCountBasis === "topology_derived").length;
+  if (derivedCounts > 0) {
+    warnings.push({
+      code: "CUSTOMER_COUNTS_TOPOLOGY_DERIVED",
+      message:
+        `${derivedCounts} exposure(s) take their customer count from the network model rather than a count made ` +
+        "at the time. The counts are derived, not estimated, and reflect the topology they were read from.",
+    });
+  }
+  const basis: KpiBasis = {
+    interruptionClasses: ATTRIBUTION_CLASSES,
+    plannedInterruptions: parameters.include.planned ? "included" : "excluded",
+  };
   const quality = worstQuality([
     customersServed.quality,
     ...counted.map((exposure) => exposure.quality),
@@ -212,6 +225,7 @@ export function calculateReliability(params: {
     period,
     asOf: null,
     methodology: methodologyRef(methodology),
+    basis,
     inputs,
     coverage: null,
     quality,
@@ -337,5 +351,41 @@ export function calculateReliability(params: {
     saifi: finalizeKpi(saifi),
     caidi: finalizeKpi(caidi),
     asai: finalizeKpi(asai),
+  };
+}
+
+/* ==========================================================
+   INDICES ON A STATED BASIS
+========================================================== */
+
+/**
+ * SAIDI and SAIFI counting only the given attribution classes, e.g. only
+ * "network" for a figure that leaves out load shedding and upstream
+ * supply. Each is the sum of those classes' parts of the total, so no
+ * exposure is counted that the total does not count. The KPIs state the
+ * classes in their `basis`, which is what lets them be compared with a
+ * reported figure on the same basis.
+ */
+export function reliabilityOnBasis(
+  result: ReliabilityResult,
+  classes: readonly AttributionClass[],
+): { saidi: CalculatedKpi; saifi: CalculatedKpi } {
+  const selected = ATTRIBUTION_CLASSES.filter((name) => classes.includes(name));
+  const parts = selected.map((name) => result.attribution[name]);
+  const sum = (pick: (part: AttributedIndices) => number | null): number | null =>
+    parts.some((part) => pick(part) === null) ? null : parts.reduce((total, part) => total + (pick(part) as number), 0);
+  const basis: KpiBasis = { ...result.saidi.basis, interruptionClasses: selected };
+  const narrowed = (kpi: CalculatedKpi, value: number | null, input: "customerMinutes" | "customerInterruptions"): CalculatedKpi => ({
+    ...kpi,
+    basis,
+    value: kpi.value === null ? null : value,
+    inputs: {
+      ...kpi.inputs,
+      [input]: { ...kpi.inputs[input], value: parts.reduce((total, part) => total + part[input], 0) },
+    },
+  });
+  return {
+    saidi: narrowed(result.saidi, sum((part) => part.saidi), "customerMinutes"),
+    saifi: narrowed(result.saifi, sum((part) => part.saifi), "customerInterruptions"),
   };
 }
