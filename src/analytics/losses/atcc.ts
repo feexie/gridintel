@@ -1,10 +1,10 @@
 import type { KpiKey, Period, ScopeRef } from "@/domain";
 import type { AtccParameters, Methodology } from "../core/methodology.ts";
-import type { CalculatedKpi, CalculationContext, InputValue, MonetaryInput, Warning } from "../core/result.ts";
+import type { CalculatedKpi, CalculationContext, EstimatedInput, InputValue, MonetaryInput, ResultStatus, UnfinalizedKpi, Warning } from "../core/result.ts";
 import type { EnergyAccount, EnergyFigure } from "../energy/account.ts";
 import { ATCC_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
-import { ratio, reportedInputWarnings } from "../core/result.ts";
+import { finalizeKpi, isComputed, ratio, reportedInputWarnings } from "../core/result.ts";
 import { convertUnit, dimensionOf } from "../core/units.ts";
 import { calculateCollectionEfficiency, missingMoney } from "./collection.ts";
 
@@ -19,6 +19,12 @@ import { calculateCollectionEfficiency, missingMoney } from "./collection.ts";
      ATC&C                     = 1 − BE × CE
      technical loss            = technical loss ÷ energy input
      commercial loss           = unbilled energy ÷ energy input
+
+   Commercial loss is a RESIDUAL: what is left of the energy input
+   after technical loss and billed energy are taken away. It is not
+   measured, and it inherits the uncertainty of both: when technical
+   loss comes from a study, commercial loss is only as good as that
+   study.
 
    The energy input is net of transfers out (see the energy
    account). Commercial loss is only available when technical loss
@@ -41,6 +47,7 @@ function figureAsInput(figure: EnergyFigure, ref: string): InputValue {
     unit: "kWh",
     origin: "calculated",
     quality: figure.quality ?? "missing",
+    ...(figure.estimatedShare === undefined ? {} : { estimatedShare: figure.estimatedShare }),
     ref,
   };
 }
@@ -74,7 +81,7 @@ function kpi(
   methodology: Methodology<AtccParameters>,
   inputs: Record<string, InputValue>,
   context: CalculationContext,
-): Omit<CalculatedKpi, "status" | "value" | "missingInputs" | "warnings"> {
+): Omit<UnfinalizedKpi, "status" | "value" | "missingInputs" | "warnings"> {
   return {
     kind: "calculated",
     metric,
@@ -105,7 +112,7 @@ export function calculateBillingEfficiency(params: {
   const input = inKwh("energy input", params.energyInput, warnings);
   const billed = inKwh("energy billed", params.energyBilled, warnings);
   if (input === "mismatch" || billed === "mismatch") {
-    return { ...base, status: "not_computable", value: null, missingInputs: [], warnings };
+    return finalizeKpi({ ...base, status: "not_computable", value: null, missingInputs: [], warnings });
   }
   const outcome = ratio("energy billed", billed, "energy input", input);
   warnings.push(...outcome.warnings, ...reportedInputWarnings(inputs));
@@ -115,7 +122,7 @@ export function calculateBillingEfficiency(params: {
       message: "Energy billed exceeds energy input; check period alignment of billing and metering.",
     });
   }
-  return { ...base, status: outcome.status, value: outcome.value, missingInputs: outcome.missingInputs, warnings };
+  return finalizeKpi({ ...base, status: outcome.status, value: outcome.value, missingInputs: outcome.missingInputs, warnings });
 }
 
 export interface AtccResult {
@@ -160,8 +167,8 @@ export function calculateAtcc(params: {
     ...reportedInputWarnings(allInputs),
   ];
 
-  let atcc: CalculatedKpi;
-  if (billingEfficiency.status === "ok" && collectionEfficiency.status === "ok") {
+  let atcc: UnfinalizedKpi;
+  if (isComputed(billingEfficiency.status) && isComputed(collectionEfficiency.status)) {
     atcc = {
       ...base,
       status: "ok",
@@ -180,7 +187,7 @@ export function calculateAtcc(params: {
       warnings,
     };
   }
-  return { atcc, billingEfficiency, collectionEfficiency };
+  return { atcc: finalizeKpi(atcc), billingEfficiency, collectionEfficiency };
 }
 
 export interface LossSplit {
@@ -201,16 +208,22 @@ export function calculateLossSplit(params: {
   const technical = figureAsInput(account.technicalLoss, "energy_account.technicalLoss");
   const technicalInputs = { energyInput, technicalLoss: technical };
   const technicalOutcome = ratio("technical loss", technical.value, "energy input", energyInput.value);
-  const technicalLoss: CalculatedKpi = {
+  const technicalLoss = finalizeKpi({
     ...kpi("technical_loss", account.scope, account.period, methodology, technicalInputs, context),
     status: technicalOutcome.status,
     value: technicalOutcome.value,
     missingInputs: technicalOutcome.missingInputs,
     warnings: technicalOutcome.warnings,
-  };
+  });
 
   const unbilled = figureAsInput(account.unbilled, "energy_account.unbilled");
-  const commercialInputs = { energyInput, unbilled };
+  // The inputs listed are the ones the residual is made from, so that an estimate in any of
+  // them shows on the result.
+  const commercialInputs = {
+    energyInput,
+    technicalLoss: technical,
+    energyBilled: figureAsInput(account.energyBilled, "energy_account.energyBilled"),
+  };
   const commercialOutcome = ratio("unbilled energy", unbilled.value, "energy input", energyInput.value);
   const commercialWarnings = [...commercialOutcome.warnings];
   if (account.technicalLoss.status !== "ok") {
@@ -220,13 +233,17 @@ export function calculateLossSplit(params: {
         "Technical loss is not available, so total loss cannot be split into technical and commercial loss.",
     });
   }
-  const commercialLoss: CalculatedKpi = {
+  const commercialLoss = finalizeKpi({
     ...kpi("commercial_loss", account.scope, account.period, methodology, commercialInputs, context),
     status: commercialOutcome.status,
     value: commercialOutcome.value,
     missingInputs: commercialOutcome.missingInputs,
     warnings: commercialWarnings,
-  };
+    derivation: {
+      kind: "residual",
+      note: "Energy input − technical loss − energy billed. Not measured; it carries the uncertainty of the technical-loss figure and of any estimated billing.",
+    },
+  });
 
   return { technicalLoss, commercialLoss };
 }
@@ -247,7 +264,9 @@ export function calculateLossSplit(params: {
  * input that was billed but not paid for.
  */
 export interface AtccDecomposition {
-  status: CalculatedKpi["status"];
+  status: ResultStatus;
+  /** The estimated inputs behind any of the parts. */
+  estimatedInputs: EstimatedInput[];
   technical: number | null;
   commercial: number | null;
   collection: number | null;
@@ -261,12 +280,19 @@ export function decomposeAtcc(atcc: AtccResult, split: LossSplit): AtccDecomposi
     atcc.billingEfficiency.value === null || atcc.collectionEfficiency.value === null
       ? null
       : atcc.billingEfficiency.value * (1 - atcc.collectionEfficiency.value);
+  const estimated = new Map<string, EstimatedInput>();
+  for (const part of parts) for (const input of part.estimatedInputs) estimated.set(input.name, input);
+  const estimatedInputs = [...estimated.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const allComputed = parts.every((part) => isComputed(part.status));
   return {
     status: parts.some((part) => part.status === "not_computable")
       ? "not_computable"
-      : parts.every((part) => part.status === "ok")
-        ? "ok"
-        : "insufficient_data",
+      : !allComputed
+        ? "insufficient_data"
+        : estimatedInputs.length > 0
+          ? "calculated_with_estimates"
+          : "ok",
+    estimatedInputs,
     technical: split.technicalLoss.value,
     commercial: split.commercialLoss.value,
     collection,

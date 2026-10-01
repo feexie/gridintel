@@ -1,0 +1,140 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import type { InputValue } from "../core/result.ts";
+import type { InterruptionCause, Outage, Period, ResponsibleParty } from "@/domain";
+import { CONTEXT, PROVENANCE, approx } from "../__fixtures__/network.ts";
+import { calculateReliability } from "./indices.ts";
+import { calculateSupplyHours } from "./supplyHours.ts";
+
+const TWO_DAYS: Period = { start: "2026-01-01T00:00:00Z", end: "2026-01-03T00:00:00Z" };
+const SCOPE = { kind: "feeder", id: "FD-1" } as const;
+const served = (value: number | null): InputValue => ({
+  value,
+  unit: "count",
+  origin: "calculated",
+  quality: value === null ? "missing" : "measured",
+});
+
+const outage = (
+  id: string,
+  cause: InterruptionCause,
+  responsibleParty: ResponsibleParty,
+  customers: number | null,
+  interruptedAt?: string,
+  restoredAt?: string,
+): Outage => ({
+  id,
+  origin: { kind: "feeder", id: "FD-1" },
+  planned: cause === "planned_maintenance",
+  cause,
+  responsibleParty,
+  exposures: [
+    {
+      affected: { kind: "feeder", id: "FD-1" },
+      customersAffected: customers,
+      customerCountBasis: "recorded",
+      interruptedAt,
+      restoredAt,
+      quality: "measured",
+    },
+  ],
+  provenance: PROVENANCE,
+});
+
+// 10 customers. Day 1: 6 h of shedding for all, a 2 h fault for 5. Day 2: 3 h upstream loss for all.
+const OUTAGES: Outage[] = [
+  outage("O-SHED", "load_shedding", "transmission", 10, "2026-01-01T00:00:00Z", "2026-01-01T06:00:00Z"),
+  outage("O-FAULT", "fault", "distribution", 5, "2026-01-01T10:00:00Z", "2026-01-01T12:00:00Z"),
+  outage("O-PLANNED", "planned_maintenance", "distribution", 2, "2026-01-01T13:00:00Z", "2026-01-01T14:00:00Z"),
+  outage("O-UP", "upstream_supply", "transmission", 10, "2026-01-02T08:00:00Z", "2026-01-02T11:00:00Z"),
+  outage("O-GEN", "fault", "generation", 10, "2026-01-02T12:00:00Z", "2026-01-02T13:00:00Z"),
+  outage("O-THIRD", "vandalism", "third_party", 1, "2026-01-02T14:00:00Z", "2026-01-02T15:00:00Z"),
+  outage("O-TRIP", "fault", "distribution", 10, "2026-01-02T16:00:00Z", "2026-01-02T16:02:00Z"),
+  outage("O-OPEN", "unknown", "unknown", 1, "2026-01-02T17:00:00Z"),
+];
+
+describe("reliability attribution", () => {
+  const result = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: OUTAGES, customersServed: served(10), context: CONTEXT });
+
+  it("puts every counted exposure in exactly one class, by cause and responsible party", () => {
+    const a = result.attribution;
+    // Load shedding wins over the responsible party; a generation fault is upstream supply.
+    assert.equal(a.load_management.customerMinutes, 10 * 360);
+    assert.equal(a.upstream_supply.customerMinutes, 10 * 180 + 10 * 60);
+    assert.equal(a.network.customerMinutes, 5 * 120 + 2 * 60);
+    assert.equal(a.other.customerMinutes, 60);
+    assert.equal(a.network.customerInterruptions, 7);
+    assert.equal(a.upstream_supply.customerInterruptions, 20);
+  });
+
+  it("sums to the total SAIDI and SAIFI", () => {
+    const parts = Object.values(result.attribution);
+    assert.ok(approx(parts.reduce((sum, part) => sum + (part.saidi as number), 0), result.saidi.value as number));
+    assert.ok(approx(parts.reduce((sum, part) => sum + (part.saifi as number), 0), result.saifi.value as number));
+    assert.ok(approx(result.attribution.network.saidi, 72));
+  });
+
+  it("leaves momentary and unusable exposures out of every class", () => {
+    const counted = Object.values(result.components.attribution).reduce((sum, part) => sum + part.exposures, 0);
+    assert.equal(counted, 6);
+    assert.equal(result.components.momentary.exposures, 1);
+    assert.equal(result.components.excludedForData, 1);
+  });
+
+  it("gives customer-minutes but no index when the customers served are not known", () => {
+    const unknown = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: OUTAGES, customersServed: served(null), context: CONTEXT });
+    assert.equal(unknown.attribution.network.saidi, null);
+    assert.equal(unknown.attribution.network.saifi, null);
+    assert.equal(unknown.attribution.network.customerMinutes, 720);
+  });
+});
+
+describe("hours of supply and band compliance", () => {
+  const supply = (band: "A" | "C" | null, customers: number | null = 10, period = TWO_DAYS) =>
+    calculateSupplyHours({ scope: SCOPE, period, outages: OUTAGES, customersServed: served(customers), band, context: CONTEXT });
+
+  it("is the customer-weighted hours of supply on each day, counting every interruption", () => {
+    const result = supply("A");
+    assert.equal(result.status, "ok");
+    // Day 1: 3600 + 600 + 120 customer-minutes over 10 customers = 7.2 h off.
+    assert.ok(approx(result.days[0].hoursOfSupply, 24 - 7.2));
+    // Day 2: 1800 + 600 + 60 + 20 (the momentary trip counts too) = 4.1333 h off.
+    assert.ok(approx(result.days[1].hoursOfSupply, 24 - 2480 / 600));
+    assert.ok(approx(result.averageHours, (16.8 + 24 - 2480 / 600) / 2));
+  });
+
+  it("tests each day against the band minimum, separately from the average", () => {
+    const bandA = supply("A");
+    assert.equal(bandA.minimumHours, 20);
+    assert.deepEqual(bandA.days.map((day) => day.compliant), [false, false]);
+    assert.equal(bandA.daysNonCompliant, 2);
+    assert.equal(bandA.compliantOnAverage, false);
+
+    const bandC = supply("C");
+    assert.equal(bandC.minimumHours, 12);
+    assert.equal(bandC.daysCompliant, 2);
+    assert.equal(bandC.complianceRate, 1);
+    assert.equal(bandC.compliantOnAverage, true);
+  });
+
+  it("reports the exposure it could not use instead of treating it as supply", () => {
+    const result = supply("A");
+    assert.equal(result.exposuresExcludedForData, 1);
+    assert.ok(result.warnings.some((w) => w.code === "EXPOSURES_EXCLUDED"));
+  });
+
+  it("makes no band test where there is no band", () => {
+    const result = supply(null);
+    assert.equal(result.minimumHours, null);
+    assert.equal(result.daysCompliant, null);
+    assert.equal(result.compliantOnAverage, null);
+    assert.equal(result.days.length, 2);
+  });
+
+  it("is insufficient_data without the customers served, and not computable over part-days", () => {
+    assert.equal(supply("A", null).status, "insufficient_data");
+    assert.deepEqual(supply("A", null).missingInputs, ["customers served"]);
+    assert.equal(supply("A", 0).status, "not_computable");
+    assert.equal(supply("A", 10, { start: "2026-01-01T00:00:00Z", end: "2026-01-02T12:00:00Z" }).status, "not_computable");
+  });
+});

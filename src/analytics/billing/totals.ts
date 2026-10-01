@@ -39,6 +39,8 @@ export interface BasisTotals {
 export interface BillingTotals {
   scope: ScopeRef;
   period: Period;
+  /** Revenue collected is money received in the period, whichever charge it settles. */
+  collectionBasis: "cash";
   energyBilled: InputValue;
   revenueBilled: MonetaryInput;
   revenueCollected: MonetaryInput;
@@ -78,6 +80,7 @@ export function billingTotals(params: {
   const missing = (reason: Warning): BillingTotals => ({
     scope,
     period,
+    collectionBasis: "cash",
     energyBilled: { value: null, unit: "kWh", origin: "observed", quality: "missing", ref: ref("energy_billed") },
     revenueBilled: { value: null, unit: "currency", currency, scale: 1, origin: "observed", quality: "missing", ref: ref("revenue_billed") },
     revenueCollected: { value: null, unit: "currency", currency, scale: 1, origin: "observed", quality: "missing", ref: ref("revenue_collected") },
@@ -159,10 +162,22 @@ export function billingTotals(params: {
   const energyQuality: DataQuality = energyKwh === null ? "missing" : estimated ? "estimated" : "measured";
   const revenueQuality: DataQuality = foreignCurrency ? "missing" : "measured";
 
+  const estimatedKwh = byBasis.estimated.energyKwh;
+  const estimatedShare =
+    energyKwh === null || estimatedKwh === null || energyKwh === 0 ? null : estimatedKwh / energyKwh;
+
   return {
     scope,
     period,
-    energyBilled: { value: energyKwh, unit: "kWh", origin: "observed", quality: energyQuality, ref: ref("energy_billed") },
+    collectionBasis: "cash",
+    energyBilled: {
+      value: energyKwh,
+      unit: "kWh",
+      origin: "observed",
+      quality: energyQuality,
+      ...(estimated ? { estimatedShare } : {}),
+      ref: ref("energy_billed"),
+    },
     revenueBilled: {
       value: foreignCurrency ? null : billedMinor / MINOR_PER_MAJOR,
       unit: "currency",

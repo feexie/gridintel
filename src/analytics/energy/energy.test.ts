@@ -143,7 +143,8 @@ describe("energy accounting — boundaries by level", () => {
     registry.meters = registry.meters.filter((m) => m.id !== "M-DT2");
     const result = account({ index: buildTopologyIndex(registry), scope: { kind: "feeder", id: "FD-1" }, inputs: {} });
     assert.equal(result.downstreamMeasured.value, null);
-    assert.ok(result.missingInputs.includes("dt_totalizer meter for distribution_transformer DT-2"));
+    assert.ok(result.crossChecks.missingInputs.includes("dt_totalizer meter for distribution_transformer DT-2"));
+    assert.equal(result.crossChecks.status, "insufficient_data");
     // The input boundary is still fully measured.
     assert.equal(result.received.value, 400);
   });

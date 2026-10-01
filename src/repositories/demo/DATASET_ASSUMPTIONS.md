@@ -31,10 +31,12 @@ It is identical on every build.
 | Distribution transformers | 6, rated 50–300 kVA, 11/0.415 kV |
 | Connections | 432: 431 at low voltage and 1 customer supplied at 11 kV |
 
-- **Deliberately small.** A real 11 kV feeder carries dozens of transformers,
-  and a real transformer usually serves more customers. With three
-  transformers each, the feeders are lightly loaded (peak 10–18% of rating).
-  Feeder loading here says nothing about real feeders.
+- **Deliberately small, so feeder loading is not realistic.** A real 11 kV
+  feeder carries dozens of transformers. Each feeder here carries three, so
+  its peak loading is only 10–18% of rating. That figure is an artefact of
+  the small model, not a picture of a loaded feeder, and the UI must say so
+  wherever feeder loading is shown. Transformer loading is realistic. The fix
+  (more transformers per feeder) is deferred to the Phase 6 dataset widening.
 - **Coordinates** place the network near Yola so a map has somewhere to draw
   it. The assets do not exist. Service points are scattered within about
   300 m of their transformer. A feeder's route is a straight polyline from
@@ -49,10 +51,17 @@ Band definitions were checked against the NERC Service-Based Tariff FAQ
 (nerc.gov.ng, checked 1 October 2026): minimum average hours of supply per
 day of 20 (A), 16 (B), 12 (C), 8 (D) and 4 (E).
 
-- Market Road is Band A and is supplied about 21.7 hours a day.
-- Old Town is Band C and is supplied about 13.7 hours a day.
+- Market Road is Band A (minimum 20 h). It averages about 21.5 hours a day,
+  so it complies on average, but it falls below 20 hours on 7 of the 30 days.
+  This is deliberate: a feeder that complies on average while failing on
+  individual days is the realistic case.
+- Old Town is Band C (minimum 12 h). It averages about 13.8 hours a day and
+  falls below 12 hours on 3 days, when a fault or the upstream loss comes on
+  top of load shedding.
 - The band on a feeder is stored as a classification only. Hours of supply
   are calculated from the outage log, never read from the band.
+- The day-by-day test is a GridIntel reference calculation, not a regulatory
+  determination.
 
 ## Customers and metering
 
@@ -100,9 +109,11 @@ Fixed fractions of the energy entering each section, not load-dependent:
 
 Technical loss cannot be metered directly. The dataset therefore includes a
 synthetic **technical-loss study** as reported figures, and the energy
-account uses it as a reported input. The study states the model's own loss,
-so the technical/commercial split comes out exact. A real study would be an
-estimate.
+account uses it as a reported input of quality `estimated`. Every result
+built on it is therefore `calculated_with_estimates`, and commercial loss is
+shown as a derived residual that inherits the study's uncertainty. The
+synthetic study states the model's own loss, so the split happens to come out
+exact here; a real study would not.
 
 ## Billing, tariffs and collection
 
@@ -128,8 +139,9 @@ estimate.
 ## Outages
 
 - **Load shedding** in whole-hour blocks, attributed to transmission: Market
-  Road is off for 2–4 hours on two days in three; Old Town is off for 4–5
-  hours overnight and 5–6 hours in the day, every day.
+  Road is off for 2–5 hours on two days in three (a five-hour block leaves 19
+  hours, under its band minimum); Old Town is off for 4–5 hours overnight and
+  5–6 hours in the day, every day.
 - Six individual events: an 11 kV fault on Old Town restored in two stages, a
   three-minute feeder trip on Market Road, planned maintenance on one
   transformer, a loss of 33 kV supply to the whole substation, a transformer
@@ -137,7 +149,8 @@ estimate.
 - One customer complaint with no restoration time, to show how an incomplete
   record is excluded from the indices rather than guessed at.
 - Every interruption is recorded per transformer, with the number of active
-  accounts on that transformer.
+  accounts on that transformer, held as a recorded count (as an outage
+  system would hold it).
 
 ## Deliberate data-quality cases
 

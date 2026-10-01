@@ -4,11 +4,12 @@ import type {
   CalculationContext,
   InputValue,
   ReliabilityResult,
+  SupplyHoursResult,
   UnattributableExposure,
   Warning,
 } from "../../analytics/index.ts";
 import type { Sourced } from "./sourcing.ts";
-import { calculateReliability, customersServed, outagesForScope } from "../../analytics/index.ts";
+import { calculateReliability, calculateSupplyHours, customersServed, outagesForScope } from "../../analytics/index.ts";
 import { SourceTrail } from "./sourcing.ts";
 import { loadTopology } from "./topology.ts";
 
@@ -23,10 +24,16 @@ import { loadTopology } from "./topology.ts";
    customer account. With a partial registry the count is not a
    total, so it is passed on as missing and the indices are
    insufficient_data rather than wrong.
+
+   Hours of supply per day are calculated from the same exposures.
+   For a feeder they are tested against the minimum of the service
+   band recorded on the feeder; other scopes have no band.
 ========================================================== */
 
 export interface ScopeReliability {
   reliability: ReliabilityResult;
+  /** Hours of supply per day, and for a feeder its compliance with its service band. */
+  supply: SupplyHoursResult;
   /** Exposures recorded on an element above the scope, or on one that could not be placed. */
   unattributable: UnattributableExposure[];
   /** Whether the outage log is complete; an index from a partial log is a lower bound. */
@@ -73,8 +80,16 @@ export async function scopeReliability(params: {
     customersServed: servedInput,
     context,
   });
+  const supply = calculateSupplyHours({
+    scope,
+    period,
+    outages: scoped.outages,
+    customersServed: servedInput,
+    band: scope.kind === "feeder" ? (index.feederById.get(scope.id)?.serviceBand ?? null) : null,
+    context,
+  });
   return {
-    result: { reliability, unattributable: scoped.unattributable, outageCompleteness: outages.completeness, warnings },
+    result: { reliability, supply, unattributable: scoped.unattributable, outageCompleteness: outages.completeness, warnings },
     sourcing: await trail.resolve(repos.sources),
   };
 }

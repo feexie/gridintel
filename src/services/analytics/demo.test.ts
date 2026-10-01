@@ -53,19 +53,32 @@ describe("synthetic marker", () => {
 });
 
 describe("energy account and losses", () => {
-  it("is fully measured on the fully metered transformer", async () => {
+  it("measures everything it can on the fully metered transformer, and says the technical loss is an estimate", async () => {
     const { result } = await sectionLosses({ repos, scope: dt("DT-MKT-3"), period, context });
-    assert.equal(result.account.status, "ok");
-    assert.equal(result.account.quality, "measured");
+    assert.equal(result.account.status, "calculated_with_estimates");
+    assert.deepEqual(result.account.estimatedInputs, [{ name: "technical loss", quality: "estimated", share: 1 }]);
+    assert.equal(result.account.crossChecks.status, "ok");
     assert.equal(result.account.recordedConsumption.status, "ok");
+    // ATC&C needs no technical loss, and every bill here is from a meter: it is fully measured.
+    assert.equal(result.atcc.atcc.status, "ok");
+    assert.deepEqual(result.atcc.atcc.estimatedInputs, []);
     assert.ok(close(result.account.downstreamMeasured.value, result.account.recordedConsumption.value, 1e-6));
   });
 
   it("gives the loss chain but no downstream total where connections are unmetered", async () => {
     const { result } = await sectionLosses({ repos, scope: dt("DT-OLD-2"), period, context });
-    assert.equal(result.account.status, "insufficient_data");
+    // Unmetered consumption is estimated, not missing: the chain is complete.
+    assert.equal(result.account.status, "calculated_with_estimates");
+    assert.deepEqual(result.account.missingInputs, []);
+    assert.deepEqual(result.account.estimatedInputs.map((input) => input.name), ["technical loss", "energy billed"]);
+    const billed = result.account.estimatedInputs[1];
+    assert.ok((billed.share as number) > 0.3 && (billed.share as number) < 0.7);
+    // The measured cross-checks are what cannot be done without meters.
+    assert.equal(result.account.crossChecks.status, "insufficient_data");
     assert.equal(result.account.downstreamMeasured.value, null);
-    assert.ok(result.account.missingInputs.some((name) => name.startsWith("service_point meter for service_point")));
+    assert.ok(result.account.crossChecks.missingInputs.some((name) => name.startsWith("service_point meter for service_point")));
+    assert.equal(result.atcc.atcc.status, "calculated_with_estimates");
+    assert.deepEqual(result.atcc.atcc.estimatedInputs.map((input) => input.name), ["energyBilled"]);
     assert.equal(result.account.energyInput.status, "ok");
     assert.equal(result.account.unbilled.status, "ok");
     assert.equal(result.account.energyBilled.quality, "estimated");
@@ -81,7 +94,8 @@ describe("energy account and losses", () => {
     for (const scope of [SUBSTATION, feeder("FD-MKT"), feeder("FD-OLD"), dt("DT-MKT-3"), dt("DT-OLD-2")]) {
       const { result } = await sectionLosses({ repos, scope, period, context });
       const d = result.decomposition;
-      assert.equal(d.status, "ok", scope.id);
+      assert.equal(d.status, "calculated_with_estimates", scope.id);
+      assert.ok(d.estimatedInputs.some((input) => input.name === "technicalLoss" && input.share === 1), scope.id);
       assert.ok(close((d.technical as number) + (d.commercial as number) + (d.collection as number), d.atcc), scope.id);
       assert.ok((d.technical as number) > 0 && (d.commercial as number) >= 0 && (d.collection as number) >= 0, scope.id);
     }
@@ -90,8 +104,23 @@ describe("energy account and losses", () => {
   it("flags the technical loss as a reported input and names the study", async () => {
     const { result } = await sectionLosses({ repos, scope: feeder("FD-OLD"), period, context });
     assert.equal(result.technicalLossStudy?.metric, "technical_loss");
-    assert.equal(result.split.technicalLoss.inputs.technicalLoss.origin, "calculated");
+    assert.equal(result.account.technicalLoss.quality, "estimated");
+    assert.equal(result.split.technicalLoss.status, "calculated_with_estimates");
     assert.ok(result.account.warnings.some((w) => w.code === "INPUTS_FROM_REPORTED"));
+  });
+
+  it("labels commercial loss as a residual that inherits the estimate", async () => {
+    const { result } = await sectionLosses({ repos, scope: dt("DT-MKT-3"), period, context });
+    const commercial = result.split.commercialLoss;
+    assert.equal(commercial.derivation?.kind, "residual");
+    assert.equal(commercial.status, "calculated_with_estimates");
+    assert.equal(commercial.quality, "estimated");
+    assert.deepEqual(commercial.estimatedInputs.map((input) => [input.name, input.share]), [["technicalLoss", 1]]);
+  });
+
+  it("states that collection is on a cash basis", async () => {
+    const { result } = await sectionLosses({ repos, scope: feeder("FD-OLD"), period, context });
+    assert.equal(result.billing.collectionBasis, "cash");
   });
 
   it("shows Old Town as the feeder with heavy commercial loss and poor collection", async () => {
@@ -149,12 +178,44 @@ describe("reliability", () => {
     }
   });
 
-  it("keeps each feeder within the hours of supply its service band commits to", async () => {
-    const hours = async (id: string) =>
-      ((await scopeReliability({ repos, scope: feeder(id), period, context })).result.reliability.asai.value as number) * 24;
-    assert.ok((await hours("FD-MKT")) >= 20);
-    const oldTown = await hours("FD-OLD");
-    assert.ok(oldTown >= 12 && oldTown < 16);
+  it("splits the indices by attribution, and the parts sum to the totals", async () => {
+    for (const scope of [SUBSTATION, feeder("FD-MKT"), dt("DT-OLD-2")]) {
+      const { reliability } = (await scopeReliability({ repos, scope, period, context })).result;
+      const parts = Object.values(reliability.attribution);
+      assert.ok(close(parts.reduce((sum, part) => sum + (part.saidi as number), 0), reliability.saidi.value, 1e-6), scope.id);
+      assert.ok(close(parts.reduce((sum, part) => sum + (part.saifi as number), 0), reliability.saifi.value, 1e-9), scope.id);
+      assert.ok((reliability.attribution.load_management.saidi as number) > (reliability.attribution.network.saidi as number));
+      assert.equal(reliability.attribution.other.customerMinutes, 0);
+    }
+    const substation = (await scopeReliability({ repos, scope: SUBSTATION, period, context })).result.reliability;
+    assert.ok((substation.attribution.upstream_supply.saidi as number) > 0);
+    assert.ok((substation.attribution.network.saidi as number) > 0);
+  });
+
+  it("tests hours of supply per day against the service band of the feeder", async () => {
+    const market = (await scopeReliability({ repos, scope: feeder("FD-MKT"), period, context })).result.supply;
+    assert.equal(market.status, "ok");
+    assert.equal(market.band, "A");
+    assert.equal(market.minimumHours, 20);
+    assert.equal(market.days.length, 30);
+    // Compliant on average, with failing days: the realistic case.
+    assert.equal(market.compliantOnAverage, true);
+    assert.ok((market.daysNonCompliant as number) >= 2 && (market.daysNonCompliant as number) <= 10);
+    assert.equal((market.daysCompliant as number) + (market.daysNonCompliant as number), 30);
+    assert.equal(market.exposuresExcludedForData, 1);
+
+    const oldTown = (await scopeReliability({ repos, scope: feeder("FD-OLD"), period, context })).result.supply;
+    assert.equal(oldTown.band, "C");
+    assert.equal(oldTown.minimumHours, 12);
+    assert.ok((oldTown.averageHours as number) >= 12 && (oldTown.averageHours as number) < 16);
+  });
+
+  it("gives hours of supply but no band test for scopes that have no band", async () => {
+    const { supply } = (await scopeReliability({ repos, scope: dt("DT-OLD-2"), period, context })).result;
+    assert.equal(supply.status, "ok");
+    assert.equal(supply.band, null);
+    assert.equal(supply.daysCompliant, null);
+    assert.ok(supply.days.every((day) => day.compliant === null));
   });
 
   it("excludes the momentary trip and the complaint that was never closed", async () => {

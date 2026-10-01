@@ -1,6 +1,7 @@
 import type { KpiKey, KpiUnit, Period, ReportedKpi, ScopeRef, UnresolvedRef } from "@/domain";
 import type { CalculatedKpi } from "../core/result.ts";
 import { qualityRank } from "../core/quality.ts";
+import { isComputed } from "../core/result.ts";
 import { toEpochMs } from "../core/time.ts";
 import { convertUnit, dimensionOf } from "../core/units.ts";
 
@@ -80,7 +81,7 @@ function samePeriod(a: Period, b: Period): boolean {
 export function compareKpi(reported: ReportedKpi, calculated: CalculatedKpi): KpiComparison {
   const issues: ComparabilityIssue[] = [];
 
-  if (calculated.status !== "ok") {
+  if (!isComputed(calculated.status)) {
     issues.push({
       code: "CALCULATION_NOT_OK",
       message: `The calculation's status is ${calculated.status}; there is no calculated value to compare.`,

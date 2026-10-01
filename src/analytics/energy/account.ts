@@ -7,7 +7,7 @@ import type {
   Period,
   ScopeRef,
 } from "@/domain";
-import type { CalcStatus, InputValue, MonetaryInput, Warning } from "../core/result.ts";
+import type { CalcStatus, EstimatedInput, InputValue, MonetaryInput, ResultStatus, Warning } from "../core/result.ts";
 import type { EnergyParameters, Methodology } from "../core/methodology.ts";
 import type { TopologyIndex } from "../topology/registry.ts";
 import type { BoundaryRequirement } from "./boundary.ts";
@@ -45,6 +45,18 @@ import { sumMeterEnergy } from "./intervals.ts";
    missing inputs, so it can be traced back to its boundary. No
    missing value is ever treated as 0.
 
+   STATUS. The account's status describes the CHAIN above (energy
+   received through to unbilled energy, and revenue):
+   - "ok": every input is present and measured;
+   - "calculated_with_estimates": every input is present, but at
+     least one was estimated (a technical-loss study, estimated
+     billing, estimated intervals). `estimatedInputs` lists them;
+   - "insufficient_data": an input of the chain is missing.
+   The two cross-checks are not part of the chain. Where customers
+   are unmetered their consumption cannot be measured, which makes
+   the cross-checks unavailable but leaves the chain intact, so they
+   carry their own status in `crossChecks`.
+
    Loss basis: energy input net of transfers out. None of the
    section types supported here transfers energy out of the scope
    (a feeder that supplies a substation is rejected), so the
@@ -77,6 +89,8 @@ export interface EnergyFigure {
   /** How the figure was obtained. */
   derivation: string;
   missingInputs: string[];
+  /** For an estimated figure: the share of its value that was estimated; null when not known. */
+  estimatedShare?: number | null;
 }
 
 /** DER/BESS energy that the caller asks to be added to energy received. */
@@ -102,7 +116,12 @@ export interface EnergyAccount {
   period: Period;
   methodology: MethodologyRef;
   lossBasis: "energy_input_net_of_transfers_out";
-  status: CalcStatus;
+  /** Status of the accounting chain; see the note on status above. */
+  status: ResultStatus;
+  /** The chain inputs that were estimated rather than measured. */
+  estimatedInputs: EstimatedInput[];
+  /** Status of the measured cross-checks (downstream measured, recorded consumption). */
+  crossChecks: { status: CalcStatus; missingInputs: string[] };
   boundary: { input: BoundaryMeasurement; downstream: BoundaryMeasurement };
   received: EnergyFigure;
   embeddedApplied: EnergyFigure;
@@ -163,6 +182,9 @@ function inputFigure(
     quality: input.quality,
     derivation: `${derivation} (${input.origin})`,
     missingInputs: [],
+    ...(input.quality === "estimated" || input.quality === "substituted"
+      ? { estimatedShare: input.estimatedShare ?? null }
+      : {}),
   };
 }
 
@@ -432,17 +454,35 @@ export function computeEnergyAccount(params: {
   const missingInputs = [
     ...new Set([
       ...chain.flatMap((figure) => figure.missingInputs),
-      ...downstreamMeasured.missingInputs,
-      ...recordedConsumption.missingInputs,
       ...(revenueBilled?.value == null ? ["revenue billed"] : []),
       ...(revenueCollected?.value == null ? ["revenue collected"] : []),
     ]),
   ];
 
-  let status: CalcStatus;
+  const estimatedInputs: EstimatedInput[] = [
+    { name: "energy received", figure: received },
+    { name: "embedded adjustment", figure: embeddedApplied },
+    { name: "technical loss", figure: technicalLoss },
+    { name: "energy billed", figure: energyBilled },
+  ]
+    .filter(({ figure }) => figure.status === "ok" && (figure.quality === "estimated" || figure.quality === "substituted"))
+    .map(({ name, figure }) => ({ name, quality: figure.quality as "estimated" | "substituted", share: figure.estimatedShare ?? null }));
+
+  let status: ResultStatus;
   if (chain.some((figure) => figure.status === "not_computable")) status = "not_computable";
   else if (missingInputs.length > 0) status = "insufficient_data";
+  else if (estimatedInputs.length > 0) status = "calculated_with_estimates";
   else status = "ok";
+
+  const crossMissing = [...new Set([...downstreamMeasured.missingInputs, ...recordedConsumption.missingInputs])];
+  const crossChecks = {
+    status: ([downstreamMeasured, recordedConsumption].some((figure) => figure.status === "not_computable")
+      ? "not_computable"
+      : crossMissing.length > 0
+        ? "insufficient_data"
+        : "ok") as CalcStatus,
+    missingInputs: crossMissing,
+  };
 
   const figureQualities = [...chain, downstreamMeasured, recordedConsumption]
     .map((figure) => figure.quality)
@@ -457,6 +497,8 @@ export function computeEnergyAccount(params: {
     methodology: methodologyRef(methodology),
     lossBasis: "energy_input_net_of_transfers_out",
     status,
+    estimatedInputs,
+    crossChecks,
     boundary: { input, downstream },
     received,
     embeddedApplied,

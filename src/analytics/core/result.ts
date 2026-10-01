@@ -25,6 +25,32 @@ import type {
 
 export type CalcStatus = "ok" | "insufficient_data" | "not_computable";
 
+/**
+ * The status of a finished result. It adds one outcome to CalcStatus:
+ * - "calculated_with_estimates": the value was computed and every input
+ *   it needs is present, but at least one input was estimated rather
+ *   than measured. `estimatedInputs` names them and, where known, the
+ *   share of each that was estimated.
+ *
+ * "insufficient_data" stays reserved for inputs that are genuinely
+ * missing. An estimate is not missing data, and it is not a measurement.
+ */
+export type ResultStatus = CalcStatus | "calculated_with_estimates";
+
+/** True when the result has a value: "ok" or "calculated_with_estimates". */
+export function isComputed(status: ResultStatus): boolean {
+  return status === "ok" || status === "calculated_with_estimates";
+}
+
+/** An input that was estimated or substituted rather than measured. */
+export interface EstimatedInput {
+  name: string;
+  quality: DataQuality;
+  /** The share of the input's value that was estimated (1 = all of it); null when not known. */
+  share: Fraction | null;
+  ref?: string;
+}
+
 export interface Warning {
   code: string;
   message: string;
@@ -44,6 +70,11 @@ export interface InputValue {
   unit: KpiUnit;
   origin: ValueOrigin;
   quality: DataQuality;
+  /**
+   * For an input of quality "estimated" or "substituted": the share of its
+   * value that was estimated (1 = all of it). null or absent when not known.
+   */
+  estimatedShare?: Fraction | null;
   /** Where the value came from, e.g. a ReportedKpi id or a calculation. */
   ref?: string;
 }
@@ -71,14 +102,18 @@ export interface CalculatedKpi {
   period: Period | null;
   /** The moment a point-in-time value describes; null for period values. */
   asOf: IsoTimestamp | null;
-  status: CalcStatus;
-  /** null unless status is "ok". */
+  status: ResultStatus;
+  /** null unless the result is computed ("ok" or "calculated_with_estimates"). */
   value: number | null;
   unit: KpiUnit;
   methodology: MethodologyRef;
   /** Every input used, with its origin and quality. */
   inputs: Record<string, InputValue>;
   missingInputs: string[];
+  /** The inputs that were estimated; empty unless status is "calculated_with_estimates". */
+  estimatedInputs: EstimatedInput[];
+  /** Set when the value is what is left after subtracting other figures, so it inherits their uncertainty. */
+  derivation?: { kind: "residual"; note: string };
   /** Coverage of the underlying observations, where that applies. */
   coverage: Fraction | null;
   /** Worst quality among the inputs; null when nothing could be assessed. */
@@ -139,6 +174,44 @@ export function ratio(
     value: (numerator as number) / (denominator as number),
     missingInputs: [],
     warnings: [],
+  };
+}
+
+function isEstimate(quality: DataQuality): boolean {
+  return quality === "estimated" || quality === "substituted";
+}
+
+/** The inputs that were estimated or substituted, in name order. */
+export function estimatedInputsOf(inputs: Record<string, InputValue>): EstimatedInput[] {
+  return Object.keys(inputs)
+    .filter((name) => inputs[name].value !== null && isEstimate(inputs[name].quality))
+    .sort()
+    .map((name) => ({
+      name,
+      quality: inputs[name].quality,
+      share: inputs[name].estimatedShare ?? null,
+      ...(inputs[name].ref === undefined ? {} : { ref: inputs[name].ref }),
+    }));
+}
+
+/** The status of a finished value: "ok" becomes "calculated_with_estimates" when anything behind it was estimated. */
+export function resultStatus(status: CalcStatus, quality: DataQuality | null): ResultStatus {
+  return status === "ok" && quality !== null && isEstimate(quality) ? "calculated_with_estimates" : status;
+}
+
+/** A KPI before its final status is settled. */
+export type UnfinalizedKpi = Omit<CalculatedKpi, "status" | "estimatedInputs"> & { status: CalcStatus };
+
+/**
+ * Settles a KPI's final status: a computed KPI with any estimated input
+ * is "calculated_with_estimates" and lists those inputs.
+ */
+export function finalizeKpi(kpi: UnfinalizedKpi): CalculatedKpi {
+  const estimatedInputs = kpi.status === "ok" ? estimatedInputsOf(kpi.inputs) : [];
+  return {
+    ...kpi,
+    status: estimatedInputs.length > 0 ? "calculated_with_estimates" : kpi.status,
+    estimatedInputs,
   };
 }
 

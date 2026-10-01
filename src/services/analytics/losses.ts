@@ -38,7 +38,9 @@ import { loadTopology } from "./topology.ts";
    - the technical loss a loss study reports for exactly this scope
      and period, if there is one. Technical loss is not metered, so
      without a study the technical/commercial split is unavailable
-     and only the total loss is given.
+     and only the total loss is given. A study is an estimate: the
+     input is tagged "estimated", and the commercial loss derived
+     from it is a residual that inherits that uncertainty.
 
    Analytics does every calculation; this service only gathers the
    inputs and says where they came from.
@@ -87,7 +89,8 @@ export async function sectionLosses(params: {
   let technicalLossNote: string | null = null;
   let technicalLoss: InputValue | undefined;
   if (studies.length === 1) {
-    const conversion = reportedInput(studies[0], "energy");
+    // A loss study is an estimate as of its date, not a measurement.
+    const conversion = reportedInput(studies[0], "energy", "estimated");
     if (conversion.ok) {
       technicalLossStudy = studies[0];
       technicalLoss = conversion.input;

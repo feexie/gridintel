@@ -11,6 +11,7 @@ import type { LoadingParameters, Methodology } from "../core/methodology.ts";
 import type { CalcStatus, CalculatedKpi, CalculationContext, InputValue, Warning } from "../core/result.ts";
 import type { ApparentPowerMethod, ElectricalSemantics, ReadingUsed } from "./apparentPower.ts";
 import { LOADING_REFERENCE, methodologyRef } from "../core/methodology.ts";
+import { finalizeKpi } from "../core/result.ts";
 import { worstQuality } from "../core/quality.ts";
 import { toEpochMs } from "../core/time.ts";
 import { apparentPowerKva, latestReading, withinSkew } from "./apparentPower.ts";
@@ -253,7 +254,7 @@ function loadingKpiInputs(loading: LoadingResult): Record<string, InputValue> {
 
 /** A distribution transformer's loading as a calculated KPI, for comparison with reported loading. */
 export function transformerLoadingKpi(loading: LoadingResult): CalculatedKpi {
-  return {
+  return finalizeKpi({
     kind: "calculated",
     metric: "transformer_loading",
     scope: { kind: "distribution_transformer", id: loading.asset.id },
@@ -269,5 +270,5 @@ export function transformerLoadingKpi(loading: LoadingResult): CalculatedKpi {
     quality: loading.quality,
     warnings: loading.warnings,
     computedAt: loading.computedAt,
-  };
+  });
 }

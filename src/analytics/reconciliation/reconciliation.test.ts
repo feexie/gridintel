@@ -35,6 +35,7 @@ const calculated = (extra: Partial<CalculatedKpi> = {}): CalculatedKpi => ({
   methodology: { id: "gridintel.atcc.reference", version: "0.1.0" },
   inputs: {},
   missingInputs: [],
+  estimatedInputs: [],
   coverage: null,
   quality: "measured",
   warnings: [],

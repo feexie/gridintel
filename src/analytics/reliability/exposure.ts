@@ -45,6 +45,21 @@ export type MethodologyExclusion =
   | "LOAD_SHEDDING"
   | "MAJOR_EVENT";
 
+/**
+ * Who an interruption is attributed to, from the cause and responsible
+ * party recorded on the outage. The classes are exclusive and cover every
+ * exposure, in this order of precedence:
+ * - load_management: load shedding, whoever ordered it;
+ * - upstream_supply: attributed to transmission or generation, or caused
+ *   by loss of upstream supply;
+ * - network: any other interruption the distribution business is
+ *   responsible for (faults, planned work, weather damage);
+ * - other: the customer, a third party, or not known.
+ */
+export type AttributionClass = "network" | "upstream_supply" | "load_management" | "other";
+
+export const ATTRIBUTION_CLASSES: readonly AttributionClass[] = ["network", "upstream_supply", "load_management", "other"];
+
 export interface ClassifiedExposure {
   outageId: string;
   /** Position of the exposure within its outage. */
@@ -63,6 +78,7 @@ export interface ClassifiedExposure {
   responsibleParty: ResponsibleParty;
   upstream: boolean;
   loadShedding: boolean;
+  attribution: AttributionClass;
   majorEvent: boolean;
   /** Set when the data does not support using this exposure at all. */
   dataExclusion: ExclusionReason | null;
@@ -96,6 +112,13 @@ export function classifyExposures(params: {
       outage.cause === "upstream_supply";
     const loadShedding = outage.cause === "load_shedding";
     const majorEvent = isMajorEvent(outage, parameters);
+    const attribution: AttributionClass = loadShedding
+      ? "load_management"
+      : upstream
+        ? "upstream_supply"
+        : outage.responsibleParty === "distribution"
+          ? "network"
+          : "other";
 
     outage.exposures.forEach((exposure, exposureIndex) => {
       const startMs = exposure.interruptedAt === undefined ? undefined : toEpochMs(exposure.interruptedAt);
@@ -161,6 +184,7 @@ export function classifyExposures(params: {
         responsibleParty: outage.responsibleParty,
         upstream,
         loadShedding,
+        attribution,
         majorEvent,
         dataExclusion,
         methodologyExclusions,

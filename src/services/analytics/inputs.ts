@@ -1,4 +1,4 @@
-import type { ReportedKpi } from "@/domain";
+import type { DataQuality, ReportedKpi } from "@/domain";
 import type { Dimension, InputValue, MonetaryInput } from "../../analytics/index.ts";
 import { dimensionOf } from "../../analytics/index.ts";
 
@@ -10,14 +10,22 @@ import { dimensionOf } from "../../analytics/index.ts";
    on exactly as reported, and the input stays tagged
    origin "reported", so every result that uses it says so.
 
-   Quality is "measured", following Phase 3: the figure is used as
-   stated, with nothing estimated or substituted; that it is a
-   reported rather than an observed value is carried by `origin`.
+   Quality is "measured" by default, following Phase 3: the figure
+   is used as stated, with nothing estimated or substituted; that it
+   is a reported rather than an observed value is carried by
+   `origin`. A figure that is an estimate by nature (a technical-loss
+   study) is passed on as "estimated" instead, so every result built
+   on it says so.
 ========================================================== */
 
 export type Conversion<T> = { ok: true; input: T } | { ok: false; reason: string };
 
-export function reportedInput(kpi: ReportedKpi, dimension: Dimension): Conversion<InputValue> {
+export function reportedInput(
+  kpi: ReportedKpi,
+  dimension: Dimension,
+  /** Set when the reported figure is itself an estimate rather than a count or a measurement. */
+  quality: Extract<DataQuality, "measured" | "estimated"> = "measured",
+): Conversion<InputValue> {
   if (kpi.unit === "currency") {
     return { ok: false, reason: `${kpi.id} is a monetary figure; use reportedMoney.` };
   }
@@ -29,7 +37,14 @@ export function reportedInput(kpi: ReportedKpi, dimension: Dimension): Conversio
   }
   return {
     ok: true,
-    input: { value: kpi.value, unit: kpi.unit, origin: "reported", quality: "measured", ref: kpi.id },
+    input: {
+      value: kpi.value,
+      unit: kpi.unit,
+      origin: "reported",
+      quality,
+      ...(quality === "estimated" ? { estimatedShare: 1 } : {}),
+      ref: kpi.id,
+    },
   };
 }
 

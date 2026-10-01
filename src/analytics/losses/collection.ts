@@ -3,7 +3,7 @@ import type { AtccParameters, Methodology } from "../core/methodology.ts";
 import type { CalculatedKpi, CalculationContext, InputValue, MonetaryInput, Warning } from "../core/result.ts";
 import { ATCC_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
-import { ratio, reportedInputWarnings } from "../core/result.ts";
+import { finalizeKpi, ratio, reportedInputWarnings } from "../core/result.ts";
 
 /* ==========================================================
    ANALYTICS — COLLECTION EFFICIENCY
@@ -57,7 +57,7 @@ export function calculateCollectionEfficiency(params: {
   const bothPresent = revenueBilled.value !== null && revenueCollected.value !== null;
   const mismatch = bothPresent ? currencyMismatch(revenueBilled, revenueCollected) : null;
   if (mismatch) {
-    return { ...base, status: "not_computable", value: null, missingInputs: [], warnings: [mismatch] };
+    return finalizeKpi({ ...base, status: "not_computable", value: null, missingInputs: [], warnings: [mismatch] });
   }
 
   const outcome = ratio("revenue collected", revenueCollected.value, "revenue billed", revenueBilled.value);
@@ -68,7 +68,7 @@ export function calculateCollectionEfficiency(params: {
       message: "More was collected than billed in the period, e.g. arrears recovery.",
     });
   }
-  return { ...base, status: outcome.status, value: outcome.value, missingInputs: outcome.missingInputs, warnings };
+  return finalizeKpi({ ...base, status: outcome.status, value: outcome.value, missingInputs: outcome.missingInputs, warnings });
 }
 
 export interface CollectionPart {
@@ -114,7 +114,7 @@ export function aggregateCollectionEfficiency(params: {
   };
 
   if (parts.length === 0) {
-    return { ...base, status: "insufficient_data", value: null, missingInputs: ["at least one part"], warnings: [] };
+    return finalizeKpi({ ...base, status: "insufficient_data", value: null, missingInputs: ["at least one part"], warnings: [] });
   }
 
   const present = parts
@@ -123,13 +123,13 @@ export function aggregateCollectionEfficiency(params: {
   for (const { part, money } of present) {
     const mismatch = currencyMismatch(present[0].money, money);
     if (mismatch) {
-      return {
+      return finalizeKpi({
         ...base,
         status: "not_computable",
         value: null,
         missingInputs: [],
         warnings: [{ ...mismatch, ref: part.label }],
-      };
+      });
     }
   }
 
@@ -143,15 +143,15 @@ export function aggregateCollectionEfficiency(params: {
     else collected += part.revenueCollected.value;
   }
   if (missingInputs.length > 0) {
-    return { ...base, status: "insufficient_data", value: null, missingInputs, warnings: reportedInputWarnings(inputs) };
+    return finalizeKpi({ ...base, status: "insufficient_data", value: null, missingInputs, warnings: reportedInputWarnings(inputs) });
   }
 
   const outcome = ratio("total revenue collected", collected, "total revenue billed", billed);
-  return {
+  return finalizeKpi({
     ...base,
     status: outcome.status,
     value: outcome.value,
     missingInputs: outcome.missingInputs,
     warnings: [...outcome.warnings, ...reportedInputWarnings(inputs)],
-  };
+  });
 }

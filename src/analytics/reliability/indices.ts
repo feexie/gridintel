@@ -1,12 +1,12 @@
 import type { DataQuality, Outage, Period, ScopeRef } from "@/domain";
 import type { Methodology, ReliabilityParameters } from "../core/methodology.ts";
-import type { CalculatedKpi, CalculationContext, InputValue, Warning } from "../core/result.ts";
-import type { ClassifiedExposure } from "./exposure.ts";
+import type { CalculatedKpi, CalculationContext, InputValue, UnfinalizedKpi, Warning } from "../core/result.ts";
+import type { AttributionClass, ClassifiedExposure } from "./exposure.ts";
 import { RELIABILITY_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
-import { ratio } from "../core/result.ts";
+import { finalizeKpi, ratio } from "../core/result.ts";
 import { MS_PER_MINUTE, periodBounds } from "../core/time.ts";
-import { classifyExposures } from "./exposure.ts";
+import { ATTRIBUTION_CLASSES, classifyExposures } from "./exposure.ts";
 
 /* ==========================================================
    ANALYTICS — RELIABILITY INDICES
@@ -23,6 +23,12 @@ import { classifyExposures } from "./exposure.ts";
 
    The caller supplies the outages for the scope and the number of
    customers served; neither is inferred here.
+
+   ATTRIBUTION. The counted totals are also split by who the
+   interruption is attributed to (network, upstream supply, load
+   management, other; see exposure.ts). The split uses the same
+   counted exposures as the indices, so the parts always sum to the
+   total. Nothing is apportioned.
 ========================================================== */
 
 export interface ComponentTotals {
@@ -39,6 +45,12 @@ export interface ReliabilityComponents {
     saidi: ComponentTotals;
     saifi: ComponentTotals;
   };
+  /**
+   * The counted exposures by attribution class. In each class,
+   * customerMinutes are those counted for SAIDI and
+   * customerInterruptions those counted for SAIFI.
+   */
+  attribution: Record<AttributionClass, ComponentTotals>;
   /** Every usable sustained exposure, grouped by class, before methodology filters. */
   breakdown: {
     byPlanned: Record<"planned" | "unplanned" | "unknown", ComponentTotals>;
@@ -53,8 +65,18 @@ export interface ReliabilityComponents {
   outsidePeriod: number;
 }
 
+/** One attribution class's contribution to SAIDI and SAIFI; the classes sum to the totals. */
+export interface AttributedIndices {
+  customerMinutes: number;
+  customerInterruptions: number;
+  /** In the methodology's duration unit; null when the customers served are not known. */
+  saidi: number | null;
+  saifi: number | null;
+}
+
 export interface ReliabilityResult {
   components: ReliabilityComponents;
+  attribution: Record<AttributionClass, AttributedIndices>;
   saidi: CalculatedKpi;
   saifi: CalculatedKpi;
   caidi: CalculatedKpi;
@@ -82,6 +104,12 @@ export function reliabilityComponents(params: {
     period: params.period,
     exposures,
     counted: { saidi: emptyTotals(), saifi: emptyTotals() },
+    attribution: {
+      network: emptyTotals(),
+      upstream_supply: emptyTotals(),
+      load_management: emptyTotals(),
+      other: emptyTotals(),
+    },
     breakdown: {
       byPlanned: { planned: emptyTotals(), unplanned: emptyTotals(), unknown: emptyTotals() },
       byCause: {},
@@ -112,12 +140,18 @@ export function reliabilityComponents(params: {
     add((breakdown.byResponsibleParty[exposure.responsibleParty] ??= emptyTotals()), exposure);
     add(breakdown.majorEvent[exposure.majorEvent ? "major_event" : "normal"], exposure);
 
-    if (exposure.countsForSaidi) add(components.counted.saidi, exposure);
+    const customers = exposure.customersAffected as number;
+    const attributed = components.attribution[exposure.attribution];
+    if (exposure.countsForSaidi || exposure.countsForSaifi) attributed.exposures += 1;
+    if (exposure.countsForSaidi) {
+      add(components.counted.saidi, exposure);
+      attributed.customerMinutes += customers * exposure.minutesInPeriod;
+    }
     if (exposure.countsForSaifi) {
       // SAIFI counts interruptions; its minutes are not used.
-      const customers = exposure.customersAffected as number;
       components.counted.saifi.exposures += 1;
       components.counted.saifi.customerInterruptions += customers;
+      attributed.customerInterruptions += customers;
     }
   }
   return components;
@@ -191,7 +225,7 @@ export function calculateReliability(params: {
     "customers served",
     served,
   );
-  const saidi: CalculatedKpi = {
+  const saidi: UnfinalizedKpi = {
     ...base,
     metric: "saidi",
     unit: parameters.durationUnit,
@@ -207,7 +241,7 @@ export function calculateReliability(params: {
     "customers served",
     served,
   );
-  const saifi: CalculatedKpi = {
+  const saifi: UnfinalizedKpi = {
     ...base,
     metric: "saifi",
     unit: "interruptions_per_customer",
@@ -218,7 +252,7 @@ export function calculateReliability(params: {
   };
 
   const caidiOutcome = ratio("SAIDI", saidi.value, "SAIFI", saifi.value);
-  const caidi: CalculatedKpi = {
+  const caidi: UnfinalizedKpi = {
     ...base,
     metric: "caidi",
     unit: parameters.durationUnit,
@@ -226,6 +260,17 @@ export function calculateReliability(params: {
     value: caidiOutcome.value,
     missingInputs: [...saidi.missingInputs, ...saifi.missingInputs],
     warnings: [...warnings, ...caidiOutcome.warnings],
+  };
+
+  const usableServed = served !== null && served > 0;
+  const attributed = (name: AttributionClass): AttributedIndices => {
+    const totals = components.attribution[name];
+    return {
+      customerMinutes: totals.customerMinutes,
+      customerInterruptions: totals.customerInterruptions,
+      saidi: usableServed ? (totals.customerMinutes / (served as number)) * durationFactor : null,
+      saifi: usableServed ? totals.customerInterruptions / (served as number) : null,
+    };
   };
 
   const bounds = periodBounds(period);
@@ -236,7 +281,7 @@ export function calculateReliability(params: {
     "customer-minutes demanded",
     served === null || periodMinutes === null ? null : served * periodMinutes,
   );
-  const asai: CalculatedKpi = {
+  const asai: UnfinalizedKpi = {
     ...base,
     metric: "asai",
     unit: "fraction",
@@ -248,17 +293,43 @@ export function calculateReliability(params: {
 
   if (bounds === null) {
     // Without a valid period nothing can be attributed to it; an empty count is not a real zero.
-    const invalid = (kpi: CalculatedKpi): CalculatedKpi => ({
-      ...kpi,
-      status: "insufficient_data",
-      value: null,
-      missingInputs: [...new Set([...kpi.missingInputs, "valid period"])],
-      warnings: [
-        ...kpi.warnings,
-        { code: "INVALID_PERIOD", message: "The period is invalid, empty, or has no explicit time zone." },
-      ],
-    });
-    return { components, saidi: invalid(saidi), saifi: invalid(saifi), caidi: invalid(caidi), asai: invalid(asai) };
+    const invalid = (kpi: UnfinalizedKpi): CalculatedKpi =>
+      finalizeKpi({
+        ...kpi,
+        status: "insufficient_data",
+        value: null,
+        missingInputs: [...new Set([...kpi.missingInputs, "valid period"])],
+        warnings: [
+          ...kpi.warnings,
+          { code: "INVALID_PERIOD", message: "The period is invalid, empty, or has no explicit time zone." },
+        ],
+      });
+    const unknown = { saidi: null, saifi: null };
+    return {
+      components,
+      attribution: {
+        network: { ...attributed("network"), ...unknown },
+        upstream_supply: { ...attributed("upstream_supply"), ...unknown },
+        load_management: { ...attributed("load_management"), ...unknown },
+        other: { ...attributed("other"), ...unknown },
+      },
+      saidi: invalid(saidi),
+      saifi: invalid(saifi),
+      caidi: invalid(caidi),
+      asai: invalid(asai),
+    };
   }
-  return { components, saidi, saifi, caidi, asai };
+  return {
+    components,
+    attribution: {
+      network: attributed("network"),
+      upstream_supply: attributed("upstream_supply"),
+      load_management: attributed("load_management"),
+      other: attributed("other"),
+    },
+    saidi: finalizeKpi(saidi),
+    saifi: finalizeKpi(saifi),
+    caidi: finalizeKpi(caidi),
+    asai: finalizeKpi(asai),
+  };
 }

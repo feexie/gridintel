@@ -21,6 +21,7 @@ export * from "./billing/totals.ts";
 export * from "./reliability/exposure.ts";
 export * from "./reliability/indices.ts";
 export * from "./reliability/scope.ts";
+export * from "./reliability/supplyHours.ts";
 export * from "./loading/apparentPower.ts";
 export * from "./loading/loading.ts";
 export * from "./loading/peak.ts";

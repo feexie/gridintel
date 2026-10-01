@@ -66,9 +66,10 @@ function loadShedding(): EventPlan[] {
   const market = seeded("shedding:FD-MKT");
   const oldTown = seeded("shedding:FD-OLD");
   for (let day = 0; day < DEMO_DAYS; day++) {
-    // Market Road (Band A): one block of 2–4 hours on two days in three.
+    // Market Road (Band A): one block of 2–5 hours on two days in three. A five-hour block
+    // leaves 19 hours of supply, under the band's 20-hour minimum for that day.
     const marketStart = [1, 2, 13, 14][Math.floor(market() * 4)];
-    const marketHours = 2 + Math.floor(market() * 3);
+    const marketHours = 2 + Math.floor(market() * 4);
     if (day % 3 !== 0) shed("FD-MKT", MKT_KEYS, day, 1, marketStart, marketHours);
 
     // Old Town (Band C): off for 4–5 hours overnight and 5–6 hours in the day, every day.
@@ -190,7 +191,7 @@ export function buildDemoOutages(): Outage[] {
       (part): OutageExposure => ({
         affected: affected(part.supplyKey),
         customersAffected: activeAccounts(part.supplyKey),
-        customerCountBasis: "topology_derived",
+        customerCountBasis: "recorded",
         interruptedAt: wat(part.startMs),
         restoredAt: wat(part.endMs),
         quality: "measured",
