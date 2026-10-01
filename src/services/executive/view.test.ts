@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { OperationsRuntime } from "../operations/levels.ts";
 import { DEMO_CLOCK, DEMO_PERIOD, createDemoRepositories } from "../../repositories/demo/index.ts";
-import { createMockRepositories } from "../../repositories/mock/index.ts";
+import { SPARSE_AS_OF, SPARSE_PERIOD, sparseRepositories } from "../analytics/__fixtures__/sparse.ts";
 import { substationView } from "../operations/levels.ts";
 import { executiveView } from "./view.ts";
 
@@ -75,14 +75,9 @@ describe("executive read model", () => {
   });
 
   it("ranks nothing it has no value for", async () => {
-    const mock = await executiveView({
-      repos: createMockRepositories(),
-      now: "2026-07-12T09:45:00Z",
-      period: { start: "2026-07-01T00:00:00Z", end: "2026-08-01T00:00:00Z" },
-      caveats: {},
-    });
-    assert.deepEqual(mock.whereToLook, []);
-    assert.equal(mock.reliability.saidi.value, null);
-    assert.equal(mock.reliability.saidi.status, "insufficient_data");
+    const sparse = await executiveView({ repos: sparseRepositories(), now: SPARSE_AS_OF, period: SPARSE_PERIOD, caveats: {} });
+    assert.deepEqual(sparse.whereToLook, []);
+    assert.equal(sparse.reliability.saidi.value, null);
+    assert.equal(sparse.reliability.saidi.status, "insufficient_data");
   });
 });

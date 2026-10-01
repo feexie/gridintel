@@ -15,7 +15,7 @@ const reported = (extra: Partial<ReportedKpi> = {}): ReportedKpi => ({
   asOf: null,
   value: 17.2,
   unit: "percent",
-  source: { name: "test", kind: "gridintel_mock" },
+  source: { name: "test", kind: "other" },
   document: null,
   basis: { lossBasis: "energy_input_net_of_transfers_out", collection: "cash" },
   methodology: { name: "source's stated method" },

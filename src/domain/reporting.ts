@@ -7,7 +7,7 @@ import type { InterruptionClass } from "./events";
    GRIDINTEL DOMAIN — REPORTED FIGURES
 
    A ReportedKpi is a figure as someone else published it: a
-   regulator, a utility, a partner, or GridIntel's own mock data.
+   regulator, a utility, a partner, or a synthetic demonstration dataset.
    It is stored exactly as stated.
 
    Reported figures are never treated as observations, never
@@ -119,7 +119,6 @@ export interface ReportedKpi {
       | "utility"
       | "government"
       | "development_partner"
-      | "gridintel_mock"
       /** A figure invented as part of a synthetic demonstration dataset. */
       | "gridintel_synthetic"
       | "other";

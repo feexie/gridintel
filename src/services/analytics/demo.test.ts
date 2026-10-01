@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { ScopeRef } from "@/domain";
 import { compareKpi, compareOnBasis, reliabilityOnBasis } from "../../analytics/index.ts";
 import { DEMO_CLOCK, DEMO_PERIOD, DEMO_REGION_ID, createDemoRepositories } from "../../repositories/demo/index.ts";
-import { createMockRepositories } from "../../repositories/mock/index.ts";
+import { SPARSE_PERIOD, sparseRepositories } from "./__fixtures__/sparse.ts";
 import { scopeCollection } from "./billing.ts";
 import { assetLoading } from "./loading.ts";
 import { sectionLosses } from "./losses.ts";
@@ -39,16 +39,16 @@ describe("synthetic marker", () => {
     }
   });
 
-  it("is not set on results from the legacy mock data, which is a different kind of source", async () => {
-    const mock = createMockRepositories();
-    const { sourcing } = await scopeReliability({
-      repos: mock,
-      scope: { kind: "organization", id: "mock-utility" },
-      period: { start: "2026-07-01T00:00:00Z", end: "2026-08-01T00:00:00Z" },
+  it("is not set on results from any other kind of source", async () => {
+    const { sourcing } = await assetLoading({
+      repos: sparseRepositories(),
+      asset: { kind: "feeder", id: "FD-1" },
+      asOf: SPARSE_PERIOD.end,
       context,
     });
     assert.equal(sourcing.synthetic, false);
-    assert.ok(sourcing.sources.every((source) => source.kind === "mock"));
+    assert.ok(sourcing.sources.length > 0);
+    assert.ok(sourcing.sources.every((source) => source.kind === "spreadsheet_import"));
   });
 });
 
@@ -158,13 +158,7 @@ describe("energy account and losses", () => {
   });
 
   it("without billing records, gives energy input but no ATC&C", async () => {
-    const mock = createMockRepositories();
-    const { result } = await sectionLosses({
-      repos: mock,
-      scope: feeder("ADM-FD-001"),
-      period: { start: "2026-07-01T00:00:00Z", end: "2026-08-01T00:00:00Z" },
-      context,
-    });
+    const { result } = await sectionLosses({ repos: sparseRepositories(), scope: feeder("FD-1"), period: SPARSE_PERIOD, context });
     assert.equal(result.billing.energyBilled.value, null);
     assert.equal(result.atcc.atcc.status, "insufficient_data");
     assert.equal(result.atcc.atcc.value, null);
@@ -272,9 +266,9 @@ describe("reliability", () => {
 
   it("is insufficient_data, not a wrong number, when the customer registry is incomplete", async () => {
     const { result } = await scopeReliability({
-      repos: createMockRepositories(),
-      scope: feeder("ADM-FD-001"),
-      period: { start: "2026-07-01T00:00:00Z", end: "2026-08-01T00:00:00Z" },
+      repos: sparseRepositories(),
+      scope: feeder("FD-1"),
+      period: SPARSE_PERIOD,
       context,
     });
     assert.equal(result.reliability.saidi.status, "insufficient_data");

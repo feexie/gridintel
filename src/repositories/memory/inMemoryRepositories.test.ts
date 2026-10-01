@@ -83,7 +83,7 @@ function dataset(overrides: Partial<DomainDataset> = {}): DomainDataset {
     reportedKpis: [],
     billingRecords: [],
     payments: [],
-    dataSources: [{ id: "test", name: "Test", kind: "mock" }],
+    dataSources: [{ id: "test", name: "Test", kind: "manual_entry" }],
     completeness: {
       intervalEnergy: "complete",
       telemetry: "partial",
@@ -242,6 +242,6 @@ describe("in-memory reported figures", () => {
 describe("in-memory data sources", () => {
   it("lists the dataset's sources", async () => {
     const repos = createInMemoryRepositories(dataset());
-    assert.deepEqual(await repos.sources.listDataSources(), [{ id: "test", name: "Test", kind: "mock" }]);
+    assert.deepEqual(await repos.sources.listDataSources(), [{ id: "test", name: "Test", kind: "manual_entry" }]);
   });
 });

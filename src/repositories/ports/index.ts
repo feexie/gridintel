@@ -2,7 +2,7 @@
    REPOSITORY PORTS
 
    Read-only interfaces that return canonical domain records. An
-   adapter (mock today; an API or database later) implements them,
+   adapter (synthetic demo data today; a database or API later) implements them,
    and analytics never depends on which adapter is in use. This
    module re-exports types only.
 ========================================================== */

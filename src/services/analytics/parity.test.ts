@@ -74,7 +74,7 @@ function fixtureRepositories(): GridIntelRepositories {
     reportedKpis: [],
     billingRecords: [],
     payments: [],
-    dataSources: [{ id: "test-fixture", name: "Phase 3 test network", kind: "mock" }],
+    dataSources: [{ id: "test-fixture", name: "Phase 3 test network", kind: "manual_entry" }],
     completeness: {
       intervalEnergy: "complete",
       telemetry: "complete",

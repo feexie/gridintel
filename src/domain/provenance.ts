@@ -22,12 +22,6 @@ export type DataSourceKind =
   | "api"
   | "gis"
   /**
-   * Placeholder data written to fill a screen. It was not designed to be
-   * internally consistent and must never pass for real data. To be retired
-   * together with the legacy mock files.
-   */
-  | "mock"
-  /**
    * A deliberately designed, internally consistent demonstration dataset
    * that exercises the analytics engine. It describes no real network,
    * customer or transaction. Every result derived from it must say so.

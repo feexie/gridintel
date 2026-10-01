@@ -14,8 +14,8 @@ import type { Completeness, NetworkRegistrySnapshot, RegistryCoverage } from "..
    IN-MEMORY DATASET
 
    A complete set of canonical domain records held in memory. The
-   mock adapter produces one from the legacy mock data; tests build
-   their own. Records are served as stored.
+   demo adapter generates one; tests build their own. Records are
+   served as stored.
 ========================================================== */
 
 export interface DomainDataset {

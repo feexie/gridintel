@@ -12,7 +12,7 @@ function kpi(overrides: Partial<ReportedKpi>): ReportedKpi {
     asOf: null,
     value: 86.6,
     unit: "percent",
-    source: { name: "Test", kind: "gridintel_mock" },
+    source: { name: "Test", kind: "other" },
     document: null,
     basis: null,
     methodology: null,

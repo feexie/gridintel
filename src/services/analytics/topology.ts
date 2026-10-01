@@ -9,7 +9,7 @@ import { buildTopologyIndex } from "../../analytics/index.ts";
    Loads the registry through its repository and hands it to the
    analytics topology index. The coverage is passed on so callers
    know when counts derived from the registry are not totals (for
-   example, customer accounts are not available from the mock).
+   example, when the source holds no customer accounts).
 ========================================================== */
 
 export interface LoadedTopology {
