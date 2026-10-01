@@ -111,6 +111,26 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
       },
     },
 
+    billing: {
+      async listBillingRecords(query) {
+        const { startMs, endMs } = queryBounds(query.period);
+        const records = dataset.billingRecords.filter((record) => {
+          const billedMs = epochMs(record.billedAt);
+          return billedMs === null || (billedMs >= startMs && billedMs < endMs);
+        });
+        return { records, completeness: dataset.completeness.billing };
+      },
+
+      async listPayments(query) {
+        const { startMs, endMs } = queryBounds(query.period);
+        const records = dataset.payments.filter((payment) => {
+          const receivedMs = epochMs(payment.receivedAt);
+          return receivedMs === null || (receivedMs >= startMs && receivedMs < endMs);
+        });
+        return { records, completeness: dataset.completeness.billing };
+      },
+    },
+
     sources: {
       async listDataSources() {
         return [...dataset.dataSources];

@@ -72,6 +72,8 @@ function fixtureRepositories(): GridIntelRepositories {
     heartbeats: [],
     outages: OUTAGES,
     reportedKpis: [],
+    billingRecords: [],
+    payments: [],
     dataSources: [{ id: "test-fixture", name: "Phase 3 test network", kind: "mock" }],
     completeness: {
       intervalEnergy: "complete",
@@ -79,6 +81,7 @@ function fixtureRepositories(): GridIntelRepositories {
       heartbeats: "complete",
       outages: "complete",
       reportedKpis: "complete",
+      billing: "not_available",
     },
   };
   return createInMemoryRepositories(dataset);

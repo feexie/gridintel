@@ -1,8 +1,10 @@
 import type {
+  BillingRecord,
   DataSource,
   DeviceHeartbeat,
   IntervalEnergy,
   Outage,
+  Payment,
   ReportedKpi,
   TelemetryPoint,
 } from "@/domain";
@@ -25,6 +27,8 @@ export interface DomainDataset {
   heartbeats: readonly DeviceHeartbeat[];
   outages: readonly Outage[];
   reportedKpis: readonly ReportedKpi[];
+  billingRecords: readonly BillingRecord[];
+  payments: readonly Payment[];
   dataSources: readonly DataSource[];
   completeness: {
     intervalEnergy: Completeness;
@@ -32,5 +36,6 @@ export interface DomainDataset {
     heartbeats: Completeness;
     outages: Completeness;
     reportedKpis: Completeness;
+    billing: Completeness;
   };
 }

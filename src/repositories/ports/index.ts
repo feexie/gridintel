@@ -7,6 +7,7 @@
    module re-exports types only.
 ========================================================== */
 
+import type { BillingRepository } from "./billing.ts";
 import type { EventRepository } from "./events.ts";
 import type { ObservationRepository } from "./observations.ts";
 import type { RegistryRepository } from "./registry.ts";
@@ -18,6 +19,7 @@ export type * from "./registry.ts";
 export type * from "./observations.ts";
 export type * from "./events.ts";
 export type * from "./reporting.ts";
+export type * from "./billing.ts";
 export type * from "./sources.ts";
 
 export interface GridIntelRepositories {
@@ -25,5 +27,6 @@ export interface GridIntelRepositories {
   observations: ObservationRepository;
   events: EventRepository;
   reported: ReportedKpiRepository;
+  billing: BillingRepository;
   sources: SourceRepository;
 }

@@ -2,6 +2,15 @@ import type { Audit, ExternalId, IsoDate, LifecycleStatus } from "./primitives";
 import type { Provenance } from "./provenance";
 import type { Coordinates } from "./geo";
 
+/**
+ * NERC Service-Based Tariff band of a feeder, set by the minimum average
+ * hours of supply per day the band commits to: A ≥ 20, B ≥ 16, C ≥ 12,
+ * D ≥ 8, E ≥ 4. The band is the regulatory classification as recorded;
+ * the hours actually supplied are calculated from outages, never read
+ * from the band.
+ */
+export type ServiceBand = "A" | "B" | "C" | "D" | "E";
+
 /* ==========================================================
    GRIDINTEL DOMAIN — ELECTRICAL NETWORK
 
@@ -98,6 +107,10 @@ export interface Feeder extends Audit {
   origin: FeederOrigin;
   /** ADMINISTRATIVE: overrides the region inherited from the origin substation. */
   adminRegionId?: string;
+  /** REGULATORY: the tariff band the feeder is classified in, when recorded. */
+  serviceBand?: ServiceBand;
+  /** The line route as an ordered polyline, starting at the origin substation. */
+  route?: readonly Coordinates[];
   nominalVoltageKv: number;
   ratedCurrentA?: number;
   ratedCapacityMva?: number;

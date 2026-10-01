@@ -80,6 +80,8 @@ export function buildMockDataset(legacy: LegacyData = LEGACY_DATA): MockDatasetB
       heartbeats: observations.heartbeats,
       outages: events.outages,
       reportedKpis: reported.reportedKpis,
+      billingRecords: [],
+      payments: [],
       dataSources: MOCK_DATA_SOURCES,
       completeness: {
         intervalEnergy: "not_available",
@@ -87,6 +89,7 @@ export function buildMockDataset(legacy: LegacyData = LEGACY_DATA): MockDatasetB
         heartbeats: "partial",
         outages: "partial",
         reportedKpis: "partial",
+        billing: "not_available",
       },
     },
     report: {

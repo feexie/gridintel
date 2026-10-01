@@ -80,6 +80,8 @@ function dataset(overrides: Partial<DomainDataset> = {}): DomainDataset {
     heartbeats: [],
     outages: [],
     reportedKpis: [],
+    billingRecords: [],
+    payments: [],
     dataSources: [{ id: "test", name: "Test", kind: "mock" }],
     completeness: {
       intervalEnergy: "complete",
@@ -87,6 +89,7 @@ function dataset(overrides: Partial<DomainDataset> = {}): DomainDataset {
       heartbeats: "partial",
       outages: "partial",
       reportedKpis: "not_available",
+      billing: "not_available",
     },
     ...overrides,
   };

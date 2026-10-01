@@ -230,3 +230,47 @@ export function calculateLossSplit(params: {
 
   return { technicalLoss, commercialLoss };
 }
+
+/* ==========================================================
+   ATC&C DECOMPOSITION
+========================================================== */
+
+/**
+ * ATC&C split into three additive parts, each a fraction of energy input:
+ *
+ *   technical  = technical loss ÷ energy input
+ *   commercial = unbilled energy ÷ energy input
+ *   collection = billing efficiency × (1 − collection efficiency)
+ *
+ * technical + commercial = 1 − billing efficiency, so the three parts
+ * sum to ATC&C = 1 − BE × CE. The collection part is the share of energy
+ * input that was billed but not paid for.
+ */
+export interface AtccDecomposition {
+  status: CalculatedKpi["status"];
+  technical: number | null;
+  commercial: number | null;
+  collection: number | null;
+  atcc: number | null;
+  missingInputs: string[];
+}
+
+export function decomposeAtcc(atcc: AtccResult, split: LossSplit): AtccDecomposition {
+  const parts = [atcc.atcc, atcc.billingEfficiency, atcc.collectionEfficiency, split.technicalLoss, split.commercialLoss];
+  const collection =
+    atcc.billingEfficiency.value === null || atcc.collectionEfficiency.value === null
+      ? null
+      : atcc.billingEfficiency.value * (1 - atcc.collectionEfficiency.value);
+  return {
+    status: parts.some((part) => part.status === "not_computable")
+      ? "not_computable"
+      : parts.every((part) => part.status === "ok")
+        ? "ok"
+        : "insufficient_data",
+    technical: split.technicalLoss.value,
+    commercial: split.commercialLoss.value,
+    collection,
+    atcc: atcc.atcc.value,
+    missingInputs: [...new Set(parts.flatMap((part) => part.missingInputs))],
+  };
+}

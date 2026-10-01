@@ -98,6 +98,8 @@ export interface ReportedKpi {
       | "government"
       | "development_partner"
       | "gridintel_mock"
+      /** A figure invented as part of a synthetic demonstration dataset. */
+      | "gridintel_synthetic"
       | "other";
     organizationId?: string;
   };

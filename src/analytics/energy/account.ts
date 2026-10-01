@@ -209,17 +209,30 @@ function measuredFigure(measurement: BoundaryMeasurement, derivation: string): E
    BOUNDARY MEASUREMENT
 ========================================================== */
 
+/** Interval records grouped by meter, so each meter is summed from its own records only. */
+type IntervalsByMeter = ReadonlyMap<string, IntervalEnergy[]>;
+
+function groupByMeter(intervals: readonly IntervalEnergy[]): IntervalsByMeter {
+  const groups = new Map<string, IntervalEnergy[]>();
+  for (const interval of intervals) {
+    const group = groups.get(interval.meterId);
+    if (group === undefined) groups.set(interval.meterId, [interval]);
+    else group.push(interval);
+  }
+  return groups;
+}
+
 function measureBoundary(
   index: TopologyIndex,
   side: "input" | "downstream",
   requirements: readonly BoundaryRequirement[],
-  intervals: readonly IntervalEnergy[],
+  intervals: IntervalsByMeter,
   period: Period,
   warnings: Warning[],
 ): BoundaryMeasurement {
   const meterById = new Map(index.registry.meters.map((meter) => [meter.id, meter]));
   const measured: MeasuredRequirement[] = requirements.map((req) => {
-    const meters = req.meterIds.map((id) => sumMeterEnergy(meterById.get(id)!, intervals, period));
+    const meters = req.meterIds.map((id) => sumMeterEnergy(meterById.get(id)!, intervals.get(id) ?? [], period));
     for (const total of meters) warnings.push(...total.warnings);
     const complete = meters.length > 0 && meters.every((total) => total.netKwh !== null);
     return {
@@ -253,7 +266,7 @@ function measureBoundary(
 function recordedConsumptionFigure(
   index: TopologyIndex,
   scope: ScopeRef,
-  intervals: readonly IntervalEnergy[],
+  intervals: IntervalsByMeter,
   period: Period,
 ): EnergyFigure {
   const derivation = "sum of import through service-point meters under the scope";
@@ -268,7 +281,7 @@ function recordedConsumptionFigure(
       continue;
     }
     for (const meter of meters) {
-      const sum = sumMeterEnergy(meter, intervals, period);
+      const sum = sumMeterEnergy(meter, intervals.get(meter.id) ?? [], period);
       if (sum.importKwh === null) {
         missingInputs.push(`complete import channel for meter ${meter.id}`);
         continue;
@@ -350,7 +363,8 @@ export function computeEnergyAccount(params: {
   methodology?: Methodology<EnergyParameters>;
   computedAt: IsoTimestamp;
 }): EnergyAccount {
-  const { index, scope, period, intervals, computedAt } = params;
+  const { index, scope, period, computedAt } = params;
+  const intervals = groupByMeter(params.intervals);
   const inputs = params.inputs ?? {};
   const methodology = params.methodology ?? ENERGY_REFERENCE;
   const warnings: Warning[] = [];
