@@ -85,10 +85,7 @@ const importBoundaries = [
       { regex: "^@/services(/|$)", allowTypeImports: true, message: "The UI imports view-model types from services, never service functions." },
       reaching("data|domain|analytics|repositories|services", "The UI imports only the composition root and view-model types."),
       ...extra,
-    ], {
-      // The Executive page still reads legacy data; it is migrated in Phase 5 step 5.
-      ignores: ["src/app/dashboard/utility/executive/**", "src/components/utility/executive/**"],
-    }),
+    ]),
   ),
   boundary(["src/data/**"], [
     { regex: "^@/(?!types(/|$))", message: "Mock data may import only legacy types." },

@@ -284,6 +284,7 @@ function SupplyStrip({ supply }: { supply: SupplyView }) {
 export function ReliabilityPanel({ reliability, showBand }: { reliability: ReliabilityView; showBand: boolean }) {
   return (
     <Panel title="Reliability and hours of supply" aside={<span>Customers served: <MetricCell metric={reliability.customersServed} /></span>}>
+      {reliability.scopeNote ? <p className="border-l-2 border-amber-400/60 pl-2 text-xs text-amber-100/90">{reliability.scopeNote}</p> : null}
       <div className="grid gap-2 md:grid-cols-5">
         <MetricTile metric={reliability.saidi} sourcing={reliability.sourcing} emphasis />
         <MetricTile metric={reliability.saifi} sourcing={reliability.sourcing} />

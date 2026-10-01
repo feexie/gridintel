@@ -62,13 +62,13 @@ export interface OperationsRuntime {
   caveats: { feederLoading?: string };
 }
 
-interface Loaded {
+export interface Loaded {
   index: TopologyIndex;
   snapshot: NetworkRegistrySnapshot;
   coverage: RegistryCoverage;
 }
 
-const ALARMS: NotAvailableView = {
+export const ALARMS: NotAvailableView = {
   title: "Alarms",
   reason:
     "Not available. The platform has no alarm data source yet, so no alarms are shown rather than an invented list. " +
@@ -89,7 +89,7 @@ function localDate(iso: string, timeZone: string | undefined): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timeZone ?? "UTC" }).format(new Date(iso));
 }
 
-function timeZoneOf(snapshot: NetworkRegistrySnapshot): string | undefined {
+export function timeZoneOf(snapshot: NetworkRegistrySnapshot): string | undefined {
   return snapshot.organizations[0]?.timezone;
 }
 
@@ -170,7 +170,7 @@ async function reportedComparisons(
   );
 }
 
-async function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef, scopeNote: string | null): Promise<LossesView> {
+export async function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef, scopeNote: string | null): Promise<LossesView> {
   const { result, sourcing } = await sectionLosses({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime) });
   const { account, atcc, split, decomposition, billing } = result;
   const energy = methodologyRef(ENERGY_REFERENCE);
@@ -273,7 +273,7 @@ const ATTRIBUTION_LABELS = [
   { key: "other", label: "Other", description: "Customer, third party, or not known." },
 ] as const;
 
-async function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, timeZone: string | undefined): Promise<ReliabilityView> {
+export async function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, timeZone: string | undefined): Promise<ReliabilityView> {
   const { result, sourcing } = await scopeReliability({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime) });
   const { reliability, supply } = result;
   const supplyMethod = methodView(methodologyRef(SUPPLY_HOURS_REFERENCE));
@@ -346,7 +346,7 @@ async function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, tim
   };
 }
 
-async function loadingBlock(
+export async function loadingBlock(
   runtime: OperationsRuntime,
   asset: { kind: "distribution_transformer" | "feeder"; id: string },
 ): Promise<LoadingView | null> {
@@ -469,7 +469,7 @@ function activeAccountsUnder(loaded: Loaded, scope: ScopeRef): number | null {
   ).length;
 }
 
-async function load(runtime: OperationsRuntime): Promise<Loaded> {
+export async function loadRegistry(runtime: OperationsRuntime): Promise<Loaded> {
   const { index, snapshot, coverage } = await loadTopology(runtime.repos.registry, runtime.now);
   return { index, snapshot, coverage };
 }
@@ -481,7 +481,7 @@ function count(value: number | null): string {
 /* ---------------- Levels ---------------- */
 
 export async function overviewView(runtime: OperationsRuntime): Promise<OverviewView> {
-  const loaded = await load(runtime);
+  const loaded = await loadRegistry(runtime);
   const rows: ChildRow[] = [];
   for (const region of loaded.snapshot.regions) {
     const scope: ScopeRef = { kind: "region", id: region.id };
@@ -558,7 +558,7 @@ const SECTION_COLUMNS = [
 ];
 
 export async function regionView(runtime: OperationsRuntime, regionId: string): Promise<NetworkLevelView | null> {
-  const loaded = await load(runtime);
+  const loaded = await loadRegistry(runtime);
   const region = loaded.index.regionById.get(regionId);
   if (!region) return null;
   const scope: ScopeRef = { kind: "region", id: regionId };
@@ -602,7 +602,7 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
 }
 
 export async function substationView(runtime: OperationsRuntime, substationId: string): Promise<NetworkLevelView | null> {
-  const loaded = await load(runtime);
+  const loaded = await loadRegistry(runtime);
   const substation = loaded.index.substationById.get(substationId);
   if (!substation) return null;
   const scope: ScopeRef = { kind: "substation", id: substationId };
@@ -658,7 +658,7 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
 }
 
 export async function feederView(runtime: OperationsRuntime, feederId: string): Promise<NetworkLevelView | null> {
-  const loaded = await load(runtime);
+  const loaded = await loadRegistry(runtime);
   const feeder = loaded.index.feederById.get(feederId);
   if (!feeder) return null;
   const scope: ScopeRef = { kind: "feeder", id: feederId };
@@ -795,7 +795,7 @@ async function servicePointTable(runtime: OperationsRuntime, loaded: Loaded, tit
 }
 
 export async function transformerView(runtime: OperationsRuntime, transformerId: string): Promise<NetworkLevelView | null> {
-  const loaded = await load(runtime);
+  const loaded = await loadRegistry(runtime);
   const dt = loaded.index.transformerById.get(transformerId);
   if (!dt) return null;
   const scope: ScopeRef = { kind: "distribution_transformer", id: transformerId };
@@ -828,7 +828,7 @@ export async function transformerView(runtime: OperationsRuntime, transformerId:
 }
 
 export async function servicePointView(runtime: OperationsRuntime, servicePointId: string): Promise<ServicePointView | null> {
-  const loaded = await load(runtime);
+  const loaded = await loadRegistry(runtime);
   const { index, snapshot } = loaded;
   const sp = index.servicePointById.get(servicePointId);
   if (!sp) return null;

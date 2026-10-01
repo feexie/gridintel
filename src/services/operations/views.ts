@@ -157,6 +157,8 @@ export interface SupplyView {
 
 export interface ReliabilityView {
   sourcing: SourcingView;
+  /** Shown when the figures belong to another scope than the page's. */
+  scopeNote?: string | null;
   saidi: MetricView;
   saifi: MetricView;
   caidi: MetricView;

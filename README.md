@@ -4,11 +4,10 @@ GridIntel is an energy intelligence platform for electricity distribution
 utilities, distributed energy resources (DER), mini-grids and power-system
 planning.
 
-> **Status: prototype on synthetic data.** The Operations Center runs end to
-> end on a designed, synthetic demonstration dataset: no real network,
-> customer or transaction. There is no backend API, database, authentication,
-> AI integration or GIS map yet. The Executive page still runs on legacy mock
-> data.
+> **Status: prototype on synthetic data.** The Executive page and the
+> Operations Center run end to end on a designed, synthetic demonstration
+> dataset: no real network, customer or transaction. There is no backend API,
+> database, authentication, AI integration or GIS map yet.
 
 ## Documents
 
@@ -81,7 +80,7 @@ Adapters (src/repositories/memory, demo, mock)
 - `src/analytics`: deterministic, pure calculations. Every result carries a
   status, its inputs, their origin and quality, and the methodology used.
 - `src/repositories/demo`: the synthetic dataset, generated from a fixed seed.
-- `src/services/operations`: read models for the Operations screens.
+- `src/services/operations`, `src/services/executive`: read models for the screens.
 - `src/data`, `src/types`, `src/repositories/mock`: legacy mock data, kept
   until Phase 6.
 
@@ -92,7 +91,7 @@ Adapters (src/repositories/memory, demo, mock)
 | `/dashboard` | Platform overview |
 | `/dashboard/utility` | Utility Intelligence suite hub |
 | `/dashboard/utility/operations` | Operations Center: drill from region to substation, feeder, transformer and service point. ATC&C decomposition, reliability with attribution, service-band compliance and peak loading, each with status, origin, source and method |
-| `/dashboard/utility/executive` | Executive dashboard on legacy mock data (to be migrated) |
+| `/dashboard/utility/executive` | Executive: a ranked "where to look first" list, ATC&C with its technical / commercial / collection split, reliability with attribution, service-band compliance per feeder, transformer peak loading, and reported figures against calculated ones on the same basis |
 | Other routes | Placeholders |
 
 ## Development notes
