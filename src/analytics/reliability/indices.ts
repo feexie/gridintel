@@ -6,7 +6,7 @@ import { RELIABILITY_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
 import { finalizeKpi, ratio } from "../core/result.ts";
 import { MS_PER_MINUTE, periodBounds } from "../core/time.ts";
-import { ATTRIBUTION_CLASSES, classifyExposures } from "./exposure.ts";
+import { classifyExposures } from "./exposure.ts";
 
 /* ==========================================================
    ANALYTICS — RELIABILITY INDICES
@@ -69,6 +69,8 @@ export interface ReliabilityComponents {
 export interface AttributedIndices {
   customerMinutes: number;
   customerInterruptions: number;
+  /** This class's share of the counted customer-minutes; null when there are none. */
+  shareOfCustomerMinutes: number | null;
   /** In the methodology's duration unit; null when the customers served are not known. */
   saidi: number | null;
   saifi: number | null;
@@ -268,6 +270,10 @@ export function calculateReliability(params: {
     return {
       customerMinutes: totals.customerMinutes,
       customerInterruptions: totals.customerInterruptions,
+      shareOfCustomerMinutes:
+        components.counted.saidi.customerMinutes > 0
+          ? totals.customerMinutes / components.counted.saidi.customerMinutes
+          : null,
       saidi: usableServed ? (totals.customerMinutes / (served as number)) * durationFactor : null,
       saifi: usableServed ? totals.customerInterruptions / (served as number) : null,
     };

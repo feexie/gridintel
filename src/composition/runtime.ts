@@ -1,6 +1,6 @@
 import type { IsoTimestamp, Period } from "@/domain";
 import type { GridIntelRepositories } from "../repositories/ports/index.ts";
-import { DEMO_CLOCK, DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
+import { DEMO_CLOCK, DEMO_NOTICE, DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
 
 /* ==========================================================
    COMPOSITION ROOT
@@ -26,6 +26,17 @@ export interface RuntimeClock {
   now: IsoTimestamp;
   /** The reporting period shown by default. */
   reportingPeriod: Period;
+}
+
+/** What must be said about the data the application is running on; null for real data. */
+export interface DataNotice {
+  label: string;
+  summary: string;
+  caveats: { feederLoading?: string; tariffs?: string };
+}
+
+export function getDataNotice(): DataNotice | null {
+  return DEMO_NOTICE;
 }
 
 export function getClock(): RuntimeClock {

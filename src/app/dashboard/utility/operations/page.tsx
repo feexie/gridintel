@@ -1,5 +1,6 @@
-import OperationsDashboard from "@/components/utility/operations/OperationsDashboard";
+import { Overview } from "@/components/operations/Level";
+import { operations } from "@/composition/operations";
 
-export default function OperationsCenterPage() {
-  return <OperationsDashboard />;
+export default async function OperationsCenterPage() {
+  return <Overview view={await operations.overview()} />;
 }

@@ -54,6 +54,60 @@ export interface BillingTotals {
 
 const MINOR_PER_MAJOR = 100;
 
+/** What one account was charged and paid in a period. Amounts are in major currency units. */
+export interface AccountBilling {
+  customerId: string;
+  /** null when a charge states no energy. */
+  energyBilledKwh: number | null;
+  /** True when any charge was estimated rather than read from a meter. */
+  estimated: boolean;
+  amountBilled: number;
+  amountPaid: number;
+  charges: number;
+}
+
+/**
+ * Charges and payments in a period, per account. Records in another
+ * currency, or without a usable time, are left out; an account with no
+ * record in the period is absent from the result rather than zero.
+ */
+export function billingByAccount(params: {
+  period: Period;
+  billingRecords: readonly BillingRecord[];
+  payments: readonly Payment[];
+  currency: string;
+}): Map<string, AccountBilling> {
+  const accounts = new Map<string, AccountBilling>();
+  const bounds = periodBounds(params.period);
+  if (bounds === null) return accounts;
+  const inPeriod = (timestamp: string): boolean => {
+    const ms = toEpochMs(timestamp);
+    return ms !== null && ms >= bounds.startMs && ms < bounds.endMs;
+  };
+  const account = (customerId: string): AccountBilling => {
+    let entry = accounts.get(customerId);
+    if (entry === undefined) {
+      entry = { customerId, energyBilledKwh: 0, estimated: false, amountBilled: 0, amountPaid: 0, charges: 0 };
+      accounts.set(customerId, entry);
+    }
+    return entry;
+  };
+  for (const record of params.billingRecords) {
+    if (record.amount.currency !== params.currency || !inPeriod(record.billedAt)) continue;
+    const entry = account(record.customerId);
+    entry.charges += 1;
+    entry.amountBilled += record.amount.amountMinor / MINOR_PER_MAJOR;
+    if (record.basis === "estimated") entry.estimated = true;
+    entry.energyBilledKwh =
+      entry.energyBilledKwh === null || record.energyKwh === null ? null : entry.energyBilledKwh + record.energyKwh;
+  }
+  for (const payment of params.payments) {
+    if (payment.amount.currency !== params.currency || !inPeriod(payment.receivedAt)) continue;
+    account(payment.customerId).amountPaid += payment.amount.amountMinor / MINOR_PER_MAJOR;
+  }
+  return accounts;
+}
+
 function emptyBasis(): BasisTotals {
   return { records: 0, energyKwh: 0, amount: 0 };
 }

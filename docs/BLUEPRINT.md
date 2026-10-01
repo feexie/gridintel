@@ -1,8 +1,26 @@
 # GridIntel blueprint
 
-Current versus target architecture, as of 2026-10-01 (commit `da0fad7`).
-Update this file when the architecture changes. The plan is in
-`ROADMAP.md`; the vision is in `FOUNDING_DIRECTIVE.md`.
+Current versus target architecture. Update this file when the architecture
+changes. The plan is in `ROADMAP.md`; the vision is in
+`FOUNDING_DIRECTIVE.md`.
+
+> **State after the Phase 5 Operations checkpoint (2026-10-01).** Sections 2
+> to 12 below describe the repository as audited at commit `da0fad7`, before
+> Phase 5. Since then:
+>
+> - The Operations Center runs on the canonical stack end to end:
+>   UI → composition root → operations read models → analytics services →
+>   analytics → repository ports → synthetic demo adapter.
+> - The domain has billing records, a `synthetic` source kind and feeder
+>   service bands; analytics has billing totals, reliability attribution,
+>   hours of supply and band compliance, peak loading, ATC&C decomposition and
+>   the `calculated_with_estimates` status.
+> - A lint rule keeps the UI away from data files, the domain, analytics and
+>   repositories. The Executive page is the one exemption left; it still
+>   reads legacy data and still holds two hardcoded KPIs until Phase 5 step 5.
+> - The legacy operations components and `OperationsContext` are deleted.
+>   Legacy `src/data`, `src/types` and the mock adapter remain until Phase 6.
+> - CI runs typecheck, tests, lint and build on every push.
 
 ## 1. Product map
 

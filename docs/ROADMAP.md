@@ -4,7 +4,8 @@ Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
 Last updated: 2026-10-01. Status: **Phase 5 in progress, stopped at the
-dataset checkpoint. UI work waits for the Founder's realism review.**
+Operations checkpoint. The Executive page waits for the Founder's review of
+the Operations drill-down.**
 
 ## Completed
 
@@ -28,14 +29,21 @@ each traceable to source and method, with no KPI computed in a component.
 | 1. Composition root (`src/composition/runtime.ts`) | Done; the UI lint rule comes with step 4 |
 | 2. Synthetic demo dataset (`src/repositories/demo`) | Done; awaiting realism review |
 | 3. Services with status, provenance and synthetic marker | Done for losses / ATC&C, reliability, loading, collection |
-| **Checkpoint: Founder reviews the dataset** | **Here** |
-| 3b. Operations read models with coverage | Not started |
-| 4. Operations drill-down on services, selection in the URL | Not started |
+| Checkpoint: Founder reviews the dataset | Approved with changes |
+| 3a. Reliability attribution, estimated-input status, band compliance (ADR 0006) | Done |
+| 3b. Operations read models with coverage (`src/services/operations`) | Done |
+| 4. Operations drill-down on services, selection in the URL, UI lint rule | Done |
+| **Checkpoint: Founder reviews the Operations drill-down** | **Here** |
 | 5. Executive page: reported versus calculated | Not started |
-| README refresh | Not started |
+| README refresh | Done |
 
 **Decisions recorded.** ADR 0003 (synthetic source kind), ADR 0004 (GIS
-order), ADR 0005 (billing domain and loss inputs).
+order), ADR 0005 (billing domain and loss inputs), ADR 0006 (reliability
+attribution and the `calculated_with_estimates` status).
+
+**Operations routes.** `/dashboard/utility/operations`, then
+`/regions/[id]`, `/substations/[id]`, `/feeders/[id]`, `/transformers/[id]`
+and `/service-points/[id]`. Screenshots: `docs/screenshots/phase5`.
 
 **What the dataset contains.** 1 region, 1 substation, 1 power transformer,
 2 feeders (NERC Band A and Band C), 6 distribution transformers, 432
@@ -44,12 +52,13 @@ level, 30 days of hourly interval energy, telemetry, 87 outages, bills, vends
 and payments in NGN, and a synthetic monthly report to compare against.
 Assumptions: `src/repositories/demo/DATASET_ASSUMPTIONS.md`.
 
-**Open before step 4.**
+**Carried into Phase 6 by Founder decision.**
 
-- Region-level ATC&C: energy accounting does not support administrative
-  scopes (ADR 0005).
-- Alarms stay out of the slice; the fabricated alarm panel becomes a "not
-  available" state.
+- Region-level energy accounting (aggregation across sections). Until then a
+  region shows its only substation's figures, labelled as such.
+- Widening the dataset so feeder loading is realistic. Until then the UI
+  shows a caveat beside feeder loading.
+- Alarms. The Operations screens show an explicit "not available" state.
 
 **Risks.**
 
@@ -75,7 +84,8 @@ Assumptions: `src/repositories/demo/DATASET_ASSUMPTIONS.md`.
 
 **Goal.** Executive and Operations fully on services; legacy `src/data`,
 `src/types`, the mock adapter and the `mock` source kind removed; alarms and
-events real.
+events real; region-level energy accounting; a wider synthetic dataset with
+realistically loaded feeders.
 **Includes.** Alarm and maintenance ports; Events / Alarms, Reliability and
 Assets workspaces; navigation restructure; shared loading, error, empty and
 stale states; consistent design tokens; component tests.

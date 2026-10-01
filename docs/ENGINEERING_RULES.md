@@ -64,8 +64,10 @@ Adapters (memory, demo, mock; later database, API, telemetry)
   composition root (`src/composition`) selects the adapter.
 - Every service returns its result with `sourcing`; a result built on any
   synthetic record is marked synthetic and shown as such.
-- The UI imports services and view-model types only. It does not import
-  `src/data`, legacy types, adapters or analytics internals.
+- The UI receives view models. Routes call the composition root
+  (`src/composition`); components take view models as props and import only
+  view-model types from `src/services`. The UI never imports `src/data`,
+  the domain, analytics, repositories or a service function.
 - The boundaries are enforced in `eslint.config.mjs`. Extend the rules when a
   layer is added; do not weaken them to make code pass.
 - One canonical type per concept. No page-specific copies of an entity.

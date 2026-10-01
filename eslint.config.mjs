@@ -69,6 +69,27 @@ const importBoundaries = [
     { regex: "^(\\.\\./)+repositories/(memory|mock|demo)(/|$)", message: "Services receive repositories; they do not choose an adapter." },
     reaching("data|types|composition|components|app|context", "Services use the ports, not legacy data."),
   ], { ignores: ["src/services/**/*.test.ts"] }),
+  // The UI gets its data from the composition root, as view models. It never reaches the
+  // domain, analytics, repositories or legacy data, and it calls no service function.
+  ...[
+    { files: ["src/app/**"], extra: [] },
+    {
+      files: ["src/components/**"],
+      extra: [{ regex: "^@/composition(/|$)", message: "Components receive view models as props; only routes call the composition root." }],
+    },
+  ].map(({ files, extra }) =>
+    boundary(files, [
+      { regex: "^@/data/(?!platform(/|$))", message: "The UI does not read data files; it receives view models." },
+      { regex: "^@/(domain|analytics|repositories)(/|$)", message: "The UI imports only the composition root and view-model types." },
+      { regex: "^@/types/(utility|executive)$", message: "Legacy types are not used by the UI." },
+      { regex: "^@/services(/|$)", allowTypeImports: true, message: "The UI imports view-model types from services, never service functions." },
+      reaching("data|domain|analytics|repositories|services", "The UI imports only the composition root and view-model types."),
+      ...extra,
+    ], {
+      // The Executive page still reads legacy data; it is migrated in Phase 5 step 5.
+      ignores: ["src/app/dashboard/utility/executive/**", "src/components/utility/executive/**"],
+    }),
+  ),
   boundary(["src/data/**"], [
     { regex: "^@/(?!types(/|$))", message: "Mock data may import only legacy types." },
   ]),

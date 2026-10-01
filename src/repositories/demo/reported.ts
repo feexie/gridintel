@@ -27,7 +27,7 @@ const MONTHLY_REPORT = {
   title: "Monthly operations report, September 2026 (synthetic)",
   methodology: {
     name: "Utility internal reporting (synthetic)",
-    description: "Reliability figures exclude load shedding and loss of upstream supply.",
+    description: "The utility's own basis. Its reliability figures exclude load shedding and loss of upstream supply.",
   },
 };
 
