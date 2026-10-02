@@ -16,11 +16,22 @@ import type { DomainDataset } from "./dataset.ts";
 const EXPLICIT_ZONE = /(Z|[+-]\d{2}:\d{2})$/;
 const MS_PER_MINUTE = 60_000;
 
+// The same few timestamps recur across thousands of records; each is parsed once.
+const PARSED = new Map<string, number | null>();
+
 /** Epoch ms, or null when the timestamp is invalid or has no explicit zone. */
 function epochMs(timestamp: IsoTimestamp | undefined): number | null {
-  if (timestamp === undefined || !EXPLICIT_ZONE.test(timestamp)) return null;
-  const ms = Date.parse(timestamp);
-  return Number.isNaN(ms) ? null : ms;
+  if (timestamp === undefined) return null;
+  const known = PARSED.get(timestamp);
+  if (known !== undefined) return known;
+  let ms: number | null = null;
+  if (EXPLICIT_ZONE.test(timestamp)) {
+    const parsed = Date.parse(timestamp);
+    ms = Number.isNaN(parsed) ? null : parsed;
+  }
+  if (PARSED.size >= 100_000) PARSED.clear();
+  PARSED.set(timestamp, ms);
+  return ms;
 }
 
 function queryBounds(period: Period): { startMs: number; endMs: number } {

@@ -3,7 +3,8 @@ import type { LoadingParameters, Methodology } from "../core/methodology.ts";
 import type { CalculationContext } from "../core/result.ts";
 import type { ElectricalSemantics } from "./apparentPower.ts";
 import type { LoadingResult, LoadingTarget } from "./loading.ts";
-import { periodBounds, toEpochMs } from "../core/time.ts";
+import { LOADING_REFERENCE } from "../core/methodology.ts";
+import { MS_PER_MINUTE, periodBounds, toEpochMs } from "../core/time.ts";
 import { calculateLoading } from "./loading.ts";
 
 /* ==========================================================
@@ -42,20 +43,30 @@ export function peakLoading(params: {
   const bounds = periodBounds(window);
   if (bounds === null) return empty;
 
-  const points = params.telemetry.filter(
-    (point) => point.source.kind === target.kind && point.source.id === target.asset.id,
-  );
+  // The asset's readings in time order. A reading without a usable time can never be used.
+  const timed = params.telemetry
+    .filter((point) => point.source.kind === target.kind && point.source.id === target.asset.id)
+    .map((point) => ({ point, ms: toEpochMs(point.observedAt) }))
+    .filter((entry): entry is { point: TelemetryPoint; ms: number } => entry.ms !== null)
+    .sort((a, b) => a.ms - b.ms);
   const instants = new Map<number, IsoTimestamp>();
-  for (const point of points) {
-    const ms = toEpochMs(point.observedAt);
-    if (ms !== null && ms >= bounds.startMs && ms < bounds.endMs) instants.set(ms, point.observedAt);
+  for (const { point, ms } of timed) {
+    if (ms >= bounds.startMs && ms < bounds.endMs) instants.set(ms, point.observedAt);
   }
+
+  // Loading at an instant uses only readings no older than the methodology allows, so each
+  // instant is given just that window of readings rather than the whole history.
+  const maxAgeMs = (params.methodology ?? LOADING_REFERENCE).parameters.maxReadingAgeMinutes * MS_PER_MINUTE;
+  let from = 0;
+  let to = 0;
 
   const result = { ...empty, instantsEvaluated: instants.size };
   for (const ms of [...instants.keys()].sort((a, b) => a - b)) {
+    while (from < timed.length && timed[from].ms < ms - maxAgeMs) from++;
+    while (to < timed.length && timed[to].ms <= ms) to++;
     const loading = calculateLoading({
       target,
-      telemetry: points,
+      telemetry: timed.slice(from, to).map((entry) => entry.point),
       asOf: instants.get(ms) as IsoTimestamp,
       semantics: params.semantics,
       methodology: params.methodology,
