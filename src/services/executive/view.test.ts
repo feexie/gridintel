@@ -14,7 +14,7 @@ describe("executive read model", () => {
     const substation = await substationView(runtime, "SS-RIV");
     assert.equal(view.losses?.atcc.value, substation?.losses?.atcc.value);
     assert.equal(view.losses?.collectionEfficiency.value, substation?.losses?.collectionEfficiency.value);
-    assert.match(view.losses?.scopeNote ?? "", /only substation in the portfolio/);
+    assert.match(view.losses?.scopeNote ?? "", /Summed over 1 electrical section\(s\): SS-RIV\. An organization is not an electrical boundary/);
     assert.equal(view.losses?.collectionBasis, "cash");
     assert.equal(view.losses?.sourcing.synthetic, true);
     assert.equal(view.reliability.sourcing.synthetic, true);
@@ -32,7 +32,7 @@ describe("executive read model", () => {
     assert.equal(saidi?.sameBasis, true);
     assert.ok((saidi?.calculated.value as number) < 10);
     assert.ok((view.reliability.saidi.value as number) > 200);
-    assert.match(view.reliability.scopeNote ?? "", /only substation in the portfolio/);
+    assert.equal(view.reliability.scopeNote ?? null, null);
   });
 
   it("summarises band compliance per feeder and transformer loading, highest peak first", () => {
@@ -48,35 +48,88 @@ describe("executive read model", () => {
     assert.deepEqual(peaks, [...peaks].sort((a, b) => b - a));
   });
 
-  it("lists where to look from fixed rules, in a fixed order, each with a figure that has a value", () => {
-    assert.deepEqual(
-      view.whereToLook.map((item) => [item.rank, item.rule, item.subject.id]),
-      [
-        [1, "Transformer loaded above its rating", "DT-OLD-2"],
-        [2, "Feeder with the highest ATC&C", "FD-OLD"],
-        [3, "Feeder below its service-band minimum on at least one day", "FD-MKT"],
-        [4, "Feeder below its service-band minimum on at least one day", "FD-OLD"],
-        [5, "Feeder with the lowest collection efficiency", "FD-OLD"],
-        [6, "Transformer with the highest commercial loss", "DT-OLD-2"],
-        [7, "Feeder with the highest network-attributable SAIDI", "FD-OLD"],
-      ],
-    );
-    for (const item of view.whereToLook) {
-      assert.ok(item.metric.value !== null, item.title);
-      assert.ok(item.metric.status === "ok" || item.metric.status === "calculated_with_estimates", item.title);
+  it("puts the overloaded transformer in asset risk, apart from the money ranking", () => {
+    assert.deepEqual(view.assetRisk.map((entry) => [entry.rank, entry.group, entry.subject.id, entry.money]), [[1, "asset_risk", "DT-OLD-2", null]]);
+    // It also has the highest commercial loss; that is listed under it, not as a second entry.
+    assert.deepEqual(view.assetRisk[0].findings.map((finding) => finding.rule), [
+      "Transformer loaded above its rating",
+      "Transformer with the highest commercial loss",
+    ]);
+    assert.equal(view.assetRisk[0].findings[0].detail?.label, "hours over rating");
+    assert.match(view.assetRisk[0].findings[1].context?.note ?? "", /part of Old Town 11 kV feeder's revenue not realised; not ranked separately/);
+  });
+
+  it("ranks feeders by revenue not realised, each once, with every rule it triggered", () => {
+    assert.deepEqual(view.whereToLook.map((entry) => [entry.rank, entry.group, entry.subject.kind, entry.subject.id]), [
+      [1, "money", "feeder", "FD-MKT"],
+      [2, "money", "feeder", "FD-OLD"],
+    ]);
+    const [market, oldTown] = view.whereToLook;
+    assert.ok((market.money?.value as number) > (oldTown.money?.value as number));
+    assert.deepEqual(market.findings.map((finding) => finding.rule), [
+      "Feeder with the largest revenue not realised",
+      "Feeder below its service-band minimum on at least one day",
+    ]);
+    assert.deepEqual(oldTown.findings.map((finding) => finding.rule), [
+      "Feeder with the highest ATC&C",
+      "Feeder below its service-band minimum on at least one day",
+      "Feeder with the lowest collection efficiency",
+      "Feeder with the highest network-attributable SAIDI",
+    ]);
+    // No subject is listed twice across the two lists.
+    const all = [...view.assetRisk, ...view.whereToLook].map((entry) => entry.subject.id);
+    assert.equal(new Set(all).size, all.length);
+    assert.match(view.whereToLookMethod, /Asset risk is its own group, shown first and never ranked by money/);
+    for (const entry of [...view.assetRisk, ...view.whereToLook]) {
+      for (const finding of entry.findings) assert.ok(finding.metric.value !== null, finding.title);
     }
-    assert.deepEqual(view.whereToLook[0].detail?.label, "hours over rating");
-    assert.ok((view.whereToLook[2].detail?.value as number) > (view.whereToLook[3].detail?.value as number));
+  });
+
+  it("shows reported figures at the scope they are stated for, labelled with it", () => {
+    // Nothing is reported for the organization; the report states its figures for the substation.
+    const rows = [...(view.losses?.reported ?? []), ...view.reliability.reported];
+    assert.deepEqual(rows.map((row) => row.label), ["ATC&C", "Collection efficiency", "SAIDI", "SAIFI"]);
+    for (const row of rows) {
+      assert.equal(row.statedFor, "Riverside 33/11 kV injection substation", row.label);
+      assert.equal(row.sameBasis, true, row.label);
+      assert.equal(row.comparable, true, row.label);
+      assert.ok(row.variance !== null, row.label);
+    }
+  });
+
+  it("shows the revenue gap as two separate parts, labelled as a monthly estimate", () => {
+    const gap = view.revenueGap;
+    assert.equal(gap.currency, "NGN");
+    assert.equal(gap.commercial.origin, "derived");
+    assert.equal(gap.commercial.status, "calculated_with_estimates");
+    assert.equal(gap.collection.origin, "calculated");
+    assert.equal(gap.collection.status, "ok");
+    assert.equal(gap.notRealised.origin, "derived");
+    assert.equal(gap.notRealised.status, "calculated_with_estimates");
+    assert.ok(Math.abs((gap.notRealised.value as number) - ((gap.commercial.value as number) + (gap.collection.value as number))) < 1e-6);
+    assert.match(gap.definition, /estimate of revenue not realised/);
+    assert.match(gap.definition, /not an amount owed/);
+    assert.doesNotMatch(`${gap.definition} ${gap.periodNote} ${gap.notRealised.note}`, /theft/i);
+    assert.match(gap.periodNote, /Not annualised/);
+    assert.equal(gap.negativeNote, null);
+    // The feeders' parts add up to the portfolio's.
+    const feeders = view.gapByFeeder.reduce((total, row) => total + (row.collection.value as number), 0);
+    assert.ok(Math.abs(feeders - (gap.collection.value as number)) < 1e-6);
+    // Each transformer is valued at its own feeder's rate; none at a blended one.
+    const rates = new Set(gap.parts.filter((part) => part.kind === "section").map((part) => Math.round(part.ratePerKwh as number)));
+    assert.deepEqual([...rates].sort((a, b) => a - b), [50, 210]);
   });
 
   it("is the same list every time", async () => {
     const again = await executiveView(runtime);
     assert.deepEqual(again.whereToLook, view.whereToLook);
+    assert.deepEqual(again.assetRisk, view.assetRisk);
   });
 
   it("ranks nothing it has no value for", async () => {
     const sparse = await executiveView({ repos: sparseRepositories(), now: SPARSE_AS_OF, period: SPARSE_PERIOD, caveats: {} });
     assert.deepEqual(sparse.whereToLook, []);
+    assert.deepEqual(sparse.assetRisk, []);
     assert.equal(sparse.reliability.saidi.value, null);
     assert.equal(sparse.reliability.saidi.status, "insufficient_data");
   });

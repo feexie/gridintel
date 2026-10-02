@@ -1,9 +1,11 @@
 import type { ScopeRef } from "@/domain";
 import type { OperationsRuntime } from "../operations/levels.ts";
-import type { LoadingView, LossesView, MetricView, ReliabilityView } from "../operations/views.ts";
-import type { BandComplianceRow, ExecutiveView, LookItem, TransformerLoadingRow } from "./views.ts";
+import type { LoadingView, LossesView, MetricView, ReliabilityView, ReportedComparisonView, RevenueGapView } from "../operations/views.ts";
+import type { FeederSignals, TransformerSignals } from "./attention.ts";
+import type { BandComplianceRow, ExecutiveView, FeederGapRow, TransformerLoadingRow } from "./views.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
-import { ALARMS, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, timeZoneOf } from "../operations/levels.ts";
+import { ALARMS, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
+import { ATTENTION_METHOD, attention } from "./attention.ts";
 
 /* ==========================================================
    SERVICES — EXECUTIVE READ MODEL
@@ -11,26 +13,23 @@ import { ALARMS, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, time
    "What is happening across the portfolio, and where should I look
    first?" Everything here comes from the same services as the
    Operations drill-down, so a figure on this screen is the figure
-   the drill-down shows.
+   the drill-down shows. What to look at first is decided by the
+   fixed rules in attention.ts.
 
-   WHERE TO LOOK is a ranked list of facts produced by fixed rules,
-   applied in a fixed order. There is no scoring model, no weighting
-   and no generated text: each item names the rule that selected it
-   and carries the figure with its own status, origin and method.
-   Figures without a value are never ranked.
+   REPORTED FIGURES. A reported figure is compared only at the scope
+   it is stated for. When nothing is reported for the portfolio
+   itself, the comparisons shown are those of the electrical sections
+   the portfolio is made of, each labelled with the section it is
+   stated for. A substation's reported figure is never set beside a
+   portfolio calculation.
 ========================================================== */
-
-const WHERE_TO_LOOK_METHOD =
-  "Fixed rules in a fixed order: (1) every transformer loaded above its rating, highest peak first; " +
-  "(2) the feeder with the highest ATC&C; (3) every feeder that fell below its service-band minimum, most days first; " +
-  "(4) the feeder with the lowest collection efficiency; (5) the transformer with the highest commercial loss; " +
-  "(6) the feeder with the highest network-attributable SAIDI. Figures with no value are not ranked. No weighting, no AI.";
 
 interface FeederFacts {
   id: string;
   name: string;
   losses: LossesView;
   reliability: ReliabilityView;
+  gap: RevenueGapView;
 }
 
 interface TransformerFacts {
@@ -39,18 +38,7 @@ interface TransformerFacts {
   feederName: string;
   losses: LossesView;
   loading: LoadingView | null;
-}
-
-/** The entry with the highest (or lowest) value; entries without a value are left out. Ties go to the lower id. */
-function extreme<T extends { id: string }>(entries: readonly T[], pick: (entry: T) => MetricView, direction: "highest" | "lowest"): T | null {
-  let best: T | null = null;
-  for (const entry of [...entries].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
-    const value = pick(entry).value;
-    if (value === null) continue;
-    const bestValue = best === null ? null : (pick(best).value as number);
-    if (bestValue === null || (direction === "highest" ? value > bestValue : value < bestValue)) best = entry;
-  }
-  return best;
+  gap: RevenueGapView;
 }
 
 function networkSaidi(reliability: ReliabilityView): MetricView {
@@ -63,85 +51,32 @@ function networkSaidi(reliability: ReliabilityView): MetricView {
   };
 }
 
-function whereToLook(feeders: readonly FeederFacts[], transformers: readonly TransformerFacts[]): LookItem[] {
-  const items: Omit<LookItem, "rank">[] = [];
-
-  const overloaded = transformers
-    .filter((dt) => dt.loading !== null && (dt.loading.hoursOverRating ?? 0) > 0 && dt.loading.peak.value !== null)
-    .sort((a, b) => (b.loading?.peak.value as number) - (a.loading?.peak.value as number) || (a.id < b.id ? -1 : 1));
-  for (const dt of overloaded) {
-    items.push({
-      rule: "Transformer loaded above its rating",
-      title: "Transformer over rating",
-      subject: { kind: "distribution_transformer", id: dt.id, name: dt.name },
-      metric: dt.loading!.peak,
-      detail: { label: "hours over rating", value: dt.loading!.hoursOverRating as number, unit: "hours" },
-    });
-  }
-
-  const worstAtcc = extreme(feeders, (feeder) => feeder.losses.atcc, "highest");
-  if (worstAtcc) {
-    items.push({
-      rule: "Feeder with the highest ATC&C",
-      title: "Highest ATC&C among feeders",
-      subject: { kind: "feeder", id: worstAtcc.id, name: worstAtcc.name },
-      metric: worstAtcc.losses.atcc,
-      detail: null,
-    });
-  }
-
-  const failing = feeders
-    .filter((feeder) => (feeder.reliability.supply.daysNonCompliant ?? 0) > 0)
-    .sort(
-      (a, b) =>
-        (b.reliability.supply.daysNonCompliant as number) - (a.reliability.supply.daysNonCompliant as number) || (a.id < b.id ? -1 : 1),
-    );
-  for (const feeder of failing) {
-    items.push({
-      rule: "Feeder below its service-band minimum on at least one day",
-      title: `Below Band ${feeder.reliability.supply.band} minimum of ${feeder.reliability.supply.minimumHours} h`,
-      subject: { kind: "feeder", id: feeder.id, name: feeder.name },
-      metric: feeder.reliability.supply.averageHours,
-      detail: { label: "days below minimum", value: feeder.reliability.supply.daysNonCompliant as number, unit: "days" },
-    });
-  }
-
-  const worstCollection = extreme(feeders, (feeder) => feeder.losses.collectionEfficiency, "lowest");
-  if (worstCollection) {
-    items.push({
-      rule: "Feeder with the lowest collection efficiency",
-      title: "Lowest collection efficiency among feeders (cash basis)",
-      subject: { kind: "feeder", id: worstCollection.id, name: worstCollection.name },
-      metric: worstCollection.losses.collectionEfficiency,
-      detail: null,
-    });
-  }
-
-  const worstCommercial = extreme(transformers, (dt) => dt.losses.parts.commercial, "highest");
-  if (worstCommercial) {
-    items.push({
-      rule: "Transformer with the highest commercial loss",
-      title: "Highest commercial loss among transformers",
-      subject: { kind: "distribution_transformer", id: worstCommercial.id, name: worstCommercial.name },
-      metric: worstCommercial.losses.parts.commercial,
-      detail: null,
-    });
-  }
-
-  const network = feeders.map((feeder) => ({ ...feeder, networkSaidi: networkSaidi(feeder.reliability) }));
-  const worstNetwork = extreme(network, (feeder) => feeder.networkSaidi, "highest");
-  if (worstNetwork) {
-    items.push({
-      rule: "Feeder with the highest network-attributable SAIDI",
-      title: "Highest network-attributable SAIDI among feeders",
-      subject: { kind: "feeder", id: worstNetwork.id, name: worstNetwork.name },
-      metric: worstNetwork.networkSaidi,
-      detail: null,
-    });
-  }
-
-  return items.map((item, i) => ({ ...item, rank: i + 1 }));
+function feederSignals(feeder: FeederFacts): FeederSignals {
+  const supply = feeder.reliability.supply;
+  return {
+    id: feeder.id,
+    name: feeder.name,
+    revenueNotRealised: feeder.gap.notRealised,
+    atcc: feeder.losses.atcc,
+    collectionEfficiency: feeder.losses.collectionEfficiency,
+    networkSaidi: networkSaidi(feeder.reliability),
+    supply: { band: supply.band, minimumHours: supply.minimumHours, averageHours: supply.averageHours, daysBelowMinimum: supply.daysNonCompliant },
+  };
 }
+
+function transformerSignals(dt: TransformerFacts): TransformerSignals {
+  return {
+    id: dt.id,
+    name: dt.name,
+    feederName: dt.feederName,
+    peakLoading: dt.loading?.peak ?? null,
+    hoursOverRating: dt.loading?.hoursOverRating ?? null,
+    commercialLoss: dt.losses.parts.commercial,
+    commercialGap: dt.gap.commercial,
+  };
+}
+
+const stated = (rows: ReportedComparisonView[], name: string): ReportedComparisonView[] => rows.map((row) => ({ ...row, statedFor: name }));
 
 export async function executiveView(runtime: OperationsRuntime): Promise<ExecutiveView> {
   const loaded = await loadRegistry(runtime);
@@ -157,37 +92,49 @@ export async function executiveView(runtime: OperationsRuntime): Promise<Executi
       feeders.push({
         id: feeder.id,
         name: feeder.name,
-        losses: await lossesBlock(runtime, scope, null),
+        losses: await lossesBlock(runtime, scope),
         reliability: await reliabilityBlock(runtime, scope, timeZone),
+        gap: await revenueGapBlock(runtime, loaded, scope),
       });
       for (const dt of transformersOnFeeder(index, feeder.id)) {
+        const dtScope: ScopeRef = { kind: "distribution_transformer", id: dt.id };
         transformers.push({
           id: dt.id,
           name: dt.name,
           feederName: feeder.name,
-          losses: await lossesBlock(runtime, { kind: "distribution_transformer", id: dt.id }, null),
+          losses: await lossesBlock(runtime, dtScope),
           loading: await loadingBlock(runtime, { kind: "distribution_transformer", id: dt.id }),
+          gap: await revenueGapBlock(runtime, loaded, dtScope),
         });
       }
     }
   }
 
-  const only = snapshot.substations.length === 1 ? snapshot.substations[0] : null;
-  const losses = only
-    ? await lossesBlock(
-        runtime,
-        { kind: "substation", id: only.id },
-        `These are the figures of ${only.name}, the only substation in the portfolio. Energy accounting is done per electrical section; aggregation across substations is not implemented yet.`,
-      )
-    : null;
+  // The portfolio is the organization; a region stands in when the registry names none.
+  const portfolio: ScopeRef = organization
+    ? { kind: "organization", id: organization.id }
+    : { kind: "region", id: snapshot.regions[0]?.id ?? "" };
+  let losses = await lossesBlock(runtime, portfolio);
+  let reliability = await reliabilityBlock(runtime, portfolio, timeZone);
 
-  // With one substation its figures are the portfolio's, and the utility's reported figures are
-  // stated for it, so the two can be set side by side. Otherwise the organization is used.
-  const reliabilityScope: ScopeRef = only
-    ? { kind: "substation", id: only.id }
-    : organization
-      ? { kind: "organization", id: organization.id }
-      : { kind: "region", id: snapshot.regions[0]?.id ?? "" };
+  // Nothing reported for the portfolio itself: show what is reported for its sections, labelled.
+  if (losses.reported.length === 0 || reliability.reported.length === 0) {
+    const lossRows: ReportedComparisonView[] = [];
+    const reliabilityRows: ReportedComparisonView[] = [];
+    for (const section of losses.sections) {
+      const scope: ScopeRef = { kind: section.kind as "substation" | "feeder" | "distribution_transformer", id: section.id };
+      const name =
+        (section.kind === "substation"
+          ? index.substationById.get(section.id)?.name
+          : section.kind === "feeder"
+            ? index.feederById.get(section.id)?.name
+            : index.transformerById.get(section.id)?.name) ?? section.id;
+      lossRows.push(...stated((await lossesBlock(runtime, scope)).reported, name));
+      reliabilityRows.push(...stated((await reliabilityBlock(runtime, scope, timeZone)).reported, name));
+    }
+    if (losses.reported.length === 0) losses = { ...losses, reported: lossRows };
+    if (reliability.reported.length === 0) reliability = { ...reliability, reported: reliabilityRows };
+  }
 
   const bandCompliance: BandComplianceRow[] = feeders.map((feeder) => ({
     feederId: feeder.id,
@@ -216,6 +163,15 @@ export async function executiveView(runtime: OperationsRuntime): Promise<Executi
     }))
     .sort((a, b) => (b.peak.value ?? -1) - (a.peak.value ?? -1) || (a.transformerId < b.transformerId ? -1 : 1));
 
+  const gapByFeeder: FeederGapRow[] = feeders.map((feeder) => ({
+    feederId: feeder.id,
+    feederName: feeder.name,
+    commercial: feeder.gap.commercial,
+    collection: feeder.gap.collection,
+    notRealised: feeder.gap.notRealised,
+  }));
+
+  const look = attention(feeders.map(feederSignals), transformers.map(transformerSignals));
   const note = (kind: keyof typeof coverage) => (coverage[kind] === "complete" ? "" : ` (registry ${coverage[kind].replace("_", " ")})`);
   return {
     organization: organization?.name ?? null,
@@ -227,16 +183,14 @@ export async function executiveView(runtime: OperationsRuntime): Promise<Executi
       { label: "Feeders", value: `${feeders.length}${note("feeders")}` },
       { label: "Distribution transformers", value: `${transformers.length}${note("distributionTransformers")}` },
     ],
-    whereToLook: whereToLook(feeders, transformers),
-    whereToLookMethod: WHERE_TO_LOOK_METHOD,
+    assetRisk: look.assetRisk,
+    whereToLook: look.ranked,
+    whereToLookMethod: ATTENTION_METHOD,
     losses,
-    lossesNote: losses
-      ? null
-      : "Energy accounting is done per electrical section. The portfolio has more than one substation and aggregation across substations is not implemented yet; open a substation in Operations for its figures.",
-    reliability: {
-      ...(await reliabilityBlock(runtime, reliabilityScope, timeZone)),
-      scopeNote: only ? `These are the figures of ${only.name}, the only substation in the portfolio.` : null,
-    },
+    lossesNote: null,
+    revenueGap: await revenueGapBlock(runtime, loaded, portfolio),
+    gapByFeeder,
+    reliability,
     bandCompliance,
     transformerLoading,
     alarms: ALARMS,

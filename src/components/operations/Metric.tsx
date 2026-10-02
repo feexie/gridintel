@@ -139,7 +139,7 @@ export function MetricTile({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="relative border border-slate-800 bg-slate-900/40 px-3 py-2">
+    <div data-metric={metric.label} className="relative border border-slate-800 bg-slate-900/40 px-3 py-2">
       <div className="flex items-start justify-between gap-2">
         <p className="text-[11px] uppercase tracking-wide text-slate-400">{metric.label}</p>
         <OriginTag origin={metric.origin} />

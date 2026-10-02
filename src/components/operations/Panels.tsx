@@ -91,8 +91,11 @@ export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.label} className="border-b border-slate-800/60 align-top">
-              <td className="py-1 pr-2 text-slate-200">{row.label}</td>
+            <tr key={`${row.statedFor ?? ""}:${row.label}`} className="border-b border-slate-800/60 align-top">
+              <td className="py-1 pr-2 text-slate-200">
+                {row.label}
+                {row.statedFor ? <span className="block text-[10px] leading-snug text-amber-100/90">Stated for {row.statedFor}; compared at that scope.</span> : null}
+              </td>
               <td className="py-1 pr-2 text-right">
                 <MetricCell metric={row.reported} />
               </td>

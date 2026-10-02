@@ -1,6 +1,7 @@
 import type { IsoTimestamp, KpiBasis, Period, ScopeRef } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot, RegistryCoverage } from "../../repositories/ports/index.ts";
-import type { CalculatedKpi, CalculationContext, TopologyIndex } from "../../analytics/index.ts";
+import type { CalculatedKpi, CalculationContext, RevenueGap, TopologyIndex } from "../../analytics/index.ts";
+import type { ServiceCache } from "../analytics/cache.ts";
 import type {
   ChildRow,
   ChildTable,
@@ -14,12 +15,14 @@ import type {
   OverviewView,
   ReliabilityView,
   ReportedComparisonView,
+  RevenueGapView,
   ServicePointView,
 } from "./views.ts";
 import {
   ATCC_REFERENCE,
   ENERGY_REFERENCE,
   LOADING_REFERENCE,
+  REVENUE_GAP_REFERENCE,
   SUPPLY_HOURS_REFERENCE,
   billingByAccount,
   compareOnBasis,
@@ -36,6 +39,8 @@ import {
   transformersOnFeeder,
 } from "../../analytics/index.ts";
 import { registryCurrency } from "../analytics/billing.ts";
+import { NO_CACHE } from "../analytics/cache.ts";
+import { scopeRevenueGap } from "../analytics/revenueGap.ts";
 import { assetLoading } from "../analytics/loading.ts";
 import { sectionLosses } from "../analytics/losses.ts";
 import { scopeReliability } from "../analytics/reliability.ts";
@@ -59,7 +64,14 @@ export interface OperationsRuntime {
   now: IsoTimestamp;
   period: Period;
   /** Caveats about the dataset that must travel with particular figures. */
-  caveats: { feederLoading?: string };
+  caveats: { feederLoading?: string; tariffs?: string };
+  /** Reuses results for as long as the records do not change; see services/analytics/cache.ts. */
+  cache?: ServiceCache;
+}
+
+/** One block of a screen, computed once per scope while the cache is valid. */
+function block<T>(runtime: OperationsRuntime, name: string, scope: { kind: string; id: string }, compute: () => Promise<T>): Promise<T> {
+  return (runtime.cache ?? NO_CACHE).get(`view:${name}|${scope.kind}|${scope.id}|${runtime.period.start}|${runtime.period.end}|${runtime.now}`, compute);
 }
 
 export interface Loaded {
@@ -170,8 +182,18 @@ async function reportedComparisons(
   );
 }
 
-export async function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef, scopeNote: string | null): Promise<LossesView> {
-  const { result, sourcing } = await sectionLosses({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime) });
+export function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef): Promise<LossesView> {
+  return block(runtime, "losses", scope, () => buildLosses(runtime, scope));
+}
+
+async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise<LossesView> {
+  const { result, sourcing } = await sectionLosses({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime), cache: runtime.cache });
+  const summed = result.sections.length !== 1 || result.sections[0].kind !== scope.kind || result.sections[0].id !== scope.id;
+  const scopeNote = !summed
+    ? null
+    : result.sections.length === 0
+      ? result.technicalLossNote
+      : `Summed over ${result.sections.length} electrical section(s): ${result.sections.map((section) => section.id).join(", ")}. ${scope.kind === "organization" ? "An organization" : "A region"} is not an electrical boundary, so its account is the sum of the sections wholly inside it; each connection is counted once.`;
   const { account, atcc, split, decomposition, billing } = result;
   const energy = methodologyRef(ENERGY_REFERENCE);
   const unmetered = account.crossChecks.missingInputs.filter((name) => name.startsWith("service_point meter for")).length;
@@ -207,6 +229,7 @@ export async function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef, s
 
   return {
     sourcing: sourcingView(sourcing),
+    sections: result.sections.map((section) => ({ kind: section.kind as "substation" | "feeder" | "distribution_transformer", id: section.id })),
     scopeNote,
     status: account.status,
     chain: [
@@ -273,8 +296,12 @@ const ATTRIBUTION_LABELS = [
   { key: "other", label: "Other", description: "Customer, third party, or not known." },
 ] as const;
 
-export async function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, timeZone: string | undefined): Promise<ReliabilityView> {
-  const { result, sourcing } = await scopeReliability({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime) });
+export function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, timeZone: string | undefined): Promise<ReliabilityView> {
+  return block(runtime, `reliability:${timeZone ?? "UTC"}`, scope, () => buildReliability(runtime, scope, timeZone));
+}
+
+async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, timeZone: string | undefined): Promise<ReliabilityView> {
+  const { result, sourcing } = await scopeReliability({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime), cache: runtime.cache });
   const { reliability, supply } = result;
   const supplyMethod = methodView(methodologyRef(SUPPLY_HOURS_REFERENCE));
   const supplyStatus = supply.status;
@@ -346,7 +373,14 @@ export async function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeR
   };
 }
 
-export async function loadingBlock(
+export function loadingBlock(
+  runtime: OperationsRuntime,
+  asset: { kind: "distribution_transformer" | "feeder"; id: string },
+): Promise<LoadingView | null> {
+  return block(runtime, "loading", asset, () => buildLoading(runtime, asset));
+}
+
+async function buildLoading(
   runtime: OperationsRuntime,
   asset: { kind: "distribution_transformer" | "feeder"; id: string },
 ): Promise<LoadingView | null> {
@@ -356,6 +390,7 @@ export async function loadingBlock(
     asOf: runtime.now,
     window: runtime.period,
     context: context(runtime),
+    cache: runtime.cache,
   });
   if (result.loading === null) return null;
   const method = methodView(methodologyRef(LOADING_REFERENCE));
@@ -401,6 +436,90 @@ export async function loadingBlock(
     overloaded: peak?.peak === null || peak === null ? null : peak.instantsOverloaded > 0,
     caveat,
   };
+}
+
+/* ---------------- Revenue gap ---------------- */
+
+const GAP_DEFINITION =
+  "An estimate of revenue not realised in the period. The commercial part values unbilled energy at the average rate actually " +
+  "billed to low-voltage, non-maximum-demand customers where the loss occurs; unbilled energy is a residual that depends on a " +
+  "technical-loss study. It is not an amount owed by anyone, and it does not say why the energy went unbilled.";
+
+function gapView(runtime: OperationsRuntime, loaded: Loaded, gap: RevenueGap, sourcing: Parameters<typeof sourcingView>[0]): RevenueGapView {
+  const method = methodView(methodologyRef(REVENUE_GAP_REFERENCE));
+  const name = (kind: string, id: string): string =>
+    (kind === "distribution_transformer"
+      ? loaded.index.transformerById.get(id)?.name
+      : kind === "feeder"
+        ? loaded.index.feederById.get(id)?.name
+        : kind === "substation"
+          ? loaded.index.substationById.get(id)?.name
+          : loaded.index.regionById.get(id)?.name) ?? id;
+  const base = { unit: "currency" as const, currency: gap.currency, method, inputs: [], warnings: [] as string[] };
+  const negative = gap.negativeParts.length > 0;
+  return {
+    sourcing: sourcingView(sourcing),
+    status: gap.status,
+    currency: gap.currency,
+    commercial: {
+      ...base,
+      label: "Commercial gap",
+      value: gap.commercial.amount,
+      status: gap.commercial.status,
+      origin: "derived",
+      derivation:
+        "Unbilled energy valued at the low-voltage, non-MD average billed rate of the transformer where it occurs, summed upward; each level's own residual at that level's low-voltage average. Medium-voltage and maximum-demand accounts are in no rate.",
+      estimatedInputs: gap.estimatedInputs.map((input) => ({ name: input.name, share: input.share })),
+      missingInputs: gap.missingInputs.filter((input) => !input.startsWith("revenue")),
+      warnings: gap.warnings.filter((warning) => warning.code !== "COLLECTION_EXCEEDS_BILLED").map((warning) => warning.message),
+      note: "Derived from unbilled energy, which is a residual; inherits the technical-loss estimate.",
+    },
+    collection: {
+      ...base,
+      label: "Collection gap",
+      value: gap.collection.amount,
+      status: gap.collection.status,
+      origin: "calculated",
+      derivation: `Revenue billed less revenue collected in the period${gap.collection.basis ? `, ${gap.collection.basis} basis` : ""}. Negative in a period of arrears recovery.`,
+      estimatedInputs: [],
+      missingInputs: gap.missingInputs.filter((input) => input.startsWith("revenue")),
+      note: gap.collection.basis === "cash" ? "Cash basis." : null,
+    },
+    notRealised: {
+      ...base,
+      label: "Revenue not realised",
+      value: gap.notRealised,
+      status: gap.status,
+      origin: "derived",
+      derivation: "Commercial gap plus collection gap, counting only the parts that are positive. A negative part is never set against the other.",
+      estimatedInputs: gap.estimatedInputs.map((input) => ({ name: input.name, share: input.share })),
+      missingInputs: gap.missingInputs,
+      note: "Estimate. Monthly figure for the reporting period; not annualised.",
+    },
+    definition: GAP_DEFINITION,
+    periodNote: "For the reporting period only. Not annualised.",
+    negativeNote: negative
+      ? `The ${gap.negativeParts.join(" and ")} gap is negative. It is shown as it is and is not set against the other part.`
+      : null,
+    caveat: runtime.caveats.tariffs ?? null,
+    // A residual within rounding is nothing; it is left out of the breakdown shown.
+    parts: gap.commercial.parts
+      .filter((part) => part.kind === "section" || part.amount !== 0)
+      .map((part) => ({
+      scope: { kind: part.scope.kind as "substation" | "feeder" | "distribution_transformer" | "region", id: part.scope.id, name: name(part.scope.kind, part.scope.id) },
+      kind: part.kind,
+      energyKwh: part.energyKwh,
+        ratePerKwh: part.ratePerKwh,
+        amount: part.amount,
+      })),
+  };
+}
+
+export function revenueGapBlock(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<RevenueGapView> {
+  return block(runtime, "revenue-gap", scope, async () => {
+    const { result, sourcing } = await scopeRevenueGap({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime), cache: runtime.cache });
+    return gapView(runtime, loaded, result, sourcing);
+  });
 }
 
 /* ---------------- Headers and crumbs ---------------- */
@@ -470,7 +589,7 @@ function activeAccountsUnder(loaded: Loaded, scope: ScopeRef): number | null {
 }
 
 export async function loadRegistry(runtime: OperationsRuntime): Promise<Loaded> {
-  const { index, snapshot, coverage } = await loadTopology(runtime.repos.registry, runtime.now);
+  const { index, snapshot, coverage } = await loadTopology(runtime.repos.registry, runtime.now, runtime.cache);
   return { index, snapshot, coverage };
 }
 
@@ -528,7 +647,7 @@ async function sectionRow(
   facts: string[],
 ): Promise<ChildRow> {
   const scope: ScopeRef = { kind, id };
-  const losses = await lossesBlock(runtime, scope, null);
+  const losses = await lossesBlock(runtime, scope);
   const reliability = await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot));
   const loading = kind === "substation" ? null : await loadingBlock(runtime, { kind, id });
   return {
@@ -565,14 +684,7 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
   const substations = loaded.snapshot.substations.filter((ss) => ss.adminRegionId === regionId);
   const organization = loaded.snapshot.organizations.find((org) => org.id === region.organizationId);
 
-  const only = substations.length === 1 ? substations[0] : null;
-  const losses = only
-    ? await lossesBlock(
-        runtime,
-        { kind: "substation", id: only.id },
-        `These are the figures of ${only.name}, the only substation in this region. Energy accounting is done per electrical section; aggregation across a region is not implemented yet.`,
-      )
-    : null;
+  const losses = await lossesBlock(runtime, scope);
 
   const rows: ChildRow[] = [];
   for (const ss of substations) {
@@ -591,9 +703,7 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
       { label: "Registry coverage", value: loaded.coverage.substations },
     ]),
     losses,
-    lossesNote: losses
-      ? null
-      : "Energy accounting is done per electrical section. This region has more than one substation and aggregation across a region is not implemented yet; open a substation for its figures.",
+    lossesNote: null,
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: null,
     children: [{ title: "Substations", coverage: loaded.coverage.substations, columns: SECTION_COLUMNS, rows }],
@@ -641,7 +751,7 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
       ],
       substation.location ?? null,
     ),
-    losses: await lossesBlock(runtime, scope, null),
+    losses: await lossesBlock(runtime, scope),
     lossesNote: null,
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: null,
@@ -693,7 +803,7 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
       { label: "Transformers", value: String(transformers.length) },
       { label: "Active accounts", value: count(activeAccountsUnder(loaded, scope)) },
     ]),
-    losses: await lossesBlock(runtime, scope, null),
+    losses: await lossesBlock(runtime, scope),
     lossesNote: null,
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: await loadingBlock(runtime, { kind: "feeder", id: feederId }),
@@ -818,7 +928,7 @@ export async function transformerView(runtime: OperationsRuntime, transformerId:
       ],
       dt.location ?? null,
     ),
-    losses: await lossesBlock(runtime, scope, null),
+    losses: await lossesBlock(runtime, scope),
     lossesNote: null,
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: await loadingBlock(runtime, { kind: "distribution_transformer", id: transformerId }),

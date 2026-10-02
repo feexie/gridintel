@@ -84,6 +84,8 @@ export interface Crumb {
 
 export interface ReportedComparisonView {
   label: string;
+  /** Set when the comparison is for another scope than the page's: the name of the scope the report is stated for. */
+  statedFor?: string | null;
   reported: MetricView;
   /** The calculated figure on the reported figure's basis, when there is one. */
   calculated: MetricView;
@@ -106,6 +108,8 @@ export interface ReportedComparisonView {
 
 export interface LossesView {
   sourcing: SourcingView;
+  /** The electrical sections the account covers. More than one, or another than the page's own, when summed. */
+  sections: { kind: LevelKind; id: string }[];
   /** Shown when the figures belong to another scope than the page's (e.g. a region showing its substation). */
   scopeNote: string | null;
   status: DisplayStatus;
@@ -123,6 +127,36 @@ export interface LossesView {
   billingByBasis: { basis: string; label: string; records: number; energyKwh: number | null; amount: number }[];
   accounts: { inScope: number | null; billed: number };
   reported: ReportedComparisonView[];
+}
+
+/* ---------------- Revenue gap ---------------- */
+
+export interface RevenueGapPartView {
+  scope: { kind: LevelKind; id: string; name: string };
+  /** "section": a lowest-level section valued whole; "residual": the loss between a section's boundary and those below it. */
+  kind: "section" | "residual";
+  energyKwh: number | null;
+  ratePerKwh: number | null;
+  amount: number | null;
+}
+
+export interface RevenueGapView {
+  sourcing: SourcingView;
+  status: DisplayStatus;
+  currency: string | null;
+  commercial: MetricView;
+  collection: MetricView;
+  /** The sum of the parts that are positive. */
+  notRealised: MetricView;
+  /** What the figure is and is not; must be shown with it. */
+  definition: string;
+  /** "For the reporting period; not annualised." */
+  periodNote: string;
+  /** Set when a part is negative: it is shown as negative and not netted. */
+  negativeNote: string | null;
+  /** A caveat about the data that must be shown with the figure. */
+  caveat: string | null;
+  parts: RevenueGapPartView[];
 }
 
 /* ---------------- Reliability ---------------- */

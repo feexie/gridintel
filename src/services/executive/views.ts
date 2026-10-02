@@ -1,4 +1,5 @@
-import type { LevelKind, LossesView, MetricView, NotAvailableView, ReliabilityView } from "../operations/views.ts";
+import type { LossesView, MetricView, NotAvailableView, ReliabilityView, RevenueGapView } from "../operations/views.ts";
+import type { AttentionSubject } from "./attention.ts";
 
 /* ==========================================================
    SERVICES — EXECUTIVE VIEW MODEL
@@ -6,6 +7,8 @@ import type { LevelKind, LossesView, MetricView, NotAvailableView, ReliabilityVi
    What the Executive screen receives. Its job: "What is happening
    across the portfolio, and where should I look first?"
 ========================================================== */
+
+export type { AttentionSubject, Finding } from "./attention.ts";
 
 export interface BandComplianceRow {
   feederId: string;
@@ -31,21 +34,12 @@ export interface TransformerLoadingRow {
   overloaded: boolean | null;
 }
 
-/**
- * One thing to look at first. A ranked fact, not an interpretation: the
- * rule that selected it is stated, and the figure is a MetricView with its
- * own status, origin and method.
- */
-export interface LookItem {
-  rank: number;
-  /** The fixed rule that produced this item. */
-  rule: string;
-  /** What the figure is, e.g. "Highest ATC&C among feeders". */
-  title: string;
-  subject: { kind: LevelKind; id: string; name: string };
-  metric: MetricView;
-  /** A second number that belongs with the first, e.g. hours over rating. */
-  detail: { label: string; value: number; unit: "hours" | "days" } | null;
+export interface FeederGapRow {
+  feederId: string;
+  feederName: string;
+  commercial: MetricView;
+  collection: MetricView;
+  notRealised: MetricView;
 }
 
 export interface ExecutiveView {
@@ -53,11 +47,16 @@ export interface ExecutiveView {
   period: { start: string; end: string };
   asOf: string;
   facts: { label: string; value: string }[];
-  whereToLook: LookItem[];
-  /** How the list is produced, shown with it. */
+  /** Equipment at risk of failure. Its own group, shown first, never ranked by money. */
+  assetRisk: AttentionSubject[];
+  /** Feeders ranked by estimated revenue not realised, then subjects with no money figure in rule order. */
+  whereToLook: AttentionSubject[];
+  /** How the lists are produced and ranked, shown with them. */
   whereToLookMethod: string;
   losses: LossesView | null;
   lossesNote: string | null;
+  revenueGap: RevenueGapView;
+  gapByFeeder: FeederGapRow[];
   reliability: ReliabilityView;
   bandCompliance: BandComplianceRow[];
   transformerLoading: TransformerLoadingRow[];

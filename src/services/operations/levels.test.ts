@@ -99,12 +99,27 @@ describe("operations read models", () => {
     assert.equal(losses?.collectionBasis, "cash");
   });
 
-  it("show the substation's figures at region level, and say so", async () => {
+  it("account for a region as the sum of its sections, and say which", async () => {
     const region = (await regionView(runtime, DEMO_REGION_ID)) as NetworkLevelView;
     const substation = (await substationView(runtime, "SS-RIV")) as NetworkLevelView;
     assert.equal(region.losses?.atcc.value, substation.losses?.atcc.value);
-    assert.match(region.losses?.scopeNote ?? "", /only substation in this region/);
+    assert.deepEqual(region.losses?.sections, [{ kind: "substation", id: "SS-RIV" }]);
+    assert.match(region.losses?.scopeNote ?? "", /Summed over 1 electrical section\(s\): SS-RIV\. A region is not an electrical boundary/);
     assert.equal(substation.losses?.scopeNote, null);
+    // The figure reported for the region can now be set beside a calculated one.
+    assert.deepEqual(region.losses?.reported.map((row) => [row.label, row.sameBasis]), [["ATC&C", true], ["Collection efficiency", true]]);
+  });
+
+  it("give the same view model with and without the cache, and compute a block once with it", async () => {
+    const { createMemoryCache } = await import("../analytics/cache.ts");
+    const cache = createMemoryCache();
+    const cached = { ...runtime, cache };
+    const first = await feederView(cached, "FD-OLD");
+    const entries = cache.size();
+    const second = await feederView(cached, "FD-OLD");
+    assert.equal(cache.size(), entries);
+    assert.deepEqual(second, first);
+    assert.deepEqual(first, await feederView(runtime, "FD-OLD"));
   });
 
   it("split reliability by attribution and test the band at feeder level only", async () => {

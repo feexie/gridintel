@@ -38,7 +38,7 @@ export function formatPercent(value: number | null, digits = 1): string {
 
 export function formatMoney(value: number, currency: string | null): string {
   const symbol = currency === "NGN" ? "₦" : currency ? `${currency} ` : "";
-  return `${symbol}${number(0).format(value)}`;
+  return `${value < 0 ? "−" : ""}${symbol}${number(Math.abs(value) < 1000 && !Number.isInteger(value) ? 2 : 0).format(Math.abs(value))}`;
 }
 
 /** The value of a metric as text, or a dash when it has none. */
