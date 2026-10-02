@@ -15,7 +15,11 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1500, height: 900 } } }],
+  projects: [
+    { name: "chromium", testIgnore: /timing\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1500, height: 900 } } },
+    // Page timings are measured last and alone, so no other test is loading the server.
+    { name: "timing", testMatch: /timing\.spec\.ts/, dependencies: ["chromium"] },
+  ],
   webServer: {
     command: `npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/dashboard`,

@@ -1,16 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-
-const OPERATIONS = "/dashboard/utility/operations";
-const ROUTES = [
-  "/dashboard/utility/executive",
-  OPERATIONS,
-  `${OPERATIONS}/regions/demo-region-northfield`,
-  `${OPERATIONS}/substations/SS-RIV`,
-  `${OPERATIONS}/feeders/FD-MKT`,
-  `${OPERATIONS}/feeders/FD-OLD`,
-  `${OPERATIONS}/transformers/DT-OLD-2`,
-  `${OPERATIONS}/service-points/SP-OLD2-001`,
-];
+import { OPERATIONS, ROUTES } from "./routes";
 
 /** The tile of a headline figure, by the figure's label. */
 const tile = (page: Page, label: string) => page.locator(`[data-metric="${label}"]`).first();
@@ -129,18 +118,12 @@ test("an unmetered connection shows no measured energy and an estimated bill", a
   await expect(page.getByRole("row", { name: /Estimated bills \(no meter\)/ })).toContainText("Estimated");
 });
 
-test("every screen answers within 500 ms once the server has warmed", async ({ request }) => {
-  // The first request to a route also loads its code; the target is for the screen itself.
-  for (const route of ROUTES) await request.get(route);
-  for (const route of ROUTES) {
-    // The best of three: other tests share this server, and the target is the screen's own time.
-    let best = Infinity;
-    for (let i = 0; i < 3; i++) {
-      const started = Date.now();
-      const response = await request.get(route);
-      expect(response.ok(), route).toBe(true);
-      best = Math.min(best, Date.now() - started);
-    }
-    expect(best, `${route} took too long`).toBeLessThan(500);
-  }
+test("a long list of connections shows its first rows, with the full list one click away", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/transformers/DT-OLD-2`);
+  const table = page.locator("section", { has: page.getByRole("heading", { name: /^Service points \(135\)/ }) });
+  await expect(table.locator("tbody tr")).toHaveCount(40);
+  await expect(table).toContainText("Showing the first 40 of 135.");
+  await table.getByRole("link", { name: "Show all 135" }).click();
+  await expect(page).toHaveURL(/\/transformers\/DT-OLD-2\?rows=all$/);
+  await expect(table.locator("tbody tr")).toHaveCount(135);
 });

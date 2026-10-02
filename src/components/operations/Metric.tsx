@@ -166,15 +166,12 @@ export function MetricTile({
 /** A figure in a table row: value, a status mark, and the full trail on hover. */
 export function MetricCell({ metric, mark }: { metric: MetricView | undefined; mark?: string }) {
   if (!metric) return <span className="text-slate-600">—</span>;
+  // Kept short: a table can hold hundreds of cells. Everything the cell means is already
+  // visible (value, status mark, origin tag, footnote); the full trail is on the row's own page.
   const hover = [
-    `${metric.label}: ${formatMetric(metric)}`,
-    `Status: ${STATUS_LABEL[metric.status]}`,
-    `Origin: ${ORIGIN_LABEL[metric.origin]}`,
-    metric.derivation ? `How: ${metric.derivation}` : "",
-    metric.method ? `Method: ${metric.method.name} (${metric.method.id} v${metric.method.version})` : "",
-    metric.estimatedInputs.length > 0 ? `Estimated inputs: ${metric.estimatedInputs.map((input) => `${input.name} (${share(input.share)})`).join("; ")}` : "",
-    metric.missingInputs.length > 0 ? `Missing: ${metric.missingInputs.slice(0, 3).join("; ")}` : "",
-    metric.note ?? "",
+    `${metric.label} · ${STATUS_LABEL[metric.status]} · ${ORIGIN_LABEL[metric.origin]}`,
+    metric.estimatedInputs.length > 0 ? `Estimated: ${metric.estimatedInputs.map((input) => `${input.name} (${share(input.share)})`).join("; ")}` : "",
+    metric.missingInputs.length > 0 ? `Missing: ${metric.missingInputs.slice(0, 2).join("; ")}` : "",
   ]
     .filter(Boolean)
     .join("\n");

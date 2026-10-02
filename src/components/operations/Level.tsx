@@ -70,7 +70,7 @@ function LevelHead({ header }: { header: LevelHeader }) {
   );
 }
 
-export function NetworkLevel({ view }: { view: NetworkLevelView }) {
+export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevelView; showAllRows?: boolean }) {
   return (
     <div className="space-y-4">
       <LevelHead header={view.header} />
@@ -84,7 +84,7 @@ export function NetworkLevel({ view }: { view: NetworkLevelView }) {
       <ReliabilityPanel reliability={view.reliability} showBand={view.header.kind === "feeder"} />
       {view.loading ? <LoadingPanel loading={view.loading} /> : null}
       {view.children.map((table) => (
-        <ChildrenTable key={table.title} table={table} />
+        <ChildrenTable key={table.title} table={table} showAll={showAllRows} allHref={`${levelHref(view.header.kind, view.header.id)}?rows=all`} />
       ))}
       <NotAvailable view={view.alarms} />
     </div>

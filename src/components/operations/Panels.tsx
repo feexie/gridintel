@@ -383,11 +383,15 @@ export function LoadingPanel({ loading }: { loading: LoadingView }) {
 
 const FOOTNOTE_MARKS = ["†", "‡", "§", "¶", "‖", "#"];
 
-export function ChildrenTable({ table }: { table: ChildTable }) {
+/** Long lists show this many rows until the reader asks for all of them. */
+export const ROW_LIMIT = 40;
+
+export function ChildrenTable({ table, showAll = true, allHref }: { table: ChildTable; showAll?: boolean; allHref?: string }) {
+  const rows = showAll ? table.rows : table.rows.slice(0, ROW_LIMIT);
   // Every caveat on a figure in the table is printed under it, with a marker on the figure,
   // so that no caveat depends on hovering.
   const notes: string[] = [];
-  for (const row of table.rows) {
+  for (const row of rows) {
     for (const column of table.columns) {
       const note = row.cells[column.key]?.note;
       if (note && !notes.includes(note)) notes.push(note);
@@ -414,7 +418,7 @@ export function ChildrenTable({ table }: { table: ChildTable }) {
             </tr>
           </thead>
           <tbody>
-            {table.rows.map((row) => (
+            {rows.map((row) => (
               <tr key={row.id} className="border-b border-slate-800/60 hover:bg-slate-800/30">
                 <td className="py-1 pr-3">
                   <Link href={levelHref(row.kind, row.id)} className="text-cyan-300 hover:text-cyan-200 hover:underline">
@@ -432,6 +436,16 @@ export function ChildrenTable({ table }: { table: ChildTable }) {
           </tbody>
         </table>
       </div>
+      {rows.length < table.rows.length ? (
+        <p className="text-xs text-slate-300">
+          Showing the first {rows.length} of {table.rows.length}.{" "}
+          {allHref ? (
+            <Link href={allHref} className="text-cyan-300 hover:underline">
+              Show all {table.rows.length}
+            </Link>
+          ) : null}
+        </p>
+      ) : null}
       {notes.length > 0 ? (
         <ul className="space-y-0.5 text-[11px] leading-snug text-amber-100/90">
           {notes.map((note) => (
