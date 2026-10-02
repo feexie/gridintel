@@ -1,7 +1,9 @@
 import type { IsoTimestamp } from "@/domain";
 import type { NetworkRegistrySnapshot, RegistryCoverage, RegistryRepository } from "../../repositories/ports/index.ts";
 import type { Registry, TopologyIndex } from "../../analytics/index.ts";
+import type { ServiceCache } from "./cache.ts";
 import { buildTopologyIndex } from "../../analytics/index.ts";
+import { NO_CACHE } from "./cache.ts";
 
 /* ==========================================================
    SERVICES — TOPOLOGY
@@ -20,7 +22,11 @@ export interface LoadedTopology {
   coverage: RegistryCoverage;
 }
 
-export async function loadTopology(registry: RegistryRepository, asOf: IsoTimestamp): Promise<LoadedTopology> {
+export function loadTopology(registry: RegistryRepository, asOf: IsoTimestamp, cache: ServiceCache = NO_CACHE): Promise<LoadedTopology> {
+  return cache.get(`topology|${asOf}`, () => buildTopology(registry, asOf));
+}
+
+async function buildTopology(registry: RegistryRepository, asOf: IsoTimestamp): Promise<LoadedTopology> {
   const result = await registry.getSnapshot({ asOf });
   // The repository snapshot must stay usable as an analytics Registry.
   const records: Registry = result.snapshot;

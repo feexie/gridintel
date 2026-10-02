@@ -8,8 +8,10 @@ import type {
   UnattributableExposure,
   Warning,
 } from "../../analytics/index.ts";
+import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
 import { calculateReliability, calculateSupplyHours, customersServed, outagesForScope } from "../../analytics/index.ts";
+import { NO_CACHE, resultKey } from "./cache.ts";
 import { SourceTrail } from "./sourcing.ts";
 import { loadTopology } from "./topology.ts";
 
@@ -41,15 +43,24 @@ export interface ScopeReliability {
   warnings: Warning[];
 }
 
-export async function scopeReliability(params: {
+interface ReliabilityParams {
   repos: GridIntelRepositories;
   scope: ScopeRef;
   period: Period;
   context: CalculationContext;
-}): Promise<Sourced<ScopeReliability>> {
+  cache?: ServiceCache;
+}
+
+export function scopeReliability(params: ReliabilityParams): Promise<Sourced<ScopeReliability>> {
+  return (params.cache ?? NO_CACHE).get(resultKey("reliability", params.scope, params.period, params.context.computedAt), () =>
+    computeReliability(params),
+  );
+}
+
+async function computeReliability(params: ReliabilityParams): Promise<Sourced<ScopeReliability>> {
   const { repos, scope, period, context } = params;
   const trail = new SourceTrail();
-  const { index, snapshot, coverage } = await loadTopology(repos.registry, period.end);
+  const { index, snapshot, coverage } = await loadTopology(repos.registry, period.end, params.cache);
   trail.add(snapshot.customers);
 
   const outages = await repos.events.listOutages({ period });

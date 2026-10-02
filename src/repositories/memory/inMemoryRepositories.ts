@@ -1,4 +1,4 @@
-import type { IsoTimestamp, Outage, OutageExposure, Period } from "@/domain";
+import type { IntervalEnergy, IsoTimestamp, Outage, OutageExposure, Period } from "@/domain";
 import type { GridIntelRepositories } from "../ports/index.ts";
 import type { DomainDataset } from "./dataset.ts";
 
@@ -53,6 +53,20 @@ function outageSelected(outage: Outage, startMs: number, endMs: number): boolean
 }
 
 export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRepositories {
+  // Built on first use: interval records by meter, each list in dataset order.
+  let byMeter: Map<string, IntervalEnergy[]> | null = null;
+  const intervalsOf = (meterId: string): readonly IntervalEnergy[] => {
+    if (byMeter === null) {
+      byMeter = new Map();
+      for (const interval of dataset.intervalEnergy) {
+        const list = byMeter.get(interval.meterId);
+        if (list === undefined) byMeter.set(interval.meterId, [interval]);
+        else list.push(interval);
+      }
+    }
+    return byMeter.get(meterId) ?? [];
+  };
+
   return {
     registry: {
       async getSnapshot(query) {
@@ -64,13 +78,14 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
     observations: {
       async listIntervalEnergy(query) {
         const { startMs, endMs } = queryBounds(query.period);
-        const meterIds = new Set(query.meterIds);
-        const records = dataset.intervalEnergy.filter((interval) => {
-          if (!meterIds.has(interval.meterId)) return false;
-          const intervalStartMs = epochMs(interval.intervalStart);
-          if (intervalStartMs === null) return true;
-          return intervalStartMs < endMs && intervalStartMs + interval.intervalMinutes * MS_PER_MINUTE > startMs;
-        });
+        // Records are returned grouped by meter, in the order the meters were asked for.
+        const records = [...new Set(query.meterIds)].flatMap((meterId) =>
+          intervalsOf(meterId).filter((interval) => {
+            const intervalStartMs = epochMs(interval.intervalStart);
+            if (intervalStartMs === null) return true;
+            return intervalStartMs < endMs && intervalStartMs + interval.intervalMinutes * MS_PER_MINUTE > startMs;
+          }),
+        );
         return { records, completeness: dataset.completeness.intervalEnergy };
       },
 

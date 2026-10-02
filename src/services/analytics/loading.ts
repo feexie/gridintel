@@ -7,6 +7,7 @@ import type {
   OverloadResult,
   PeakLoadingResult,
 } from "../../analytics/index.ts";
+import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
 import {
   LOADING_REFERENCE,
@@ -16,6 +17,7 @@ import {
   peakLoading,
   toEpochMs,
 } from "../../analytics/index.ts";
+import { NO_CACHE, resultKey } from "./cache.ts";
 import { SourceTrail } from "./sourcing.ts";
 import { loadTopology } from "./topology.ts";
 
@@ -36,17 +38,25 @@ export interface AssetLoading {
   peak: PeakLoadingResult | null;
 }
 
-export async function assetLoading(params: {
+interface LoadingParams {
   repos: GridIntelRepositories;
   asset: { kind: "distribution_transformer" | "feeder"; id: string };
   asOf: IsoTimestamp;
   /** Also report the highest loading observed in this window. */
   window?: Period;
   context: CalculationContext;
-}): Promise<Sourced<AssetLoading>> {
+  cache?: ServiceCache;
+}
+
+export function assetLoading(params: LoadingParams): Promise<Sourced<AssetLoading>> {
+  const key = `${resultKey("loading", params.asset, params.window ?? null, params.asOf)}|${params.context.computedAt}`;
+  return (params.cache ?? NO_CACHE).get(key, () => computeLoading(params));
+}
+
+async function computeLoading(params: LoadingParams): Promise<Sourced<AssetLoading>> {
   const { repos, asset, asOf, window, context } = params;
   const trail = new SourceTrail();
-  const { index } = await loadTopology(repos.registry, asOf);
+  const { index } = await loadTopology(repos.registry, asOf, params.cache);
 
   const record = asset.kind === "feeder" ? index.feederById.get(asset.id) : index.transformerById.get(asset.id);
   const asOfMs = toEpochMs(asOf);
