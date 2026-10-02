@@ -530,3 +530,168 @@ function dedupeWarnings(warnings: readonly Warning[]): Warning[] {
     return true;
   });
 }
+
+/* ==========================================================
+   AGGREGATION ACROSS SECTIONS
+
+   An administrative scope (a region, an organization) is not an
+   electrical boundary, so it has no boundary meters of its own. Its
+   energy account is the SUM of the accounts of the electrical
+   sections that make it up (see cut.ts for how they are chosen).
+
+   A figure of the total exists only when every section has it. One
+   section with a missing figure makes the total missing; the other
+   sections are never summed into a partial figure that would look
+   like the whole. The estimated share of a total is the
+   energy-weighted share of its parts, when every part states one.
+========================================================== */
+
+function sumFigures(figures: readonly EnergyFigure[], derivation: string): EnergyFigure {
+  if (figures.length === 0) return missingFigure("at least one section", derivation);
+  if (figures.some((figure) => figure.status === "not_computable")) {
+    return { value: null, unit: "kWh", status: "not_computable", quality: null, derivation, missingInputs: [] };
+  }
+  if (figures.some((figure) => figure.status !== "ok")) {
+    return {
+      value: null,
+      unit: "kWh",
+      status: "insufficient_data",
+      quality: null,
+      derivation,
+      missingInputs: [...new Set(figures.flatMap((figure) => figure.missingInputs))],
+    };
+  }
+  const value = figures.reduce((total, figure) => total + (figure.value as number), 0);
+  const quality = worstQuality(figures.map((figure) => figure.quality).filter((q): q is DataQuality => q !== null));
+  const estimated = quality === "estimated" || quality === "substituted";
+  let estimatedShare: number | null | undefined;
+  if (estimated) {
+    const shares = figures.map((figure) =>
+      figure.quality === "estimated" || figure.quality === "substituted" ? (figure.estimatedShare ?? null) : 0,
+    );
+    estimatedShare =
+      shares.some((share) => share === null) || value === 0
+        ? null
+        : figures.reduce((total, figure, i) => total + (shares[i] as number) * (figure.value as number), 0) / value;
+  }
+  return { value, unit: "kWh", status: "ok", quality, derivation, missingInputs: [], ...(estimated ? { estimatedShare } : {}) };
+}
+
+function sumBoundaries(side: "input" | "downstream", parts: readonly BoundaryMeasurement[]): BoundaryMeasurement {
+  const complete = parts.length > 0 && parts.every((part) => part.status === "ok");
+  const coverages = parts.map((part) => part.coverage).filter((c): c is number => c !== null);
+  return {
+    side,
+    direction: "downstream_positive",
+    requirements: parts.flatMap((part) => part.requirements),
+    status: complete ? "ok" : "insufficient_data",
+    netKwh: complete ? parts.reduce((total, part) => total + (part.netKwh as number), 0) : null,
+    quality: worstQuality(parts.map((part) => part.quality).filter((q): q is DataQuality => q !== null)),
+    coverage: coverages.length > 0 ? Math.min(...coverages) : null,
+    missingInputs: [...new Set(parts.flatMap((part) => part.missingInputs))],
+  };
+}
+
+export function aggregateEnergyAccounts(params: {
+  scope: ScopeRef;
+  period: Period;
+  /** The accounts of the sections that make up the scope, each for the same period. */
+  accounts: readonly EnergyAccount[];
+  /** Revenue for the whole scope, from its own billing totals. */
+  revenueBilled?: MonetaryInput;
+  revenueCollected?: MonetaryInput;
+  /** Warnings from choosing the sections. */
+  warnings?: readonly Warning[];
+  methodology?: Methodology<EnergyParameters>;
+  computedAt: IsoTimestamp;
+}): EnergyAccount {
+  const { scope, period, accounts, computedAt } = params;
+  const methodology = params.methodology ?? ENERGY_REFERENCE;
+  const n = accounts.length;
+  const sum = (pick: (account: EnergyAccount) => EnergyFigure, name: string) =>
+    sumFigures(accounts.map(pick), `sum of ${name} over ${n} section(s)`);
+
+  const received = sum((a) => a.received, "energy received");
+  const embeddedApplied = sum((a) => a.embeddedApplied, "embedded adjustments");
+  const energyInput = sum((a) => a.energyInput, "energy input");
+  const downstreamMeasured = sum((a) => a.downstreamMeasured, "downstream measured");
+  const sectionResidual = sum((a) => a.sectionResidual, "section residuals");
+  const technicalLoss = sum((a) => a.technicalLoss, "technical loss");
+  const delivered = sum((a) => a.delivered, "energy delivered");
+  const recordedConsumption = sum((a) => a.recordedConsumption, "recorded consumption");
+  const energyBilled = sum((a) => a.energyBilled, "energy billed");
+  const unbilled = sum((a) => a.unbilled, "unbilled energy");
+  const totalLoss = sum((a) => a.totalLoss, "total loss");
+
+  const revenueBilled = params.revenueBilled ?? null;
+  const revenueCollected = params.revenueCollected ?? null;
+  const chain = [received, embeddedApplied, energyInput, technicalLoss, delivered, energyBilled, unbilled, totalLoss];
+  const missingInputs = [
+    ...new Set([
+      ...chain.flatMap((figure) => figure.missingInputs),
+      ...(revenueBilled?.value == null ? ["revenue billed"] : []),
+      ...(revenueCollected?.value == null ? ["revenue collected"] : []),
+    ]),
+  ];
+  const estimatedInputs: EstimatedInput[] = [
+    { name: "energy received", figure: received },
+    { name: "embedded adjustment", figure: embeddedApplied },
+    { name: "technical loss", figure: technicalLoss },
+    { name: "energy billed", figure: energyBilled },
+  ]
+    .filter(({ figure }) => figure.status === "ok" && (figure.quality === "estimated" || figure.quality === "substituted"))
+    .map(({ name, figure }) => ({ name, quality: figure.quality as "estimated" | "substituted", share: figure.estimatedShare ?? null }));
+
+  let status: ResultStatus;
+  if (chain.some((figure) => figure.status === "not_computable")) status = "not_computable";
+  else if (missingInputs.length > 0) status = "insufficient_data";
+  else if (estimatedInputs.length > 0) status = "calculated_with_estimates";
+  else status = "ok";
+
+  const crossMissing = [...new Set([...downstreamMeasured.missingInputs, ...recordedConsumption.missingInputs])];
+  const figureQualities = [...chain, downstreamMeasured, recordedConsumption]
+    .map((figure) => figure.quality)
+    .filter((q): q is DataQuality => q !== null);
+  if (revenueBilled) figureQualities.push(revenueBilled.quality);
+  if (revenueCollected) figureQualities.push(revenueCollected.quality);
+
+  return {
+    kind: "energy_account",
+    scope,
+    period,
+    methodology: methodologyRef(methodology),
+    lossBasis: "energy_input_net_of_transfers_out",
+    status,
+    estimatedInputs,
+    crossChecks: {
+      status: [downstreamMeasured, recordedConsumption].some((figure) => figure.status === "not_computable")
+        ? "not_computable"
+        : crossMissing.length > 0
+          ? "insufficient_data"
+          : "ok",
+      missingInputs: crossMissing,
+    },
+    boundary: {
+      input: sumBoundaries("input", accounts.map((a) => a.boundary.input)),
+      downstream: sumBoundaries("downstream", accounts.map((a) => a.boundary.downstream)),
+    },
+    received,
+    embeddedApplied,
+    embeddedIgnored: accounts.flatMap((a) => a.embeddedIgnored),
+    energyInput,
+    downstreamMeasured,
+    sectionResidual,
+    technicalLoss,
+    delivered,
+    recordedConsumption,
+    energyBilled,
+    unbilled,
+    totalLoss,
+    revenueBilled,
+    revenueCollected,
+    missingInputs,
+    quality: worstQuality(figureQualities),
+    warnings: dedupeWarnings([...(params.warnings ?? []), ...accounts.flatMap((a) => a.warnings)]),
+    computedAt,
+  };
+}

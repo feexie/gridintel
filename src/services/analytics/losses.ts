@@ -9,8 +9,10 @@ import type {
   InputValue,
   LossSplit,
 } from "../../analytics/index.ts";
+import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
 import {
+  aggregateEnergyAccounts,
   atccInputsFromAccount,
   calculateAtcc,
   calculateLossSplit,
@@ -18,19 +20,21 @@ import {
   decomposeAtcc,
   metersWithRole,
   sectionBoundary,
+  sectionsForScope,
   servicePointsUnder,
   toEpochMs,
 } from "../../analytics/index.ts";
 import { fetchBillingTotals } from "./billing.ts";
+import { NO_CACHE, resultKey } from "./cache.ts";
 import { reportedInput } from "./inputs.ts";
 import { SourceTrail } from "./sourcing.ts";
 import { loadTopology } from "./topology.ts";
 
 /* ==========================================================
-   SERVICES — ENERGY ACCOUNT, LOSSES AND ATC&C FOR A SECTION
+   SERVICES — ENERGY ACCOUNT, LOSSES AND ATC&C
 
-   For a distribution transformer, a feeder or a substation, and a
-   period:
+   For an electrical section (a distribution transformer, a feeder
+   or a substation) and a period:
    - interval energy for the section's boundary meters and for the
      customer meters under it → the energy account;
    - charges and payments of the accounts under it → energy billed,
@@ -42,6 +46,10 @@ import { loadTopology } from "./topology.ts";
      input is tagged "estimated", and the commercial loss derived
      from it is a residual that inherits that uncertainty.
 
+   For an administrative scope (a region, an organization) the
+   account is the sum of the accounts of the electrical sections
+   that make it up, and the revenue is that of all its accounts.
+
    Analytics does every calculation; this service only gathers the
    inputs and says where they came from.
 ========================================================== */
@@ -52,25 +60,47 @@ export interface SectionLosses {
   atcc: AtccResult;
   split: LossSplit;
   decomposition: AtccDecomposition;
-  /** The reported figure used as the technical-loss input; null when none applied. */
+  /** The electrical sections the account covers: the scope itself, or the sections an administrative scope is cut into. */
+  sections: ScopeRef[];
+  /** The reported figure used as the technical-loss input of a single section; null when none applied or the account is a sum. */
   technicalLossStudy: ReportedKpi | null;
-  /** Why no technical-loss figure was used, when none was. */
+  /** How the technical-loss input was obtained, or why there is none. */
   technicalLossNote: string | null;
+}
+
+interface LossParams {
+  repos: GridIntelRepositories;
+  scope: ScopeRef;
+  period: Period;
+  context: CalculationContext;
+  cache?: ServiceCache;
 }
 
 function samePeriod(a: Period | null, b: Period): boolean {
   return a !== null && toEpochMs(a.start) === toEpochMs(b.start) && toEpochMs(a.end) === toEpochMs(b.end);
 }
 
-export async function sectionLosses(params: {
-  repos: GridIntelRepositories;
-  scope: ScopeRef;
-  period: Period;
-  context: CalculationContext;
-}): Promise<Sourced<SectionLosses>> {
+function finish(
+  params: LossParams,
+  account: EnergyAccount,
+  billing: BillingTotals,
+  rest: Pick<SectionLosses, "sections" | "technicalLossStudy" | "technicalLossNote">,
+): SectionLosses {
+  const { scope, period, context } = params;
+  const atcc = calculateAtcc({
+    scope,
+    period,
+    inputs: { ...atccInputsFromAccount(account), collectionBasis: billing.collectionBasis },
+    context,
+  });
+  const split = calculateLossSplit({ account, context });
+  return { account, billing, atcc, split, decomposition: decomposeAtcc(atcc, split), ...rest };
+}
+
+async function sectionAccount(params: LossParams): Promise<Sourced<SectionLosses>> {
   const { repos, scope, period, context } = params;
   const trail = new SourceTrail();
-  const { index, snapshot } = await loadTopology(repos.registry, period.end);
+  const { index, snapshot } = await loadTopology(repos.registry, period.end, params.cache);
 
   const boundary = sectionBoundary(index, scope);
   const customerMeters = (servicePointsUnder(index, scope).value ?? []).flatMap((sp) =>
@@ -118,24 +148,51 @@ export async function sectionLosses(params: {
     },
     computedAt: context.computedAt,
   });
-  const atcc = calculateAtcc({
-    scope,
-    period,
-    inputs: { ...atccInputsFromAccount(account), collectionBasis: billing.collectionBasis },
-    context,
-  });
-  const split = calculateLossSplit({ account, context });
-
   return {
-    result: {
-      account,
-      billing,
-      atcc,
-      split,
-      decomposition: decomposeAtcc(atcc, split),
-      technicalLossStudy,
-      technicalLossNote,
-    },
+    result: finish(params, account, billing, { sections: [scope], technicalLossStudy, technicalLossNote }),
     sourcing: await trail.resolve(repos.sources),
   };
+}
+
+async function aggregatedAccount(params: LossParams): Promise<Sourced<SectionLosses>> {
+  const { repos, scope, period, context } = params;
+  const trail = new SourceTrail();
+  const { index, snapshot } = await loadTopology(repos.registry, period.end, params.cache);
+
+  const cut = sectionsForScope(index, scope);
+  const parts = await Promise.all(cut.sections.map((section) => sectionLosses({ ...params, scope: section })));
+  for (const part of parts) trail.addSourcing(part.sourcing);
+
+  const billing = await fetchBillingTotals({ repos, index, snapshot, scope, period, trail });
+  const account = aggregateEnergyAccounts({
+    scope,
+    period,
+    accounts: parts.map((part) => part.result.account),
+    revenueBilled: billing.revenueBilled,
+    revenueCollected: billing.revenueCollected,
+    warnings: cut.warnings,
+    computedAt: context.computedAt,
+  });
+  // A scope that cannot be cut into sections has no account at all, rather than an empty one.
+  const computable = cut.status === "not_computable" ? { ...account, status: "not_computable" as const } : account;
+  const names = cut.sections.map((section) => section.id).join(", ");
+  return {
+    result: finish(params, computable, billing, {
+      sections: cut.sections,
+      technicalLossStudy: null,
+      technicalLossNote:
+        cut.sections.length === 0
+          ? (cut.warnings.find((warning) => warning.code !== "TOPOLOGY_CURRENT_ONLY")?.message ?? "No electrical section lies inside this scope.")
+          : `Sum of the technical-loss figures of ${cut.sections.length} section(s): ${names}. Each is an estimate from a loss study.`,
+    }),
+    sourcing: await trail.resolve(repos.sources),
+  };
+}
+
+export function sectionLosses(params: LossParams): Promise<Sourced<SectionLosses>> {
+  const { scope, period, context } = params;
+  const administrative = scope.kind === "region" || scope.kind === "organization";
+  return (params.cache ?? NO_CACHE).get(resultKey("losses", scope, period, context.computedAt), () =>
+    administrative ? aggregatedAccount(params) : sectionAccount(params),
+  );
 }

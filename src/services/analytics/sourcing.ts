@@ -34,6 +34,13 @@ export class SourceTrail {
     return this;
   }
 
+  /** Takes over the sources of a result that was built on other results. */
+  addSourcing(sourcing: Sourcing): this {
+    for (const source of sourcing.sources) this.ids.add(source.id);
+    for (const id of sourcing.unknownSources) this.ids.add(id);
+    return this;
+  }
+
   async resolve(sources: SourceRepository): Promise<Sourcing> {
     const known = new Map((await sources.listDataSources()).map((source) => [source.id, source]));
     const ids = [...this.ids].sort();
