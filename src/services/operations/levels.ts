@@ -502,6 +502,10 @@ function gapView(runtime: OperationsRuntime, loaded: Loaded, gap: RevenueGap, so
       ? `The ${gap.negativeParts.join(" and ")} gap is negative. It is shown as it is and is not set against the other part.`
       : null,
     caveat: runtime.caveats.tariffs ?? null,
+    unknownDemandClassNote:
+      gap.unknownDemandClassExcluded > 0
+        ? `${gap.unknownDemandClassExcluded} account(s) with unknown demand class excluded from the rate. They are not assumed to be non-MD.`
+        : null,
     // A residual within rounding is nothing; it is left out of the breakdown shown.
     parts: gap.commercial.parts
       .filter((part) => part.kind === "section" || part.amount !== 0)

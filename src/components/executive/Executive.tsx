@@ -128,6 +128,7 @@ function RevenueGapPanel({ gap, byFeeder }: { gap: RevenueGapView; byFeeder: Fee
         {gap.negativeNote ? <span className="text-amber-100"> {gap.negativeNote}</span> : null}
       </p>
       {gap.caveat ? <p className="text-[11px] leading-snug text-amber-100/90">† {gap.caveat} The rates below are therefore assumptions too.</p> : null}
+      {gap.unknownDemandClassNote ? <p className="text-[11px] leading-snug text-amber-100/90">! {gap.unknownDemandClassNote}</p> : null}
 
       <div className="grid gap-3 xl:grid-cols-2">
         <div>

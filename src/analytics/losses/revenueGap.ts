@@ -66,8 +66,13 @@ export interface RevenueGapNode {
   scope: ScopeRef;
   /** The section's unbilled energy (delivered − billed). */
   unbilled: InputValue;
-  /** For a node with no children: what was billed to its low-voltage customers. */
-  lowVoltage?: { energyBilled: InputValue; revenueBilled: MonetaryInput };
+  /** For a node with no children: what was billed to its low-voltage, non-MD customers. */
+  lowVoltage?: {
+    energyBilled: InputValue;
+    revenueBilled: MonetaryInput;
+    /** Low-voltage accounts left out of the rate because their demand class is not recorded. */
+    unknownDemandClassExcluded?: number;
+  };
   children: readonly RevenueGapNode[];
 }
 
@@ -105,6 +110,12 @@ export interface RevenueGap {
   notRealised: number | null;
   /** The parts that are negative, if any. */
   negativeParts: ("commercial" | "collection")[];
+  /**
+   * Accounts left out of every rate because their demand class is not
+   * recorded. They are not assumed to be non-MD; with any, the rates rest on
+   * fewer accounts than the sections serve.
+   */
+  unknownDemandClassExcluded: number;
   estimatedInputs: EstimatedInput[];
   missingInputs: string[];
   warnings: Warning[];
@@ -120,6 +131,7 @@ interface Valued {
   currency: string | null;
   qualities: DataQuality[];
   missing: string[];
+  unknownDemandClass: number;
 }
 
 function kwh(input: InputValue): number | null {
@@ -167,6 +179,7 @@ function valueNode(node: RevenueGapNode, parameters: RevenueGapParameters, warni
       currency: node.lowVoltage?.revenueBilled.currency ?? null,
       qualities,
       missing,
+      unknownDemandClass: node.lowVoltage?.unknownDemandClassExcluded ?? 0,
     };
   }
 
@@ -187,6 +200,7 @@ function valueNode(node: RevenueGapNode, parameters: RevenueGapParameters, warni
     currency: currencies.length === 1 ? currencies[0] : null,
     qualities: [...qualities, ...children.flatMap((child) => child.qualities)],
     missing: [...missing, ...children.flatMap((child) => child.missing)],
+    unknownDemandClass: children.reduce((total, child) => total + child.unknownDemandClass, 0),
   };
 }
 
@@ -251,6 +265,13 @@ export function calculateRevenueGap(params: {
     });
   }
 
+  if (valued.unknownDemandClass > 0) {
+    warnings.push({
+      code: "DEMAND_CLASS_UNKNOWN",
+      message: `${valued.unknownDemandClass} account(s) with unknown demand class excluded from the rate.`,
+    });
+  }
+
   const bothKnown = commercialAmount !== null && collectionAmount !== null;
   const status: ResultStatus =
     collectionStatus === "not_computable"
@@ -271,6 +292,7 @@ export function calculateRevenueGap(params: {
     collection: { status: collectionStatus, amount: collectionAmount, basis: params.collectionBasis ?? null },
     notRealised: bothKnown ? Math.max(commercialAmount as number, 0) + Math.max(collectionAmount as number, 0) : null,
     negativeParts,
+    unknownDemandClassExcluded: valued.unknownDemandClass,
     estimatedInputs: estimated
       ? [{ name: "unbilled energy", quality: "estimated", share: tree.unbilled.estimatedShare ?? null }]
       : [],

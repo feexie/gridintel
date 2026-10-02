@@ -144,10 +144,13 @@ describe("revenue gap: collection part and the total", () => {
 });
 
 describe("low-voltage non-MD billing", () => {
-  const registry = buildRegistry();
   // C-2 is a maximum-demand account on DT-1; C-4 is supplied directly by the feeder at medium voltage.
-  registry.customers = registry.customers.map((customer) => (customer.id === "C-2" ? { ...customer, demandClass: "md" } : customer));
-  const index = buildTopologyIndex(registry);
+  const withClasses = (classes: Record<string, "md" | "non_md" | undefined>) => {
+    const registry = buildRegistry();
+    registry.customers = registry.customers.map((customer) => ({ ...customer, demandClass: classes[customer.id] }));
+    return buildTopologyIndex(registry);
+  };
+  const RECORDED = { "C-1": "non_md", "C-2": "md", "C-3": "non_md", "C-4": "md", "C-5": "non_md" } as const;
   const charge = (id: string, customerId: string, kwh: number, ngn: number) => ({
     id,
     customerId,
@@ -158,8 +161,8 @@ describe("low-voltage non-MD billing", () => {
     provenance: PROVENANCE,
   });
   const charges = [charge("B-1", "C-1", 100, 5000), charge("B-2", "C-2", 900, 180_000), charge("B-3", "C-3", 100, 5000), charge("B-4", "C-4", 5000, 1_000_000)];
-  const totals = (scope: ScopeRef, accounts?: "all" | "low_voltage_non_md") =>
-    billingTotals({ index, scope, period: PERIOD, recordsAvailable: true, billingRecords: charges, payments: [], currency: "NGN", accounts });
+  const totals = (scope: ScopeRef, accounts?: "all" | "low_voltage_non_md", classes: Record<string, "md" | "non_md" | undefined> = RECORDED) =>
+    billingTotals({ index: withClasses(classes), scope, period: PERIOD, recordsAvailable: true, billingRecords: charges, payments: [], currency: "NGN", accounts });
 
   it("leaves out the medium-voltage customer and the maximum-demand account", () => {
     const all = totals(FEEDER);
@@ -168,10 +171,42 @@ describe("low-voltage non-MD billing", () => {
     assert.equal(ordinary.energyBilled.value, 200);
     assert.equal(ordinary.revenueBilled.value, 10_000);
     assert.equal(ordinary.accountsBilled, 2);
+    assert.equal(ordinary.unknownDemandClassExcluded, 0);
   });
 
   it("counts every account by default", () => {
     assert.equal(totals(dt("DT-1")).energyBilled.value, 1000);
     assert.equal(totals(dt("DT-1"), "low_voltage_non_md").energyBilled.value, 100);
+    assert.equal(totals(dt("DT-1")).unknownDemandClassExcluded, 0);
+  });
+
+  it("leaves out an account with no demand class recorded, and counts it: missing is not assumed non-MD", () => {
+    const ordinary = totals(FEEDER, "low_voltage_non_md", { ...RECORDED, "C-3": undefined });
+    // C-3's 100 kWh are not in the rate; only C-1's are.
+    assert.equal(ordinary.energyBilled.value, 100);
+    assert.equal(ordinary.revenueBilled.value, 5000);
+    assert.equal(ordinary.unknownDemandClassExcluded, 1);
+    assert.ok(ordinary.warnings.some((w) => w.code === "DEMAND_CLASS_UNKNOWN"));
+    // An unrecorded class at medium voltage is not a low-voltage account and is not counted here.
+    assert.equal(totals(FEEDER, "low_voltage_non_md", { ...RECORDED, "C-4": undefined }).unknownDemandClassExcluded, 0);
+    // With every class unknown there is no rate at all, rather than one from assumed non-MD accounts.
+    const none = totals(dt("DT-1"), "low_voltage_non_md", {});
+    assert.equal(none.energyBilled.value, 0);
+    assert.equal(none.unknownDemandClassExcluded, 3);
+  });
+
+  it("flags the excluded accounts on the revenue-gap result", () => {
+    const node: RevenueGapNode = {
+      scope: FEEDER,
+      unbilled: energy(110),
+      children: [
+        { ...transformer("DT-A", 100, 1000, 50_000), lowVoltage: { energyBilled: energy(1000, "measured"), revenueBilled: money(50_000), unknownDemandClassExcluded: 2 } },
+        { ...transformer("DT-B", 10, 200, 40_000), lowVoltage: { energyBilled: energy(200, "measured"), revenueBilled: money(40_000), unknownDemandClassExcluded: 1 } },
+      ],
+    };
+    const result = gap(node);
+    assert.equal(result.unknownDemandClassExcluded, 3);
+    assert.ok(result.warnings.some((w) => w.code === "DEMAND_CLASS_UNKNOWN" && w.message === "3 account(s) with unknown demand class excluded from the rate."));
+    assert.equal(gap(feeder(130)).unknownDemandClassExcluded, 0);
   });
 });

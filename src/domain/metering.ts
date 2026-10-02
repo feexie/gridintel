@@ -88,7 +88,8 @@ export interface Customer extends Audit {
    * Whether the account is billed on a maximum-demand (MD) tariff. MD
    * accounts are few and large and are priced differently, so figures
    * meant to describe ordinary customers leave them out. Absent when the
-   * source does not record it.
+   * source does not record it; an absent class is unknown, and is never
+   * taken to mean non-MD.
    */
   demandClass?: "md" | "non_md";
   accountStatus: "active" | "disconnected" | "closed";

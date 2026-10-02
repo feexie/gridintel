@@ -20,7 +20,8 @@ import { loadTopology } from "./topology.ts";
 
    The rate that values unbilled energy comes only from low-voltage,
    non-maximum-demand accounts: those supplied through a distribution
-   transformer and not recorded as MD. A customer supplied directly
+   transformer and recorded as non-MD. An account with no demand
+   class recorded is left out and counted; it is not assumed non-MD. A customer supplied directly
    by a feeder at medium voltage never enters a rate, however large
    its bill.
 ========================================================== */
@@ -65,7 +66,11 @@ export async function scopeRevenueGap(params: GapParams): Promise<Sourced<Revenu
           return {
             scope: section,
             unbilled,
-            lowVoltage: { energyBilled: ordinary.energyBilled, revenueBilled: ordinary.revenueBilled },
+            lowVoltage: {
+              energyBilled: ordinary.energyBilled,
+              revenueBilled: ordinary.revenueBilled,
+              unknownDemandClassExcluded: ordinary.unknownDemandClassExcluded,
+            },
             children: [],
           };
         }

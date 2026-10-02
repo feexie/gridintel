@@ -25,10 +25,13 @@ import { servicePointsUnder } from "../topology/registry.ts";
 
    ACCOUNTS. By default every account under the scope is counted.
    With `accounts: "low_voltage_non_md"` only accounts supplied
-   through a distribution transformer and not recorded as maximum
-   demand are counted: the ordinary low-voltage customers whose
-   average billed rate is used to value unbilled energy. A customer
-   supplied directly at medium voltage is never among them.
+   through a distribution transformer AND recorded as non-MD are
+   counted: the ordinary low-voltage customers whose average billed
+   rate is used to value unbilled energy. A customer supplied
+   directly at medium voltage is never among them. An account whose
+   demand class is not recorded is left out too, and counted in
+   `unknownDemandClassExcluded`: a missing class is not assumed to
+   be non-MD.
 
    Amounts are returned in major currency units (scale 1). Records
    in any other currency than the one asked for make the revenue
@@ -56,6 +59,11 @@ export interface BillingTotals {
   accountsInScope: number | null;
   /** Accounts with at least one charge in the period. */
   accountsBilled: number;
+  /**
+   * With `accounts: "low_voltage_non_md"`: low-voltage accounts left out
+   * because their demand class is not recorded. 0 otherwise.
+   */
+  unknownDemandClassExcluded: number;
   warnings: Warning[];
 }
 
@@ -150,6 +158,7 @@ export function billingTotals(params: {
     byBasis,
     accountsInScope: null,
     accountsBilled: 0,
+    unknownDemandClassExcluded: 0,
     warnings: [...warnings, reason],
   });
 
@@ -168,15 +177,18 @@ export function billingTotals(params: {
   const pointIds = new Set(
     points.value.filter((sp) => !lowVoltageOnly || sp.supply.kind === "distribution_transformer").map((sp) => sp.id),
   );
+  const connected = index.registry.customers.filter(
+    (customer) => customer.servicePointId !== undefined && pointIds.has(customer.servicePointId),
+  );
+  const unknownDemandClassExcluded = lowVoltageOnly ? connected.filter((customer) => customer.demandClass === undefined).length : 0;
+  if (unknownDemandClassExcluded > 0) {
+    warnings.push({
+      code: "DEMAND_CLASS_UNKNOWN",
+      message: `${unknownDemandClassExcluded} account(s) with no demand class recorded were left out of the low-voltage non-MD figures.`,
+    });
+  }
   const accounts = new Set(
-    index.registry.customers
-      .filter(
-        (customer) =>
-          customer.servicePointId !== undefined &&
-          pointIds.has(customer.servicePointId) &&
-          !(lowVoltageOnly && customer.demandClass === "md"),
-      )
-      .map((customer) => customer.id),
+    connected.filter((customer) => !lowVoltageOnly || customer.demandClass === "non_md").map((customer) => customer.id),
   );
   const inPeriod = (timestamp: string, id: string): boolean => {
     const ms = toEpochMs(timestamp);
@@ -270,6 +282,7 @@ export function billingTotals(params: {
     byBasis,
     accountsInScope: accounts.size,
     accountsBilled: billedAccounts.size,
+    unknownDemandClassExcluded,
     warnings,
   };
 }

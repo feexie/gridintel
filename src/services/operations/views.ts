@@ -156,6 +156,8 @@ export interface RevenueGapView {
   negativeNote: string | null;
   /** A caveat about the data that must be shown with the figure. */
   caveat: string | null;
+  /** Set when accounts were left out of the rate because their demand class is not recorded. */
+  unknownDemandClassNote: string | null;
   parts: RevenueGapPartView[];
 }
 
