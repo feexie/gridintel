@@ -19,6 +19,7 @@ export * from "./energy/cut.ts";
 export * from "./losses/collection.ts";
 export * from "./losses/atcc.ts";
 export * from "./billing/totals.ts";
+export * from "./losses/revenueGap.ts";
 export * from "./reliability/exposure.ts";
 export * from "./reliability/indices.ts";
 export * from "./reliability/scope.ts";

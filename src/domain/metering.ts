@@ -84,6 +84,13 @@ export interface Customer extends Audit {
   servicePointId?: string;
   category?: "residential" | "commercial" | "industrial" | "public" | "special";
   paymentMode?: "prepaid" | "postpaid";
+  /**
+   * Whether the account is billed on a maximum-demand (MD) tariff. MD
+   * accounts are few and large and are priced differently, so figures
+   * meant to describe ordinary customers leave them out. Absent when the
+   * source does not record it.
+   */
+  demandClass?: "md" | "non_md";
   accountStatus: "active" | "disconnected" | "closed";
   provenance: Provenance;
 }

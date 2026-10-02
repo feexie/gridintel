@@ -23,6 +23,13 @@ import { servicePointsUnder } from "../topology/registry.ts";
    are not available at all, every total is missing, never 0. With
    records available, an empty period is a real zero.
 
+   ACCOUNTS. By default every account under the scope is counted.
+   With `accounts: "low_voltage_non_md"` only accounts supplied
+   through a distribution transformer and not recorded as maximum
+   demand are counted: the ordinary low-voltage customers whose
+   average billed rate is used to value unbilled energy. A customer
+   supplied directly at medium voltage is never among them.
+
    Amounts are returned in major currency units (scale 1). Records
    in any other currency than the one asked for make the revenue
    totals unavailable; nothing is converted.
@@ -122,6 +129,8 @@ export function billingTotals(params: {
   payments: readonly Payment[];
   /** ISO 4217 code the totals are stated in. */
   currency: string;
+  /** Which accounts under the scope to count; all of them by default. */
+  accounts?: "all" | "low_voltage_non_md";
 }): BillingTotals {
   const { index, scope, period, currency } = params;
   const ref = (name: string) => `billing:${scope.kind}:${scope.id}:${name}`;
@@ -155,10 +164,18 @@ export function billingTotals(params: {
   if (points.value === null) return missing(points.warnings[0]);
   warnings.push(...points.warnings);
 
-  const pointIds = new Set(points.value.map((sp) => sp.id));
+  const lowVoltageOnly = params.accounts === "low_voltage_non_md";
+  const pointIds = new Set(
+    points.value.filter((sp) => !lowVoltageOnly || sp.supply.kind === "distribution_transformer").map((sp) => sp.id),
+  );
   const accounts = new Set(
     index.registry.customers
-      .filter((customer) => customer.servicePointId !== undefined && pointIds.has(customer.servicePointId))
+      .filter(
+        (customer) =>
+          customer.servicePointId !== undefined &&
+          pointIds.has(customer.servicePointId) &&
+          !(lowVoltageOnly && customer.demandClass === "md"),
+      )
       .map((customer) => customer.id),
   );
   const inPeriod = (timestamp: string, id: string): boolean => {

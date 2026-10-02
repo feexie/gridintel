@@ -439,6 +439,7 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
       servicePointId: connection.servicePointId,
       category: connection.category,
       paymentMode: connection.metering === "prepaid" ? "prepaid" : "postpaid",
+      demandClass: connection.category === "industrial" ? "md" : "non_md",
       accountStatus: connection.disconnected ? "disconnected" : "active",
       provenance,
     });

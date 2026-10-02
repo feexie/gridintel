@@ -1,6 +1,7 @@
 import type { Period, ScopeRef } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot } from "../../repositories/ports/index.ts";
 import type { BillingTotals, CalculatedKpi, CalculationContext, TopologyIndex } from "../../analytics/index.ts";
+import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
 import { billingTotals, calculateCollectionEfficiency } from "../../analytics/index.ts";
 import { SourceTrail } from "./sourcing.ts";
@@ -27,6 +28,8 @@ export async function fetchBillingTotals(params: {
   scope: ScopeRef;
   period: Period;
   trail: SourceTrail;
+  /** Which accounts under the scope to count; all of them by default. */
+  accounts?: "all" | "low_voltage_non_md";
 }): Promise<BillingTotals> {
   const { repos, index, scope, period } = params;
   const [charges, payments] = await Promise.all([
@@ -43,6 +46,7 @@ export async function fetchBillingTotals(params: {
     billingRecords: charges.records,
     payments: payments.records,
     currency: currency ?? "unknown",
+    accounts: params.accounts,
   });
   if (charges.completeness === "partial") {
     totals.warnings.push({
@@ -63,10 +67,11 @@ export async function scopeCollection(params: {
   scope: ScopeRef;
   period: Period;
   context: CalculationContext;
+  cache?: ServiceCache;
 }): Promise<Sourced<ScopeCollection>> {
   const { repos, scope, period, context } = params;
   const trail = new SourceTrail();
-  const { index, snapshot } = await loadTopology(repos.registry, period.end);
+  const { index, snapshot } = await loadTopology(repos.registry, period.end, params.cache);
   const billing = await fetchBillingTotals({ repos, index, snapshot, scope, period, trail });
   const collectionEfficiency = calculateCollectionEfficiency({
     scope,
