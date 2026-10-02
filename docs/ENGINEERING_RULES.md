@@ -64,6 +64,8 @@ Adapters (memory, demo, mock; later database, API, telemetry)
   composition root (`src/composition`) selects the adapter.
 - Every service returns its result with `sourcing`; a result built on any
   synthetic record is marked synthetic and shown as such.
+- Results are cached once per process by the composition root. Any adapter
+  whose records can change must discard that cache on every change.
 - The UI receives view models. Routes call the composition root
   (`src/composition`); components take view models as props and import only
   view-model types from `src/services`. The UI never imports `src/data`,
@@ -124,10 +126,13 @@ For each phase: inspect → plan → implement → test → review → commit �
 docs.
 
 - Work only on the phase approved in `docs/ROADMAP.md`.
-- Keep the repository working. Prefer several coherent commits to one large
-  rewrite.
-- Before every commit run `npm run typecheck`, `npm test`, `npm run lint` and
-  `npm run build`. All four must pass.
+- Work each phase or sub-phase on its own branch (`phase-6a`, `phase-6b`).
+  Merge to `main` only at the checkpoint, after the Founder approves it.
+- Commit every time the four checks are green, so an interruption never
+  loses more than one step. Push the branch as you go.
+- The four checks are `npm run typecheck`, `npm test`, `npm run lint` and
+  `npm run build`. All must pass before every commit. Run the browser tests
+  (`npm run test:e2e`) before a checkpoint and whenever a screen changes.
 - New analytics and services come with tests. Deterministic logic is tested
   with fixed inputs and fixed times.
 - Temporary analysis scripts are removed after use. Do not modify production

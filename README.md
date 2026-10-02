@@ -56,9 +56,11 @@ to `/dashboard`.
 | `npm run start`     | Serve the production build                  |
 | `npm run lint`      | Run ESLint, including import boundaries     |
 | `npm run typecheck` | Type-check the project with `tsc --noEmit`  |
-| `npm test`          | Run the test suite                          |
+| `npm test`          | Run the unit test suite                     |
+| `npm run test:e2e`  | Run the browser tests (build first)         |
 
-All four checks (typecheck, test, lint, build) run in CI on every push.
+Typecheck, unit tests, lint, build and the browser tests run in CI. The browser
+tests need Chromium once: `npx playwright install chromium`.
 
 ## Architecture
 
@@ -73,7 +75,7 @@ Analytics (src/analytics) → Domain (src/domain)
   ↓
 Repository ports (src/repositories/ports)
   ↑
-Adapters (src/repositories/memory, demo, mock)
+Adapters (src/repositories/memory, demo)
 ```
 
 - `src/domain`: canonical types. No runtime code.
@@ -81,8 +83,9 @@ Adapters (src/repositories/memory, demo, mock)
   status, its inputs, their origin and quality, and the methodology used.
 - `src/repositories/demo`: the synthetic dataset, generated from a fixed seed.
 - `src/services/operations`, `src/services/executive`: read models for the screens.
-- `src/data`, `src/types`, `src/repositories/mock`: legacy mock data, kept
-  until Phase 6.
+- `src/composition`: chooses the adapter and the clock, and holds the result
+  cache.
+- `e2e`: browser tests.
 
 ## Current functionality
 

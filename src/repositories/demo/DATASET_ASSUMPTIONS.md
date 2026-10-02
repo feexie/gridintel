@@ -76,6 +76,9 @@ day of 20 (A), 16 (B), 12 (C), 8 (D) and 4 (E).
 | MV customer on Market Road | 11 kV | 1 | 0 | 1 | 0 |
 
 - An unmetered connection has a service point and an account but no meter.
+- The 11 kV customer is recorded as a maximum-demand (MD) account; every
+  other account is non-MD. MD and medium-voltage accounts are left out of the
+  rate that values unbilled energy in the revenue gap.
 - DT-MKT-3 is fully metered on purpose, so one energy account is complete.
 - DT-OLD-2 has too many connections for its rating on purpose.
 - Nine accounts on Old Town are disconnected for the whole month and use

@@ -3,9 +3,9 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-01. Status: **Phase 5 complete. Phase 6 not started;
-it waits for the Founder's approval and for the open decisions listed under
-"Decisions waiting for the Founder".**
+Last updated: 2026-10-02. Status: **Phase 6a complete on branch `phase-6a`,
+awaiting the Founder's approval before it is merged to `main`. Phase 6b not
+started.**
 
 ## Completed
 
@@ -41,7 +41,7 @@ each traceable to source and method, with no KPI computed in a component.
 **Decisions recorded.** ADR 0003 (synthetic source kind), ADR 0004 (GIS
 order), ADR 0005 (billing domain and loss inputs), ADR 0006 (reliability
 attribution and the `calculated_with_estimates` status), ADR 0007 (same-basis
-comparison). ADR 0008 (revenue gap) is a proposal and is not implemented.
+comparison). ADR 0008 (revenue gap) was proposed here and accepted and built in Phase 6a.
 
 **Acceptance, as met.** Drill from region to service point by URL; losses,
 loading and SAIDI calculated and traceable to source and method; Executive
@@ -144,27 +144,96 @@ Recommend adding `@playwright/test` as a dev dependency, Chromium only.
 - *Alternative:* keep a small in-repo DevTools script with no dependency.
   Cheaper, more brittle, no trace viewer. Not recommended.
 
-### Decisions waiting for the Founder
+### Decisions taken after Phase 5
 
-1. Revenue gap in NGN (ADR 0008, proposal).
-2. Playwright as a dev dependency (above).
-3. Phase 6 scope and order.
+- Revenue gap: accepted with corrections (ADR 0008), built in Phase 6a.
+- Playwright: approved as a dev dependency, Chromium only, in CI.
+- Phase 6 is split into three gated sub-phases, each ending in a checkpoint.
+- Each sub-phase is worked on its own branch and merged to `main` after the
+  Founder approves its checkpoint (see `ENGINEERING_RULES.md`).
 
-## Phase 6: Complete the core utility UI and retire legacy
+## Phase 6: Complete the core utility product
 
-**Goal.** Executive and Operations fully on services; legacy `src/data`,
-`src/types`, the mock adapter and the `mock` source kind removed; alarms and
-events real; region-level energy accounting; a wider synthetic dataset with
-realistically loaded feeders.
-**Includes.** Alarm and maintenance ports; Events / Alarms, Reliability and
-Assets workspaces; navigation restructure; shared loading, error, empty and
-stale states; a design system with consistent tokens and a chosen typeface;
-per-request memoisation of read models; browser tests if approved.
-**Dependencies.** Phase 5.
-**Risks.** Removing legacy before replacement is live (decision gate).
-**Acceptance.** No import of `src/data/utility` or `src/types/utility`
-remains; each of the three new workspaces answers its user's question from
-the founding directive on the demo dataset.
+Three gated sub-phases. Work stops after each for the Founder's review.
+
+### Phase 6a: Engine (complete, awaiting approval; branch `phase-6a`)
+
+**Goal.** Make the engine ready to be widened: correct at every scope, fast,
+free of legacy, and tested in a browser.
+
+| Item | Status |
+| --- | --- |
+| Remove legacy `src/data/utility`, legacy types, the mock adapter and the `mock` source kind | Done |
+| Region and portfolio accounts as the sum of their electrical sections | Done |
+| Revenue gap (ADR 0008) on the Executive page | Done |
+| "Where to look first": asset-risk group, feeders ranked by money, one entry per subject | Done |
+| Result cache, held once per process, with a written invalidation rule | Done |
+| Every page under 500 ms on the current dataset | Done (see timings below) |
+| Playwright, Chromium only, in CI | Done, 17 flows |
+| Blueprint note on DisCo-only assumptions | Done |
+
+**Page timings**, production build, one machine, milliseconds. "Before" is the
+start of Phase 6a; "after" is with the cache warmed at server start. The
+Executive and Operations home pages are prerendered and were already fast.
+
+| Route | Before | After, first request | After, repeat |
+| --- | --- | --- | --- |
+| Executive | 19 | 47 | 11 |
+| Operations home | 11 | 22 | 31 |
+| Region | 1,184 | 459 | 119 |
+| Substation | 1,838 | 81 | 71 |
+| Feeder, Market Road | 2,524 | 85 | 71 |
+| Feeder, Old Town | 2,528 | 64 | 83 |
+| Transformer, Riverbank | 1,282 | 351 | 372 |
+| Transformer, Market Square | 1,125 | 198 | 186 |
+| Service point | 80 | 71 | 23 |
+
+The first request to any drill-down route also loads that route's code, which
+is what the Region figure shows. Timings vary by tens of milliseconds between
+runs. A browser test holds every screen to the 500 ms budget.
+
+**How it got there.** Parsing each timestamp once instead of on every use;
+giving peak loading only the readings recent enough for each instant instead
+of the whole history; looking interval records up by meter; computing each
+section once per process and reusing it; warming the network screens at start.
+
+**Acceptance, as met.** A region with one substation has exactly that
+substation's account (tested); the revenue gap values each transformer at its
+own low-voltage non-MD rate and keeps the 11 kV customer out of every rate
+(tested); no legacy import remains; typecheck, unit tests, lint, build and
+browser tests are green.
+
+### Phase 6b: Dataset widening (not started)
+
+**Goal.** A synthetic network large enough that nothing about it is an
+artefact of being small.
+
+**Includes.** A second substation, so region aggregation sums more than one
+section; a realistic number of transformers per feeder, so feeder loading is
+real and its caveat can be removed; the same realism rules, with every
+assumption in `DATASET_ASSUMPTIONS.md`.
+**Dependencies.** Phase 6a approved and merged.
+**Risks.** Dataset size and page time: the cache computes each section once,
+but the first computation grows with the network; the 500 ms budget must
+still hold. A longer "where to look" list needs a cut-off rule.
+**Acceptance.** Feeder peak loading is plausible for an 11 kV feeder and its
+caveat is gone; the region account equals the sum of two substations; every
+page stays under 500 ms; the assumptions file is complete.
+**Constraint.** Nothing added may assume every network is a DisCo network
+(see the blueprint note).
+
+### Phase 6c: Workspaces (not started)
+
+**Goal.** Each user's question has a screen shaped for it.
+
+**Includes.** Events / Alarms (an alarm port and synthetic alarm data),
+Reliability and Assets workspaces; navigation restructure; a design system
+and a chosen typeface; one `h1` per page.
+**Dependencies.** Phase 6b.
+**Risks.** Scope creep into a full redesign; alarms are new domain data.
+**Acceptance.** Each workspace answers its user's question from the founding
+directive on the widened dataset; the alarm panel shows real (synthetic)
+alarms or an explicit empty state; browser tests cover the new flows.
 
 ## Phase 7: GIS and network intelligence
 

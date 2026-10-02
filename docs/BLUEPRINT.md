@@ -4,6 +4,12 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `FOUNDING_DIRECTIVE.md`.
 
+> **State at the end of Phase 6a (2026-10-02).** Legacy mock data, types,
+> the mock adapter and the `mock` source kind are gone. Regions and the
+> portfolio are accounted as the sum of their electrical sections. Results are
+> cached once per process. Browser tests run in CI. See section 13 for the
+> assumptions that would tie the platform to distribution utilities.
+>
 > **State at the end of Phase 5 (2026-10-01).** Sections 2
 > to 12 below describe the repository as audited at commit `da0fad7`, before
 > Phase 5. Since then:
@@ -233,3 +239,33 @@ Assets, Reliability, Events / Alarms and Revenue workspaces; GIS; mini-grid
 and DER domains and screens; planning; AI assistant; reports; authentication
 and multi-organization access; real data ingestion; billing and financial
 intelligence.
+
+## 13. Assumptions that would make the platform DisCo-only
+
+The first paying customers may be mini-grid developers reporting for
+results-based financing, not distribution companies. Nothing has been built
+for them, and nothing should be designed against them. These are the places
+where the domain or the services currently assume a distribution utility.
+None is hard to change; each needs a decision before mini-grid work starts.
+
+| Where | Assumption today | What a mini-grid needs |
+| --- | --- | --- |
+| `ScopeRef`, topology index | Scopes are organization, region, substation, feeder, distribution transformer. Every asset hangs under a substation. | A **site** scope that is not under any substation, with its own generation, storage and distribution. |
+| `MeterInstallation` roles | Boundary meters are substation incomer, feeder head, transformer totalizer and grid interface. Energy enters from upstream. | Roles for **generation** (PV, generator), storage in and out, and site output. |
+| Energy account | Energy input is the net flow at the input boundary meters. Embedded generation is ignored unless a methodology allows a separately measured adjustment (default: none). | **Generation as the energy-account input**: energy generated, less storage losses and curtailment, equals energy available for sale. |
+| `sectionsForScope` (the cut) | Sections are substations, feeders and transformers. | A site as a section in its own right. The cut's own comment says so. |
+| Reliability, hours of supply | Customer-weighted from outage exposures per transformer. | The same calculation works, but RBF reporting usually wants **availability of the site's supply** and hours per day per customer tier. |
+| `Feeder.serviceBand` | NERC Service-Based Tariff bands A to E. | Mini-grid tariffs are set per site under the mini-grid regulation; no bands. The field is optional, so it does not block, but band compliance has no meaning there. |
+| `KpiKey` | ATC&C, SAIDI, SAIFI, collection and loading. | Generation, renewable fraction, capacity utilisation, connections, energy sold per connection, uptime. |
+| `MetricKey` (telemetry) | Voltage, current, power, frequency, temperature, energy registers. | State of charge, irradiance, inverter and generator state, fuel. |
+| Billing | Bills, vends and payments per customer; tariff as a code on the charge. | Mostly prepaid per-kWh or per-tier tariffs; the model fits. Connection fees and subsidy receipts are not modelled. |
+| Revenue gap | Unbilled energy valued at the low-voltage non-MD rate of the transformer where it occurs. | The "where it occurs" level would be the site or its distribution segment. The valuation rule itself carries over. |
+| Organization | `OrganizationKind` already includes `minigrid_operator` and `der_developer`. | Nothing. |
+| Reported figures | `ReportedKpi` with a basis; compared only on the same basis. | Fits RBF reporting directly: a claimed figure beside a calculated one, with the basis stated. This is the strongest fit. |
+
+**What 6a and 6b must not do.** Add a required link from an asset to a
+substation; add a rule that energy always enters from upstream; hard-code the
+scope kinds in a way a new kind cannot join; make the NERC band required.
+Phase 6a added none of these: the cut and the aggregation work over a list
+of sections, and the revenue-gap tree is built from nodes, so a site can
+become a section or a node without changing either calculation.
