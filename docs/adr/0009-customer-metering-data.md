@@ -1,8 +1,21 @@
 # ADR 0009: What customer meters report
 
 Date: 2026-10-04
-Status: **Proposed. Not implemented.** Awaiting the Founder's decision. Nothing
-in the code follows this ADR yet.
+Status: **Accepted by the Founder on 2026-10-04. Not implemented yet.**
+Nothing in the code follows this ADR yet; it is implemented at the start of
+Phase 6c, before the workspaces.
+
+Decisions taken on acceptance, which override the suggestions below where
+they differ:
+
+- Postpaid meters without AMI have monthly register reads, some of them
+  estimated.
+- AMI is on every maximum-demand account plus about 5% of the others (the
+  proposal suggested about 10%).
+- Ordinary prepaid meters have vend records only.
+- Energy vended is shown as "energy purchased", never as consumption.
+- The effect on the energy account and the page timings are reported at the
+  Phase 6c checkpoint.
 
 ## Context
 

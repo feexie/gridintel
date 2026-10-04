@@ -3,9 +3,9 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-04. Status: **Phase 6b complete on branch `phase-6b`,
-awaiting the Founder's review of the widened dataset and approval before it
-is merged to `main`. Phase 6c not started.**
+Last updated: 2026-10-04. Status: **Phase 6b approved by the Founder
+on 2026-10-04, merged to `main` and tagged `phase-6b`. Phase 6c not started;
+its first items are the Founder's decisions recorded under Phase 6c.**
 
 ## Completed
 
@@ -203,7 +203,7 @@ own low-voltage non-MD rate and keeps the 11 kV customer out of every rate
 (tested); no legacy import remains; typecheck, unit tests, lint, build and
 browser tests are green.
 
-### Phase 6b: Dataset widening (complete, awaiting approval; branch `phase-6b`)
+### Phase 6b: Dataset widening (complete, approved 2026-10-04; tag `phase-6b`)
 
 **Goal.** A synthetic network large enough that nothing about it is an
 artefact of being small.
@@ -287,7 +287,8 @@ under 500 ms (browser test, 12 routes); the assumptions file covers the
 widened network. Typecheck, 298 unit tests, lint, build and 21 browser tests
 are green.
 
-**For the Founder's review.**
+**For the Founder's review.** Raised at the checkpoint. The Founder's answers
+are recorded under Phase 6c.
 
 - Three generated transformers on Government Avenue (DT-GOV-3, DT-GOV-10,
   DT-GOV-4) peak above their rating in office hours, because government load
@@ -320,6 +321,38 @@ and a chosen typeface; one `h1` per page.
 **Acceptance.** Each workspace answers its user's question from the founding
 directive on the widened dataset; the alarm panel shows real (synthetic)
 alarms or an explicit empty state; browser tests cover the new flows.
+
+**Founder's decisions at the 6b checkpoint (2026-10-04).** These come before
+the workspaces, in this order.
+
+1. **Hillcrest gets two 33 kV incomers and two power transformers**, as most
+   Nigerian injection substations have. Farm Road's rural line feeds one bus
+   section; Government Avenue is on the other. The simplification documented
+   in `DATASET_ASSUMPTIONS.md` (the rural line interrupts Farm Road only,
+   though the substation has one power transformer) is removed. First item
+   of 6c.
+2. **ADR 0009 is accepted and implemented before the workspaces**, with these
+   defaults:
+   - postpaid meters without AMI: monthly register reads, some of them
+     estimated;
+   - AMI on every maximum-demand account plus about 5% of the others;
+   - ordinary prepaid meters: vend records only;
+   - energy vended is shown as "energy purchased", never as consumption.
+
+   The 6c checkpoint reports the effect on the energy account and the page
+   timings.
+3. **A reported basis may state its attribution rule.** When it is stated,
+   the calculation is compared against it. When it is not, the comparison
+   carries a note that the variance may reflect a difference in
+   classification. This changes data-integrity semantics and is approved; it
+   is recorded in ADR 0007.
+4. **The top-three cut-off moves** from the Executive component into the read
+   model.
+5. **Government Avenue's overloads** (DT-GOV-3, DT-GOV-10, DT-GOV-4): explain
+   at the 6c checkpoint whether they are designed or incidental.
+
+Also confirmed: Farm Road having the highest network-attributable SAIDI is
+correct and expected.
 
 ## Phase 7: GIS and network intelligence
 
