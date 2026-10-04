@@ -46,13 +46,15 @@ describe("operations read models", () => {
     assert.deepEqual(overview.regions.rows.map((row) => row.id), [DEMO_REGION_ID]);
 
     const region = (await regionView(runtime, DEMO_REGION_ID)) as NetworkLevelView;
-    assert.deepEqual(region.children[0].rows.map((row) => [row.kind, row.id]), [["substation", "SS-RIV"]]);
+    assert.deepEqual(region.children[0].rows.map((row) => [row.kind, row.id]), [["substation", "SS-RIV"], ["substation", "SS-HIL"]]);
 
     const substation = (await substationView(runtime, "SS-RIV")) as NetworkLevelView;
     assert.deepEqual(substation.children[0].rows.map((row) => row.id), ["FD-MKT", "FD-OLD"]);
 
     const feeder = (await feederView(runtime, "FD-MKT")) as NetworkLevelView;
-    assert.deepEqual(feeder.children[0].rows.map((row) => row.id), ["DT-MKT-1", "DT-MKT-2", "DT-MKT-3"]);
+    const transformers = feeder.children[0].rows.map((row) => row.id);
+    assert.equal(transformers.length, 12);
+    for (const id of ["DT-MKT-1", "DT-MKT-2", "DT-MKT-3", "DT-MKT-12"]) assert.ok(transformers.includes(id), id);
     assert.deepEqual(feeder.children[1].rows.map((row) => row.id), ["SP-MKT-MV-001"]);
 
     const transformer = (await transformerView(runtime, "DT-MKT-3")) as NetworkLevelView;
@@ -102,9 +104,14 @@ describe("operations read models", () => {
   it("account for a region as the sum of its sections, and say which", async () => {
     const region = (await regionView(runtime, DEMO_REGION_ID)) as NetworkLevelView;
     const substation = (await substationView(runtime, "SS-RIV")) as NetworkLevelView;
-    assert.equal(region.losses?.atcc.value, substation.losses?.atcc.value);
-    assert.deepEqual(region.losses?.sections, [{ kind: "substation", id: "SS-RIV" }]);
-    assert.match(region.losses?.scopeNote ?? "", /Summed over 1 electrical section\(s\): SS-RIV\. A region is not an electrical boundary/);
+    const hillcrest = (await substationView(runtime, "SS-HIL")) as NetworkLevelView;
+    // Energy received is the two incomers added together; ATC&C is of the whole, so it lies between the two.
+    const received = (view: NetworkLevelView) => view.losses?.chain[0].value as number;
+    assert.ok(Math.abs(received(region) - (received(substation) + received(hillcrest))) < 1e-6);
+    const [low, high] = [substation.losses?.atcc.value as number, hillcrest.losses?.atcc.value as number].sort((a, b) => a - b);
+    assert.ok((region.losses?.atcc.value as number) > low && (region.losses?.atcc.value as number) < high);
+    assert.deepEqual(region.losses?.sections, [{ kind: "substation", id: "SS-HIL" }, { kind: "substation", id: "SS-RIV" }]);
+    assert.match(region.losses?.scopeNote ?? "", /Summed over 2 electrical section\(s\): SS-HIL, SS-RIV\. A region is not an electrical boundary/);
     assert.equal(substation.losses?.scopeNote, null);
     // The figure reported for the region can now be set beside a calculated one.
     assert.deepEqual(region.losses?.reported.map((row) => [row.label, row.sameBasis]), [["ATC&C", true], ["Collection efficiency", true]]);

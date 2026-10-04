@@ -1,4 +1,4 @@
-import type { LossesView, MetricView, NotAvailableView, ReliabilityView, RevenueGapView } from "../operations/views.ts";
+import type { LossesView, MetricView, NotAvailableView, ReliabilityView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
 import type { AttentionSubject } from "./attention.ts";
 
 /* ==========================================================
@@ -34,14 +34,6 @@ export interface TransformerLoadingRow {
   overloaded: boolean | null;
 }
 
-export interface FeederGapRow {
-  feederId: string;
-  feederName: string;
-  commercial: MetricView;
-  collection: MetricView;
-  notRealised: MetricView;
-}
-
 export interface ExecutiveView {
   organization: string | null;
   period: { start: string; end: string };
@@ -56,7 +48,7 @@ export interface ExecutiveView {
   losses: LossesView | null;
   lossesNote: string | null;
   revenueGap: RevenueGapView;
-  gapByFeeder: FeederGapRow[];
+  gapByFeeder: RevenueGapRow[];
   reliability: ReliabilityView;
   bandCompliance: BandComplianceRow[];
   transformerLoading: TransformerLoadingRow[];

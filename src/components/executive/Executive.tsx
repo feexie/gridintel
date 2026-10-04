@@ -1,9 +1,8 @@
 import Link from "next/link";
-import type { AttentionSubject, ExecutiveView, FeederGapRow } from "@/services/executive/views";
-import type { RevenueGapView } from "@/services/operations/views";
-import { Legend, MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "@/components/operations/Metric";
-import { LossesPanel, NotAvailable, ReliabilityPanel } from "@/components/operations/Panels";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatMoney, formatNumber, formatPeriod, formatTime, levelHref } from "@/components/operations/format";
+import type { AttentionSubject, ExecutiveView } from "@/services/executive/views";
+import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/operations/Metric";
+import { LossesPanel, NotAvailable, ReliabilityPanel, RevenueGapPanel } from "@/components/operations/Panels";
+import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatPeriod, formatTime, levelHref } from "@/components/operations/format";
 
 function Subject({ entry }: { entry: AttentionSubject }) {
   return (
@@ -58,8 +57,22 @@ function Subject({ entry }: { entry: AttentionSubject }) {
   );
 }
 
-function WhereToLook({ assetRisk, ranked, method }: { assetRisk: AttentionSubject[]; ranked: AttentionSubject[]; method: string }) {
-  const money = ranked.filter((entry) => entry.group === "money");
+/** Feeders shown in the money ranking until the reader asks for all of them. */
+const TOP_FEEDERS = 3;
+
+function WhereToLook({
+  assetRisk,
+  ranked,
+  method,
+  showAll,
+}: {
+  assetRisk: AttentionSubject[];
+  ranked: AttentionSubject[];
+  method: string;
+  showAll: boolean;
+}) {
+  const everyFeeder = ranked.filter((entry) => entry.group === "money");
+  const money = showAll ? everyFeeder : everyFeeder.slice(0, TOP_FEEDERS);
   const other = ranked.filter((entry) => entry.group === "other");
   return (
     <Panel title="Where to look first" aside="Facts from fixed rules. No AI.">
@@ -80,7 +93,10 @@ function WhereToLook({ assetRisk, ranked, method }: { assetRisk: AttentionSubjec
 
       <div data-group="money">
         <h3 className="flex items-center gap-2 border-t border-slate-800 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-200">
-          Revenue <span className="font-normal normal-case tracking-normal text-slate-400">Feeders, ranked by estimated revenue not realised.</span>
+          Revenue{" "}
+          <span className="font-normal normal-case tracking-normal text-slate-400">
+            {showAll || everyFeeder.length <= TOP_FEEDERS ? "Feeders" : `Top ${TOP_FEEDERS} of ${everyFeeder.length} feeders`}, ranked by estimated revenue not realised.
+          </span>
         </h3>
         {money.length === 0 ? (
           <p className="py-1 text-xs text-slate-400">No feeder has a money figure to rank by in this period.</p>
@@ -92,6 +108,14 @@ function WhereToLook({ assetRisk, ranked, method }: { assetRisk: AttentionSubjec
           </ol>
         )}
       </div>
+
+      {money.length < everyFeeder.length ? (
+        <p className="text-xs">
+          <Link href="?feeders=all" className="text-cyan-300 hover:underline">
+            Show all {everyFeeder.length} feeders
+          </Link>
+        </p>
+      ) : null}
 
       {other.length > 0 ? (
         <div data-group="other">
@@ -110,95 +134,7 @@ function WhereToLook({ assetRisk, ranked, method }: { assetRisk: AttentionSubjec
   );
 }
 
-function RevenueGapPanel({ gap, byFeeder }: { gap: RevenueGapView; byFeeder: FeederGapRow[] }) {
-  return (
-    <Panel title="Revenue gap" aside={<span>Estimate of revenue not realised · monthly, not annualised</span>}>
-      <p className="border-l-2 border-amber-400/60 pl-2 text-xs leading-snug text-amber-100/90">
-        {gap.definition} {gap.periodNote}
-      </p>
-      <div className="grid gap-2 md:grid-cols-3">
-        <MetricTile metric={gap.notRealised} sourcing={gap.sourcing} emphasis />
-        <MetricTile metric={gap.commercial} sourcing={gap.sourcing} />
-        <MetricTile metric={gap.collection} sourcing={gap.sourcing}>
-          <span className="border border-slate-700 px-1.5 py-px text-[10px] uppercase tracking-wide text-slate-300">Cash basis</span>
-        </MetricTile>
-      </div>
-      <p className="text-[11px] leading-snug text-slate-300">
-        The commercial gap and the collection gap are shown separately and are never set against each other.
-        {gap.negativeNote ? <span className="text-amber-100"> {gap.negativeNote}</span> : null}
-      </p>
-      {gap.caveat ? <p className="text-[11px] leading-snug text-amber-100/90">† {gap.caveat} The rates below are therefore assumptions too.</p> : null}
-      {gap.unknownDemandClassNote ? <p className="text-[11px] leading-snug text-amber-100/90">! {gap.unknownDemandClassNote}</p> : null}
-
-      <div className="grid gap-3 xl:grid-cols-2">
-        <div>
-          <h3 className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">By feeder</h3>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                <th className="py-1 pr-2 font-normal">Feeder</th>
-                <th className="py-1 pr-2 text-right font-normal">Commercial gap</th>
-                <th className="py-1 pr-2 text-right font-normal">Collection gap</th>
-                <th className="py-1 text-right font-normal">Not realised</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byFeeder.map((row) => (
-                <tr key={row.feederId} className="border-b border-slate-800/60">
-                  <td className="py-1 pr-2">
-                    <Link href={levelHref("feeder", row.feederId)} className="text-cyan-300 hover:underline">
-                      {row.feederName}
-                    </Link>
-                  </td>
-                  <td className="py-1 pr-2 text-right">
-                    <MetricCell metric={row.commercial} />
-                  </td>
-                  <td className="py-1 pr-2 text-right">
-                    <MetricCell metric={row.collection} />
-                  </td>
-                  <td className="py-1 text-right">
-                    <MetricCell metric={row.notRealised} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <h3 className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">How the commercial gap is valued</h3>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                <th className="py-1 pr-2 font-normal">Where the loss occurs</th>
-                <th className="py-1 pr-2 text-right font-normal">Unbilled energy</th>
-                <th className="py-1 pr-2 text-right font-normal">LV non-MD rate{gap.caveat ? " †" : ""}</th>
-                <th className="py-1 text-right font-normal">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {gap.parts.map((part) => (
-                <tr key={`${part.kind}:${part.scope.id}`} className="border-b border-slate-800/60">
-                  <td className="py-1 pr-2 text-slate-200">
-                    {part.scope.name}
-                    <span className="ml-1.5 text-[10px] text-slate-500">{part.kind === "residual" ? "residual above the sections below" : part.scope.id}</span>
-                  </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.ratePerKwh === null ? "—" : `${formatMoney(part.ratePerKwh, gap.currency)}/kWh`}</td>
-                  <td className="whitespace-nowrap py-1 text-right font-mono text-slate-50">{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-1 text-[10px] leading-snug text-slate-500">
-            Each loss is valued at the average rate billed to low-voltage, non-maximum-demand customers where it occurs. Customers supplied at 11 kV are in no rate.
-          </p>
-        </div>
-      </div>
-    </Panel>
-  );
-}
-
-export function Executive({ view }: { view: ExecutiveView }) {
+export function Executive({ view, showAllFeeders = false }: { view: ExecutiveView; showAllFeeders?: boolean }) {
   return (
     <div className="space-y-4">
       <header className="space-y-2">
@@ -234,9 +170,9 @@ export function Executive({ view }: { view: ExecutiveView }) {
         <Legend />
       </header>
 
-      <WhereToLook assetRisk={view.assetRisk} ranked={view.whereToLook} method={view.whereToLookMethod} />
+      <WhereToLook assetRisk={view.assetRisk} ranked={view.whereToLook} method={view.whereToLookMethod} showAll={showAllFeeders} />
 
-      <RevenueGapPanel gap={view.revenueGap} byFeeder={view.gapByFeeder} />
+      <RevenueGapPanel gap={view.revenueGap} below={{ title: "By feeder", rows: view.gapByFeeder }} />
 
       {view.losses ? (
         <LossesPanel losses={view.losses} />

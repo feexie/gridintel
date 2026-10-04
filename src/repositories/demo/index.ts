@@ -23,12 +23,11 @@ export const DEMO_NOTICE = {
   summary:
     "A designed demonstration dataset for September 2026. It describes no real network, customer, " +
     "meter reading, outage, bill or payment.",
+  // Feeder loading needs no caveat any more: each feeder now carries ten to fourteen
+  // transformers and peaks at 54–81% of its rating.
   caveats: {
-    feederLoading:
-      "Each feeder in this dataset carries only three transformers, so feeder loading is far below " +
-      "what a real 11 kV feeder carries. It is an artefact of the small model.",
     tariffs: "Tariffs are assumptions, not current published rates.",
-  },
+  } as { feederLoading?: string; tariffs?: string },
 } as const;
 
 export { buildDemoDataset, demoDataset } from "./buildDemoDataset.ts";

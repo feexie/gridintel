@@ -18,14 +18,15 @@ test("drills from region to service point, one URL per level", async ({ page }) 
   await expect(page).toHaveURL(/\/regions\/demo-region-northfield$/);
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Northfield Region");
 
-  await page.getByRole("link", { name: "Riverside 33/11 kV injection substation" }).click();
+  // Each level links to the one below from its revenue-gap rows and from its table; either will do.
+  await page.getByRole("link", { name: "Riverside 33/11 kV injection substation" }).first().click();
   await expect(page).toHaveURL(/\/substations\/SS-RIV$/);
 
-  await page.getByRole("link", { name: "Old Town 11 kV feeder" }).click();
+  await page.getByRole("link", { name: "Old Town 11 kV feeder" }).first().click();
   await expect(page).toHaveURL(/\/feeders\/FD-OLD$/);
   await expect(page.getByText("NERC service band")).toBeVisible();
 
-  await page.getByRole("link", { name: "Riverbank transformer" }).click();
+  await page.getByRole("link", { name: "Riverbank transformer" }).first().click();
   await expect(page).toHaveURL(/\/transformers\/DT-OLD-2$/);
   await expect(tile(page, "Peak loading")).toContainText("Over rating");
 
@@ -73,12 +74,30 @@ test("Source & method on commercial loss says it is a derived residual", async (
 test("table caveats are visible as a marker and a footnote, not only on hover", async ({ page }) => {
   await page.goto(`${OPERATIONS}/substations/SS-RIV`);
   const feeders = page.locator("section", { has: page.getByRole("heading", { name: /^Feeders/ }) });
-  await expect(feeders.getByText("Each feeder in this dataset carries only three transformers")).toBeVisible();
   await expect(feeders.getByText("Cash basis: received in the period ÷ billed in the period.")).toBeVisible();
-  // The marker printed on the peak-loading cells is the one the footnote starts with.
-  const footnote = feeders.locator("li", { hasText: "Each feeder in this dataset" });
+  // The marker printed on the collection cells is the one the footnote starts with.
+  const footnote = feeders.locator("li", { hasText: "Cash basis: received in the period" });
   const marker = (await footnote.locator("span").first().innerText()).trim();
   await expect(feeders.getByRole("row", { name: /Market Road/ })).toContainText(marker);
+  // Feeders now carry a realistic number of transformers, so feeder loading has no caveat.
+  await expect(page.getByText("carries only three transformers")).toHaveCount(0);
+});
+
+test("feeder loading is that of a loaded 11 kV feeder, with no caveat", async ({ page }) => {
+  for (const [feeder, peak] of [["FD-MKT", "78.5%"], ["FD-OLD", "80.9%"], ["FD-GOV", "72.3%"], ["FD-FRM", "53.8%"]]) {
+    await page.goto(`${OPERATIONS}/feeders/${feeder}`);
+    await expect(tile(page, "Peak loading"), feeder).toContainText(peak);
+    await expect(page.getByText("artefact of the small model"), feeder).toHaveCount(0);
+  }
+});
+
+test("government accounts are shown as their own customer class, with their own collection efficiency", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/feeders/FD-GOV`);
+  const classes = page.locator('[data-table="customer-class"]');
+  const government = classes.getByRole("row", { name: /^Government \(MDA\)/ });
+  await expect(government).toContainText("90");
+  await expect(government).toContainText("19.8%");
+  await expect(classes.getByRole("row", { name: /^Residential/ })).toContainText(/95\.\d%/);
 });
 
 test("a reported figure on another basis is not comparable, with the reason and no difference", async ({ page }) => {
@@ -96,16 +115,20 @@ test("reported SAIDI is set beside the network-only calculation, on the same bas
   const row = page.getByRole("row", { name: /^SAIDI/ });
   await expect(row).toContainText("Same basis");
   await expect(row).toContainText("network interruptions only");
-  await expect(row).toContainText("5.1 h");
-  await expect(row).toContainText("5.7 h");
+  await expect(row).toContainText("3.0 h");
+  await expect(row).toContainText("3.4 h");
   // The total, with load shedding, is the headline figure and is far larger.
-  await expect(tile(page, "SAIDI")).toContainText("216.0 h");
+  await expect(tile(page, "SAIDI")).toContainText("208.7 h");
 });
 
 test("a region is accounted as the sum of its sections, and alarms are an explicit not-available state", async ({ page }) => {
   await page.goto(`${OPERATIONS}/regions/demo-region-northfield`);
-  await expect(page.getByText("Summed over 1 electrical section(s): SS-RIV.")).toBeVisible();
-  await expect(tile(page, "ATC&C")).toContainText("22.4%");
+  await expect(page.getByText("Summed over 2 electrical section(s): SS-HIL, SS-RIV.")).toBeVisible();
+  await expect(tile(page, "ATC&C")).toContainText("31.5%");
+  // The gap below the region is by substation, and the two rows are the region's two sections.
+  const gap = page.locator("section", { has: page.getByRole("heading", { name: "Revenue gap", level: 2 }) });
+  await expect(gap.getByRole("link", { name: "Riverside 33/11 kV injection substation" })).toBeVisible();
+  await expect(gap.getByRole("link", { name: "Hillcrest 33/11 kV injection substation" })).toBeVisible();
   const alarms = page.locator("section", { has: page.getByRole("heading", { name: "Alarms" }) });
   await expect(alarms).toContainText("Not available");
   await expect(alarms).toContainText("no alarms are shown rather than an invented list");

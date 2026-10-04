@@ -17,8 +17,12 @@ It is identical on every build.
 
 - Period: 1–30 September 2026, in West Africa Time (UTC+1).
 - Demo clock ("now"): 1 October 2026, 00:00 WAT. Nothing is dated later.
-- Interval energy and telemetry are hourly. Real boundary meters usually
-  record every 15 or 30 minutes; hourly keeps the dataset small.
+- Boundary meters (substation incomers, feeder heads, transformer
+  totalizers) and telemetry are hourly. Real boundary meters usually record
+  every 15 or 30 minutes; hourly keeps the dataset small.
+- Customer meters report one reading a day, the sum of that day's hours.
+  Consumption is still modelled hour by hour; only what the customer meter
+  reports is daily. This keeps the dataset small with thousands of meters.
 
 ## Network
 
@@ -26,22 +30,43 @@ It is identical on every build.
 | --- | --- |
 | Organization | Savanna Electricity Distribution (synthetic); invented |
 | Region | Northfield; invented |
-| Substation | Riverside 33/11 kV injection substation, one 2.5 MVA power transformer |
-| Feeders | Market Road (Band A) and Old Town (Band C), both 11 kV, rated 120 A |
-| Distribution transformers | 6, rated 50–300 kVA, 11/0.415 kV |
-| Connections | 432: 431 at low voltage and 1 customer supplied at 11 kV |
+| Substations | Riverside and Hillcrest, both 33/11 kV injection substations, each with one 5 MVA power transformer |
+| Feeders | Riverside: Market Road (Band A, 120 A) and Old Town (Band C, 120 A). Hillcrest: Government Avenue (Band B, 200 A) and Farm Road (Band D, 60 A). All 11 kV |
+| Distribution transformers | 48, rated 50–500 kVA, 11/0.415 kV: 12 on Market Road, 14 on Old Town, 12 on Government Avenue, 10 on Farm Road |
+| Connections | 6,448: 6,447 at low voltage and 1 customer supplied at 11 kV |
 
-- **Deliberately small, so feeder loading is not realistic.** A real 11 kV
-  feeder carries dozens of transformers. Each feeder here carries three, so
-  its peak loading is only 10–18% of rating. That figure is an artefact of
-  the small model, not a picture of a loaded feeder, and the UI must say so
-  wherever feeder loading is shown. Transformer loading is realistic. The fix
-  (more transformers per feeder) is deferred to the Phase 6 dataset widening.
+- **The four feeders are four different problems.** Market Road is
+  commercial and well metered. Old Town is mostly unmetered with poor
+  collection. Government Avenue is well metered and well run, but loses its
+  collection to government accounts. Farm Road is rural, mostly unmetered,
+  and fed by an upstream supply that fails on most days.
+- **Six transformers are designed by hand; 42 are generated.** The first
+  three on Market Road and on Old Town keep the figures they had before the
+  network was widened. Every other transformer is generated from its
+  feeder's profile: a fixed list of ratings, and for each a customer count
+  sized so that the evening peak falls at a loading drawn from a range
+  (50–82% on Market Road, 50–88% on Old Town, 50–80% on Government Avenue,
+  40–75% on Farm Road). Generated transformers are named by number
+  ("Old Town transformer 7").
+- **Feeder loading is now that of a loaded feeder.** Peak loading is about
+  79% of rating on Market Road, 81% on Old Town, 72% on Government Avenue
+  and 54% on Farm Road. The caveat shown beside feeder loading when each
+  feeder carried three transformers has been removed.
+- **Four transformers peak above their rating.** DT-OLD-2 has too many
+  connections for its rating on purpose. DT-GOV-3, DT-GOV-10 and DT-GOV-4
+  were not designed by hand: on Government Avenue the customer count is
+  sized for the evening peak, and the daytime load of the government
+  accounts comes on top of it, so these three peak above rating in office
+  hours. This is a consequence of how the generator sizes a transformer,
+  kept because it is a realistic case, and it is not a claim about any real
+  asset.
 - **Coordinates** place the network near Yola so a map has somewhere to draw
-  it. The assets do not exist. Service points are scattered within about
-  300 m of their transformer. A feeder's route is a straight polyline from
-  the substation through its transformers. The power transformer has no
-  coordinates of its own; it is in the substation.
+  it. The assets do not exist. Hillcrest is placed about 7 km north-east of
+  Riverside. Generated transformers are spaced along a straight heading from
+  their substation, with a small random offset. Service points are scattered
+  within about 300 m of their transformer. A feeder's route is a straight
+  polyline from the substation through its transformers. A power transformer
+  has no coordinates of its own; it is in its substation.
 - **Names** of places, assets and the organization are invented. No personal
   names are generated.
 
@@ -56,14 +81,30 @@ day of 20 (A), 16 (B), 12 (C), 8 (D) and 4 (E).
   This is deliberate: a feeder that complies on average while failing on
   individual days is the realistic case.
 - Old Town is Band C (minimum 12 h). It averages about 13.8 hours a day and
-  falls below 12 hours on 3 days, when a fault or the upstream loss comes on
+  falls below 12 hours on 2 days, when a fault or the upstream loss comes on
   top of load shedding.
+- Government Avenue is Band B (minimum 16 h). It averages about 17.7 hours a
+  day and falls below 16 hours on 7 days.
+- Farm Road is Band D (minimum 8 h). It averages about 9.3 hours a day and
+  falls below 8 hours on 9 days, when the upstream supply fails on top of
+  load shedding.
 - The band on a feeder is stored as a classification only. Hours of supply
   are calculated from the outage log, never read from the band.
 - The day-by-day test is a GridIntel reference calculation, not a regulatory
   determination.
 
 ## Customers and metering
+
+By feeder:
+
+| Feeder | Connections | Prepaid | Postpaid | Unmetered |
+| --- | --- | --- | --- | --- |
+| Market Road (with the 11 kV customer) | 1,477 | 962 | 332 | 183 |
+| Old Town | 2,141 | 574 | 365 | 1,202 |
+| Government Avenue (with 90 government accounts) | 1,766 | 937 | 779 | 50 |
+| Farm Road | 1,064 | 177 | 127 | 760 |
+
+The six hand-designed transformers, unchanged by the widening:
 
 | Transformer | Rating | Connections | Prepaid | Postpaid | Unmetered |
 | --- | --- | --- | --- | --- | --- |
@@ -76,27 +117,37 @@ day of 20 (A), 16 (B), 12 (C), 8 (D) and 4 (E).
 | MV customer on Market Road | 11 kV | 1 | 0 | 1 | 0 |
 
 - An unmetered connection has a service point and an account but no meter.
-- The 11 kV customer is recorded as a maximum-demand (MD) account; every
-  other account is non-MD. MD and medium-voltage accounts are left out of the
-  rate that values unbilled energy in the revenue gap.
+- **Government (MDA) accounts** are a customer category of their own, kept
+  apart from "public" services. There are 90, all on Government Avenue:
+  about 0.03 per kVA of each transformer's rating. Each is metered, postpaid
+  and billed on a meter reading as a maximum-demand account, with a mean
+  peak demand of 14 kW. What sets them apart is how seldom they pay.
+- **Demand class.** The 11 kV customer and the government accounts are
+  recorded as maximum-demand (MD). MD and medium-voltage accounts are left
+  out of the rate that values unbilled energy in the revenue gap. On Farm
+  Road, 2% of accounts (19) have no demand class recorded in the registry:
+  they are left out of the rate, not assumed to be non-MD, and the revenue
+  gap says how many. Every other account is non-MD.
 - DT-MKT-3 is fully metered on purpose, so one energy account is complete.
-- DT-OLD-2 has too many connections for its rating on purpose.
-- Nine accounts on Old Town are disconnected for the whole month and use
-  nothing.
-- **Every customer meter is treated as an interval-read smart meter**, prepaid
-  ones included. In reality most prepaid meters are not read hourly. This is
-  the largest simplification in the dataset.
-- Bypassed meters: 5% of metered connections on Market Road and 8% on Old
-  Town. A bypassed meter records 45% of what is consumed.
+- Disconnected for the whole month, using nothing: 3% of connections on Old
+  Town (75) and 4% on Farm Road (49).
+- **Every customer meter is treated as a smart meter that is read daily**,
+  prepaid ones included. In reality most prepaid meters are not read on a
+  schedule at all. This is the largest simplification in the dataset.
+- Bypassed meters, as a share of metered connections: 5% on Market Road, 8%
+  on Old Town, 2% on Government Avenue and 10% on Farm Road. A bypassed
+  meter records 45% of what is consumed.
 - An unmetered connection uses 25% more than a metered one of the same kind.
 
 ## Consumption
 
 - Each connection has a peak demand drawn between 50% and 150% of its group
-  mean: residential 0.9 kW (Market Road) or 0.55 kW (Old Town); commercial
-  2.5–3.2 kW; the 11 kV customer 120 kW.
+  mean: residential 0.9 kW (Market Road), 0.55 kW (Old Town), 1.0 kW
+  (Government Avenue) or 0.35 kW (Farm Road); commercial 1.2–3.2 kW;
+  government 14 kW; the 11 kV customer 120 kW.
 - Demand follows a fixed daily shape per category (residential peaks at
-  20:00, commercial at 10:00–14:00), a weekday factor, a daily factor per
+  20:00, commercial at 10:00–14:00, government in office hours with little
+  outside them and 20–25% at weekends), a weekday factor, a daily factor per
   transformer (±8%) and hourly noise per connection (±20%).
 - Consumption is zero for exactly the time a transformer is off.
 - No load pickup after an outage, no seasonality, no reverse flow.
@@ -105,10 +156,11 @@ day of 20 (A), 16 (B), 12 (C), 8 (D) and 4 (E).
 
 Fixed fractions of the energy entering each section, not load-dependent:
 
-- Low-voltage network and transformer: 4.5–5.5% on Market Road, 7.5–10% on
-  Old Town (10% on the overloaded transformer).
-- 11 kV line: 2% on Market Road, 3.5% on Old Town.
-- Power transformer and busbars: 1%.
+- Low-voltage network and transformer: 4.5–6% on Market Road and Government
+  Avenue, 7.5–10% on Old Town (10% on DT-OLD-2), 9–13% on Farm Road.
+- 11 kV line: 2% on Market Road, 3.5% on Old Town, 2.2% on Government Avenue,
+  5% on Farm Road.
+- Power transformer and busbars: 1% at each substation.
 
 Technical loss cannot be metered directly. The dataset therefore includes a
 synthetic **technical-loss study** as reported figures, and the energy
@@ -122,20 +174,30 @@ exact here; a real study would not.
 
 - All amounts are in NGN, stored in kobo.
 - **Tariffs are assumptions, not current published rates:** ₦209.50/kWh on
-  the Band A feeder and ₦50.00/kWh on the Band C feeder, the same for
-  non-maximum-demand and maximum-demand customers. No VAT, fixed charges or
-  arrears.
+  the Band A feeder, ₦63.00 on Band B, ₦50.00 on Band C and ₦43.00 on Band D,
+  the same for non-maximum-demand and maximum-demand customers. No VAT,
+  fixed charges or arrears.
 - Prepaid: two to four vends in the month, each paid when raised, for 94–106%
   of what the meter recorded.
-- Postpaid with a meter: one bill at a month-end run (30 September, 23:30)
-  for what the meter recorded.
-- Unmetered: one estimated bill at the same run for a fixed energy: 220 kWh
-  (residential) or 600 kWh (commercial) on Market Road, 90 or 250 kWh on Old
-  Town. These figures are invented; they are not NERC capping values.
+- Postpaid with a meter, government accounts included: one bill at a
+  month-end run (30 September, 23:30) for what the meter recorded.
+- Unmetered: one estimated bill at the same run for a fixed energy,
+  residential / commercial: 220 / 600 kWh on Market Road, 90 / 250 on Old
+  Town, 180 / 450 on Government Avenue, 55 / 160 on Farm Road. These figures
+  are invented; they are not NERC capping values.
 - Collection is on a cash basis. Each postpaid or unmetered account pays in
   full, pays nothing, or pays 30–80%, with these chances of paying in full /
-  nothing: Market Road postpaid 70% / 8%, unmetered 40% / 25%; Old Town
-  postpaid 40% / 30%, unmetered 15% / 50%. The 11 kV customer pays 93%.
+  nothing:
+
+  | Feeder | Postpaid | Unmetered | Government |
+  | --- | --- | --- | --- |
+  | Market Road | 70% / 8% | 40% / 25% | none on this feeder |
+  | Old Town | 40% / 30% | 15% / 50% | none on this feeder |
+  | Government Avenue | 80% / 5% | 50% / 20% | 8% / 72% |
+  | Farm Road | 35% / 35% | 12% / 55% | none on this feeder |
+
+  The 11 kV customer pays 93%. Government accounts come out at about 20%
+  collected, against about 95% for residential accounts on the same feeder.
 - Simplification: the money received in September is sized against the
   September bill. In reality it would settle earlier bills.
 
@@ -144,11 +206,21 @@ exact here; a real study would not.
 - **Load shedding** in whole-hour blocks, attributed to transmission: Market
   Road is off for 2–5 hours on two days in three (a five-hour block leaves 19
   hours, under its band minimum); Old Town is off for 4–5 hours overnight and
-  5–6 hours in the day, every day.
-- Six individual events: an 11 kV fault on Old Town restored in two stages, a
-  three-minute feeder trip on Market Road, planned maintenance on one
-  transformer, a loss of 33 kV supply to the whole substation, a transformer
-  fault on DT-OLD-2 and a storm outage on DT-OLD-3.
+  5–6 hours in the day, every day; Government Avenue is off for one block of
+  4–9 hours every day, starting between midnight and 02:00 (a nine-hour block
+  leaves 15 hours, under its band minimum); Farm Road is off for 6 hours
+  overnight and 6–7 hours in the day, every day.
+- **Farm Road's upstream supply fails on about two days in three**, for 2–5
+  hours from about 17:00, on top of load shedding. Each failure is recorded
+  as a loss of upstream supply, attributed to transmission.
+- Nine individual events: an 11 kV fault on Old Town restored in two stages,
+  a three-minute feeder trip on Market Road, planned maintenance on DT-MKT-2,
+  a loss of 33 kV supply to the whole of Riverside substation, a transformer
+  fault on DT-OLD-2, a storm outage on DT-OLD-3, an 11 kV cable fault on
+  Government Avenue, planned maintenance on DT-GOV-4 and a low-voltage fault
+  on DT-FRM-3.
+- Individual events are placed in hours that load shedding never uses on the
+  feeder concerned, so no supply is recorded as off twice at once.
 - One customer complaint with no restoration time, to show how an incomplete
   record is excluded from the indices rather than guessed at.
 - Every interruption is recorded per transformer. Its customer count is the
@@ -170,7 +242,8 @@ exact here; a real study would not.
 ## Reported figures
 
 A synthetic monthly report states ATC&C, collection efficiency, SAIDI and
-SAIFI for the region, the substation and each feeder. They were written to
+SAIFI for each substation and each feeder, and ATC&C and collection
+efficiency for the region. They were written to
 differ from what the records support, so that reported and calculated values
 can be compared. Each figure states its basis:
 

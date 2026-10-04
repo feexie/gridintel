@@ -15,11 +15,12 @@ import type { LevelKind, MetricView } from "../operations/views.ts";
       question and is never ranked by money. Every transformer
       loaded above its rating is listed here, highest peak first.
 
-   2. REVENUE, RANKED BY MONEY. Feeders, ranked by their estimated
-      revenue not realised, largest first. Only feeders are ranked,
-      because their figures do not overlap: a transformer's
-      commercial gap is already part of its feeder's total and must
-      not compete with it.
+   2. REVENUE, RANKED BY MONEY. Every feeder with a money figure,
+      ranked by its estimated revenue not realised, largest first.
+      Only feeders are ranked, because their figures do not overlap:
+      a transformer's commercial gap is already part of its feeder's
+      total and must not compete with it. The screen shows the top
+      few and offers the full list.
 
    3. OTHER. Subjects with a finding but no money figure to rank
       by, in the fixed order of the rules.
@@ -85,7 +86,8 @@ export const ATTENTION_METHOD =
   "revenue not realised; (3) the feeder with the highest ATC&C; (4) a feeder that fell below its service-band minimum on at least one " +
   "day; (5) the feeder with the lowest collection efficiency; (6) the transformer with the highest commercial loss; (7) the feeder " +
   "with the highest network-attributable SAIDI. Asset risk is its own group, shown first and never ranked by money: transformers " +
-  "over rating, highest peak first. Feeders are then ranked by estimated revenue not realised, largest first. Only feeders are " +
+  "over rating, highest peak first. Every feeder with a money figure is then ranked by estimated revenue not realised, largest " +
+  "first; the screen shows the top few and offers the full list. Only feeders are " +
   "ranked by money, because a transformer's commercial gap is already part of its feeder's total. Subjects with no money figure " +
   "follow in rule order. Each subject appears once, with every rule it triggered. Money figures are monthly estimates of revenue " +
   "not realised, not amounts owed. Figures with no value produce no finding. No weighting, no AI.";
@@ -205,6 +207,14 @@ export function attention(feeders: readonly FeederSignals[], transformers: reado
       detail: null,
       context: null,
     });
+  }
+
+  // Every feeder with a money figure is ranked, whether or not another rule picked it out.
+  for (const feeder of feeders) {
+    const key = `feeder:${feeder.id}`;
+    if (positive(feeder.revenueNotRealised) !== null && !findings.has(key)) {
+      findings.set(key, { subject: { kind: "feeder", id: feeder.id, name: feeder.name }, findings: [] });
+    }
   }
 
   const firstRule = (entry: { findings: Finding[] }) => Math.min(...entry.findings.map((finding) => RULE_ORDER.indexOf(finding.rule)));

@@ -125,6 +125,8 @@ export interface LossesView {
   revenueCollected: MetricView;
   collectionBasis: "cash";
   billingByBasis: { basis: string; label: string; records: number; energyKwh: number | null; amount: number }[];
+  /** Billing and collection by customer class, largest billing first. */
+  byCustomerClass: { category: string; label: string; accounts: number; revenueBilled: number; revenueCollected: number; collection: MetricView }[];
   accounts: { inScope: number | null; billed: number };
   reported: ReportedComparisonView[];
 }
@@ -138,6 +140,16 @@ export interface RevenueGapPartView {
   energyKwh: number | null;
   ratePerKwh: number | null;
   amount: number | null;
+}
+
+/** The revenue gap of one section below the page's scope. */
+export interface RevenueGapRow {
+  kind: LevelKind;
+  id: string;
+  name: string;
+  commercial: MetricView;
+  collection: MetricView;
+  notRealised: MetricView;
 }
 
 export interface RevenueGapView {
@@ -270,6 +282,9 @@ export interface NetworkLevelView {
   losses: LossesView | null;
   /** Why there is no losses block, when there is none. */
   lossesNote: string | null;
+  /** The revenue gap of the level, and of the sections directly below it. */
+  revenueGap: RevenueGapView;
+  revenueGapBelow: { title: string; rows: RevenueGapRow[] } | null;
   reliability: ReliabilityView;
   loading: LoadingView | null;
   children: ChildTable[];

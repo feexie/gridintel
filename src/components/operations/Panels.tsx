@@ -6,6 +6,8 @@ import type {
   NotAvailableView,
   ReliabilityView,
   ReportedComparisonView,
+  RevenueGapRow,
+  RevenueGapView,
   SupplyView,
 } from "@/services/operations/views";
 import { MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "./Metric";
@@ -221,12 +223,132 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
           <p className="text-[10px] text-slate-500">
             {losses.accounts.billed} of {losses.accounts.inScope ?? "an unknown number of"} accounts were charged in the period.
           </p>
+          {losses.byCustomerClass.length > 0 ? (
+            <table className="w-full border-collapse text-xs" data-table="customer-class">
+              <thead>
+                <tr className="border-b border-slate-800 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                  <th className="py-1 pr-2 font-normal">Customer class</th>
+                  <th className="py-1 pr-2 text-right font-normal">Accounts</th>
+                  <th className="py-1 pr-2 text-right font-normal">Billed</th>
+                  <th className="py-1 pr-2 text-right font-normal">Collected</th>
+                  <th className="py-1 text-right font-normal">Collection eff.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {losses.byCustomerClass.map((row) => (
+                  <tr key={row.category} className="border-b border-slate-800/60">
+                    <td className="py-1 pr-2 text-slate-200">{row.label}</td>
+                    <td className="py-1 pr-2 text-right font-mono">{formatNumber(row.accounts)}</td>
+                    <td className="py-1 pr-2 text-right font-mono">{formatMoney(row.revenueBilled, losses.revenueBilled.currency)}</td>
+                    <td className="py-1 pr-2 text-right font-mono">{formatMoney(row.revenueCollected, losses.revenueBilled.currency)}</td>
+                    <td className="py-1 text-right">
+                      <MetricCell metric={row.collection} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
         </div>
       </div>
       <Comparisons rows={losses.reported} />
     </Panel>
   );
 }
+
+/* ---------------- Revenue gap ---------------- */
+
+/** The revenue gap of a scope: two separate parts, how the commercial part is valued, and the sections below. */
+export function RevenueGapPanel({ gap, below }: { gap: RevenueGapView; below: { title: string; rows: RevenueGapRow[] } | null }) {
+  return (
+    <Panel title="Revenue gap" aside={<span>Estimate of revenue not realised · monthly, not annualised</span>}>
+      <p className="border-l-2 border-amber-400/60 pl-2 text-xs leading-snug text-amber-100/90">
+        {gap.definition} {gap.periodNote}
+      </p>
+      <div className="grid gap-2 md:grid-cols-3">
+        <MetricTile metric={gap.notRealised} sourcing={gap.sourcing} emphasis />
+        <MetricTile metric={gap.commercial} sourcing={gap.sourcing} />
+        <MetricTile metric={gap.collection} sourcing={gap.sourcing}>
+          <span className="border border-slate-700 px-1.5 py-px text-[10px] uppercase tracking-wide text-slate-300">Cash basis</span>
+        </MetricTile>
+      </div>
+      <p className="text-[11px] leading-snug text-slate-300">
+        The commercial gap and the collection gap are shown separately and are never set against each other.
+        {gap.negativeNote ? <span className="text-amber-100"> {gap.negativeNote}</span> : null}
+      </p>
+      {gap.caveat ? <p className="text-[11px] leading-snug text-amber-100/90">† {gap.caveat} The rates below are therefore assumptions too.</p> : null}
+      {gap.unknownDemandClassNote ? <p className="text-[11px] leading-snug text-amber-100/90">! {gap.unknownDemandClassNote}</p> : null}
+
+      <div className="grid gap-3 xl:grid-cols-2">
+        {below && below.rows.length > 0 ? (
+        <div>
+          <h3 className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">{below.title}</h3>
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                <th className="py-1 pr-2 font-normal">Section</th>
+                <th className="py-1 pr-2 text-right font-normal">Commercial gap</th>
+                <th className="py-1 pr-2 text-right font-normal">Collection gap</th>
+                <th className="py-1 text-right font-normal">Not realised</th>
+              </tr>
+            </thead>
+            <tbody>
+              {below.rows.map((row) => (
+                <tr key={row.id} className="border-b border-slate-800/60">
+                  <td className="py-1 pr-2">
+                    <Link href={levelHref(row.kind, row.id)} className="text-cyan-300 hover:underline">
+                      {row.name}
+                    </Link>
+                  </td>
+                  <td className="py-1 pr-2 text-right">
+                    <MetricCell metric={row.commercial} />
+                  </td>
+                  <td className="py-1 pr-2 text-right">
+                    <MetricCell metric={row.collection} />
+                  </td>
+                  <td className="py-1 text-right">
+                    <MetricCell metric={row.notRealised} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        ) : null}
+        <div>
+          <h3 className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">How the commercial gap is valued</h3>
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                <th className="py-1 pr-2 font-normal">Where the loss occurs</th>
+                <th className="py-1 pr-2 text-right font-normal">Unbilled energy</th>
+                <th className="py-1 pr-2 text-right font-normal">LV non-MD rate{gap.caveat ? " †" : ""}</th>
+                <th className="py-1 text-right font-normal">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {gap.parts.map((part) => (
+                <tr key={`${part.kind}:${part.scope.id}`} className="border-b border-slate-800/60">
+                  <td className="py-1 pr-2 text-slate-200">
+                    {part.scope.name}
+                    <span className="ml-1.5 text-[10px] text-slate-500">{part.kind === "residual" ? "residual above the sections below" : part.scope.id}</span>
+                  </td>
+                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</td>
+                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.ratePerKwh === null ? "—" : `${formatMoney(part.ratePerKwh, gap.currency)}/kWh`}</td>
+                  <td className="whitespace-nowrap py-1 text-right font-mono text-slate-50">{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-1 text-[10px] leading-snug text-slate-500">
+            Each loss is valued at the average rate billed to low-voltage, non-maximum-demand customers where it occurs. Customers supplied at 11 kV are in no rate.
+          </p>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
 
 /* ---------------- Reliability ---------------- */
 

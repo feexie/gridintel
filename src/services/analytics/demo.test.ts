@@ -138,7 +138,7 @@ describe("energy account and losses", () => {
     const reported = (await repos.reported.listReportedKpis({ metrics: ["atcc"], scopes: [feeder("FD-OLD")] })).records;
     assert.equal(reported.length, 1);
     const comparison = compareKpi(reported[0], result.atcc.atcc);
-    assert.equal(comparison.reported.value, 48);
+    assert.equal(comparison.reported.value, 52);
     assert.equal(comparison.sameBasis, true);
     assert.ok((comparison.variance.absolute as number) > 5);
   });
@@ -169,10 +169,18 @@ describe("energy account and losses", () => {
 describe("collection for an administrative scope", () => {
   it("totals the region from billing records", async () => {
     const { result } = await scopeCollection({ repos, scope: { kind: "region", id: DEMO_REGION_ID }, period, context });
-    const substation = (await sectionLosses({ repos, scope: SUBSTATION, period, context })).result;
+    const substations = await Promise.all(
+      ["SS-RIV", "SS-HIL"].map((id) => sectionLosses({ repos, scope: { kind: "substation", id }, period, context })),
+    );
+    const billed = substations.reduce((total, part) => total + (part.result.billing.revenueBilled.value as number), 0);
     assert.equal(result.collectionEfficiency.status, "ok");
     assert.equal(result.billing.revenueBilled.currency, "NGN");
-    assert.ok(close(result.billing.revenueBilled.value, substation.billing.revenueBilled.value, 1e-6));
+    assert.ok(close(result.billing.revenueBilled.value, billed, 1e-3));
+    // Government accounts are billed like any other and collected far worse.
+    const government = result.billing.byCategory.government;
+    assert.ok(government.accounts > 50);
+    assert.ok(government.revenueCollected / government.revenueBilled < 0.4);
+    assert.ok(result.billing.byCategory.residential.revenueCollected / result.billing.byCategory.residential.revenueBilled > 0.6);
     assert.ok(result.billing.byBasis.estimated.records > 0 && result.billing.byBasis.prepaid_vend.records > 0);
   });
 });
@@ -229,7 +237,8 @@ describe("reliability", () => {
 
   it("excludes the momentary trip and the complaint that was never closed", async () => {
     const { result } = await scopeReliability({ repos, scope: feeder("FD-MKT"), period, context });
-    assert.equal(result.reliability.components.momentary.exposures, 4);
+    // The trip is recorded on each of Market Road's twelve transformers and on the 11 kV customer.
+    assert.equal(result.reliability.components.momentary.exposures, 13);
     assert.equal(result.reliability.components.excludedForData, 1);
     assert.ok(result.reliability.saidi.warnings.some((w) => w.code === "EXPOSURES_EXCLUDED"));
   });
@@ -247,8 +256,11 @@ describe("reliability", () => {
     assert.equal(matched.sameBasis, true);
     assert.equal(matched.comparable, true);
     assert.deepEqual(matched.calculated.basis.interruptionClasses, ["network"]);
-    // Reported 5.1 h against about 5.7 h calculated, not against 216 h.
-    assert.ok(Math.abs((matched.variance.absolute as number) - 0.56) < 0.1);
+    // Reported 3.0 h against the network-attributable figure of a few hours, not against the total of about 200 h.
+    const networkHours = (reliability.attribution.network.saidi as number) / 60;
+    assert.ok(Math.abs((matched.variance.absolute as number) - (networkHours - reported.value)) < 1e-6);
+    assert.ok(Math.abs(matched.variance.absolute as number) < 2);
+    assert.ok((reliability.saidi.value as number) / 60 > 100);
   });
 
   it("derives customer counts from the network model without calling the indices estimated", async () => {

@@ -2,15 +2,25 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Provenance } from "@/domain";
 import { buildDemoDataset, createDemoRepositories, demoDataset } from "./index.ts";
-import { DEMO_CLOCK, DEMO_HOURS, DEMO_PERIOD, PERIOD_END_MS, PERIOD_START_MS } from "./clock.ts";
-import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, TRANSFORMERS } from "./network.ts";
+import { DEMO_CLOCK, DEMO_DAYS, DEMO_HOURS, DEMO_PERIOD, PERIOD_END_MS, PERIOD_START_MS } from "./clock.ts";
+import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, SUBSTATIONS, TRANSFORMERS } from "./network.ts";
 import { SUPPLY_OFF } from "./outages.ts";
 
 const dataset = demoDataset();
 const { registry } = dataset;
 
-const sumFor = (meterId: string) =>
-  dataset.intervalEnergy.filter((i) => i.meterId === meterId).reduce((total, i) => total + (i.importKwh ?? 0), 0);
+const TOTAL = new Map<string, number>();
+const COUNT = new Map<string, number>();
+for (const interval of dataset.intervalEnergy) {
+  TOTAL.set(interval.meterId, (TOTAL.get(interval.meterId) ?? 0) + (interval.importKwh ?? 0));
+  COUNT.set(interval.meterId, (COUNT.get(interval.meterId) ?? 0) + 1);
+}
+const sumFor = (meterId: string) => TOTAL.get(meterId) ?? 0;
+const BOUNDARY = [
+  ...SUBSTATIONS.map((s) => BOUNDARY_METERS.incomer(s.id)),
+  ...FEEDERS.map((f) => BOUNDARY_METERS.feederHead(f.id)),
+  ...TRANSFORMERS.map((t) => BOUNDARY_METERS.totalizer(t.id)),
+];
 
 describe("demo dataset: synthetic and deterministic", () => {
   it("builds the same records every time", () => {
@@ -65,13 +75,45 @@ describe("demo dataset: synthetic and deterministic", () => {
 describe("demo dataset: structure", () => {
   it("has the designed hierarchy", () => {
     assert.equal(registry.regions.length, 1);
-    assert.equal(registry.substations.length, 1);
-    assert.equal(registry.powerTransformers.length, 1);
-    assert.equal(registry.feeders.length, 2);
-    assert.equal(registry.distributionTransformers.length, 6);
+    assert.equal(registry.substations.length, 2);
+    assert.equal(registry.powerTransformers.length, 2);
+    assert.equal(registry.feeders.length, 4);
+    assert.equal(registry.distributionTransformers.length, 48);
     assert.equal(registry.servicePoints.length, CONNECTIONS.length);
     assert.equal(registry.customers.length, CONNECTIONS.length);
-    assert.deepEqual(registry.feeders.map((f) => [f.id, f.serviceBand]), [["FD-MKT", "A"], ["FD-OLD", "C"]]);
+    assert.ok(CONNECTIONS.length > 6000);
+    assert.deepEqual(registry.feeders.map((f) => [f.id, f.origin.substationId, f.serviceBand]), [
+      ["FD-MKT", "SS-RIV", "A"],
+      ["FD-OLD", "SS-RIV", "C"],
+      ["FD-GOV", "SS-HIL", "B"],
+      ["FD-FRM", "SS-HIL", "D"],
+    ]);
+  });
+
+  it("gives every feeder a realistic number of transformers", () => {
+    for (const feeder of FEEDERS) {
+      const count = TRANSFORMERS.filter((dt) => dt.feederId === feeder.id).length;
+      assert.ok(count >= 10 && count <= 14, `${feeder.id} has ${count}`);
+    }
+  });
+
+  it("keeps the six hand-designed transformers as they were", () => {
+    const sized = (key: string) => CONNECTIONS.filter((c) => c.supplyKey === key).length;
+    assert.deepEqual(["MKT1", "MKT2", "MKT3", "OLD1", "OLD2", "OLD3"].map(sized), [60, 76, 30, 85, 135, 45]);
+  });
+
+  it("puts government accounts on Government Avenue only, as metered maximum-demand accounts", () => {
+    const government = CONNECTIONS.filter((c) => c.category === "government");
+    assert.ok(government.length > 50);
+    assert.ok(government.every((c) => c.feederId === "FD-GOV" && c.metering === "postpaid" && c.demandClass === "md"));
+    assert.ok(registry.customers.filter((c) => c.category === "government").every((c) => c.demandClass === "md"));
+  });
+
+  it("leaves the demand class of a few rural accounts unrecorded, and of no others", () => {
+    const unknown = registry.customers.filter((c) => c.demandClass === undefined);
+    assert.ok(unknown.length > 5 && unknown.length < 60);
+    const points = new Map(CONNECTIONS.map((c) => [c.customerId, c.feederId]));
+    assert.ok(unknown.every((c) => points.get(c.id) === "FD-FRM"));
   });
 
   it("has no dangling references", () => {
@@ -137,17 +179,20 @@ describe("demo dataset: outages and energy agree", () => {
     assert.ok(overnight.every((i) => i.importKwh === 0));
   });
 
-  it("has complete hourly intervals for every boundary meter", () => {
-    const boundary = [BOUNDARY_METERS.incomer, ...FEEDERS.map((f) => BOUNDARY_METERS.feederHead(f.id)), ...TRANSFORMERS.map((t) => BOUNDARY_METERS.totalizer(t.id))];
-    for (const meterId of boundary) {
-      assert.equal(dataset.intervalEnergy.filter((i) => i.meterId === meterId).length, DEMO_HOURS, meterId);
-    }
+  it("has complete hourly intervals for every boundary meter, and daily ones for customer meters", () => {
+    for (const meterId of BOUNDARY) assert.equal(COUNT.get(meterId), DEMO_HOURS, meterId);
+    const boundary = new Set(BOUNDARY);
+    const customer = dataset.intervalEnergy.filter((i) => !boundary.has(i.meterId));
+    assert.ok(customer.length > 100_000);
+    assert.ok(customer.every((i) => i.intervalMinutes === 1440 && i.intervalStart.endsWith("T00:00:00+01:00")));
+    assert.ok(dataset.intervalEnergy.filter((i) => boundary.has(i.meterId)).every((i) => i.intervalMinutes === 60));
   });
 
   it("loses energy at every level, never gains it", () => {
-    const incomer = sumFor(BOUNDARY_METERS.incomer);
-    const heads = FEEDERS.map((f) => sumFor(BOUNDARY_METERS.feederHead(f.id)));
-    assert.ok(incomer > heads[0] + heads[1]);
+    for (const substation of SUBSTATIONS) {
+      const heads = FEEDERS.filter((f) => f.substationId === substation.id).reduce((s, f) => s + sumFor(BOUNDARY_METERS.feederHead(f.id)), 0);
+      assert.ok(sumFor(BOUNDARY_METERS.incomer(substation.id)) > heads, substation.id);
+    }
     for (const feeder of FEEDERS) {
       const totalizers = TRANSFORMERS.filter((t) => t.feederId === feeder.id).reduce((s, t) => s + sumFor(BOUNDARY_METERS.totalizer(t.id)), 0);
       assert.ok(sumFor(BOUNDARY_METERS.feederHead(feeder.id)) > totalizers);
@@ -159,11 +204,10 @@ describe("demo dataset: outages and energy agree", () => {
   });
 
   it("leaves a gap, not zeros, where a meter stopped reporting", () => {
-    const counts = new Map<string, number>();
-    for (const interval of dataset.intervalEnergy) counts.set(interval.meterId, (counts.get(interval.meterId) ?? 0) + 1);
-    const short = [...counts.entries()].filter(([, n]) => n !== DEMO_HOURS);
+    const boundary = new Set(BOUNDARY);
+    const short = [...COUNT.entries()].filter(([meterId, n]) => !boundary.has(meterId) && n !== DEMO_DAYS);
     assert.equal(short.length, 1);
-    assert.equal(short[0][1], DEMO_HOURS - 48);
+    assert.equal(short[0][1], DEMO_DAYS - 2);
   });
 });
 

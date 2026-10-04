@@ -55,6 +55,12 @@ export interface BillingTotals {
   revenueBilled: MonetaryInput;
   revenueCollected: MonetaryInput;
   byBasis: Record<BillingBasis, BasisTotals>;
+  /**
+   * The same totals by the account's customer category, to show where
+   * billing and collection sit. "not_recorded" holds accounts with no
+   * category. Amounts are in major currency units.
+   */
+  byCategory: Record<string, { accounts: number; revenueBilled: number; revenueCollected: number }>;
   /** Accounts connected under the scope, whatever their status. */
   accountsInScope: number | null;
   /** Accounts with at least one charge in the period. */
@@ -156,6 +162,7 @@ export function billingTotals(params: {
     revenueBilled: { value: null, unit: "currency", currency, scale: 1, origin: "observed", quality: "missing", ref: ref("revenue_billed") },
     revenueCollected: { value: null, unit: "currency", currency, scale: 1, origin: "observed", quality: "missing", ref: ref("revenue_collected") },
     byBasis,
+    byCategory: {},
     accountsInScope: null,
     accountsBilled: 0,
     unknownDemandClassExcluded: 0,
@@ -199,6 +206,13 @@ export function billingTotals(params: {
     return ms >= bounds.startMs && ms < bounds.endMs;
   };
 
+  const categoryOf = new Map(connected.map((customer) => [customer.id, customer.category ?? "not_recorded"]));
+  const byCategory: BillingTotals["byCategory"] = {};
+  for (const id of accounts) {
+    const entry = (byCategory[categoryOf.get(id) as string] ??= { accounts: 0, revenueBilled: 0, revenueCollected: 0 });
+    entry.accounts += 1;
+  }
+
   let energyKwh: number | null = 0;
   let billedMinor = 0;
   let collectedMinor = 0;
@@ -213,6 +227,7 @@ export function billingTotals(params: {
       continue;
     }
     billedAccounts.add(record.customerId);
+    byCategory[categoryOf.get(record.customerId) as string].revenueBilled += record.amount.amountMinor / MINOR_PER_MAJOR;
     const basis = byBasis[record.basis];
     basis.records += 1;
     basis.amount += record.amount.amountMinor / MINOR_PER_MAJOR;
@@ -234,6 +249,7 @@ export function billingTotals(params: {
       continue;
     }
     collectedMinor += payment.amount.amountMinor;
+    byCategory[categoryOf.get(payment.customerId) as string].revenueCollected += payment.amount.amountMinor / MINOR_PER_MAJOR;
   }
 
   if (foreignCurrency) {
@@ -280,6 +296,7 @@ export function billingTotals(params: {
       ref: ref("revenue_collected"),
     },
     byBasis,
+    byCategory,
     accountsInScope: accounts.size,
     accountsBilled: billedAccounts.size,
     unknownDemandClassExcluded,

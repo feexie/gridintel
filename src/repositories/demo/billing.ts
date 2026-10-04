@@ -15,6 +15,9 @@ import { BILLING_SOURCE, demoProvenance } from "./sources.ts";
      for the energy the meter recorded;
    - unmetered: one estimated bill at the month-end run, for a fixed
      monthly energy that does not depend on what was used.
+   Government (MDA) accounts are metered and billed on a meter
+   reading like any postpaid account; what sets them apart is how
+   seldom they pay.
 
    Payments are on a cash basis: money received during the month.
    For postpaid and unmetered accounts the amount received is sized
@@ -131,13 +134,14 @@ export function buildDemoBilling(recordedKwh: ReadonlyMap<string, number>): {
 
     if (connection.metering === "postpaid") {
       const energy = recordedKwh.get(connection.customerId) ?? 0;
+      const government = connection.category === "government";
       monthEndBill(
         connection,
         feeder,
         "meter_reading",
         energy,
-        `${feeder.tariffCode} non-MD`,
-        paidFraction(feeder.payment.postpaid, random),
+        `${feeder.tariffCode} ${government ? "MD" : "non-MD"}`,
+        paidFraction(government ? feeder.payment.government : feeder.payment.postpaid, random),
         random,
       );
       continue;

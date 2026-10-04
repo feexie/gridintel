@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
 import { Legend, MetricTile, OriginTag, Panel } from "./Metric";
-import { ChildrenTable, LoadingPanel, LossesPanel, NotAvailable, ReliabilityPanel } from "./Panels";
+import { ChildrenTable, LoadingPanel, LossesPanel, NotAvailable, ReliabilityPanel, RevenueGapPanel } from "./Panels";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatPeriod, formatTime, levelHref } from "./format";
 
 export function SyntheticBanner({ notice }: { notice: { label: string; summary: string } | null }) {
@@ -81,6 +81,7 @@ export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevel
           <p className="text-xs text-slate-400">{view.lossesNote}</p>
         </Panel>
       )}
+      <RevenueGapPanel gap={view.revenueGap} below={view.revenueGapBelow} />
       <ReliabilityPanel reliability={view.reliability} showBand={view.header.kind === "feeder"} />
       {view.loading ? <LoadingPanel loading={view.loading} /> : null}
       {view.children.map((table) => (

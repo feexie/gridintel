@@ -82,7 +82,13 @@ export interface Customer extends Audit {
    * point on a given date can be reconstructed for historical reports.
    */
   servicePointId?: string;
-  category?: "residential" | "commercial" | "industrial" | "public" | "special";
+  /**
+   * "government" is a ministry, department or agency (MDA) account. It is
+   * kept apart from "public" (street lighting, water works and the like)
+   * because MDA accounts are billed like any customer and are a distinct
+   * collection problem.
+   */
+  category?: "residential" | "commercial" | "industrial" | "government" | "public" | "special";
   paymentMode?: "prepaid" | "postpaid";
   /**
    * Whether the account is billed on a maximum-demand (MD) tariff. MD

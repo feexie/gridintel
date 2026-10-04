@@ -10,8 +10,11 @@ const SHOTS: [string, string][] = [
   ["operations", OPERATIONS],
   ["region", `${OPERATIONS}/regions/demo-region-northfield`],
   ["substation", `${OPERATIONS}/substations/SS-RIV`],
+  ["substation-hillcrest", `${OPERATIONS}/substations/SS-HIL`],
   ["feeder-market-road", `${OPERATIONS}/feeders/FD-MKT`],
   ["feeder-old-town", `${OPERATIONS}/feeders/FD-OLD`],
+  ["feeder-government-avenue", `${OPERATIONS}/feeders/FD-GOV`],
+  ["feeder-farm-road", `${OPERATIONS}/feeders/FD-FRM`],
   ["transformer-riverbank", `${OPERATIONS}/transformers/DT-OLD-2`],
   ["service-point", `${OPERATIONS}/service-points/SP-OLD2-002`],
 ];

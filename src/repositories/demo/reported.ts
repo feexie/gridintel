@@ -50,10 +50,13 @@ const LOSS_BASIS = "energy_input_net_of_transfers_out" as const;
 const NETWORK_ONLY: KpiBasis = { interruptionClasses: ["network"], plannedInterruptions: "included" };
 
 const REPORTED_HEADLINES: readonly Headline[] = [
-  ...headlines({ kind: "region", id: DEMO_REGION_ID }, { atcc: 18.5, collection: 95.0 }),
-  ...headlines({ kind: "substation", id: DEMO_SUBSTATION_ID }, { atcc: 18.5, collection: 95.0, saidiHours: 5.1, saifi: 1.1 }),
-  ...headlines({ kind: "feeder", id: "FD-MKT" }, { atcc: 11.0, collection: 96.0, saidiHours: 1.8, saifi: 0.4 }),
-  ...headlines({ kind: "feeder", id: "FD-OLD" }, { atcc: 48.0, collection: 72.0, saidiHours: 7.2, saifi: 1.5 }, "accrual"),
+  ...headlines({ kind: "region", id: DEMO_REGION_ID }, { atcc: 26.0, collection: 88.0 }),
+  ...headlines({ kind: "substation", id: DEMO_SUBSTATION_ID }, { atcc: 27.0, collection: 91.0, saidiHours: 3.0, saifi: 0.9 }),
+  ...headlines({ kind: "feeder", id: "FD-MKT" }, { atcc: 16.0, collection: 94.0, saidiHours: 0.2, saifi: 0.1 }),
+  ...headlines({ kind: "feeder", id: "FD-OLD" }, { atcc: 52.0, collection: 72.0, saidiHours: 5.0, saifi: 1.4 }, "accrual"),
+  ...headlines({ kind: "substation", id: "SS-HIL" }, { atcc: 33.0, collection: 74.0, saidiHours: 1.9, saifi: 0.8 }),
+  ...headlines({ kind: "feeder", id: "FD-GOV" }, { atcc: 30.0, collection: 76.0, saidiHours: 2.7, saifi: 1.0 }),
+  ...headlines({ kind: "feeder", id: "FD-FRM" }, { atcc: 61.0, collection: 55.0, saidiHours: 0.4, saifi: 0.2 }),
 ];
 
 function headlines(

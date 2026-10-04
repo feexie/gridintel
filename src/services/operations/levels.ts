@@ -15,12 +15,14 @@ import type {
   OverviewView,
   ReliabilityView,
   ReportedComparisonView,
+  RevenueGapRow,
   RevenueGapView,
   ServicePointView,
 } from "./views.ts";
 import {
   ATCC_REFERENCE,
   ENERGY_REFERENCE,
+  calculateCollectionEfficiency,
   LOADING_REFERENCE,
   REVENUE_GAP_REFERENCE,
   SUPPLY_HOURS_REFERENCE,
@@ -85,6 +87,16 @@ export const ALARMS: NotAvailableView = {
   reason:
     "Not available. The platform has no alarm data source yet, so no alarms are shown rather than an invented list. " +
     "Alarms are planned for Phase 6.",
+};
+
+const CLASS_LABEL: Record<string, string> = {
+  residential: "Residential",
+  commercial: "Commercial",
+  industrial: "Industrial",
+  government: "Government (MDA)",
+  public: "Public services",
+  special: "Special",
+  not_recorded: "Class not recorded",
 };
 
 const BASIS_LABEL: Record<string, string> = {
@@ -281,6 +293,30 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
       energyKwh: billing.byBasis[basis].energyKwh,
       amount: billing.byBasis[basis].amount,
     })),
+    byCustomerClass: Object.keys(billing.byCategory)
+      .map((category) => {
+        const totals = billing.byCategory[category];
+        const money = (value: number) => ({ value, unit: "currency" as const, currency: billing.revenueBilled.currency, scale: 1, origin: "observed" as const, quality: "measured" as const });
+        return {
+          category,
+          label: CLASS_LABEL[category] ?? category,
+          accounts: totals.accounts,
+          revenueBilled: totals.revenueBilled,
+          revenueCollected: totals.revenueCollected,
+          collection: kpiMetric(
+            "Collection efficiency",
+            calculateCollectionEfficiency({
+              scope,
+              period: runtime.period,
+              revenueBilled: money(totals.revenueBilled),
+              revenueCollected: money(totals.revenueCollected),
+              collectionBasis: billing.collectionBasis,
+              context: context(runtime),
+            }),
+          ),
+        };
+      })
+      .sort((a, b) => b.revenueBilled - a.revenueBilled || (a.category < b.category ? -1 : 1)),
     accounts: { inScope: billing.accountsInScope, billed: billing.accountsBilled },
     reported: await reportedComparisons(runtime, scope, [
       { metric: "atcc", label: "ATC&C", candidates: () => [atcc.atcc] },
@@ -519,6 +555,20 @@ function gapView(runtime: OperationsRuntime, loaded: Loaded, gap: RevenueGap, so
   };
 }
 
+/** The revenue gap of each of the given sections, as rows under a level's own gap. */
+export async function revenueGapRows(
+  runtime: OperationsRuntime,
+  loaded: Loaded,
+  sections: readonly { kind: "substation" | "feeder" | "distribution_transformer"; id: string; name: string }[],
+): Promise<RevenueGapRow[]> {
+  const rows: RevenueGapRow[] = [];
+  for (const section of sections) {
+    const gap = await revenueGapBlock(runtime, loaded, { kind: section.kind, id: section.id });
+    rows.push({ kind: section.kind, id: section.id, name: section.name, commercial: gap.commercial, collection: gap.collection, notRealised: gap.notRealised });
+  }
+  return rows;
+}
+
 export function revenueGapBlock(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<RevenueGapView> {
   return block(runtime, "revenue-gap", scope, async () => {
     const { result, sourcing } = await scopeRevenueGap({ repos: runtime.repos, scope, period: runtime.period, context: context(runtime), cache: runtime.cache });
@@ -708,6 +758,11 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
     ]),
     losses,
     lossesNote: null,
+    revenueGap: await revenueGapBlock(runtime, loaded, scope),
+    revenueGapBelow: {
+      title: "By substation",
+      rows: await revenueGapRows(runtime, loaded, substations.map((ss) => ({ kind: "substation", id: ss.id, name: ss.name }))),
+    },
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: null,
     children: [{ title: "Substations", coverage: loaded.coverage.substations, columns: SECTION_COLUMNS, rows }],
@@ -757,6 +812,11 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
     ),
     losses: await lossesBlock(runtime, scope),
     lossesNote: null,
+    revenueGap: await revenueGapBlock(runtime, loaded, scope),
+    revenueGapBelow: {
+      title: "By feeder",
+      rows: await revenueGapRows(runtime, loaded, feeders.map((feeder) => ({ kind: "feeder", id: feeder.id, name: feeder.name }))),
+    },
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: null,
     children: [
@@ -809,6 +869,11 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
     ]),
     losses: await lossesBlock(runtime, scope),
     lossesNote: null,
+    revenueGap: await revenueGapBlock(runtime, loaded, scope),
+    revenueGapBelow: {
+      title: "By transformer",
+      rows: await revenueGapRows(runtime, loaded, transformers.map((dt) => ({ kind: "distribution_transformer", id: dt.id, name: dt.name }))),
+    },
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: await loadingBlock(runtime, { kind: "feeder", id: feederId }),
     children,
@@ -833,8 +898,15 @@ async function servicePointTable(runtime: OperationsRuntime, loaded: Loaded, tit
       : billingByAccount({ period: runtime.period, billingRecords: charges.records, payments: payments.records, currency });
   const energy = methodologyRef(ENERGY_REFERENCE);
 
+  const wanted = new Set(servicePointIds);
+  const customerAt = new Map<string, (typeof snapshot.customers)[number]>();
+  for (const candidate of snapshot.customers) {
+    const at = candidate.servicePointId;
+    if (at !== undefined && wanted.has(at) && candidate.accountStatus !== "closed" && !customerAt.has(at)) customerAt.set(at, candidate);
+  }
+
   const rows = servicePointIds.map((id): ChildRow => {
-    const customer = snapshot.customers.find((c) => c.servicePointId === id && c.accountStatus !== "closed");
+    const customer = customerAt.get(id);
     const meter = metersWithRole(index, "service_point", id)[0];
     const account = customer && billing ? billing.get(customer.id) : undefined;
     const metering = meter ? (customer?.paymentMode ?? "metered") : "unmetered";
@@ -934,6 +1006,8 @@ export async function transformerView(runtime: OperationsRuntime, transformerId:
     ),
     losses: await lossesBlock(runtime, scope),
     lossesNote: null,
+    revenueGap: await revenueGapBlock(runtime, loaded, scope),
+    revenueGapBelow: null,
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: await loadingBlock(runtime, { kind: "distribution_transformer", id: transformerId }),
     children: [await servicePointTable(runtime, loaded, "Service points", points.map((sp) => sp.id))],

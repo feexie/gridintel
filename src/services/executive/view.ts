@@ -1,8 +1,8 @@
 import type { ScopeRef } from "@/domain";
 import type { OperationsRuntime } from "../operations/levels.ts";
-import type { LoadingView, LossesView, MetricView, ReliabilityView, ReportedComparisonView, RevenueGapView } from "../operations/views.ts";
+import type { LoadingView, LossesView, MetricView, ReliabilityView, ReportedComparisonView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
 import type { FeederSignals, TransformerSignals } from "./attention.ts";
-import type { BandComplianceRow, ExecutiveView, FeederGapRow, TransformerLoadingRow } from "./views.ts";
+import type { BandComplianceRow, ExecutiveView, TransformerLoadingRow } from "./views.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
 import { ALARMS, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
 import { ATTENTION_METHOD, attention } from "./attention.ts";
@@ -163,9 +163,10 @@ export async function executiveView(runtime: OperationsRuntime): Promise<Executi
     }))
     .sort((a, b) => (b.peak.value ?? -1) - (a.peak.value ?? -1) || (a.transformerId < b.transformerId ? -1 : 1));
 
-  const gapByFeeder: FeederGapRow[] = feeders.map((feeder) => ({
-    feederId: feeder.id,
-    feederName: feeder.name,
+  const gapByFeeder: RevenueGapRow[] = feeders.map((feeder) => ({
+    kind: "feeder",
+    id: feeder.id,
+    name: feeder.name,
     commercial: feeder.gap.commercial,
     collection: feeder.gap.collection,
     notRealised: feeder.gap.notRealised,

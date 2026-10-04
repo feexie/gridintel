@@ -43,6 +43,39 @@ export interface TopologyIndex {
   feederById: ReadonlyMap<string, Feeder>;
   transformerById: ReadonlyMap<string, DistributionTransformer>;
   servicePointById: ReadonlyMap<string, ServicePoint>;
+  /** In-service meters by "<role>:<asset id>", each list in id order. */
+  metersByInstallation: ReadonlyMap<string, readonly Meter[]>;
+  /** In-service service points by the transformer that supplies them, each list in id order. */
+  servicePointsByTransformer: ReadonlyMap<string, readonly ServicePoint[]>;
+  /** In-service service points supplied directly by a feeder, each list in id order. */
+  servicePointsByFeeder: ReadonlyMap<string, readonly ServicePoint[]>;
+}
+
+function installedOn(installation: MeterInstallation): string {
+  switch (installation.role) {
+    case "service_point":
+      return installation.servicePointId;
+    case "feeder_head":
+      return installation.feederId;
+    case "dt_totalizer":
+      return installation.transformerId;
+    case "substation_incomer":
+    case "grid_interface":
+      return installation.substationId;
+  }
+}
+
+function group<T extends { id: string }>(records: readonly T[], key: (record: T) => string | null): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const record of records) {
+    const k = key(record);
+    if (k === null) continue;
+    const list = groups.get(k);
+    if (list === undefined) groups.set(k, [record]);
+    else list.push(record);
+  }
+  for (const list of groups.values()) sortById(list);
+  return groups;
 }
 
 export const TOPOLOGY_CURRENT_ONLY: Warning = {
@@ -67,6 +100,15 @@ export function buildTopologyIndex(registry: Registry): TopologyIndex {
     feederById: byId(registry.feeders),
     transformerById: byId(registry.distributionTransformers),
     servicePointById: byId(registry.servicePoints),
+    metersByInstallation: group(registry.meters, (meter) =>
+      meter.lifecycle === "in_service" ? `${meter.installation.role}:${installedOn(meter.installation)}` : null,
+    ),
+    servicePointsByTransformer: group(registry.servicePoints, (sp) =>
+      sp.lifecycle === "in_service" && sp.supply.kind === "distribution_transformer" ? sp.supply.transformerId : null,
+    ),
+    servicePointsByFeeder: group(registry.servicePoints, (sp) =>
+      sp.lifecycle === "in_service" && sp.supply.kind === "feeder" ? sp.supply.feederId : null,
+    ),
   };
 }
 
@@ -95,26 +137,12 @@ export function transformersOnFeeder(
 
 /** Service points supplied directly by a DT. */
 export function servicePointsOnTransformer(index: TopologyIndex, transformerId: string): ServicePoint[] {
-  return sortById(
-    index.registry.servicePoints.filter(
-      (sp) =>
-        sp.lifecycle === "in_service" &&
-        sp.supply.kind === "distribution_transformer" &&
-        sp.supply.transformerId === transformerId,
-    ),
-  );
+  return [...(index.servicePointsByTransformer.get(transformerId) ?? [])];
 }
 
 /** Service points supplied directly by a feeder (not through a DT), e.g. MV customers. */
 export function servicePointsDirectOnFeeder(index: TopologyIndex, feederId: string): ServicePoint[] {
-  return sortById(
-    index.registry.servicePoints.filter(
-      (sp) =>
-        sp.lifecycle === "in_service" &&
-        sp.supply.kind === "feeder" &&
-        sp.supply.feederId === feederId,
-    ),
-  );
+  return [...(index.servicePointsByFeeder.get(feederId) ?? [])];
 }
 
 /** True if any substation lists this feeder as an upstream supply. */
@@ -234,24 +262,7 @@ export function servicePointsUnder(
 
 /** In-service meters installed with `role` on the given asset. */
 export function metersWithRole(index: TopologyIndex, role: MeterRole, assetId: string): Meter[] {
-  return sortById(
-    index.registry.meters.filter((meter) => {
-      if (meter.lifecycle !== "in_service") return false;
-      const installation = meter.installation;
-      if (installation.role !== role) return false;
-      switch (installation.role) {
-        case "service_point":
-          return installation.servicePointId === assetId;
-        case "feeder_head":
-          return installation.feederId === assetId;
-        case "dt_totalizer":
-          return installation.transformerId === assetId;
-        case "substation_incomer":
-        case "grid_interface":
-          return installation.substationId === assetId;
-      }
-    }),
-  );
+  return [...(index.metersByInstallation.get(`${role}:${assetId}`) ?? [])];
 }
 
 /**
