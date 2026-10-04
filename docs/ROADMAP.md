@@ -3,9 +3,9 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-04. Status: **Phase 6b approved by the Founder
-on 2026-10-04, merged to `main` and tagged `phase-6b`. Phase 6c not started;
-its first items are the Founder's decisions recorded under Phase 6c.**
+Last updated: 2026-10-04. Status: **Phase 6c-1 (data and engine) complete on
+branch `phase-6c`, awaiting the Founder's approval at its checkpoint. Phase
+6c-2 (workspaces) not started; its scope is proposed under Phase 6c.**
 
 ## Completed
 
@@ -309,7 +309,10 @@ are recorded under Phase 6c.
   network-attributable SAIDI" moved from Old Town to Farm Road.
 - ADR 0009 (customer metering) is a proposal with four questions to answer.
 
-### Phase 6c: Workspaces (not started)
+### Phase 6c: Workspaces (6c-1 complete, awaiting approval; 6c-2 not started)
+
+Split by the Founder into two gated parts: 6c-1, the decisions below, on the
+data and the engine; 6c-2, the workspaces themselves, after 6c-1 is approved.
 
 **Goal.** Each user's question has a screen shaped for it.
 
@@ -353,6 +356,172 @@ the workspaces, in this order.
 
 Also confirmed: Farm Road having the highest network-attributable SAIDI is
 correct and expected.
+
+#### Phase 6c-1: Data and engine (complete, awaiting approval; branch `phase-6c`)
+
+| Decision | Status | Commit |
+| --- | --- | --- |
+| 1. Hillcrest: two incomers, two power transformers, two bus sections | Done | `0292960` |
+| 2. ADR 0009, what customer meters report | Done | `c11d893` (engine), `312fbdd` (dataset, screens) |
+| 3. A reported basis may state its attribution rule; ADR 0007 amended | Done | `b9a7a44` (engine), `bd23ffe` (dataset, screens) |
+| 4. Top-three cut-off moved into the read model | Done | `8c2a132` |
+| 5. Government Avenue's overloads explained | Done: incidental, not designed | see below and `DATASET_ASSUMPTIONS.md` |
+
+**1. Hillcrest.** T1 (5 MVA, bus section A) carries Government Avenue; T2
+(2.5 MVA, bus section B) carries Farm Road and is fed by the rural 33 kV
+line. Each incomer has its own boundary meter, and the substation's energy
+received is the sum of the two. The simplification is removed. Nothing
+moved but meter rounding: 0.016 kWh on Hillcrest's energy received, ₦1 on
+its revenue gap. `PowerTransformer` gains an optional `busSection`.
+
+**2. Customer metering (ADR 0009).** 288 AMI meters (every maximum-demand
+account and 4.7% of the rest) report hourly. 1,425 postpaid meters hold two
+register readings, 138 with an estimated closing reading. 2,518 prepaid
+meters hold only their vends. Effect on the energy account:
+
+- *Status.* The account status is `calculated_with_estimates` at every scope,
+  as before. No scope gained or lost a status. The cross-checks were already
+  `insufficient_data` everywhere except DT-MKT-3, because of unmetered
+  connections, and still are; DT-MKT-3 (all AMI by design) is still `ok`.
+- *What became partial.* Recorded consumption has more it cannot see: the
+  connections without interval data rose from 2,196 to 6,161 of 6,448 in the
+  region. At a service point, "Energy recorded" was a measured figure for
+  4,253 meters. It is now the sum of intervals for 288, one register reading
+  for 1,425 (138 of them estimated), and "not available" for 2,540.
+- *Figures that moved*, region, before to after: energy billed 1,720,886 to
+  1,719,723 kWh (−0.07%); its estimated share 11.7% to 13.3%; unbilled energy
+  187,457 to 188,619 kWh; ATC&C 31.46% to 31.50%; revenue not realised
+  ₦46.45 M to ₦46.56 M. Estimated charges 2,118 to 2,256; meter-reading
+  charges 1,581 to 1,443. They move because a register reading stops at the
+  reading round (23:00 on 30 September) and because 138 readings are
+  estimates. Energy received, technical loss and energy delivered did not
+  move.
+- *Labels.* "Energy purchased (prepaid vends)" under "Purchased, not
+  consumed" on every level screen; "Energy purchased" on a prepaid service
+  point; "One register reading for the month, not interval data"; "Estimated
+  bills (no meter, or meter not read)".
+- *Records.* Customer intervals 127,588 to 207,312; register readings 0 to
+  2,850; billing records unchanged at 11,587.
+
+**3. Attribution rule.** See the table in ADR 0007's amendment. Feeder
+figures, which state their rule, are compared on it with the reference
+figure beside them (Farm Road: 0.4 h reported, 0.4 h on the report's rule,
+57.1 h on the reference rule). Substation figures, which do not, keep their
+variance (Hillcrest +20.9 h) under a note that it may reflect a difference
+in classification. No total, attribution table or headline index moved.
+
+**4. Cut-off.** The read model gives the top three feeders, how many there
+are, and all of them on request. The component no longer cuts or filters.
+
+**5. Government Avenue's overloads are incidental.** The generator sizes a
+transformer's customers for the evening peak and then adds government
+accounts whose load falls in office hours, at 0.42 kW per kVA of rating. All
+twelve transformers on the feeder therefore peak by day, at 71–97% of rating
+before day-to-day variation, and the three that start highest go over.
+Which three is a matter of the random draws. Full table in
+`DATASET_ASSUMPTIONS.md`.
+
+**Page timings.** Production build, one machine, milliseconds, median of five
+requests after warm-up (the middle of three rounds), `main` and the branch
+measured alternately, twice each. No route moved beyond run-to-run noise.
+
+| Route | `main` | Branch |
+| --- | --- | --- |
+| Executive | 171, 159 | 162, 157 |
+| Operations home | 8, 7 | 8, 7 |
+| Region | 114, 113 | 113, 113 |
+| Substation, Riverside | 104, 108 | 103, 102 |
+| Substation, Hillcrest | 99, 101 | 102, 98 |
+| Feeder, Market Road | 162, 149 | 135, 141 |
+| Feeder, Old Town | 143, 145 | 144, 147 |
+| Feeder, Government Avenue | 135, 135 | 139, 141 |
+| Feeder, Farm Road | 127, 123 | 129, 127 |
+| Transformer, Riverbank (first 40 rows) | 133, 134 | 128, 132 |
+| Transformer, Riverbank (all 135 rows) | 283, 282 | 271, 268 |
+| Service point, register reading | 28, 23 | 26, 25 |
+| Service point, prepaid | 32, 27 | 26, 30 |
+| Service point, AMI | 37, 25 | 24, 26 |
+
+The machine was busier during this comparison than when Phase 6b's table was
+taken, so the two tables are not comparable with each other. The warm-up at
+server start was 10.8 s and 6.6 s on `main` and 7.7 s and 10.1 s on the
+branch in the same four runs, which is noise; an earlier, quieter pair gave
+7.5 s before the metering change and 4.5 s after it. It is not slower. The
+in-memory adapter now looks telemetry up by source instead of scanning it.
+
+**Acceptance, as met.** Typecheck, 336 unit tests, lint, build and 26
+browser tests are green. Screenshots: `docs/screenshots/phase6c1`.
+
+**For the Founder's review.**
+
+- Government Avenue's overloads: keep as they are (incidental, documented),
+  design one deliberately, or size those transformers for their daytime
+  peak, which would leave DT-OLD-2 as the only overload.
+- A register advance is measured consumption, but it is not added to the
+  recorded-consumption cross-check, because its span is the readings' and
+  not the period's. Adding it needs a rule for how far from the period's
+  ends a reading may be. Not decided; not done.
+- DT-MKT-3 is all AMI by design, so that one transformer shows the
+  cross-checks working. Without it the cross-checks would be unavailable
+  everywhere.
+- The synthetic report states its attribution rule in its feeder tables and
+  not in its substation summary. That split was chosen so both cases are on
+  the screens.
+- Register readings are all taken at the same instant, and the opening one
+  at the first instant of the month. A real round takes days.
+- Found, not caused, by this work: a request that arrives while the server
+  is warming waits for the warm-up, 5 to 10 seconds. The browser tests no
+  longer race it. Whether the server should refuse or hold traffic until it
+  is warm is open.
+
+#### Phase 6c-2: Workspaces (not started; proposed scope, for approval)
+
+Each workspace is one screen shaped for one job, built on services that
+exist or are named here. Nothing below is built.
+
+| Workspace | User | The job it answers | Needs that do not exist yet |
+| --- | --- | --- | --- |
+| Events / Alarms | Operations engineer on shift | "What is wrong now, where, and who is affected?" | An alarm port and synthetic alarms; a port for device heartbeats (the records exist, no port reads them) |
+| Reliability | Network performance engineer | "Which feeders fail their customers, why, and is it ours to fix?" | Nothing new in the engine: causes and origin points are calculated and not yet shown |
+| Assets | Asset manager | "Which assets require attention?" | Loading of power transformers (no telemetry for them in the dataset); nothing on age, condition or maintenance |
+
+- **Events / Alarms.** Active alarms by severity and age, each linked to its
+  asset; interruptions in progress and recently restored, with where they
+  began, their class, customers affected and restoration stages; monitors
+  that have gone quiet. Read-only: no acknowledgement or assignment.
+- **Reliability.** Feeders ranked by network-attributable SAIDI and SAIFI;
+  the split by class, cause and origin point; day-by-day band compliance;
+  the assets interruptions most often begin at; reported against calculated,
+  with the attribution rule.
+- **Assets.** The transformer fleet: rating, peak loading, hours over
+  rating, interruptions that began there, commercial loss, and how its
+  connections are metered (AMI, read monthly, prepaid, unmetered). Power
+  transformers and feeders as their own lists. Age, condition and
+  maintenance shown as not available.
+- **Navigation.** A Utility Intelligence menu of Executive, Operations,
+  Reliability, Assets and Events / Alarms; the "Coming Soon" pages out of the
+  menu; one `h1` per page; the period and the SYNTHETIC DATA label in one
+  place.
+- **Design system and typeface.** One set of tokens for status, origin,
+  type and spacing, taken from what the Operations panels already do; the
+  metric, table and panel components moved out of `components/operations`
+  into a shared set. Typeface: IBM Plex Sans with IBM Plex Mono for figures,
+  self-hosted. Recommended; the choice is the Founder's.
+
+**Proposed order.** Design system and navigation; Reliability; Assets;
+Events / Alarms last, because it alone needs new domain data.
+
+**Questions that gate 6c-2.**
+
+1. Are alarms records from a source system, conditions GridIntel derives
+   from telemetry (over rating, monitor quiet), or both kept apart? The
+   recommendation is both, never mixed: one is observed, the other
+   calculated.
+2. Should the dataset gain telemetry for power transformers, so Hillcrest T1
+   and T2 have a loading?
+3. Is a Revenue workspace wanted in 6c-2? The roadmap lists three; the
+   revenue manager's job is today answered inside Operations.
+4. The typeface.
 
 ## Phase 7: GIS and network intelligence
 

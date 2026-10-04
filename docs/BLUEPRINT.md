@@ -4,6 +4,27 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `FOUNDING_DIRECTIVE.md`.
 
+> **State at the Phase 6c-1 checkpoint (2026-10-04).** Since Phase 6a:
+>
+> - The synthetic network has two substations, four feeders and 48
+>   transformers (Phase 6b). Hillcrest has two incomers, two power
+>   transformers and two bus sections; `PowerTransformer` carries an optional
+>   `busSection`.
+> - The engine no longer assumes that a customer meter reports intervals (ADR
+>   0009). AMI meters hold interval energy; postpaid meters read by hand hold
+>   register readings (`TelemetryPoint`, `energy_import_register_kwh`), which
+>   `registerAdvance` turns into the energy between two readings; ordinary
+>   prepaid meters hold only vends. `EnergyAccount.consumptionCoverage` says
+>   which connections the recorded-consumption cross-check can see. Energy
+>   vended is shown as energy purchased and is never consumption.
+> - Interruptions are attributed by where they began (ADR 0006, amendment),
+>   and a reported basis may state its attribution rule, in which case the
+>   calculation beside it is made on that rule (ADR 0007, amendment).
+> - The Executive read model cuts its own money ranking; the component cuts
+>   and filters nothing.
+> - The in-memory adapter indexes interval energy by meter and telemetry by
+>   source.
+>
 > **State at the end of Phase 6a (2026-10-02).** Legacy mock data, types,
 > the mock adapter and the `mock` source kind are gone. Regions and the
 > portfolio are accounted as the sum of their electrical sections. Results are

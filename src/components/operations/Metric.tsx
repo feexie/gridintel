@@ -142,7 +142,8 @@ export function MetricTile({
     <div data-metric={metric.label} className="relative border border-slate-800 bg-slate-900/40 px-3 py-2">
       <div className="flex items-start justify-between gap-2">
         <p className="text-[11px] uppercase tracking-wide text-slate-400">{metric.label}</p>
-        <OriginTag origin={metric.origin} />
+        {/* A figure the platform has no source for has no origin to state. */}
+        {metric.status === "not_available" ? null : <OriginTag origin={metric.origin} />}
       </div>
       <p className={`mt-1 font-mono tabular-nums text-slate-50 ${emphasis ? "text-2xl" : "text-lg"}`}>{formatMetric(metric)}</p>
       <div className="mt-1 flex flex-wrap items-center gap-1.5">
