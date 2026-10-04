@@ -116,9 +116,21 @@ test("reported SAIDI is set beside the network-only calculation, on the same bas
   await expect(row).toContainText("Same basis");
   await expect(row).toContainText("network interruptions only");
   await expect(row).toContainText("3.0 h");
-  await expect(row).toContainText("3.4 h");
+  await expect(row).toContainText("6.9 h");
   // The total, with load shedding, is the headline figure and is far larger.
   await expect(tile(page, "SAIDI")).toContainText("208.7 h");
+});
+
+test("a report that books 33 kV line faults as upstream shows as a variance on the same basis", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/substations/SS-HIL`);
+  const row = page.getByRole("row", { name: /^SAIDI/ });
+  // Comparable, because both count network interruptions; different, because the report leaves the line faults out.
+  await expect(row).toContainText("Same basis");
+  await expect(row).toContainText("1.9 h");
+  await expect(row).toContainText("22.8 h");
+  await expect(row).toContainText("+20.9 h");
+  await expect(row).not.toContainText("Not comparable");
+  await expect(page.getByText("including the lines that feed its substations")).toBeVisible();
 });
 
 test("a region is accounted as the sum of its sections, and alarms are an explicit not-available state", async ({ page }) => {

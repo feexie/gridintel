@@ -1,7 +1,10 @@
 # ADR 0006: Reliability attribution and a status for estimated inputs
 
 Date: 2026-10-01
-Status: Accepted (Founder instruction; both changes are data-integrity semantics)
+Status: Accepted (Founder instruction; both changes are data-integrity semantics).
+Decision A amended 2026-10-04: see "Amendment: attribution follows the origin
+point" below. The rule table in Decision A is kept as first written and now
+applies only to interruptions with no origin point recorded.
 
 ## Context
 
@@ -36,6 +39,74 @@ interruptions, SAIDI and SAIFI per class. The classes use the same counted
 exposures as the totals, so they always sum to the totals. Nothing is
 apportioned: exposures that cannot be attributed to the scope are still
 reported separately and are in no class.
+
+## Amendment (2026-10-04): attribution follows the origin point
+
+Approved by the Founder as a decision gate (data-integrity semantics).
+
+**What was wrong.** Decision A called an interruption "upstream" whenever its
+record named transmission as the responsible party or "loss of upstream
+supply" as the cause. In Nigeria the 33 kV lines that feed injection
+substations are the distribution company's own assets. A fault on one is the
+distribution company's interruption, yet its record is typically written from
+the substation's point of view, as a loss of upstream supply. The rule took
+that label at its word and moved the distribution company's own faults out of
+its network figures. Only an interruption that begins at the 132/33 kV
+transmission station, or a collapse of the grid, is upstream.
+
+**Decision.** Where an interruption began is recorded as a fact, and
+responsibility follows from it rather than from the label.
+
+- `Outage.originPoint` (optional) states the part of the system where the
+  interruption began: `grid`, `transmission_station`, `subtransmission_line`,
+  `mv_feeder`, `distribution_transformer` or `lv_network`. It is not inferred
+  from the cause; where the source did not record it, it stays undefined.
+- The reliability methodology names the origin points that are upstream of
+  the business being measured (`upstreamOrigins`). The reference methodology
+  names `grid` and `transmission_station`. Which side of the boundary a
+  sub-transmission line sits on is therefore a parameter, not something built
+  into the domain: a methodology for a network where those lines belong to
+  the transmission company would list `subtransmission_line` as upstream.
+- The rule, in order:
+
+| Class | Rule |
+| --- | --- |
+| `load_management` | cause is load shedding, whatever its origin point |
+| `upstream_supply` | the origin point is one the methodology names as upstream |
+| `network` | any other recorded origin point, unless the responsible party is the customer or a third party |
+| `other` | the customer or a third party |
+
+- An interruption with **no origin point** is classified by the original
+  Decision A table, unchanged. Nothing recorded before this amendment changes
+  class unless an origin point is added to it.
+- Load shedding stays its own class. It is a shortfall in the supply
+  allocated, not a failure of the distribution network and not a loss of
+  upstream supply in the sense of a fault.
+- The `include.upstream` switch of the methodology follows the same test.
+- The reference reliability methodology is now version `0.2.0`. Results name
+  the version, so a figure calculated under the old rule can be told apart.
+- `ReliabilityComponents.breakdown.byOriginPoint` gives the usable exposures
+  by origin point, with `not_recorded` for those that state none.
+
+**Consequences.**
+
+- On the synthetic dataset the network-attributable figures rise wherever a
+  33 kV line fault was previously booked as upstream, and upstream falls by
+  the same amount. Totals do not change.
+- The synthetic monthly report is deliberately left as a utility would state
+  it, with its own 33 kV faults booked as upstream. Its reliability figures
+  still say they count "network interruptions only", so they are on the same
+  basis as the calculation and are compared with it. The difference appears
+  as a variance. That variance is a designed finding, recorded in
+  `DATASET_ASSUMPTIONS.md`; the reported figures must not be retuned to
+  remove it.
+- A basis states which classes a figure counts, not how each interruption was
+  put in a class. Two parties can therefore state the same basis and classify
+  the same event differently. The comparison cannot detect that; it can only
+  show the variance. Whether a basis should also state its attribution rule
+  is left open.
+- 33 kV lines and transmission stations are not registry assets. In the
+  synthetic data their outages name them as unresolved references.
 
 ## Decision B: `calculated_with_estimates`
 

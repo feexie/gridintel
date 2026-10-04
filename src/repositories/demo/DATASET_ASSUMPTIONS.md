@@ -20,9 +20,14 @@ It is identical on every build.
 - Boundary meters (substation incomers, feeder heads, transformer
   totalizers) and telemetry are hourly. Real boundary meters usually record
   every 15 or 30 minutes; hourly keeps the dataset small.
-- Customer meters report one reading a day, the sum of that day's hours.
-  Consumption is still modelled hour by hour; only what the customer meter
-  reports is daily. This keeps the dataset small with thousands of meters.
+- **Customer meters report one reading a day rather than one an hour**, the
+  sum of that day's hours. Consumption is still modelled hour by hour; only
+  what the customer meter reports is daily. This is an interim modelling
+  choice, made to keep the dataset small with thousands of meters. It is not
+  how the meters are meant to be modelled in the end: ADR 0009 proposes
+  interval data for boundary meters and a minority of smart customer meters,
+  and vend records only for ordinary prepaid meters. That proposal is not
+  implemented and awaits the Founder's decision.
 
 ## Network
 
@@ -210,15 +215,36 @@ exact here; a real study would not.
   4–9 hours every day, starting between midnight and 02:00 (a nine-hour block
   leaves 15 hours, under its band minimum); Farm Road is off for 6 hours
   overnight and 6–7 hours in the day, every day.
-- **Farm Road's upstream supply fails on about two days in three**, for 2–5
-  hours from about 17:00, on top of load shedding. Each failure is recorded
-  as a loss of upstream supply, attributed to transmission.
+- **Every interruption records where it began** (its origin point): the
+  grid, the transmission station, a 33 kV line, an 11 kV feeder, a
+  transformer or the low-voltage network. Responsibility follows from that,
+  not from an "upstream" label (ADR 0006, amendment). The 33 kV lines that
+  feed the injection substations are the distribution company's own, as they
+  are in Nigeria; only the 132/33 kV transmission station and the grid are
+  upstream. Load shedding is recorded as beginning on the grid and stays its
+  own class: a shortfall in the supply allocated, neither a network fault nor
+  a loss of upstream supply.
+- **Farm Road loses the long rural 33 kV line that supplies it on about two
+  days in three** (20 times in the month), for 2–5 hours from about 17:00,
+  on top of load shedding. Seventeen of these are faults on the line itself:
+  the distribution company's, and network-attributable. Three (10, 18 and 29
+  September) are outages at the transmission station the line comes from:
+  the transmission company's, and upstream.
+- **Simplification:** the rural line's losses interrupt Farm Road only, as if
+  it fed a bus section of its own at Hillcrest, although Hillcrest is
+  modelled with a single power transformer. Government Avenue is unaffected.
 - Nine individual events: an 11 kV fault on Old Town restored in two stages,
   a three-minute feeder trip on Market Road, planned maintenance on DT-MKT-2,
-  a loss of 33 kV supply to the whole of Riverside substation, a transformer
-  fault on DT-OLD-2, a storm outage on DT-OLD-3, an 11 kV cable fault on
-  Government Avenue, planned maintenance on DT-GOV-4 and a low-voltage fault
-  on DT-FRM-3.
+  a fault on the 33 kV line feeding Riverside that took out the whole
+  substation, a transformer fault on DT-OLD-2, a storm outage on DT-OLD-3, an
+  11 kV cable fault on Government Avenue, planned maintenance on DT-GOV-4 and
+  a low-voltage fault on DT-FRM-3.
+- **The Riverside event was a choice.** The record says only that the
+  substation lost its 33 kV supply for 3 h 35 min. It is modelled as a fault
+  on Riverside's own 33 kV line, so it is network-attributable. Had it begun
+  at the transmission station it would be upstream.
+- Neither the 33 kV lines nor the transmission station are assets in the
+  registry. Their outages name them in words, as unresolved references.
 - Individual events are placed in hours that load shedding never uses on the
   feeder concerned, so no supply is recorded as off twice at once.
 - One customer complaint with no restoration time, to show how an incomplete
@@ -230,7 +256,8 @@ exact here; a real study would not.
   does. A derived count is not an estimate, so it does not make the
   reliability indices "calculated with estimates"; the indices carry a
   warning that the counts come from the network model.
-- The one customer complaint has a count of 1, held as `recorded`.
+- The one customer complaint has a count of 1, held as `recorded`. It has no
+  origin point: where it began is not known.
 
 ## Deliberate data-quality cases
 
@@ -254,6 +281,26 @@ can be compared. Each figure states its basis:
 - Collection efficiency is on a cash basis, except Old Town's, which is
   deliberately on an accrual basis so that one comparison on the screens
   shows the "not comparable" case.
+
+**The report deliberately misattributes 33 kV faults.** It is written as a
+utility would state it: faults on its own 33 kV lines are booked as loss of
+upstream supply, so its "network interruptions only" SAIDI and SAIFI leave
+them out. The calculation puts those faults on the network, where they
+belong. Both figures state the same basis, so they are compared, and the
+difference shows as a variance:
+
+| Scope | SAIDI reported | SAIDI calculated, network | Variance | SAIFI reported | SAIFI calculated, network |
+| --- | --- | --- | --- | --- | --- |
+| Riverside | 3.0 h | 6.9 h | +3.9 h | 0.9 | 1.65 |
+| Hillcrest | 1.9 h | 22.8 h | +20.9 h | 0.8 | 6.56 |
+| Market Road | 0.2 h | 3.8 h | +3.6 h | 0.1 | 1.05 |
+| Old Town | 5.0 h | 9.2 h | +4.2 h | 1.4 | 2.08 |
+| Government Avenue | 2.7 h | 3.1 h | +0.4 h | 1.0 | 1.08 |
+| Farm Road | 0.4 h | 57.1 h | +56.7 h | 0.2 | 16.11 |
+
+This variance is a designed finding, not an error. The reported figures must
+not be retuned to remove it. Government Avenue shows no such gap because no
+33 kV line fault interrupted it.
 
 ## Not modelled
 

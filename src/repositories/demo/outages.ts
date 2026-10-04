@@ -1,4 +1,4 @@
-import type { AssetRef, InterruptionCause, Outage, OutageExposure, ResponsibleParty } from "@/domain";
+import type { AssetRef, EntityRef, InterruptionCause, InterruptionOrigin, Outage, OutageExposure, ResponsibleParty } from "@/domain";
 import { DEMO_DAYS, HOUR_MS, at, hourStart, wat } from "./clock.ts";
 import { CONNECTIONS, FEEDERS, MV_CUSTOMER, TRANSFORMERS, activeAccounts } from "./network.ts";
 import { seeded } from "./rng.ts";
@@ -14,10 +14,17 @@ import { OUTAGE_SOURCE, demoProvenance } from "./sources.ts";
    Three kinds of interruption are modelled:
    - load shedding, in whole-hour blocks, which is what mostly sets
      the hours of supply a feeder's service band is about;
-   - on Farm Road, frequent loss of the upstream 33 kV supply to the
-     bus section that feeds it;
-   - a handful of individual events (faults, planned work, a loss of
-     supply to a whole substation, a momentary trip, a storm).
+   - on Farm Road, frequent faults on the long rural 33 kV line that
+     supplies it, and a few outages at the transmission station that
+     line comes from;
+   - a handful of individual events (faults, planned work, a 33 kV
+     line fault that takes out a whole substation, a momentary trip,
+     a storm).
+
+   Every interruption records where it began (its origin point). The
+   33 kV lines belong to the distribution business, so a fault on one
+   is a network interruption. Only the transmission station and the
+   grid are upstream (ADR 0006, amendment).
 
    Every interruption is recorded per transformer, so restoration in
    stages is visible and each transformer's customers are counted
@@ -35,7 +42,8 @@ interface Part {
 
 interface EventPlan {
   id: string;
-  origin: AssetRef;
+  origin: EntityRef;
+  originPoint: InterruptionOrigin;
   planned: boolean;
   cause: InterruptionCause;
   responsibleParty: ResponsibleParty;
@@ -68,6 +76,9 @@ function loadShedding(): EventPlan[] {
     events.push({
       id: `OUT-${dayLabel(day)}-${feederId}-LS${n}`,
       origin: { kind: "feeder", id: feederId },
+      // The feeder is opened at the substation, but the interruption begins with the
+      // shortfall in the supply allocated from the grid.
+      originPoint: "grid",
       planned: false,
       cause: "load_shedding",
       responsibleParty: "transmission",
@@ -101,28 +112,57 @@ function loadShedding(): EventPlan[] {
   return events;
 }
 
+/** 33 kV lines and the transmission station are not registry assets, so they are named, not linked. */
+const RURAL_LINE: EntityRef = { kind: "feeder", label: "Hillcrest rural 33 kV line", context: "33 kV lines are not in the registry." };
+const RIVERSIDE_LINE: EntityRef = { kind: "feeder", label: "Riverside 33 kV line", context: "33 kV lines are not in the registry." };
+const TRANSMISSION_STATION: EntityRef = {
+  kind: "substation",
+  label: "132/33 kV transmission station",
+  context: "Owned by the transmission company; not in the registry.",
+};
+
 /**
- * Farm Road's chronic problem: the 33 kV supply to the bus section that feeds it fails on
- * most days, for 2 to 5 hours in the evening, on top of load shedding. On those days the
- * feeder often falls below its band's 8-hour minimum.
+ * Farm Road's chronic problem: the long rural 33 kV line that supplies its bus section
+ * faults on most days, for 2 to 5 hours in the evening, on top of load shedding. On those
+ * days the feeder often falls below its band's 8-hour minimum. The line belongs to the
+ * distribution business, so these are network interruptions. Every sixth loss of the line
+ * is not a fault on it but an outage at the transmission station it comes from, which is
+ * the transmission company's.
  */
-function upstreamFailures(): EventPlan[] {
+function ruralLineInterruptions(): EventPlan[] {
   const events: EventPlan[] = [];
   const random = seeded("upstream:FD-FRM");
+  let n = 0;
   for (let day = 0; day < DEMO_DAYS; day++) {
     const fails = random() < 0.63;
     const startMinute = Math.floor(random() * 50);
     const minutes = 120 + Math.floor(random() * 180);
     if (!fails) continue;
-    events.push({
-      id: `OUT-${dayLabel(day)}-FD-FRM-UPSTREAM`,
-      origin: { kind: "feeder", id: "FD-FRM" },
-      planned: false,
-      cause: "upstream_supply",
-      responsibleParty: "transmission",
-      notes: "Loss of the 33 kV supply to the bus section feeding Farm Road.",
-      parts: block(keys("FD-FRM"), at(day, 17, startMinute), at(day, 17, startMinute + minutes)),
-    });
+    n += 1;
+    const parts = block(keys("FD-FRM"), at(day, 17, startMinute), at(day, 17, startMinute + minutes));
+    events.push(
+      n % 6 === 0
+        ? {
+            id: `OUT-${dayLabel(day)}-FD-FRM-TS`,
+            origin: TRANSMISSION_STATION,
+            originPoint: "transmission_station",
+            planned: false,
+            cause: "upstream_supply",
+            responsibleParty: "transmission",
+            notes: "33 kV feeder breaker opened at the transmission station supplying the rural line.",
+            parts,
+          }
+        : {
+            id: `OUT-${dayLabel(day)}-FD-FRM-33KV`,
+            origin: RURAL_LINE,
+            originPoint: "subtransmission_line",
+            planned: false,
+            cause: "fault",
+            responsibleParty: "distribution",
+            notes: "Fault on the rural 33 kV line supplying the bus section that feeds Farm Road.",
+            parts,
+          },
+    );
   }
   return events;
 }
@@ -133,6 +173,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-06-FD-OLD-FAULT",
       origin: { kind: "feeder", id: "FD-OLD" },
+      originPoint: "mv_feeder",
       planned: false,
       cause: "fault",
       responsibleParty: "distribution",
@@ -147,6 +188,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-09-FD-MKT-TRIP",
       origin: { kind: "feeder", id: "FD-MKT" },
+      originPoint: "mv_feeder",
       planned: false,
       cause: "fault",
       responsibleParty: "distribution",
@@ -156,6 +198,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-12-DT-MKT-2-MAINT",
       origin: { kind: "distribution_transformer", id: "DT-MKT-2" },
+      originPoint: "distribution_transformer",
       planned: true,
       cause: "planned_maintenance",
       responsibleParty: "distribution",
@@ -163,17 +206,21 @@ function individualEvents(): EventPlan[] {
       parts: block(["MKT2"], at(11, 7), at(11, 11, 30)),
     },
     {
-      id: "OUT-2026-09-18-SS-RIV-UPSTREAM",
-      origin: { kind: "substation", id: "SS-RIV" },
+      // The substation lost its 33 kV supply because the line feeding it faulted. The line is
+      // the distribution business's own, so this is a network interruption, not an upstream one.
+      id: "OUT-2026-09-18-SS-RIV-33KV",
+      origin: RIVERSIDE_LINE,
+      originPoint: "subtransmission_line",
       planned: false,
-      cause: "upstream_supply",
-      responsibleParty: "transmission",
-      notes: "Loss of the 33 kV supply to the substation.",
+      cause: "fault",
+      responsibleParty: "distribution",
+      notes: "Fault on the 33 kV line feeding the substation; all of Riverside lost supply.",
       parts: block(substationKeys("SS-RIV"), at(17, 19, 15), at(17, 22, 50)),
     },
     {
       id: "OUT-2026-09-23-DT-OLD-2-FAULT",
       origin: { kind: "distribution_transformer", id: "DT-OLD-2" },
+      originPoint: "distribution_transformer",
       planned: false,
       cause: "fault",
       responsibleParty: "distribution",
@@ -183,6 +230,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-27-DT-OLD-3-STORM",
       origin: { kind: "distribution_transformer", id: "DT-OLD-3" },
+      originPoint: "lv_network",
       planned: false,
       cause: "weather",
       responsibleParty: "distribution",
@@ -192,6 +240,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-15-FD-GOV-FAULT",
       origin: { kind: "feeder", id: "FD-GOV" },
+      originPoint: "mv_feeder",
       planned: false,
       cause: "fault",
       responsibleParty: "distribution",
@@ -201,6 +250,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-21-DT-GOV-4-MAINT",
       origin: { kind: "distribution_transformer", id: "DT-GOV-4" },
+      originPoint: "distribution_transformer",
       planned: true,
       cause: "planned_maintenance",
       responsibleParty: "distribution",
@@ -210,6 +260,7 @@ function individualEvents(): EventPlan[] {
     {
       id: "OUT-2026-09-25-DT-FRM-3-FAULT",
       origin: { kind: "distribution_transformer", id: "DT-FRM-3" },
+      originPoint: "lv_network",
       planned: false,
       cause: "fault",
       responsibleParty: "distribution",
@@ -219,7 +270,7 @@ function individualEvents(): EventPlan[] {
   ];
 }
 
-const EVENTS: readonly EventPlan[] = [...loadShedding(), ...upstreamFailures(), ...individualEvents()];
+const EVENTS: readonly EventPlan[] = [...loadShedding(), ...ruralLineInterruptions(), ...individualEvents()];
 
 const TRANSFORMER_ID = new Map(TRANSFORMERS.map((dt) => [dt.key, dt.id]));
 
@@ -278,6 +329,7 @@ export function buildDemoOutages(): Outage[] {
   const outages: Outage[] = EVENTS.map((event) => ({
     id: event.id,
     origin: event.origin,
+    originPoint: event.originPoint,
     planned: event.planned,
     cause: event.cause,
     responsibleParty: event.responsibleParty,
@@ -297,7 +349,8 @@ export function buildDemoOutages(): Outage[] {
   }));
 
   // A complaint that was logged but never closed: its restoration time is not known, so it
-  // cannot count toward any index. It does not change the energy model.
+  // cannot count toward any index. Nor is it known where it began, so it has no origin point.
+  // It does not change the energy model.
   const complainant = CONNECTIONS.find((c) => c.supplyKey === "MKT2" && !c.disconnected) as { servicePointId: string };
   outages.push({
     id: "OUT-2026-09-21-SP-COMPLAINT",

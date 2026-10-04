@@ -40,14 +40,42 @@ export type InterruptionCause =
   | "unknown";
 
 /**
- * Who an interruption is attributed to, from its cause and responsible
- * party. The classes are exclusive and cover every interruption, in this
- * order of precedence:
+ * The part of the power system where an interruption began, from the
+ * grid down to the low-voltage network:
+ * - grid: the bulk system as a whole (a system collapse, or a shortfall in
+ *   the supply allocated);
+ * - transmission_station: the station where transmission hands over to
+ *   sub-transmission (in Nigeria, a 132/33 kV station);
+ * - subtransmission_line: a line from that station to an injection
+ *   substation (in Nigeria, a 33 kV line);
+ * - mv_feeder: a distribution feeder out of an injection substation;
+ * - distribution_transformer: a transformer and its protection;
+ * - lv_network: the low-voltage lines beyond a transformer.
+ *
+ * It is a fact about where the interruption began, not a statement of who
+ * owns that part: ownership differs between jurisdictions, and the
+ * reliability methodology says which origin points are upstream of the
+ * business being measured.
+ */
+export type InterruptionOrigin =
+  | "grid"
+  | "transmission_station"
+  | "subtransmission_line"
+  | "mv_feeder"
+  | "distribution_transformer"
+  | "lv_network";
+
+/**
+ * Who an interruption is attributed to. The classes are exclusive and
+ * cover every interruption, in this order of precedence:
  * - load_management: load shedding, whoever ordered it;
- * - upstream_supply: attributed to transmission or generation, or caused
- *   by loss of upstream supply;
+ * - upstream_supply: began at an origin point upstream of the distribution
+ *   business. Where no origin point is recorded: attributed to
+ *   transmission or generation, or caused by loss of upstream supply;
  * - network: any other interruption the distribution business is
- *   responsible for (faults, planned work, weather damage);
+ *   responsible for (faults, planned work, weather damage). An
+ *   interruption that began on the business's own network is in this
+ *   class even when its record calls it a loss of upstream supply;
  * - other: the customer, a third party, or not known.
  */
 export type InterruptionClass = "network" | "upstream_supply" | "load_management" | "other";
@@ -74,6 +102,11 @@ export interface Outage {
   id: string;
   /** Where the interruption started, or the device that operated. */
   origin: EntityRef;
+  /**
+   * The part of the power system where the interruption began. Undefined
+   * when the source did not record it; it is never inferred from the cause.
+   */
+  originPoint?: InterruptionOrigin;
   /** null when it is not known whether the outage was planned. */
   planned: boolean | null;
   cause: InterruptionCause;

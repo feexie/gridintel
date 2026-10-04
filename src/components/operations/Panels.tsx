@@ -438,8 +438,11 @@ export function ReliabilityPanel({ reliability, showBand }: { reliability: Relia
             </thead>
             <tbody>
               {reliability.attribution.map((row) => (
-                <tr key={row.key} className="border-b border-slate-800/60" title={row.description}>
-                  <td className="py-1 pr-2 text-slate-200">{row.label}</td>
+                <tr key={row.key} className="border-b border-slate-800/60 align-top">
+                  <td className="py-1 pr-2 text-slate-200">
+                    {row.label}
+                    <span className="block text-[10px] leading-snug text-slate-500">{row.description}</span>
+                  </td>
                   <td className="py-1 pr-2 text-right font-mono tabular-nums">{row.saidiHours === null ? "—" : `${formatNumber(row.saidiHours, 1)} h`}</td>
                   <td className="py-1 pr-2 text-right font-mono tabular-nums">{row.saifi === null ? "—" : formatNumber(row.saifi, 2)}</td>
                   <td className="py-1">

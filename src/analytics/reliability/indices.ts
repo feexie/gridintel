@@ -56,6 +56,8 @@ export interface ReliabilityComponents {
     byPlanned: Record<"planned" | "unplanned" | "unknown", ComponentTotals>;
     byCause: Partial<Record<string, ComponentTotals>>;
     byResponsibleParty: Partial<Record<string, ComponentTotals>>;
+    /** By where the interruption began; "not_recorded" where the outage states no origin point. */
+    byOriginPoint: Partial<Record<string, ComponentTotals>>;
     majorEvent: Record<"major_event" | "normal", ComponentTotals>;
   };
   momentary: ComponentTotals;
@@ -116,6 +118,7 @@ export function reliabilityComponents(params: {
       byPlanned: { planned: emptyTotals(), unplanned: emptyTotals(), unknown: emptyTotals() },
       byCause: {},
       byResponsibleParty: {},
+      byOriginPoint: {},
       majorEvent: { major_event: emptyTotals(), normal: emptyTotals() },
     },
     momentary: emptyTotals(),
@@ -140,6 +143,7 @@ export function reliabilityComponents(params: {
     add(breakdown.byPlanned[exposure.planned === null ? "unknown" : exposure.planned ? "planned" : "unplanned"], exposure);
     add((breakdown.byCause[exposure.cause] ??= emptyTotals()), exposure);
     add((breakdown.byResponsibleParty[exposure.responsibleParty] ??= emptyTotals()), exposure);
+    add((breakdown.byOriginPoint[exposure.originPoint ?? "not_recorded"] ??= emptyTotals()), exposure);
     add(breakdown.majorEvent[exposure.majorEvent ? "major_event" : "normal"], exposure);
 
     const customers = exposure.customersAffected as number;

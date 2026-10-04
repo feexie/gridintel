@@ -1,4 +1,4 @@
-import type { Fraction, MethodologyRef } from "@/domain";
+import type { Fraction, InterruptionOrigin, MethodologyRef } from "@/domain";
 
 /* ==========================================================
    ANALYTICS — METHODOLOGIES
@@ -93,11 +93,17 @@ export interface ReliabilityParameters {
     planned: boolean;
     /** Outages whose planned status is not known. */
     plannedUnknown: boolean;
-    /** Attributed to transmission or generation, or caused by upstream supply loss. */
+    /** Began at an upstream origin point; or, with no origin point recorded, attributed to transmission or generation, or caused by upstream supply loss. */
     upstream: boolean;
     loadShedding: boolean;
     majorEvents: boolean;
   };
+  /**
+   * The origin points that are upstream of the distribution business. An
+   * interruption that began at any other recorded origin point began on the
+   * business's own network, whatever its record calls the cause.
+   */
+  upstreamOrigins: readonly InterruptionOrigin[];
   /** "declared_only": an outage is a major event only if one was formally declared. */
   majorEventRule: "none" | "declared_only";
   /**
@@ -112,11 +118,14 @@ export interface ReliabilityParameters {
 
 export const RELIABILITY_REFERENCE: Methodology<ReliabilityParameters> = {
   id: "gridintel.reliability.reference",
-  version: "0.1.0",
+  // 0.2.0: attribution follows the origin point where one is recorded (ADR 0006, amendment).
+  version: "0.2.0",
   name: "GridIntel reference reliability indices",
   description:
     "SAIDI, SAIFI, CAIDI and ASAI from outage exposure segments. Durations are clipped " +
-    "to the reporting period. Exposures without times or customer counts are excluded.",
+    "to the reporting period. Exposures without times or customer counts are excluded. " +
+    "An interruption is attributed by where it began: only the grid and the transmission " +
+    "station are upstream; sub-transmission lines are part of the distribution network.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
@@ -129,6 +138,7 @@ export const RELIABILITY_REFERENCE: Methodology<ReliabilityParameters> = {
       loadShedding: true,
       majorEvents: true,
     },
+    upstreamOrigins: ["grid", "transmission_station"],
     majorEventRule: "declared_only",
     saifiCounting: "interruption_starts_in_period",
     durationUnit: "minutes",

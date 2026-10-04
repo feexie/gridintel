@@ -161,6 +161,32 @@ describe("demo dataset: structure", () => {
   });
 });
 
+describe("demo dataset: where interruptions began", () => {
+  it("records an origin point on every interruption except the complaint, whose origin is not known", () => {
+    const without = dataset.outages.filter((outage) => outage.originPoint === undefined);
+    assert.deepEqual(without.map((outage) => outage.id), ["OUT-2026-09-21-SP-COMPLAINT"]);
+  });
+
+  it("treats 33 kV line faults as the distribution business's own, and only station outages as transmission's", () => {
+    const line = dataset.outages.filter((outage) => outage.originPoint === "subtransmission_line");
+    const station = dataset.outages.filter((outage) => outage.originPoint === "transmission_station");
+    assert.equal(line.length, 17);
+    assert.equal(station.length, 3);
+    assert.ok(line.every((outage) => outage.cause === "fault" && outage.responsibleParty === "distribution"));
+    assert.ok(station.every((outage) => outage.cause === "upstream_supply" && outage.responsibleParty === "transmission"));
+    // Neither a 33 kV line nor the transmission station is in the registry, so each is named, not linked.
+    assert.ok([...line, ...station].every((outage) => "label" in outage.origin));
+    assert.ok(line.some((outage) => outage.id === "OUT-2026-09-18-SS-RIV-33KV"));
+  });
+
+  it("records load shedding as beginning on the grid, and nothing else as beginning there", () => {
+    const grid = dataset.outages.filter((outage) => outage.originPoint === "grid");
+    assert.ok(grid.length > 100);
+    assert.ok(grid.every((outage) => outage.cause === "load_shedding"));
+    assert.ok(dataset.outages.filter((outage) => outage.cause === "load_shedding").every((outage) => outage.originPoint === "grid"));
+  });
+});
+
 describe("demo dataset: outages and energy agree", () => {
   it("never has a supply off twice at the same time", () => {
     for (const [key, intervals] of SUPPLY_OFF) {

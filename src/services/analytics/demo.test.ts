@@ -205,8 +205,33 @@ describe("reliability", () => {
       assert.equal(reliability.attribution.other.customerMinutes, 0);
     }
     const substation = (await scopeReliability({ repos, scope: SUBSTATION, period, context })).result.reliability;
-    assert.ok((substation.attribution.upstream_supply.saidi as number) > 0);
     assert.ok((substation.attribution.network.saidi as number) > 0);
+  });
+
+  it("puts 33 kV line faults on the network, and only transmission-station outages upstream", async () => {
+    const reliabilityOf = async (scope: ScopeRef) => (await scopeReliability({ repos, scope, period, context })).result.reliability;
+    const minutes = (totals: { customerMinutes: number } | undefined) => totals?.customerMinutes ?? 0;
+
+    // Riverside lost its 33 kV supply once, to a fault on its own line: nothing there is upstream.
+    const riverside = await reliabilityOf(SUBSTATION);
+    assert.equal(riverside.attribution.upstream_supply.customerMinutes, 0);
+    assert.ok(minutes(riverside.components.breakdown.byOriginPoint.subtransmission_line) > 0);
+
+    // Farm Road: most losses of the rural line are faults on it; a few began at the transmission station.
+    const farm = await reliabilityOf(feeder("FD-FRM"));
+    const byOrigin = farm.components.breakdown.byOriginPoint;
+    assert.ok(minutes(byOrigin.subtransmission_line) > 4 * minutes(byOrigin.transmission_station));
+    assert.equal(farm.attribution.upstream_supply.customerMinutes, minutes(byOrigin.transmission_station));
+    assert.equal(farm.attribution.upstream_supply.customerInterruptions / (farm.saidi.inputs.customersServed.value as number), 3);
+    assert.ok((farm.attribution.network.saidi as number) > 5 * (farm.attribution.upstream_supply.saidi as number));
+
+    // Load shedding began on the grid and stays its own class, not the network's and not upstream.
+    assert.equal(farm.attribution.load_management.customerMinutes, minutes(byOrigin.grid));
+    // Every interruption with usable times records where it began.
+    assert.equal(byOrigin.not_recorded, undefined);
+
+    // Government Avenue is on the same substation but not on the rural line.
+    assert.equal((await reliabilityOf(feeder("FD-GOV"))).attribution.upstream_supply.customerMinutes, 0);
   });
 
   it("tests hours of supply per day against the service band of the feeder", async () => {
@@ -259,8 +284,28 @@ describe("reliability", () => {
     // Reported 3.0 h against the network-attributable figure of a few hours, not against the total of about 200 h.
     const networkHours = (reliability.attribution.network.saidi as number) / 60;
     assert.ok(Math.abs((matched.variance.absolute as number) - (networkHours - reported.value)) < 1e-6);
-    assert.ok(Math.abs(matched.variance.absolute as number) < 2);
+    assert.ok((matched.variance.absolute as number) > 3 && (matched.variance.absolute as number) < 5);
     assert.ok((reliability.saidi.value as number) / 60 > 100);
+  });
+
+  it("shows the report's misattributed 33 kV faults as a variance on the same basis, not as a basis mismatch", async () => {
+    // The report says its SAIDI counts network interruptions, but books faults on its own 33 kV
+    // lines as upstream. The figures are therefore comparable, and they differ: a designed finding.
+    const hillcrest: ScopeRef = { kind: "substation", id: "SS-HIL" };
+    const { reliability } = (await scopeReliability({ repos, scope: hillcrest, period, context })).result;
+    const reported = (await repos.reported.listReportedKpis({ metrics: ["saidi"], scopes: [hillcrest] })).records[0];
+    assert.equal(reported.value, 1.9);
+    assert.deepEqual(reported.basis?.interruptionClasses, ["network"]);
+
+    const matched = compareOnBasis(reported, [reliability.saidi, reliabilityOnBasis(reliability, ["network"]).saidi]);
+    assert.equal(matched.sameBasis, true);
+    assert.equal(matched.comparable, true);
+    assert.ok((matched.variance.absolute as number) > 20 && (matched.variance.absolute as number) < 22);
+
+    // The variance is the 33 kV line faults: without them the two figures are close.
+    const line = reliability.components.breakdown.byOriginPoint.subtransmission_line?.customerMinutes as number;
+    const lineHours = line / (reliability.saidi.inputs.customersServed.value as number) / 60;
+    assert.ok(Math.abs((matched.variance.absolute as number) - lineHours) < 0.5);
   });
 
   it("derives customer counts from the network model without calling the indices estimated", async () => {

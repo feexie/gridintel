@@ -29,9 +29,12 @@ describe("executive read model", () => {
     assert.equal(view.reliability.attribution.length, 4);
     assert.ok(losses.reported.every((row) => row.sameBasis));
     // Reported SAIDI counts network interruptions only, and is set beside the network-only figure.
-    const saidi = view.reliability.reported.find((row) => row.label === "SAIDI");
+    // Hillcrest's is far above what the report states, because the report books 33 kV line
+    // faults as upstream; it is still far below the total, which load shedding dominates.
+    const saidi = view.reliability.reported.find((row) => row.label === "SAIDI" && row.statedFor?.startsWith("Hillcrest"));
     assert.equal(saidi?.sameBasis, true);
-    assert.ok((saidi?.calculated.value as number) < 10);
+    assert.ok((saidi?.calculated.value as number) > 20 && (saidi?.calculated.value as number) < 25);
+    assert.ok((saidi?.variance as number) > 20);
     assert.ok((view.reliability.saidi.value as number) > 200);
     assert.equal(view.reliability.scopeNote ?? null, null);
   });
@@ -84,15 +87,14 @@ describe("executive read model", () => {
     ]);
     // Ranked second on money alone: its gap is collection lost to government accounts, which no ratio rule picks out.
     assert.deepEqual(government.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day"]);
-    assert.deepEqual(oldTown.findings.map((finding) => finding.rule), [
-      "Feeder below its service-band minimum on at least one day",
-      "Feeder with the highest network-attributable SAIDI",
-    ]);
+    assert.deepEqual(oldTown.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day"]);
     // The worst ratios are on the smallest feeder, which is why ratios do not set the order.
+    // Its 33 kV line faults are the utility's own, so it also has the highest network SAIDI.
     assert.deepEqual(farm.findings.map((finding) => finding.rule), [
       "Feeder with the highest ATC&C",
       "Feeder below its service-band minimum on at least one day",
       "Feeder with the lowest collection efficiency",
+      "Feeder with the highest network-attributable SAIDI",
     ]);
     // A transformer's commercial loss has no money rank of its own: it is part of its feeder's.
     assert.equal(transformer.money, null);

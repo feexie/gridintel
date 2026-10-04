@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { InputValue } from "../core/result.ts";
-import type { InterruptionCause, Outage, Period, ResponsibleParty } from "@/domain";
+import type { InterruptionCause, InterruptionOrigin, Outage, Period, ResponsibleParty } from "@/domain";
 import { CONTEXT, PROVENANCE, approx } from "../__fixtures__/network.ts";
 import { calculateReliability } from "./indices.ts";
 import { calculateSupplyHours } from "./supplyHours.ts";
@@ -86,6 +86,69 @@ describe("reliability attribution", () => {
     assert.equal(unknown.attribution.network.saidi, null);
     assert.equal(unknown.attribution.network.saifi, null);
     assert.equal(unknown.attribution.network.customerMinutes, 720);
+  });
+});
+
+describe("reliability attribution by origin point", () => {
+  const at = (id: string, originPoint: InterruptionOrigin, cause: InterruptionCause, party: ResponsibleParty, hour: number): Outage => ({
+    ...outage(id, cause, party, 10, `2026-01-01T${String(hour).padStart(2, "0")}:00:00Z`, `2026-01-01T${String(hour + 1).padStart(2, "0")}:00:00Z`),
+    originPoint,
+  });
+  const classes = (outages: Outage[]) => {
+    const { attribution } = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages, customersServed: served(10), context: CONTEXT });
+    return Object.fromEntries(Object.entries(attribution).map(([name, part]) => [name, part.customerMinutes]));
+  };
+
+  it("puts a sub-transmission line fault on the network, even when its record calls it a loss of upstream supply", () => {
+    assert.deepEqual(classes([at("O-LINE", "subtransmission_line", "upstream_supply", "transmission", 1)]), {
+      network: 600,
+      upstream_supply: 0,
+      load_management: 0,
+      other: 0,
+    });
+  });
+
+  it("keeps the transmission station and the grid upstream, whoever the record names", () => {
+    assert.deepEqual(
+      classes([at("O-STATION", "transmission_station", "fault", "distribution", 1), at("O-GRID", "grid", "upstream_supply", "transmission", 3)]),
+      { network: 0, upstream_supply: 1200, load_management: 0, other: 0 },
+    );
+  });
+
+  it("keeps load shedding its own class, whatever its origin point", () => {
+    assert.deepEqual(classes([at("O-SHED", "grid", "load_shedding", "transmission", 1)]), {
+      network: 0,
+      upstream_supply: 0,
+      load_management: 600,
+      other: 0,
+    });
+  });
+
+  it("leaves damage by a third party on the network in 'other'", () => {
+    assert.equal(classes([at("O-THIRD", "lv_network", "vandalism", "third_party", 1)]).other, 600);
+  });
+
+  it("falls back on cause and responsible party only where no origin point is recorded", () => {
+    const unrecorded = outage("O-UP", "upstream_supply", "transmission", 10, "2026-01-01T01:00:00Z", "2026-01-01T02:00:00Z");
+    assert.equal(classes([unrecorded]).upstream_supply, 600);
+  });
+
+  it("breaks the usable exposures down by origin point, with those not recorded named as such", () => {
+    const result = calculateReliability({
+      scope: SCOPE,
+      period: TWO_DAYS,
+      outages: [at("O-LINE", "subtransmission_line", "fault", "distribution", 1), ...OUTAGES.slice(1, 2)],
+      customersServed: served(10),
+      context: CONTEXT,
+    });
+    const byOrigin = result.components.breakdown.byOriginPoint;
+    assert.equal(byOrigin.subtransmission_line?.customerMinutes, 600);
+    assert.equal(byOrigin.not_recorded?.customerMinutes, 600);
+  });
+
+  it("names the methodology version that carries the rule", () => {
+    const result = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: [], customersServed: served(10), context: CONTEXT });
+    assert.deepEqual(result.saidi.methodology, { id: "gridintel.reliability.reference", version: "0.2.0" });
   });
 });
 

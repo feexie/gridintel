@@ -15,7 +15,12 @@ import { DEMO_ORGANIZATION_ID, REPORT_SOURCE, demoProvenance } from "./sources.t
      reported and calculated values can be compared. The report
      states the basis of each figure: its reliability figures count
      network interruptions only (no load shedding, no loss of upstream
-     supply); its losses are a fraction of energy input; collection is
+     supply). The report books faults on the utility's own 33 kV lines
+     as loss of upstream supply, as a utility might, so its "network"
+     figures leave them out. The calculation puts them on the network,
+     and the same-basis comparison shows the difference as a variance.
+     That variance is a designed finding: do not retune these figures
+     to remove it. Its losses are a fraction of energy input; collection is
      on a cash basis, except for Old Town, whose collection efficiency
      is on an accrual basis and so cannot be compared with the
      calculated cash-basis figure.

@@ -3,6 +3,7 @@ import type {
   EntityRef,
   InterruptionCause,
   InterruptionClass,
+  InterruptionOrigin,
   IsoTimestamp,
   Outage,
   Period,
@@ -67,6 +68,8 @@ export interface ClassifiedExposure {
   planned: boolean | null;
   cause: InterruptionCause;
   responsibleParty: ResponsibleParty;
+  /** As recorded on the outage; null when it was not recorded. */
+  originPoint: InterruptionOrigin | null;
   upstream: boolean;
   loadShedding: boolean;
   attribution: AttributionClass;
@@ -99,17 +102,23 @@ export function classifyExposures(params: {
 
   const ordered = [...outages].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const outage of ordered) {
+    // Where the interruption began decides whether it is upstream. The cause and the
+    // responsible party decide only when no origin point was recorded.
     const upstream =
-      outage.responsibleParty === "transmission" ||
-      outage.responsibleParty === "generation" ||
-      outage.cause === "upstream_supply";
+      outage.originPoint !== undefined
+        ? parameters.upstreamOrigins.includes(outage.originPoint)
+        : outage.responsibleParty === "transmission" ||
+          outage.responsibleParty === "generation" ||
+          outage.cause === "upstream_supply";
     const loadShedding = outage.cause === "load_shedding";
     const majorEvent = isMajorEvent(outage, parameters);
+    const outsideTheBusiness = outage.responsibleParty === "customer" || outage.responsibleParty === "third_party";
+    const onOwnNetwork = outage.originPoint !== undefined ? !outsideTheBusiness : outage.responsibleParty === "distribution";
     const attribution: AttributionClass = loadShedding
       ? "load_management"
       : upstream
         ? "upstream_supply"
-        : outage.responsibleParty === "distribution"
+        : onOwnNetwork
           ? "network"
           : "other";
 
@@ -177,6 +186,7 @@ export function classifyExposures(params: {
         planned: outage.planned,
         cause: outage.cause,
         responsibleParty: outage.responsibleParty,
+        originPoint: outage.originPoint ?? null,
         upstream,
         loadShedding,
         attribution,

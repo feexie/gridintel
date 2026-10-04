@@ -326,8 +326,12 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
 }
 
 const ATTRIBUTION_LABELS = [
-  { key: "network", label: "Network", description: "Faults, planned work and weather on the distribution network." },
-  { key: "upstream_supply", label: "Upstream supply", description: "Loss of supply from transmission or generation." },
+  {
+    key: "network",
+    label: "Network",
+    description: "Faults, planned work and weather on the distribution network, including the lines that feed its substations.",
+  },
+  { key: "upstream_supply", label: "Upstream supply", description: "Loss of supply that began at the transmission station or on the grid." },
   { key: "load_management", label: "Load shedding", description: "Supply withheld under load management." },
   { key: "other", label: "Other", description: "Customer, third party, or not known." },
 ] as const;
