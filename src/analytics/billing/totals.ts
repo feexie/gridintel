@@ -82,6 +82,13 @@ export interface AccountBilling {
   energyBilledKwh: number | null;
   /** True when any charge was estimated rather than read from a meter. */
   estimated: boolean;
+  /**
+   * Energy bought on prepaid vends in the period. It is what was purchased,
+   * not what was used: credit is carried from one period to the next. 0
+   * with no vend; null when a vend states no energy.
+   */
+  energyVendedKwh: number | null;
+  vends: number;
   amountBilled: number;
   amountPaid: number;
   charges: number;
@@ -108,7 +115,7 @@ export function billingByAccount(params: {
   const account = (customerId: string): AccountBilling => {
     let entry = accounts.get(customerId);
     if (entry === undefined) {
-      entry = { customerId, energyBilledKwh: 0, estimated: false, amountBilled: 0, amountPaid: 0, charges: 0 };
+      entry = { customerId, energyBilledKwh: 0, estimated: false, energyVendedKwh: 0, vends: 0, amountBilled: 0, amountPaid: 0, charges: 0 };
       accounts.set(customerId, entry);
     }
     return entry;
@@ -119,6 +126,10 @@ export function billingByAccount(params: {
     entry.charges += 1;
     entry.amountBilled += record.amount.amountMinor / MINOR_PER_MAJOR;
     if (record.basis === "estimated") entry.estimated = true;
+    if (record.basis === "prepaid_vend") {
+      entry.vends += 1;
+      entry.energyVendedKwh = entry.energyVendedKwh === null || record.energyKwh === null ? null : entry.energyVendedKwh + record.energyKwh;
+    }
     entry.energyBilledKwh =
       entry.energyBilledKwh === null || record.energyKwh === null ? null : entry.energyBilledKwh + record.energyKwh;
   }

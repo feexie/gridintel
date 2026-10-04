@@ -21,6 +21,11 @@ import { MS_PER_MINUTE, periodBounds, toEpochMs } from "../core/time.ts";
    interpolated or substituted, and nothing becomes 0. Intervals with
    quality "suspect" (or "estimated"/"substituted" from the source)
    are used and make the total's quality correspondingly worse.
+
+   Not every meter records intervals. A meter with no interval
+   record in the period has no total here, whatever else is held for
+   it (a register reading, a vend): those are other quantities and
+   are never substituted for interval energy.
 ========================================================== */
 
 export interface MeterEnergyTotal {
@@ -33,6 +38,8 @@ export interface MeterEnergyTotal {
   netKwh: number | null;
   intervalMinutes: number | null;
   expectedIntervals: number | null;
+  /** Interval records of this meter that start in the period, usable or not. 0 for a meter that holds none. */
+  recordsInPeriod: number;
   /** Intervals with quality other than "missing" and both channels present. */
   usableIntervals: number;
   coverage: Fraction | null;
@@ -56,6 +63,7 @@ function insufficient(
     netKwh: null,
     intervalMinutes: null,
     expectedIntervals: null,
+    recordsInPeriod: 0,
     usableIntervals: 0,
     coverage: null,
     quality: null,
@@ -85,6 +93,11 @@ export function sumMeterEnergy(
   });
 
   if (inPeriod.length === 0) {
+    // A conventional meter is not read on intervals: having none is what it is, not a fault to
+    // warn about. Its energy is still missing, and is never taken as zero.
+    if (meter.meterType === "conventional") {
+      return insufficient(meter, `interval energy for meter ${meter.id} (conventional meter, not read on intervals)`, []);
+    }
     return insufficient(meter, `interval energy for meter ${meter.id}`, [
       { code: "NO_INTERVAL_DATA", message: `No interval energy for meter ${meter.id} in the period.`, ref: meter.id },
     ]);
@@ -92,25 +105,35 @@ export function sumMeterEnergy(
 
   const lengths = new Set(inPeriod.map((interval) => interval.intervalMinutes));
   if (lengths.size !== 1) {
-    return insufficient(meter, `consistent interval length for meter ${meter.id}`, [
-      {
-        code: "INTERVAL_LENGTH_INCONSISTENT",
-        message: `Meter ${meter.id} has intervals of different lengths in the period.`,
-        ref: meter.id,
-      },
-    ]);
+    return insufficient(
+      meter,
+      `consistent interval length for meter ${meter.id}`,
+      [
+        {
+          code: "INTERVAL_LENGTH_INCONSISTENT",
+          message: `Meter ${meter.id} has intervals of different lengths in the period.`,
+          ref: meter.id,
+        },
+      ],
+      { recordsInPeriod: inPeriod.length },
+    );
   }
   const intervalMinutes = inPeriod[0].intervalMinutes;
   const intervalMs = intervalMinutes * MS_PER_MINUTE;
   const periodMs = bounds.endMs - bounds.startMs;
   if (!(intervalMinutes > 0) || periodMs % intervalMs !== 0) {
-    return insufficient(meter, `interval length that divides the period for meter ${meter.id}`, [
-      {
-        code: "INTERVAL_LENGTH_INCOMPATIBLE",
-        message: `Meter ${meter.id}'s ${intervalMinutes}-minute intervals do not divide the period evenly.`,
-        ref: meter.id,
-      },
-    ]);
+    return insufficient(
+      meter,
+      `interval length that divides the period for meter ${meter.id}`,
+      [
+        {
+          code: "INTERVAL_LENGTH_INCOMPATIBLE",
+          message: `Meter ${meter.id}'s ${intervalMinutes}-minute intervals do not divide the period evenly.`,
+          ref: meter.id,
+        },
+      ],
+      { recordsInPeriod: inPeriod.length },
+    );
   }
   const expectedIntervals = periodMs / intervalMs;
 
@@ -137,7 +160,7 @@ export function sumMeterEnergy(
             ref: meter.id,
           },
         ],
-        { intervalMinutes, expectedIntervals },
+        { intervalMinutes, expectedIntervals, recordsInPeriod: inPeriod.length },
       );
     }
     slots.set(slot, interval);
@@ -190,6 +213,7 @@ export function sumMeterEnergy(
     netKwh,
     intervalMinutes,
     expectedIntervals,
+    recordsInPeriod: inPeriod.length,
     usableIntervals,
     coverage: usableIntervals / expectedIntervals,
     quality,
