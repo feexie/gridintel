@@ -1,7 +1,7 @@
 import type { IsoDate, IsoTimestamp, Period } from "./primitives";
 import type { Provenance } from "./provenance";
 import type { ScopeRef, UnresolvedRef } from "./refs";
-import type { InterruptionClass } from "./events";
+import type { InterruptionClass, InterruptionOrigin } from "./events";
 
 /* ==========================================================
    GRIDINTEL DOMAIN — REPORTED FIGURES
@@ -81,6 +81,17 @@ export interface KpiBasis {
   interruptionClasses?: readonly InterruptionClass[];
   /** Reliability indices: whether planned interruptions are counted. */
   plannedInterruptions?: "included" | "excluded";
+  /**
+   * Reliability indices: the attribution rule, as the origin points the
+   * figure treats as upstream of the business it measures. An interruption
+   * that began anywhere else is put on that business's own network.
+   *
+   * `interruptionClasses` says which classes a figure counts; this says how
+   * an interruption was put in a class. Two figures can count the same
+   * classes and still classify the same event differently. Left out when the
+   * source does not say; it is never assumed.
+   */
+  upstreamOrigins?: readonly InterruptionOrigin[];
   /**
    * Collection figures: "cash" is money received in the period over
    * charges raised in it; "accrual" is money received against the

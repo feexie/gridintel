@@ -1,4 +1,4 @@
-import type { KpiBasis, KpiKey, KpiUnit, Period, ReportedKpi, ScopeRef, UnresolvedRef } from "@/domain";
+import type { InterruptionClass, KpiBasis, KpiKey, KpiUnit, Period, ReportedKpi, ScopeRef, UnresolvedRef } from "@/domain";
 import type { CalculatedKpi } from "../core/result.ts";
 import { qualityRank } from "../core/quality.ts";
 import { isComputed } from "../core/result.ts";
@@ -35,6 +35,21 @@ import { convertUnit, dimensionOf } from "../core/units.ts";
    `compareOnBasis` picks, from several calculated figures for the
    same metric (e.g. total SAIDI and network-only SAIDI), the one on
    the reported figure's basis.
+
+   ATTRIBUTION RULE. A reliability basis says which classes of
+   interruption a figure counts. It may also say HOW an interruption
+   was put in a class: which origin points the figure treats as
+   upstream (`upstreamOrigins`). That matters only for a figure that
+   counts some of the classes an interruption can be moved between
+   (network, upstream supply, other) and not all of them.
+   - Stated on both sides and equal: like for like.
+   - Stated on both sides and different: not comparable, no variance.
+     The caller is expected to supply a calculation on the reported
+     rule, so this is the fallback and not the usual outcome.
+   - Not stated by the reported figure: the comparison is still made,
+     because the classes counted are the same, but it carries a note
+     that the variance may reflect a difference in classification.
+     The rule is not assumed to match, and it is not assumed to differ.
 ========================================================== */
 
 export interface ComparabilityIssue {
@@ -49,6 +64,8 @@ export interface ComparabilityIssue {
     | "AS_OF_MISMATCH"
     | "BASIS_UNSPECIFIED"
     | "BASIS_MISMATCH"
+    | "ATTRIBUTION_RULE_UNSPECIFIED"
+    | "ATTRIBUTION_RULE_MISMATCH"
     | "METHODOLOGY_UNSPECIFIED"
     | "METHODOLOGY_NOT_VERIFIED"
     | "INPUTS_FROM_REPORTED"
@@ -76,7 +93,11 @@ export interface KpiComparison {
     relative: number | null;
   };
   comparable: boolean;
-  /** True when every basis dimension that matters for the metric is stated on both sides and equal. */
+  /**
+   * True when every basis dimension that matters for the metric is stated on both sides and
+   * equal. An attribution rule the reported figure does not state leaves this true: the
+   * figures count the same classes, and the comparison carries a note instead.
+   */
   sameBasis: boolean;
   issues: ComparabilityIssue[];
 }
@@ -110,6 +131,7 @@ export function basisDimensions(metric: KpiKey): BasisDimension[] {
 const DIMENSION_NAME: Record<BasisDimension, string> = {
   interruptionClasses: "which interruptions are counted",
   plannedInterruptions: "whether planned interruptions are counted",
+  upstreamOrigins: "which origin points are treated as upstream",
   collection: "the collection basis (cash or accrual)",
   lossBasis: "what energy the loss is a fraction of",
 };
@@ -117,6 +139,26 @@ const DIMENSION_NAME: Record<BasisDimension, string> = {
 function basisValue(value: KpiBasis[BasisDimension]): string | null {
   if (value === undefined) return null;
   return typeof value === "string" ? value : [...value].sort().join("+");
+}
+
+/** The classes an interruption can be moved between by the attribution rule; load shedding is always its own. */
+const CLASSIFIED: readonly InterruptionClass[] = ["network", "upstream_supply", "other"];
+
+/**
+ * Whether the attribution rule changes a figure on this basis: only when
+ * it counts some, but not all, of the classes the rule moves interruptions
+ * between. A total that counts every class is the same under any rule.
+ */
+export function attributionRuleMatters(metric: KpiKey, basis: KpiBasis | null): boolean {
+  if (basisDimensions(metric) !== RELIABILITY_BASIS) return false;
+  const classes = basis?.interruptionClasses;
+  if (classes === undefined) return false;
+  const counted = CLASSIFIED.filter((name) => classes.includes(name)).length;
+  return counted > 0 && counted < CLASSIFIED.length;
+}
+
+function originWords(value: string): string {
+  return value === "" ? "nothing" : value.replaceAll("_", " ").replaceAll("+", ", ");
 }
 
 /** Every reason the two bases are not the same, for the dimensions that matter to the metric. */
@@ -145,6 +187,32 @@ export function basisIssues(metric: KpiKey, reported: KpiBasis | null, calculate
       });
     }
   }
+
+  if (attributionRuleMatters(metric, reported)) {
+    const stated = basisValue(reported?.upstreamOrigins);
+    const computed = basisValue(calculated.upstreamOrigins);
+    if (stated === null) {
+      issues.push({
+        code: "ATTRIBUTION_RULE_UNSPECIFIED",
+        message:
+          "The reported figure does not state how it put interruptions into classes (which origin points it treats as upstream). " +
+          "The variance may reflect a difference in classification rather than in what happened.",
+        blocking: false,
+      });
+    } else if (computed === null) {
+      issues.push({
+        code: "BASIS_UNSPECIFIED",
+        message: "The calculated figure does not state its attribution rule.",
+        blocking: true,
+      });
+    } else if (stated !== computed) {
+      issues.push({
+        code: "ATTRIBUTION_RULE_MISMATCH",
+        message: `Different attribution rule: the reported figure treats ${originWords(stated)} as upstream, the calculation treats ${originWords(computed)} as upstream.`,
+        blocking: true,
+      });
+    }
+  }
   return issues;
 }
 
@@ -155,7 +223,8 @@ export function basisIssues(metric: KpiKey, reported: KpiBasis | null, calculate
  */
 export function compareOnBasis(reported: ReportedKpi, candidates: readonly CalculatedKpi[]): KpiComparison {
   const match = candidates.find(
-    (candidate) => candidate.metric === reported.metric && basisIssues(reported.metric, reported.basis, candidate.basis).length === 0,
+    (candidate) =>
+      candidate.metric === reported.metric && basisIssues(reported.metric, reported.basis, candidate.basis).every((issue) => !issue.blocking),
   );
   return compareKpi(reported, match ?? candidates[0]);
 }
@@ -230,7 +299,7 @@ export function compareKpi(reported: ReportedKpi, calculated: CalculatedKpi): Kp
 
   const basis = reported.metric === calculated.metric ? basisIssues(reported.metric, reported.basis, calculated.basis) : [];
   issues.push(...basis);
-  const sameBasis = reported.metric === calculated.metric && basis.length === 0;
+  const sameBasis = reported.metric === calculated.metric && basis.every((issue) => !issue.blocking);
 
   if (reported.methodology === null) {
     issues.push({

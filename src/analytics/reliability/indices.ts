@@ -199,6 +199,8 @@ export function calculateReliability(params: {
   const basis: KpiBasis = {
     interruptionClasses: ATTRIBUTION_CLASSES,
     plannedInterruptions: parameters.include.planned ? "included" : "excluded",
+    // The attribution rule the exposures were classified under.
+    upstreamOrigins: parameters.upstreamOrigins,
   };
   const quality = worstQuality([
     customersServed.quality,

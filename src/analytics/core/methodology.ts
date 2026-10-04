@@ -145,6 +145,43 @@ export const RELIABILITY_REFERENCE: Methodology<ReliabilityParameters> = {
   },
 };
 
+const STATED_RULE_PREFIX = `${RELIABILITY_REFERENCE.id}+upstream:`;
+
+function sameOrigins(a: readonly InterruptionOrigin[], b: readonly InterruptionOrigin[]): boolean {
+  const x = [...new Set(a)].sort();
+  const y = [...new Set(b)].sort();
+  return x.length === y.length && x.every((origin, i) => origin === y[i]);
+}
+
+/**
+ * The reference reliability methodology with the attribution rule a
+ * reported figure states: the origin points IT treats as upstream. Used
+ * only to set a calculation beside that figure on its own rule. With the
+ * reference rule's own origins this is the reference methodology itself;
+ * otherwise it is a variant with its own id, so a result never passes for
+ * a reference result.
+ */
+export function reliabilityOnStatedRule(upstreamOrigins: readonly InterruptionOrigin[]): Methodology<ReliabilityParameters> {
+  if (sameOrigins(upstreamOrigins, RELIABILITY_REFERENCE.parameters.upstreamOrigins)) return RELIABILITY_REFERENCE;
+  const origins = [...new Set(upstreamOrigins)].sort();
+  return {
+    ...RELIABILITY_REFERENCE,
+    id: `${STATED_RULE_PREFIX}${origins.join(",") || "none"}`,
+    name: "GridIntel reference reliability indices, on a reported attribution rule",
+    description:
+      "The reference reliability indices, except that an interruption is upstream when it began at one of the " +
+      `origin points the reported figure names: ${origins.join(", ").replaceAll("_", " ") || "none"}.`,
+    authority: "custom",
+    parameters: { ...RELIABILITY_REFERENCE.parameters, upstreamOrigins: origins },
+  };
+}
+
+/** The name and disclaimer of a stated-rule variant, from its reference alone; null for any other methodology. */
+export function statedRuleMethodology(ref: MethodologyRef): { name: string; disclaimer: string } | null {
+  if (!ref.id.startsWith(STATED_RULE_PREFIX)) return null;
+  return { name: "GridIntel reference reliability indices, on a reported attribution rule", disclaimer: REFERENCE_DISCLAIMER };
+}
+
 /* ==========================================================
    EQUIPMENT LOADING
 ========================================================== */
