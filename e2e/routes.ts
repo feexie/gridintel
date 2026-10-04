@@ -14,5 +14,8 @@ export const ROUTES = [
   `${OPERATIONS}/feeders/FD-FRM`,
   `${OPERATIONS}/transformers/DT-OLD-2`,
   `${OPERATIONS}/transformers/DT-OLD-2?rows=all`,
+  // One of each kind of customer meter: read by hand, prepaid and not read, and AMI.
   `${OPERATIONS}/service-points/SP-OLD2-001`,
+  `${OPERATIONS}/service-points/SP-OLD2-004`,
+  `${OPERATIONS}/service-points/SP-MKT2-005`,
 ];

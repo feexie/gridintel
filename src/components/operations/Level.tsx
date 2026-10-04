@@ -143,12 +143,22 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
         </Panel>
         <Panel title="Energy recorded">
           <MetricTile metric={view.recorded} sourcing={view.sourcing} emphasis />
-          {view.meter ? (
+          {view.intervals ? (
             <p className="text-[11px] text-slate-400">
               Intervals usable: <span className="font-mono text-slate-100">{view.intervals.usable}</span> of{" "}
               <span className="font-mono text-slate-100">{view.intervals.expected ?? "—"}</span> ({formatPercent(view.intervals.coverage)} coverage). A gap makes the total unavailable; nothing is filled in.
             </p>
           ) : null}
+          {view.register ? (
+            <p className="text-[11px] text-slate-400" data-register-readings>
+              Register read <span className="font-mono text-slate-100">{formatNumber(view.register.openingKwh, 1)} kWh</span> at{" "}
+              <span className="font-mono text-slate-100">{formatTime(view.register.openingAt)}</span> and{" "}
+              <span className="font-mono text-slate-100">{formatNumber(view.register.closingKwh, 1)} kWh</span> at{" "}
+              <span className="font-mono text-slate-100">{formatTime(view.register.closingAt)}</span>
+              {view.register.estimated ? " (estimated: the meter was not read)" : ""}. The figure is the difference, for the time between the two readings.
+            </p>
+          ) : null}
+          {view.purchased ? <MetricTile metric={view.purchased} sourcing={view.sourcing} /> : null}
         </Panel>
       </div>
 

@@ -41,6 +41,12 @@ export function formatMoney(value: number, currency: string | null): string {
   return `${value < 0 ? "−" : ""}${symbol}${number(Math.abs(value) < 1000 && !Number.isInteger(value) ? 2 : 0).format(Math.abs(value))}`;
 }
 
+/** A price per unit, always to two decimals: a rate that happens to be a whole number is still a rate. */
+export function formatRate(value: number, currency: string | null): string {
+  const symbol = currency === "NGN" ? "₦" : currency ? `${currency} ` : "";
+  return `${value < 0 ? "−" : ""}${symbol}${number(2).format(Math.abs(value))}`;
+}
+
 /** The value of a metric as text, or a dash when it has none. */
 export function formatMetric(metric: MetricView): string {
   if (metric.value === null) return "—";

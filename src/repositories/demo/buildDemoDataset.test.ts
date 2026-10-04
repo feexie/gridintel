@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Provenance } from "@/domain";
 import { buildDemoDataset, createDemoRepositories, demoDataset } from "./index.ts";
-import { DEMO_CLOCK, DEMO_DAYS, DEMO_HOURS, DEMO_PERIOD, PERIOD_END_MS, PERIOD_START_MS } from "./clock.ts";
+import { DEMO_CLOCK, DEMO_HOURS, DEMO_PERIOD, PERIOD_END_MS, PERIOD_START_MS } from "./clock.ts";
 import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, SUBSTATIONS, TRANSFORMERS } from "./network.ts";
 import { SUPPLY_OFF } from "./outages.ts";
 
@@ -233,13 +233,9 @@ describe("demo dataset: outages and energy agree", () => {
     assert.ok(overnight.every((i) => i.importKwh === 0));
   });
 
-  it("has complete hourly intervals for every boundary meter, and daily ones for customer meters", () => {
+  it("has complete hourly intervals for every boundary meter", () => {
     for (const meterId of BOUNDARY) assert.equal(COUNT.get(meterId), DEMO_HOURS, meterId);
-    const boundary = new Set(BOUNDARY);
-    const customer = dataset.intervalEnergy.filter((i) => !boundary.has(i.meterId));
-    assert.ok(customer.length > 100_000);
-    assert.ok(customer.every((i) => i.intervalMinutes === 1440 && i.intervalStart.endsWith("T00:00:00+01:00")));
-    assert.ok(dataset.intervalEnergy.filter((i) => boundary.has(i.meterId)).every((i) => i.intervalMinutes === 60));
+    assert.ok(dataset.intervalEnergy.every((i) => i.intervalMinutes === 60));
   });
 
   it("loses energy at every level, never gains it", () => {
@@ -258,11 +254,103 @@ describe("demo dataset: outages and energy agree", () => {
     }
   });
 
-  it("leaves a gap, not zeros, where a meter stopped reporting", () => {
+  it("leaves a gap, not zeros, where an AMI meter stopped reporting", () => {
     const boundary = new Set(BOUNDARY);
-    const short = [...COUNT.entries()].filter(([meterId, n]) => !boundary.has(meterId) && n !== DEMO_DAYS);
+    const short = [...COUNT.entries()].filter(([meterId, n]) => !boundary.has(meterId) && n !== DEMO_HOURS);
     assert.equal(short.length, 1);
-    assert.equal(short[0][1], DEMO_DAYS - 2);
+    // Two days of hourly intervals are absent, on a meter of Garden Estate.
+    assert.equal(short[0][1], DEMO_HOURS - 48);
+    assert.equal(CONNECTIONS.find((c) => c.meterId === short[0][0])?.supplyKey, "MKT2");
+  });
+});
+
+describe("demo dataset: what each kind of customer meter reports (ADR 0009)", () => {
+  const REGISTER = dataset.telemetry.filter((point) => point.metric === "energy_import_register_kwh");
+  const readingsOf = new Map<string, typeof REGISTER>();
+  for (const point of REGISTER) readingsOf.set(point.source.id, [...(readingsOf.get(point.source.id) ?? []), point]);
+  const metered = CONNECTIONS.filter((c) => c.meterId !== undefined);
+  const typeOf = new Map(registry.meters.map((m) => [m.id, m.meterType]));
+  const maximumDemand = (c: (typeof CONNECTIONS)[number]) => c.category === "government" || c.category === "industrial";
+
+  it("puts an AMI meter on every maximum-demand account and on about 5% of the other metered accounts", () => {
+    assert.ok(metered.filter(maximumDemand).every((c) => c.ami));
+    const others = metered.filter((c) => !maximumDemand(c));
+    const share = others.filter((c) => c.ami).length / others.length;
+    assert.ok(share > 0.04 && share < 0.06, `AMI share is ${share}`);
+    // Mostly on the two better-run feeders; almost none on Old Town and Farm Road.
+    const on = (feederId: string) => others.filter((c) => c.feederId === feederId && c.ami).length;
+    assert.ok(on("FD-MKT") > 50 && on("FD-GOV") > 50 && on("FD-OLD") < 15 && on("FD-FRM") < 15);
+    assert.ok(CONNECTIONS.filter((c) => c.metering === "unmetered").every((c) => !c.ami));
+  });
+
+  it("says truthfully what kind of meter each is", () => {
+    for (const c of metered) assert.equal(typeOf.get(c.meterId as string), c.ami ? "smart" : "conventional", c.meterId);
+    for (const meterId of BOUNDARY) assert.equal(typeOf.get(meterId), "smart");
+  });
+
+  it("holds interval energy for AMI meters and for no other customer meter", () => {
+    for (const c of metered) {
+      if (c.ami) assert.ok((COUNT.get(c.meterId as string) ?? 0) >= DEMO_HOURS - 48, c.meterId);
+      else assert.equal(COUNT.get(c.meterId as string), undefined, c.meterId);
+    }
+  });
+
+  it("holds nothing from an ordinary prepaid meter but its vends", () => {
+    const prepaid = metered.filter((c) => c.metering === "prepaid" && !c.ami);
+    assert.ok(prepaid.length > 2000);
+    assert.ok(prepaid.every((c) => !readingsOf.has(c.meterId as string) && !COUNT.has(c.meterId as string)));
+    const vended = new Set(dataset.billingRecords.filter((b) => b.basis === "prepaid_vend").map((b) => b.customerId));
+    assert.ok(prepaid.filter((c) => !c.disconnected).every((c) => vended.has(c.customerId)));
+  });
+
+  it("holds two register readings for a postpaid meter that is not AMI, and for no other meter", () => {
+    const byHand = new Set(metered.filter((c) => c.metering === "postpaid" && !c.ami && !c.disconnected).map((c) => c.meterId as string));
+    assert.ok(byHand.size > 1000);
+    assert.deepEqual(new Set(readingsOf.keys()), byHand);
+    for (const [meterId, readings] of readingsOf) {
+      assert.equal(readings.length, 2, meterId);
+      const [opening, closing] = readings;
+      assert.equal(opening.observedAt, DEMO_PERIOD.start);
+      assert.equal(closing.observedAt, "2026-09-30T23:00:00+01:00");
+      assert.equal(opening.quality, "measured");
+      assert.ok((closing.value as number) >= (opening.value as number), meterId);
+    }
+  });
+
+  it("estimates some register readings where the round missed the meter, and says how", () => {
+    const estimated = REGISTER.filter((point) => point.quality === "estimated");
+    const share = estimated.length / readingsOf.size;
+    assert.ok(share > 0.05 && share < 0.2, `estimated share is ${share}`);
+    assert.ok(estimated.every((point) => /not read/.test(point.provenance.method ?? "")));
+    assert.ok(REGISTER.every((point) => point.quality === "measured" || point.quality === "estimated"));
+  });
+
+  it("bills a register-read account on the advance of its register, as an estimate when the reading was one", () => {
+    const bills = new Map(dataset.billingRecords.filter((b) => b.basis !== "prepaid_vend").map((b) => [b.customerId, b]));
+    let estimated = 0;
+    for (const c of metered) {
+      const readings = readingsOf.get(c.meterId as string);
+      if (readings === undefined) continue;
+      const bill = bills.get(c.customerId);
+      assert.ok(bill, c.customerId);
+      const advance = (readings[1].value as number) - (readings[0].value as number);
+      assert.ok(Math.abs((bill.energyKwh as number) - advance) < 1e-6, c.customerId);
+      // The bill covers the time between the two readings, which stops short of the month's end.
+      assert.deepEqual(bill.consumptionPeriod, { start: readings[0].observedAt, end: readings[1].observedAt });
+      const wasEstimated = readings[1].quality === "estimated";
+      assert.equal(bill.basis, wasEstimated ? "estimated" : "meter_reading", c.customerId);
+      if (wasEstimated) {
+        estimated += 1;
+        assert.match(bill.provenance.method ?? "", /estimated reading/);
+      }
+    }
+    assert.ok(estimated > 50);
+  });
+
+  it("keeps one transformer on which every meter is AMI, so its downstream boundary is complete", () => {
+    const hilltop = CONNECTIONS.filter((c) => c.supplyKey === "MKT3");
+    assert.equal(hilltop.length, 30);
+    assert.ok(hilltop.every((c) => c.ami));
   });
 });
 
@@ -281,7 +369,9 @@ describe("demo dataset: billing", () => {
       const bases = byCustomer.get(connection.customerId) ?? [];
       if (connection.disconnected) assert.deepEqual(bases, []);
       else if (connection.metering === "prepaid") assert.ok(bases.length >= 2 && bases.every((b) => b === "prepaid_vend"));
-      else assert.deepEqual(bases, [connection.metering === "unmetered" ? "estimated" : "meter_reading"]);
+      else if (connection.metering === "unmetered") assert.deepEqual(bases, ["estimated"]);
+      // A metered postpaid account has one bill: on a reading, or on an estimate where the meter was not read.
+      else assert.ok(bases.length === 1 && (bases[0] === "meter_reading" || (bases[0] === "estimated" && !connection.ami)), connection.customerId);
     }
   });
 
@@ -295,6 +385,11 @@ describe("demo dataset: billing", () => {
     const estimated = dataset.billingRecords.filter((record) => record.basis === "estimated");
     assert.ok(estimated.length > 100);
     assert.ok(estimated.every((record) => record.provenance.method !== undefined));
+    // Two different reasons for an estimate, and each bill says which is its own.
+    const unmetered = new Set(CONNECTIONS.filter((c) => c.metering === "unmetered").map((c) => c.customerId));
+    for (const record of estimated) {
+      assert.match(record.provenance.method ?? "", unmetered.has(record.customerId) ? /fixed monthly energy/ : /meter was not read/);
+    }
   });
 });
 

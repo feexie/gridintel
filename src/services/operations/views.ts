@@ -116,7 +116,19 @@ export interface LossesView {
   /** The accounting chain, top to bottom. */
   chain: MetricView[];
   /** The measured cross-checks, and why they may be unavailable. */
-  crossChecks: { status: DisplayStatus; metrics: MetricView[]; missingCount: number; note: string | null };
+  crossChecks: {
+    status: DisplayStatus;
+    metrics: MetricView[];
+    missingCount: number;
+    note: string | null;
+    /** Connections under the scope by what their meter can report. The four kinds add up to `servicePoints`. */
+    coverage: { servicePoints: number; recorded: number; incomplete: number; withoutIntervalData: number; unmetered: number };
+    /**
+     * Energy bought on prepaid vends in the period. Shown beside the cross-checks and labelled as
+     * purchased: it is not consumption and is never added to recorded consumption.
+     */
+    energyPurchased: MetricView;
+  };
   atcc: MetricView;
   parts: { technical: MetricView; commercial: MetricView; collection: MetricView };
   billingEfficiency: MetricView;
@@ -325,9 +337,25 @@ export interface ServicePointView {
   account: { id: string; accountNumber: string | null; category: string | null; paymentMode: string | null; status: string } | null;
   metering: "prepaid" | "postpaid" | "unmetered" | "metered";
   meter: { id: string; serialNumber: string; type: string; phases: number | null } | null;
-  /** Energy the meter recorded in the period; "not_available" when there is no meter. */
+  /**
+   * Energy the meter recorded in the period: the sum of its intervals, or the advance of its
+   * register between two readings. "not_available" when there is no meter, or the meter is not read.
+   */
   recorded: MetricView;
-  intervals: { expected: number | null; usable: number; coverage: number | null };
+  /**
+   * What is held for the meter:
+   * - intervals: the meter records interval energy;
+   * - register_readings: the meter is read by hand, about once a month;
+   * - not_read: nothing is read from the meter (an ordinary prepaid meter);
+   * - no_meter: there is no meter.
+   */
+  recordedFrom: "intervals" | "register_readings" | "not_read" | "no_meter";
+  /** Set when the meter records intervals. */
+  intervals: { expected: number | null; usable: number; coverage: number | null } | null;
+  /** Set when the figure is a register advance: the two readings it lies between. */
+  register: { openingAt: string; openingKwh: number; closingAt: string; closingKwh: number; estimated: boolean } | null;
+  /** Energy bought on prepaid vends in the period; null for an account with no vend. Purchased, not consumed. */
+  purchased: MetricView | null;
   charges: ChargeView[];
   payments: PaymentView[];
   collectionBasis: "cash";

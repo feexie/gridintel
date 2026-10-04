@@ -117,6 +117,13 @@ export interface FeederPlan {
   unknownDemandClassShare: number;
   /** Government (MDA) accounts per kVA of each generated transformer's rating; 0 for none. */
   governmentPerKva: number;
+  /**
+   * Share of this feeder's metered, non-maximum-demand accounts whose meter is an AMI meter
+   * recording intervals. Every maximum-demand account has one whatever this says (ADR 0009).
+   */
+  amiShare: number;
+  /** Share of this feeder's postpaid register readings that were not taken, and were estimated instead. */
+  estimatedReadShare: number;
   profile: FeederProfile;
 }
 
@@ -142,6 +149,8 @@ export interface TransformerPlan {
   groups: CustomerGroup[];
   /** Share of accounts disconnected for the whole month. */
   disconnectedShare: number;
+  /** True where every meter is an AMI meter, whatever the feeder's share. */
+  allAmi?: boolean;
 }
 
 /** The meter of a bypassed connection records this share of what is consumed. */
@@ -192,6 +201,8 @@ export const FEEDERS: readonly FeederPlan[] = [
     ratedCurrentA: 120,
     unknownDemandClassShare: 0,
     governmentPerKva: 0,
+    amiShare: 0.07,
+    estimatedReadShare: 0.05,
     profile: {
       ratingsKva: [200, 300, 100, 200, 500, 100, 200, 300, 200],
       targetLoading: [0.5, 0.82],
@@ -222,6 +233,8 @@ export const FEEDERS: readonly FeederPlan[] = [
     ratedCurrentA: 120,
     unknownDemandClassShare: 0,
     governmentPerKva: 0,
+    amiShare: 0.01,
+    estimatedReadShare: 0.2,
     profile: {
       ratingsKva: [200, 100, 300, 200, 100, 200, 300, 100, 200, 200, 100],
       targetLoading: [0.5, 0.88],
@@ -253,6 +266,8 @@ export const FEEDERS: readonly FeederPlan[] = [
     ratedCurrentA: 200,
     unknownDemandClassShare: 0,
     governmentPerKva: 0.03,
+    amiShare: 0.05,
+    estimatedReadShare: 0.05,
     profile: {
       ratingsKva: [300, 200, 300, 200, 500, 200, 300, 200, 300, 200, 100, 200],
       targetLoading: [0.5, 0.8],
@@ -284,6 +299,8 @@ export const FEEDERS: readonly FeederPlan[] = [
     ratedCurrentA: 60,
     unknownDemandClassShare: 0.02,
     governmentPerKva: 0,
+    amiShare: 0.01,
+    estimatedReadShare: 0.25,
     profile: {
       ratingsKva: [100, 50, 100, 200, 50, 100, 100, 50, 100, 100],
       targetLoading: [0.4, 0.75],
@@ -342,7 +359,9 @@ const DESIGNED: readonly TransformerPlan[] = [
     lvLoss: 0.045,
     powerFactor: 0.9,
     disconnectedShare: 0,
-    // Fully metered: a transformer whose downstream boundary is complete.
+    // Fully metered, and every meter an AMI meter: the one transformer whose downstream
+    // boundary is complete, so its measured cross-checks can be made.
+    allAmi: true,
     groups: [{ category: "residential", count: 30, meanPeakKw: 0.9, prepaid: 0.7, postpaid: 0.3 }],
   },
   {
@@ -466,6 +485,11 @@ export interface ConnectionPlan {
   meterId?: string;
   category: CustomerCategory;
   metering: Metering;
+  /**
+   * True when the meter is an AMI meter that records intervals. Otherwise a prepaid meter
+   * leaves vend records only and a postpaid meter one register reading a month (ADR 0009).
+   */
+  ami: boolean;
   /** Demand at the category's peak hour, kW. Known only to the generator. */
   peakKw: number;
   /** Share of consumption the meter records; 1 unless the meter is bypassed. */
@@ -502,6 +526,8 @@ function planConnections(): ConnectionPlan[] {
     const random = seeded(`connections:${dt.key}`);
     // A stream of its own, so that recording fewer demand classes changes nothing else.
     const classRandom = seeded(`demand-class:${dt.key}`);
+    // Likewise for which meters are AMI meters.
+    const amiRandom = seeded(`ami:${dt.key}`);
     let n = 0;
     for (const group of dt.groups) {
       for (let i = 0; i < group.count; i++) {
@@ -513,6 +539,9 @@ function planConnections(): ConnectionPlan[] {
         const bypassed = random() < feeder.bypassShare;
         const disconnected = random() < dt.disconnectedShare;
         const classKnown = classRandom() >= feeder.unknownDemandClassShare;
+        // Every maximum-demand account has an AMI meter; of the rest, the feeder's share.
+        const amiDraw = amiRandom() < feeder.amiShare;
+        const ami = metering !== "unmetered" && (group.category === "government" || dt.allAmi === true || amiDraw);
         connections.push({
           supplyKey: dt.key,
           feederId: dt.feederId,
@@ -521,6 +550,7 @@ function planConnections(): ConnectionPlan[] {
           ...(metering === "unmetered" ? {} : { meterId: `M-${dt.key}-${pad(n)}` }),
           category: group.category,
           metering,
+          ami,
           peakKw: disconnected ? 0 : round(group.meanPeakKw * size * (metering === "unmetered" ? UNMETERED_USE_FACTOR : 1), 3),
           recordedFraction: metering !== "unmetered" && bypassed ? BYPASS_RECORDED_FRACTION : 1,
           disconnected,
@@ -537,6 +567,7 @@ function planConnections(): ConnectionPlan[] {
     meterId: MV_CUSTOMER.meterId,
     category: "industrial",
     metering: "postpaid",
+    ami: true,
     peakKw: MV_CUSTOMER.peakKw,
     recordedFraction: 1,
     disconnected: false,
@@ -714,7 +745,8 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
         ...AUDIT,
         id: connection.meterId,
         serialNumber: `SYN-${connection.meterId}`,
-        meterType: "smart",
+        // An AMI meter records intervals and is read remotely; any other is read by hand or not at all.
+        meterType: connection.ami ? "smart" : "conventional",
         phases: connection.category === "residential" ? 1 : 3,
         installation: { role: "service_point", servicePointId: connection.servicePointId },
         lifecycle: "in_service",

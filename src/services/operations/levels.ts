@@ -1,4 +1,4 @@
-import type { IsoTimestamp, KpiBasis, Period, ScopeRef } from "@/domain";
+import type { IntervalEnergy, IsoTimestamp, KpiBasis, Meter, Period, ScopeRef, TelemetryPoint } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot, RegistryCoverage } from "../../repositories/ports/index.ts";
 import type { CalculatedKpi, CalculationContext, RevenueGap, TopologyIndex } from "../../analytics/index.ts";
 import type { ServiceCache } from "../analytics/cache.ts";
@@ -33,6 +33,7 @@ import {
   isComputed,
   metersWithRole,
   methodologyRef,
+  registerAdvance,
   reliabilityOnBasis,
   servicePointsDirectOnFeeder,
   servicePointsOnTransformer,
@@ -102,7 +103,18 @@ const CLASS_LABEL: Record<string, string> = {
 const BASIS_LABEL: Record<string, string> = {
   meter_reading: "Billed from meter reading",
   prepaid_vend: "Prepaid vends",
-  estimated: "Estimated bills (no meter)",
+  estimated: "Estimated bills (no meter, or meter not read)",
+};
+
+const PURCHASED_NOTE =
+  "Energy bought in the period, not energy used in it: credit is carried from one month to the next. It is not consumption and is never added to recorded consumption.";
+
+/** A meter type in the words shown on screen. */
+const METER_KIND: Record<Meter["meterType"], string> = {
+  smart: "AMI meter",
+  amr: "remotely read meter",
+  conventional: "conventional meter",
+  unspecified: "meter",
 };
 
 function context(runtime: OperationsRuntime): CalculationContext {
@@ -208,8 +220,28 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
       : `Summed over ${result.sections.length} electrical section(s): ${result.sections.map((section) => section.id).join(", ")}. ${scope.kind === "organization" ? "An organization" : "A region"} is not an electrical boundary, so its account is the sum of the sections wholly inside it; each connection is counted once.`;
   const { account, atcc, split, decomposition, billing } = result;
   const energy = methodologyRef(ENERGY_REFERENCE);
-  const unmetered = account.crossChecks.missingInputs.filter((name) => name.startsWith("service_point meter for")).length;
-  const otherMissing = account.crossChecks.missingInputs.length - unmetered;
+  const coverage = account.consumptionCoverage;
+  // Boundary meters below the section (feeder heads, totalizers) that gave no total.
+  const boundaryMissing = account.boundary.downstream.requirements.filter((req) => req.role !== "service_point" && req.netKwh === null).length;
+  const vends = billing.byBasis.prepaid_vend;
+  const energyPurchased: MetricView =
+    billing.accountsInScope === null
+      ? unavailable("Energy purchased (prepaid vends)", "kWh", "No billing records are available.")
+      : {
+          label: "Energy purchased (prepaid vends)",
+          value: vends.energyKwh,
+          unit: "kWh",
+          currency: null,
+          status: vends.energyKwh === null ? "insufficient_data" : "ok",
+          origin: "measured",
+          derivation: `Sum of the energy on ${vends.records} prepaid vend(s) raised in the period.`,
+          method: null,
+          inputs: [],
+          estimatedInputs: [],
+          missingInputs: vends.energyKwh === null ? ["energy on every prepaid vend"] : [],
+          warnings: [],
+          note: PURCHASED_NOTE,
+        };
 
   const collectionComputed = isComputed(atcc.billingEfficiency.status) && isComputed(atcc.collectionEfficiency.status);
   const collectionPart: MetricView = {
@@ -269,11 +301,25 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
         account.crossChecks.missingInputs.length === 0
           ? null
           : [
-              unmetered > 0 ? `${unmetered} connection(s) have no meter, so consumption under this section cannot be measured in full.` : "",
-              otherMissing > 0 ? `${otherMissing} other meter input(s) are incomplete in the period.` : "",
+              `Recorded consumption needs interval data from every connection. Of ${coverage.servicePoints} connection(s): ` +
+                [
+                  `${coverage.recorded} with interval data for the whole period`,
+                  coverage.withoutIntervalData > 0
+                    ? `${coverage.withoutIntervalData} with a meter that records no intervals (read about once a month, or prepaid and not read at all)`
+                    : "",
+                  coverage.unmetered > 0 ? `${coverage.unmetered} with no meter` : "",
+                  coverage.incomplete > 0 ? `${coverage.incomplete} with intervals missing in the period` : "",
+                ]
+                  .filter(Boolean)
+                  .join("; ") +
+                ".",
+              boundaryMissing > 0 ? `${boundaryMissing} boundary meter input(s) below this section are incomplete in the period.` : "",
+              "What is not measured is not known, and is not taken as zero.",
             ]
               .filter(Boolean)
               .join(" "),
+      coverage: { ...coverage },
+      energyPurchased,
     },
     atcc: kpiMetric("ATC&C", atcc.atcc),
     parts: {
@@ -894,23 +940,137 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
   };
 }
 
+/** What a customer meter recorded in the period, from whatever that kind of meter can report. */
+interface Recorded {
+  metric: MetricView;
+  from: ServicePointView["recordedFrom"];
+  intervals: ServicePointView["intervals"];
+  register: ServicePointView["register"];
+}
+
+/**
+ * Energy recorded at one connection (ADR 0009):
+ * - a meter that records intervals: their sum, with a gap making it unavailable;
+ * - a meter read by hand: the advance of its register between two readings, said to be that;
+ * - a meter from which nothing is read: not available. A vend is never put in its place.
+ */
+function recordedAt(
+  runtime: OperationsRuntime,
+  meter: Meter | undefined,
+  intervals: readonly IntervalEnergy[],
+  registerReadings: readonly TelemetryPoint[],
+  prepaid: boolean,
+): Recorded {
+  const label = "Energy recorded";
+  if (!meter) {
+    return { metric: unavailable(label, "kWh", "No meter at this connection; consumption is not measured."), from: "no_meter", intervals: null, register: null };
+  }
+  const total = sumMeterEnergy(meter, intervals, runtime.period);
+  if (total.recordsInPeriod > 0 || meter.meterType !== "conventional") {
+    return {
+      metric: {
+        label,
+        value: total.importKwh,
+        unit: "kWh",
+        currency: null,
+        status: total.importKwh === null ? "insufficient_data" : total.quality === "estimated" || total.quality === "substituted" ? "calculated_with_estimates" : "ok",
+        origin: "measured",
+        derivation: `Sum of ${total.usableIntervals} of ${total.expectedIntervals ?? "?"} intervals from meter ${meter.id}.`,
+        method: methodView(methodologyRef(ENERGY_REFERENCE)),
+        inputs: [],
+        estimatedInputs: [],
+        missingInputs: total.missingInputs,
+        warnings: total.warnings.map((warning) => warning.message),
+        note: null,
+      },
+      from: "intervals",
+      intervals: { expected: total.expectedIntervals, usable: total.usableIntervals, coverage: total.coverage },
+      register: null,
+    };
+  }
+
+  const advance = registerAdvance(meter, registerReadings, runtime.period);
+  if (advance.readings === 0) {
+    return {
+      metric: unavailable(
+        label,
+        "kWh",
+        prepaid
+          ? "This meter is not read: it records no intervals and no register reading is held. What the account bought is shown as energy purchased, which is not consumption."
+          : "This meter is not read: it records no intervals and no register reading is held for the period.",
+      ),
+      from: "not_read",
+      intervals: null,
+      register: null,
+    };
+  }
+  const estimated = advance.quality === "estimated" || advance.quality === "substituted";
+  const span = advance.opening && advance.closing ? `${advance.opening.kwh} kWh at ${advance.opening.at} and ${advance.closing.kwh} kWh at ${advance.closing.at}` : null;
+  return {
+    metric: {
+      label,
+      value: advance.advanceKwh,
+      unit: "kWh",
+      currency: null,
+      status: advance.status !== "ok" ? advance.status : estimated ? "calculated_with_estimates" : "ok",
+      origin: estimated ? "estimated" : "measured",
+      derivation: `Advance of the register of meter ${meter.id} between two readings${span ? `: ${span}` : ""}. It covers the time between the readings, not the whole period.`,
+      method: null,
+      inputs: [],
+      estimatedInputs: estimated ? [{ name: "closing register reading", share: null }] : [],
+      missingInputs: advance.missingInputs,
+      warnings: advance.warnings.map((warning) => warning.message),
+      note: estimated
+        ? "One register reading for the month, not interval data. The meter was not read this month: the closing reading is an estimate."
+        : "One register reading for the month, not interval data.",
+    },
+    from: "register_readings",
+    intervals: null,
+    register:
+      advance.opening && advance.closing
+        ? { openingAt: advance.opening.at, openingKwh: advance.opening.kwh, closingAt: advance.closing.at, closingKwh: advance.closing.kwh, estimated }
+        : null,
+  };
+}
+
+/** Register readings of the meters that are read by hand, by meter. Meters that record intervals are not asked for. */
+async function registerReadingsOf(runtime: OperationsRuntime, meters: readonly Meter[]): Promise<Map<string, TelemetryPoint[]>> {
+  const byHand = meters.filter((meter) => meter.meterType === "conventional");
+  const byMeter = new Map<string, TelemetryPoint[]>();
+  if (byHand.length === 0) return byMeter;
+  const readings = await runtime.repos.observations.listTelemetry({
+    sources: byHand.map((meter) => ({ kind: "meter" as const, id: meter.id })),
+    from: runtime.period.start,
+    asOf: runtime.period.end,
+  });
+  for (const point of readings.records) {
+    const list = byMeter.get(point.source.id);
+    if (list === undefined) byMeter.set(point.source.id, [point]);
+    else list.push(point);
+  }
+  return byMeter;
+}
+
 async function servicePointTable(runtime: OperationsRuntime, loaded: Loaded, title: string, servicePointIds: string[]): Promise<ChildTable> {
   const { index, snapshot } = loaded;
   const meters = servicePointIds.flatMap((id) => metersWithRole(index, "service_point", id));
-  const [intervals, charges, payments] = await Promise.all([
+  const [intervals, registers, charges, payments] = await Promise.all([
     runtime.repos.observations.listIntervalEnergy({ meterIds: meters.map((meter) => meter.id), period: runtime.period }),
+    registerReadingsOf(runtime, meters),
     runtime.repos.billing.listBillingRecords({ period: runtime.period }),
     runtime.repos.billing.listPayments({ period: runtime.period }),
   ]);
-  const byMeter = new Map<string, typeof intervals.records>();
-  for (const interval of intervals.records) byMeter.set(interval.meterId, [...(byMeter.get(interval.meterId) ?? []), interval]);
+  const byMeter = new Map<string, IntervalEnergy[]>();
+  for (const interval of intervals.records) {
+    const list = byMeter.get(interval.meterId);
+    if (list === undefined) byMeter.set(interval.meterId, [interval]);
+    else list.push(interval);
+  }
   const currency = registryCurrency(snapshot);
   const billing =
     currency === null || charges.completeness === "not_available"
       ? null
       : billingByAccount({ period: runtime.period, billingRecords: charges.records, payments: payments.records, currency });
-  const energy = methodologyRef(ENERGY_REFERENCE);
-
   const wanted = new Set(servicePointIds);
   const customerAt = new Map<string, (typeof snapshot.customers)[number]>();
   for (const candidate of snapshot.customers) {
@@ -924,27 +1084,13 @@ async function servicePointTable(runtime: OperationsRuntime, loaded: Loaded, tit
     const account = customer && billing ? billing.get(customer.id) : undefined;
     const metering = meter ? (customer?.paymentMode ?? "metered") : "unmetered";
 
-    let recorded: MetricView;
-    if (!meter) {
-      recorded = unavailable("Energy recorded", "kWh", "No meter at this connection; consumption is not measured.");
-    } else {
-      const total = sumMeterEnergy(meter, byMeter.get(meter.id) ?? [], runtime.period);
-      recorded = {
-        label: "Energy recorded",
-        value: total.importKwh,
-        unit: "kWh",
-        currency: null,
-        status: total.importKwh === null ? "insufficient_data" : total.quality === "estimated" || total.quality === "substituted" ? "calculated_with_estimates" : "ok",
-        origin: "measured",
-        derivation: `Sum of ${total.usableIntervals} of ${total.expectedIntervals ?? "?"} intervals from meter ${meter.id}.`,
-        method: methodView(energy),
-        inputs: [],
-        estimatedInputs: [],
-        missingInputs: total.missingInputs,
-        warnings: total.warnings.map((warning) => warning.message),
-        note: null,
-      };
-    }
+    const recorded = recordedAt(
+      runtime,
+      meter,
+      meter ? (byMeter.get(meter.id) ?? []) : [],
+      meter ? (registers.get(meter.id) ?? []) : [],
+      customer?.paymentMode === "prepaid",
+    ).metric;
 
     const billed = (label: string, value: number | null, unit: "kWh" | "currency", derivation: string): MetricView => {
       if (billing === null) return unavailable(label, unit, "No billing records are available.");
@@ -1036,17 +1182,15 @@ export async function servicePointView(runtime: OperationsRuntime, servicePointI
   const trail = new SourceTrail().add([sp]);
   const customer = snapshot.customers.find((c) => c.servicePointId === servicePointId && c.accountStatus !== "closed");
   const meter = metersWithRole(index, "service_point", servicePointId)[0];
-  const table = await servicePointTable(runtime, loaded, "", [servicePointId]);
-  const recorded = table.rows[0].cells.recorded;
-
-  let intervals = { expected: null as number | null, usable: 0, coverage: null as number | null };
+  let intervalRecords: IntervalEnergy[] = [];
+  let registerReadings: TelemetryPoint[] = [];
   if (meter) {
     trail.add([meter]);
-    const records = await runtime.repos.observations.listIntervalEnergy({ meterIds: [meter.id], period: runtime.period });
-    trail.add(records.records);
-    const total = sumMeterEnergy(meter, records.records, runtime.period);
-    intervals = { expected: total.expectedIntervals, usable: total.usableIntervals, coverage: total.coverage };
+    intervalRecords = (await runtime.repos.observations.listIntervalEnergy({ meterIds: [meter.id], period: runtime.period })).records;
+    registerReadings = (await registerReadingsOf(runtime, [meter])).get(meter.id) ?? [];
+    trail.add(intervalRecords).add(registerReadings);
   }
+  const recorded = recordedAt(runtime, meter, intervalRecords, registerReadings, customer?.paymentMode === "prepaid");
 
   const [charges, payments] = await Promise.all([
     runtime.repos.billing.listBillingRecords({ period: runtime.period }),
@@ -1056,6 +1200,30 @@ export async function servicePointView(runtime: OperationsRuntime, servicePointI
   const ownPayments = customer ? payments.records.filter((payment) => payment.customerId === customer.id) : [];
   trail.add(ownCharges).add(ownPayments);
   if (customer) trail.add([customer]);
+
+  // What the account bought on prepaid vends: shown as purchased, beside what was recorded and never in its place.
+  const currency = registryCurrency(snapshot);
+  const own = customer && currency !== null
+    ? billingByAccount({ period: runtime.period, billingRecords: ownCharges, payments: ownPayments, currency }).get(customer.id)
+    : undefined;
+  const purchased: MetricView | null =
+    own === undefined || own.vends === 0
+      ? null
+      : {
+          label: "Energy purchased",
+          value: own.energyVendedKwh,
+          unit: "kWh",
+          currency: null,
+          status: own.energyVendedKwh === null ? "insufficient_data" : "ok",
+          origin: "measured",
+          derivation: `Sum of the energy on ${own.vends} prepaid vend(s) in the period.`,
+          method: null,
+          inputs: [],
+          estimatedInputs: [],
+          missingInputs: own.energyVendedKwh === null ? ["energy on every prepaid vend"] : [],
+          warnings: [],
+          note: PURCHASED_NOTE,
+        };
 
   const supply = sp.supply.kind === "feeder" ? "its feeder" : "its transformer";
   return {
@@ -1068,7 +1236,7 @@ export async function servicePointView(runtime: OperationsRuntime, servicePointI
       sp.supply.kind === "feeder" ? "Service point supplied at 11 kV" : "Service point",
       [
         { label: "Account", value: customer ? `${customer.category ?? "uncategorised"}, ${customer.accountStatus}` : "none" },
-        { label: "Metering", value: meter ? `${customer?.paymentMode ?? "metered"} (meter ${meter.id})` : "unmetered" },
+        { label: "Metering", value: meter ? `${customer?.paymentMode ?? "metered"} (${METER_KIND[meter.meterType]} ${meter.id})` : "unmetered" },
       ],
       sp.location ?? null,
     ),
@@ -1084,14 +1252,18 @@ export async function servicePointView(runtime: OperationsRuntime, servicePointI
       : null,
     metering: meter ? (customer?.paymentMode ?? "metered") : "unmetered",
     meter: meter ? { id: meter.id, serialNumber: meter.serialNumber, type: meter.meterType, phases: meter.phases ?? null } : null,
-    recorded,
-    intervals,
+    recorded: recorded.metric,
+    recordedFrom: recorded.from,
+    intervals: recorded.intervals,
+    register: recorded.register,
+    purchased,
     charges: ownCharges
       .map((record) => ({
         id: record.id,
         billedAt: record.billedAt,
         basis: record.basis,
-        basisLabel: BASIS_LABEL[record.basis],
+        // An estimated bill says why there was no reading: no meter, or a meter the round did not reach.
+        basisLabel: record.basis !== "estimated" ? BASIS_LABEL[record.basis] : meter ? "Estimated bills (meter not read)" : "Estimated bills (no meter)",
         energyKwh: record.energyKwh,
         amount: record.amount.amountMinor / 100,
         currency: record.amount.currency,

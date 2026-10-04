@@ -1,4 +1,5 @@
-import type { BillingRecord, Money, Payment } from "@/domain";
+import type { BillingRecord, Money, Payment, Period } from "@/domain";
+import type { EnergyModel } from "./energy.ts";
 import type { ConnectionPlan, FeederPlan, PaymentBehaviour } from "./network.ts";
 import { DEMO_PERIOD, at, wat } from "./clock.ts";
 import { CONNECTIONS, DEMO_CURRENCY, FEEDERS, MV_CUSTOMER } from "./network.ts";
@@ -11,8 +12,12 @@ import { BILLING_SOURCE, demoProvenance } from "./sources.ts";
    Three ways an account is charged:
    - prepaid: two to four vends in the month, each paid as it is
      raised, for roughly the energy the meter recorded;
-   - postpaid with a meter: one bill at the month-end billing run,
-     for the energy the meter recorded;
+   - postpaid with an AMI meter: one bill at the month-end billing
+     run, for the energy the meter recorded;
+   - postpaid with any other meter: one bill at the same run, for
+     the advance of the meter's register between the two readings
+     that bracket the month. Where the reading round missed the
+     meter, the bill is raised on an estimated reading and says so;
    - unmetered: one estimated bill at the month-end run, for a fixed
      monthly energy that does not depend on what was used.
    Government (MDA) accounts are metered and billed on a meter
@@ -24,6 +29,9 @@ import { BILLING_SOURCE, demoProvenance } from "./sources.ts";
    against this month's bill, which stands in for the settlement of
    earlier bills that the dataset does not hold.
 ========================================================== */
+
+const UNMETERED_METHOD = "Synthetic estimated billing: a fixed monthly energy by customer category.";
+const MISSED_READING_METHOD = "Billed on an estimated reading: the meter was not read on the month-end round.";
 
 /** The month-end billing run: 30 September, 23:30 WAT. */
 const BILLING_RUN_MS = at(29, 23, 30);
@@ -40,7 +48,7 @@ function paidFraction(behaviour: PaymentBehaviour, random: () => number): number
   return 0.3 + random() * 0.5;
 }
 
-export function buildDemoBilling(recordedKwh: ReadonlyMap<string, number>): {
+export function buildDemoBilling({ recordedKwh, registerReads }: Pick<EnergyModel, "recordedKwh" | "registerReads">): {
   billingRecords: BillingRecord[];
   payments: Payment[];
 } {
@@ -61,6 +69,9 @@ export function buildDemoBilling(recordedKwh: ReadonlyMap<string, number>): {
     tariffCode: string,
     fraction: number,
     random: () => number,
+    /** The consumption the bill covers, when it is not the whole month. */
+    consumptionPeriod: Period = DEMO_PERIOD,
+    method: string | undefined = basis === "estimated" ? UNMETERED_METHOD : undefined,
   ) => {
     const id = `BILL-2026-09-${connection.customerId}`;
     const amount = money(energyKwh * feeder.tariffNgnPerKwh);
@@ -70,12 +81,12 @@ export function buildDemoBilling(recordedKwh: ReadonlyMap<string, number>): {
         customerId: connection.customerId,
         basis,
         billedAt: wat(BILLING_RUN_MS),
-        consumptionPeriod: DEMO_PERIOD,
+        consumptionPeriod,
         energyKwh,
         amount,
         tariffCode,
       },
-      basis === "estimated" ? "Synthetic estimated billing: a fixed monthly energy by customer category." : undefined,
+      method,
     );
     const paid = Math.round(amount.amountMinor * fraction);
     if (paid > 0) {
@@ -133,17 +144,18 @@ export function buildDemoBilling(recordedKwh: ReadonlyMap<string, number>): {
     }
 
     if (connection.metering === "postpaid") {
-      const energy = recordedKwh.get(connection.customerId) ?? 0;
       const government = connection.category === "government";
-      monthEndBill(
-        connection,
-        feeder,
-        "meter_reading",
-        energy,
-        `${feeder.tariffCode} ${government ? "MD" : "non-MD"}`,
-        paidFraction(government ? feeder.payment.government : feeder.payment.postpaid, random),
-        random,
-      );
+      const fraction = paidFraction(government ? feeder.payment.government : feeder.payment.postpaid, random);
+      const tariff = `${feeder.tariffCode} ${government ? "MD" : "non-MD"}`;
+      // An AMI meter is billed on its intervals; any other on the advance of its register.
+      const read = registerReads.get(connection.customerId);
+      if (read === undefined) {
+        monthEndBill(connection, feeder, "meter_reading", recordedKwh.get(connection.customerId) ?? 0, tariff, fraction, random);
+      } else if (read.estimated) {
+        monthEndBill(connection, feeder, "estimated", read.advanceKwh, `${tariff} (estimated reading)`, fraction, random, read.period, MISSED_READING_METHOD);
+      } else {
+        monthEndBill(connection, feeder, "meter_reading", read.advanceKwh, tariff, fraction, random, read.period);
+      }
       continue;
     }
 

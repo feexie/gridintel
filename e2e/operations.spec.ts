@@ -153,6 +153,56 @@ test("an unmetered connection shows no measured energy and an estimated bill", a
   await expect(page.getByRole("row", { name: /Estimated bills \(no meter\)/ })).toContainText("Estimated");
 });
 
+test("an ordinary prepaid meter shows no consumption, and its vends as energy purchased", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/service-points/SP-OLD2-004`);
+  await expect(page.getByText("conventional meter M-OLD2-004")).toBeVisible();
+  const recorded = tile(page, "Energy recorded");
+  await expect(recorded).toContainText("Not available");
+  await expect(recorded).toContainText("This meter is not read");
+  const purchased = tile(page, "Energy purchased");
+  await expect(purchased).toContainText("kWh");
+  await expect(purchased).toContainText("Measured");
+  await expect(purchased).toContainText("It is not consumption and is never added to recorded consumption.");
+  // No interval line: there are no intervals to count.
+  await expect(page.getByText("Intervals usable")).toHaveCount(0);
+});
+
+test("a postpaid meter read by hand shows one register reading, and says when it was estimated", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/service-points/SP-OLD2-001`);
+  const recorded = tile(page, "Energy recorded");
+  await expect(recorded).toContainText("kWh");
+  await expect(recorded).toContainText("One register reading for the month, not interval data.");
+  await expect(recorded).toContainText("Measured");
+  await expect(page.locator("[data-register-readings]")).toContainText("The figure is the difference, for the time between the two readings.");
+  await expect(tile(page, "Energy purchased")).toHaveCount(0);
+
+  // The reading round missed this meter: the reading, and the bill raised on it, are estimates.
+  await page.goto(`${OPERATIONS}/service-points/SP-OLD2-005`);
+  await expect(tile(page, "Energy recorded")).toContainText("Estimated");
+  await expect(tile(page, "Energy recorded")).toContainText("The meter was not read this month");
+  await expect(page.locator("[data-register-readings]")).toContainText("estimated: the meter was not read");
+  await expect(page.getByRole("row", { name: /Estimated bills \(meter not read\)/ })).toBeVisible();
+});
+
+test("an AMI meter shows the sum of its intervals", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/service-points/SP-MKT2-005`);
+  await expect(page.getByText("AMI meter M-MKT2-005")).toBeVisible();
+  await expect(tile(page, "Energy recorded")).toContainText("kWh");
+  await expect(page.getByText("Intervals usable")).toContainText("720 of 720");
+});
+
+test("a level shows energy purchased apart from recorded consumption, which it says is not available and why", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/feeders/FD-OLD`);
+  const purchased = page.locator('[data-table="energy-purchased"]');
+  await expect(purchased).toContainText("Energy purchased (prepaid vends)");
+  await expect(purchased).toContainText("kWh");
+  await expect(page.getByText("Purchased, not consumed")).toBeVisible();
+  await expect(page.getByText("934 with a meter that records no intervals (read about once a month, or prepaid and not read at all)")).toBeVisible();
+  await expect(page.getByRole("row", { name: /^Recorded consumption/ })).toContainText("insufficient data");
+  // The accounting chain does not depend on customer meters and is unchanged in status.
+  await expect(tile(page, "ATC&C")).toContainText("Estimated inputs");
+});
+
 test("a long list of connections shows its first rows, with the full list one click away", async ({ page }) => {
   await page.goto(`${OPERATIONS}/transformers/DT-OLD-2`);
   const table = page.locator("section", { has: page.getByRole("heading", { name: /^Service points \(135\)/ }) });

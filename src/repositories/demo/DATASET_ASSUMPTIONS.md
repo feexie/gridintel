@@ -20,14 +20,10 @@ It is identical on every build.
 - Boundary meters (substation incomers, feeder heads, transformer
   totalizers) and telemetry are hourly. Real boundary meters usually record
   every 15 or 30 minutes; hourly keeps the dataset small.
-- **Customer meters report one reading a day rather than one an hour**, the
-  sum of that day's hours. Consumption is still modelled hour by hour; only
-  what the customer meter reports is daily. This is an interim modelling
-  choice, made to keep the dataset small with thousands of meters. It is not
-  how the meters are meant to be modelled in the end: ADR 0009 proposes
-  interval data for boundary meters and a minority of smart customer meters,
-  and vend records only for ordinary prepaid meters. That proposal is not
-  implemented and awaits the Founder's decision.
+- **A customer meter reports only what that kind of meter can report**
+  (ADR 0009; see "Customers and metering"). Consumption is still modelled
+  hour by hour for every connection, to size the bills, the vends and the
+  boundary meters. Most of it is never written out as an observation.
 
 ## Network
 
@@ -143,12 +139,44 @@ The six hand-designed transformers, unchanged by the widening:
   Road, 2% of accounts (19) have no demand class recorded in the registry:
   they are left out of the rate, not assumed to be non-MD, and the revenue
   gap says how many. Every other account is non-MD.
-- DT-MKT-3 is fully metered on purpose, so one energy account is complete.
+- DT-MKT-3 is fully metered on purpose, and every meter on it is an AMI
+  meter, so one transformer has a complete downstream boundary and its
+  measured cross-checks can be made.
 - Disconnected for the whole month, using nothing: 3% of connections on Old
   Town (75) and 4% on Farm Road (49).
-- **Every customer meter is treated as a smart meter that is read daily**,
-  prepaid ones included. In reality most prepaid meters are not read on a
-  schedule at all. This is the largest simplification in the dataset.
+- **What each kind of customer meter reports** (ADR 0009):
+
+  | Meter | Meters | What the dataset holds | Meter type |
+  | --- | --- | --- | --- |
+  | AMI | 288 | Hourly interval energy | `smart` |
+  | Postpaid, not AMI | 1,447 | Two readings of the register: at 00:00 on 1 September and at 23:00 on 30 September | `conventional` |
+  | Prepaid, not AMI | 2,518 | Nothing from the meter. Its vends are in the billing records | `conventional` |
+  | Unmetered | none | Nothing | none |
+
+  - **AMI meters** are on every maximum-demand account (the 90 government
+    accounts and the 11 kV customer) and on 4.7% of the other metered
+    accounts (197): 7% on Market Road, 5% on Government Avenue, 1% on Old
+    Town and on Farm Road, plus all 30 connections of DT-MKT-3. They are
+    hourly, to match the boundary meters.
+  - **Register readings** are held for the 1,425 postpaid meters that are
+    not AMI and whose account is active. The reading round reaches a meter
+    at 23:00 on 30 September, half an hour before the billing run, so a
+    reading covers what was used up to 23:00 and the bill raised on it
+    covers 1 September 00:00 to 30 September 23:00, not the whole month.
+    Reading every meter at the same instant, and at the first instant of the
+    month, is a simplification: a real round takes days.
+  - **Some readings are estimated.** The round misses 5% of meters on Market
+    Road and Government Avenue, 20% on Old Town and 25% on Farm Road: 138
+    in all. The billing system then estimates the closing reading, between
+    75% and 125% of what the meter actually registered. The reading is held
+    with quality `estimated` and the bill raised on it has basis
+    `estimated`, each saying why.
+  - **Prepaid meters that are not AMI are not read.** What the model knows
+    they registered is used to size their vends and is never written out.
+    Energy vended is shown as "energy purchased" and is never added to
+    recorded consumption: credit is carried from one month to the next.
+  - The meter with a two-day gap (see "Deliberate data-quality cases") is an
+    AMI meter, since only an AMI meter has intervals to lose.
 - Bypassed meters, as a share of metered connections: 5% on Market Road, 8%
   on Old Town, 2% on Government Avenue and 10% on Farm Road. A bypassed
   meter records 45% of what is consumed.
@@ -193,9 +221,14 @@ exact here; a real study would not.
   the same for non-maximum-demand and maximum-demand customers. No VAT,
   fixed charges or arrears.
 - Prepaid: two to four vends in the month, each paid when raised, for 94–106%
-  of what the meter recorded.
-- Postpaid with a meter, government accounts included: one bill at a
+  of what the meter registered. The utility does not hold that figure; only
+  the vends.
+- Postpaid with an AMI meter, government accounts included: one bill at a
   month-end run (30 September, 23:30) for what the meter recorded.
+- Postpaid with any other meter: one bill at the same run for the advance of
+  the register between its two readings, or for an estimate of it where the
+  meter was not read. Such a bill is an estimated bill and counts toward the
+  estimated share of energy billed.
 - Unmetered: one estimated bill at the same run for a fixed energy,
   residential / commercial: 220 / 600 kWh on Market Road, 90 / 250 on Old
   Town, 180 / 450 on Government Avenue, 55 / 160 on Farm Road. These figures
@@ -274,7 +307,8 @@ exact here; a real study would not.
 
 ## Deliberate data-quality cases
 
-- One customer meter on DT-MKT-2 has no readings for 14–15 September (a gap).
+- One AMI customer meter on DT-MKT-2 has no intervals for 14–15 September (a
+  gap of 48 hours).
 - Four hourly readings of the DT-OLD-3 totalizer are marked `estimated`.
 - One transformer monitor (DT-OLD-3) stops sending heartbeats nine hours
   before the demo clock.

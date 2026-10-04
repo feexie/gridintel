@@ -176,6 +176,72 @@ describe("operations read models", () => {
     assert.equal(view?.sourcing.synthetic, true);
   });
 
+  it("show for each kind of meter only what that meter can report", async () => {
+    // Riverbank: an ordinary prepaid meter, a postpaid meter read on the round, and one the round missed.
+    const prepaid = await servicePointView(runtime, "SP-OLD2-004");
+    assert.equal(prepaid?.recordedFrom, "not_read");
+    assert.equal(prepaid?.recorded.status, "not_available");
+    assert.equal(prepaid?.recorded.value, null);
+    assert.equal(prepaid?.intervals, null);
+    assert.equal(prepaid?.meter?.type, "conventional");
+    assert.equal(prepaid?.purchased?.label, "Energy purchased");
+    assert.equal(prepaid?.purchased?.origin, "measured");
+    assert.match(prepaid?.purchased?.note ?? "", /not consumption/);
+    const vended = prepaid?.charges.reduce((total, charge) => total + (charge.energyKwh as number), 0) as number;
+    assert.ok(Math.abs((prepaid?.purchased?.value as number) - vended) < 1e-6);
+
+    const read = await servicePointView(runtime, "SP-OLD2-001");
+    assert.equal(read?.recordedFrom, "register_readings");
+    assert.equal(read?.recorded.status, "ok");
+    assert.equal(read?.recorded.origin, "measured");
+    assert.match(read?.recorded.note ?? "", /One register reading for the month, not interval data/);
+    assert.equal(read?.register?.estimated, false);
+    assert.ok(Math.abs((read?.recorded.value as number) - ((read?.register?.closingKwh as number) - (read?.register?.openingKwh as number))) < 1e-6);
+    assert.ok(Math.abs((read?.recorded.value as number) - (read?.charges[0].energyKwh as number)) < 1e-6);
+    assert.equal(read?.purchased, null);
+
+    const missed = await servicePointView(runtime, "SP-OLD2-005");
+    assert.equal(missed?.recordedFrom, "register_readings");
+    assert.equal(missed?.recorded.status, "calculated_with_estimates");
+    assert.equal(missed?.recorded.origin, "estimated");
+    assert.equal(missed?.register?.estimated, true);
+    assert.equal(missed?.charges[0].estimated, true);
+    assert.equal(missed?.charges[0].basisLabel, "Estimated bills (meter not read)");
+
+    // Garden Estate: an AMI meter, whose intervals are summed as before.
+    const ami = await servicePointView(runtime, "SP-MKT2-005");
+    assert.equal(ami?.recordedFrom, "intervals");
+    assert.equal(ami?.meter?.type, "smart");
+    assert.equal(ami?.intervals?.expected, 720);
+    assert.equal(ami?.recorded.status, "ok");
+    assert.equal(ami?.register, null);
+  });
+
+  it("show energy purchased beside the cross-checks, and say why recorded consumption is not available", async () => {
+    const feeder = (await feederView(runtime, "FD-OLD")) as NetworkLevelView;
+    const checks = feeder.losses?.crossChecks;
+    assert.equal(checks?.status, "insufficient_data");
+    const recorded = checks?.metrics.find((metric) => metric.label === "Recorded consumption");
+    assert.equal(recorded?.value, null);
+    assert.equal(recorded?.status, "insufficient_data");
+    assert.equal(checks?.energyPurchased.status, "ok");
+    assert.equal(checks?.energyPurchased.origin, "measured");
+    assert.ok((checks?.energyPurchased.value as number) > 0);
+    assert.match(checks?.energyPurchased.note ?? "", /never added to recorded consumption/);
+    const coverage = checks?.coverage;
+    assert.equal((coverage?.recorded ?? 0) + (coverage?.incomplete ?? 0) + (coverage?.withoutIntervalData ?? 0) + (coverage?.unmetered ?? 0), coverage?.servicePoints);
+    assert.match(checks?.note ?? "", /Of 2141 connection\(s\): 5 with interval data for the whole period; 934 with a meter that records no intervals/);
+    assert.match(checks?.note ?? "", /1202 with no meter/);
+    // The chain above it is untouched by what customer meters report.
+    assert.equal(feeder.losses?.status, "calculated_with_estimates");
+    assert.ok(feeder.losses?.chain.every((metric) => metric.value !== null));
+
+    // Where every meter is AMI the cross-check is made, and nothing is missing.
+    const hilltop = (await transformerView(runtime, "DT-MKT-3")) as NetworkLevelView;
+    assert.equal(hilltop.losses?.crossChecks.status, "ok");
+    assert.equal(hilltop.losses?.crossChecks.note, null);
+  });
+
   it("mark a comparison across different bases as not comparable, with the reason and no difference", async () => {
     const oldTown = (await feederView(runtime, "FD-OLD")) as NetworkLevelView;
     const collection = oldTown.losses?.reported.find((row) => row.label === "Collection efficiency");

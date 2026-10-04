@@ -1,4 +1,4 @@
-import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Provenance, TelemetryPoint } from "@/domain";
+import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Period, Provenance, TelemetryPoint } from "@/domain";
 import type { CustomerCategory } from "./network.ts";
 import { DEMO_DAYS, DEMO_HOURS, PERIOD_END_MS, at, hourStart, wat, weekday } from "./clock.ts";
 import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, MV_CUSTOMER, SUBSTATIONS, SUBSTATION_LOSS, TRANSFORMERS } from "./network.ts";
@@ -21,15 +21,24 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
      substation incomer      = Σ heads of the feeders on its bus
                                section ÷ (1 − substation loss)
 
-   Consumption is modelled hour by hour. Boundary meters (incomers,
-   feeder heads, transformer totalizers) report it hourly. Customer
-   meters report one reading a day, the sum of that day's hours,
-   which keeps the dataset small with thousands of connections.
+   Consumption is modelled hour by hour for every connection. What
+   the dataset HOLDS is only what each kind of meter can report
+   (ADR 0009):
 
-   What an unmetered connection consumes, and what a bypassed meter
-   fails to record, exist only inside this model. The dataset holds
-   only what a utility could actually observe: boundary meters and
-   the customer meters that exist.
+     boundary meters         hourly interval energy
+     AMI customer meters     hourly interval energy
+     postpaid, not AMI       two readings of the meter's register: one
+                             at the start of the month, one at the
+                             month-end reading round. Some rounds miss
+                             a meter, and that reading is estimated
+     prepaid, not AMI        nothing from the meter. The vends in the
+                             billing records are all the utility has
+     unmetered               nothing
+
+   What an unmetered connection consumes, what a prepaid meter
+   registers and what a bypassed meter fails to record exist only
+   inside this model. They size the bills, the vends and the boundary
+   meters, and are never written out as observations.
 ========================================================== */
 
 /** Demand as a share of the category's peak, by hour of the day in WAT. */
@@ -61,18 +70,37 @@ const WEEK: Record<CustomerCategory, readonly number[]> = {
   government: [0.2, 1, 1, 1, 1, 1, 0.25],
 };
 
+/** What the month-end reading round found at one postpaid meter that is not an AMI meter. */
+export interface RegisterRead {
+  /** The register's advance between the two readings, kWh; an estimate when the meter was not read. */
+  advanceKwh: number;
+  /** True when the round did not reach the meter and the billing system estimated the reading. */
+  estimated: boolean;
+  /** [opening reading, closing reading): the consumption the advance covers. */
+  period: Period;
+}
+
 export interface EnergyModel {
   intervalEnergy: IntervalEnergy[];
   telemetry: TelemetryPoint[];
   heartbeats: DeviceHeartbeat[];
-  /** Energy each customer meter recorded over the month, kWh, by customer id. */
+  /**
+   * Energy each customer meter registered over the month, kWh, by customer id. Known to the
+   * model for every meter; the dataset holds it only for AMI meters. It sizes bills and vends.
+   */
   recordedKwh: ReadonlyMap<string, number>;
+  /** The register reading behind each postpaid bill that is not from an AMI meter, by customer id. */
+  registerReads: ReadonlyMap<string, RegisterRead>;
   /** Energy lost between a section's input and its customers, kWh, by "<scope kind>:<id>". */
   technicalLossKwh: ReadonlyMap<string, number>;
 }
 
 const HOUR_STARTS: readonly IsoTimestamp[] = Array.from({ length: DEMO_HOURS }, (_, h) => wat(hourStart(h)));
-const DAY_STARTS: readonly IsoTimestamp[] = Array.from({ length: DEMO_DAYS }, (_, day) => wat(at(day, 0)));
+/**
+ * The month-end reading round reaches a meter at 23:00 on 30 September, half an hour before
+ * the billing run. A register reading covers what was used up to that moment and no later.
+ */
+export const READING_ROUND_HOUR = DEMO_HOURS - 1;
 const WEEKDAY: readonly number[] = Array.from({ length: DEMO_DAYS }, (_, day) => weekday(day));
 
 function zeros(): Float64Array {
@@ -93,47 +121,88 @@ export function buildEnergyModel(): EnergyModel {
     "Gap filled by the meter data system from the same hours of the previous day.",
   );
   const scada = demoProvenance(SCADA_SOURCE);
+  const readingRound = demoProvenance(METERING_SOURCE, undefined, "Register read by a meter reader on the monthly round.");
+  const estimatedReading = demoProvenance(
+    METERING_SOURCE,
+    undefined,
+    "The meter was not read on this round. The billing system estimated the reading from the account's earlier consumption.",
+  );
   const intervalEnergy: IntervalEnergy[] = [];
   const telemetry: TelemetryPoint[] = [];
   const recordedKwh = new Map<string, number>();
+  const registerReads = new Map<string, RegisterRead>();
+  const feederById = new Map(FEEDERS.map((feeder) => [feeder.id, feeder]));
   const technicalLossKwh = new Map<string, number>();
 
-  /** Hourly readings of a boundary meter. */
-  const pushHourly = (meterId: string, kwh: ArrayLike<number>, estimated?: (h: number) => boolean) => {
+  /**
+   * Hourly readings of a boundary meter or an AMI customer meter. Returns the month's total as
+   * the meter registered it, hours it failed to report included.
+   */
+  const pushHourly = (
+    meterId: string,
+    kwh: ArrayLike<number>,
+    options: { estimated?: (h: number) => boolean; skip?: (h: number) => boolean } = {},
+  ): number => {
+    let month = 0;
     for (let h = 0; h < DEMO_HOURS; h++) {
-      const isEstimated = estimated?.(h) ?? false;
+      const reading = round(kwh[h], 3);
+      month += reading;
+      if (options.skip?.(h)) continue;
+      const isEstimated = options.estimated?.(h) ?? false;
       intervalEnergy.push({
         meterId,
         intervalStart: HOUR_STARTS[h],
         intervalMinutes: 60,
-        importKwh: round(kwh[h], 3),
+        importKwh: reading,
         exportKwh: 0,
         quality: isEstimated ? "estimated" : "measured",
         provenance: isEstimated ? estimatedProvenance : metering,
       });
     }
+    return round(month, 3);
   };
 
-  /** Daily readings of a customer meter: each the sum of that day's hours. Returns the month's total. */
-  const pushDaily = (meterId: string, hourlyKwh: ArrayLike<number>, skipDay?: (day: number) => boolean): number => {
+  /** What a meter that reports nothing registered over the month: known to the model only. */
+  const monthTotal = (hourlyKwh: ArrayLike<number>): number => {
     let month = 0;
     for (let day = 0; day < DEMO_DAYS; day++) {
       let kwh = 0;
       for (let h = day * 24; h < day * 24 + 24; h++) kwh += hourlyKwh[h];
-      const reading = round(kwh, 3);
-      month += reading;
-      if (skipDay?.(day)) continue;
-      intervalEnergy.push({
-        meterId,
-        intervalStart: DAY_STARTS[day],
-        intervalMinutes: 24 * 60,
-        importKwh: reading,
-        exportKwh: 0,
-        quality: "measured",
-        provenance: metering,
-      });
+      month += round(kwh, 3);
     }
     return round(month, 3);
+  };
+
+  /**
+   * The two readings of a postpaid meter's register that the month-end round brackets the
+   * month with. The register counts from an arbitrary earlier reading. Where the round did
+   * not reach the meter, the billing system estimates the closing reading instead.
+   */
+  const pushRegisterReads = (customerId: string, meterId: string, hourlyKwh: ArrayLike<number>, missedShare: number) => {
+    const random = seeded(`register:${customerId}`);
+    const opening = round(400 + random() * 18_000, 1);
+    const missed = random() < missedShare;
+    const error = 0.75 + random() * 0.5;
+    let registered = 0;
+    for (let h = 0; h < READING_ROUND_HOUR; h++) registered += hourlyKwh[h];
+    const advanceKwh = round(registered * (missed ? error : 1), 1);
+    const source = { kind: "meter" as const, id: meterId };
+    telemetry.push(
+      { source, metric: "energy_import_register_kwh", observedAt: HOUR_STARTS[0], value: opening, quality: "measured", provenance: readingRound },
+      {
+        source,
+        metric: "energy_import_register_kwh",
+        observedAt: HOUR_STARTS[READING_ROUND_HOUR],
+        value: round(opening + advanceKwh, 1),
+        quality: missed ? "estimated" : "measured",
+        provenance: missed ? estimatedReading : readingRound,
+      },
+    );
+    registerReads.set(customerId, {
+      advanceKwh,
+      estimated: missed,
+      period: { start: HOUR_STARTS[0], end: HOUR_STARTS[READING_ROUND_HOUR] },
+    });
   };
 
   /* ---- Connections -------------------------------------------------- */
@@ -152,9 +221,9 @@ export function buildEnergyModel(): EnergyModel {
     return factors;
   };
 
-  // One customer meter stopped reporting for two days: a gap, not a zero.
-  const gapMeter = CONNECTIONS.find((c) => c.supplyKey === "MKT2" && c.metering === "prepaid")?.meterId;
-  const inGap = (day: number) => day === 13 || day === 14;
+  // One AMI customer meter stopped reporting for two days: a gap, not a zero.
+  const gapMeter = CONNECTIONS.find((c) => c.supplyKey === "MKT2" && c.ami)?.meterId;
+  const inGap = (h: number) => h >= 13 * 24 && h < 15 * 24;
 
   const recorded = zeros();
   for (const connection of CONNECTIONS) {
@@ -179,8 +248,15 @@ export function buildEnergyModel(): EnergyModel {
       supplyConsumed[h] += actual;
       recorded[h] = actual * connection.recordedFraction;
     }
-    if (connection.meterId !== undefined) {
-      recordedKwh.set(connection.customerId, pushDaily(connection.meterId, recorded, connection.meterId === gapMeter ? inGap : undefined));
+    if (connection.meterId === undefined) continue;
+    if (connection.ami) {
+      recordedKwh.set(connection.customerId, pushHourly(connection.meterId, recorded, connection.meterId === gapMeter ? { skip: inGap } : {}));
+      continue;
+    }
+    recordedKwh.set(connection.customerId, monthTotal(recorded));
+    if (connection.metering === "postpaid" && !connection.disconnected) {
+      const missedShare = feederById.get(connection.feederId)?.estimatedReadShare ?? 0;
+      pushRegisterReads(connection.customerId, connection.meterId, recorded, missedShare);
     }
   }
 
@@ -213,7 +289,7 @@ export function buildEnergyModel(): EnergyModel {
         const totalizer = dtConsumed.map((kwh) => kwh / (1 - dt.lvLoss));
         // One transformer's totalizer lost four readings, which the meter data system estimated.
         const estimated = dt.key === "OLD3" ? (h: number) => h >= 9 * 24 + 17 && h < 9 * 24 + 21 : undefined;
-        pushHourly(BOUNDARY_METERS.totalizer(dt.id), totalizer, estimated);
+        pushHourly(BOUNDARY_METERS.totalizer(dt.id), totalizer, { estimated });
         technicalLossKwh.set(`distribution_transformer:${dt.id}`, sum(totalizer) - sum(dtConsumed));
         feederConsumed += sum(dtConsumed);
 
@@ -267,7 +343,7 @@ export function buildEnergyModel(): EnergyModel {
     technicalLossKwh.set(`substation:${substation.id}`, received - substationConsumed);
   }
 
-  return { intervalEnergy, telemetry, heartbeats: buildHeartbeats(scada), recordedKwh, technicalLossKwh };
+  return { intervalEnergy, telemetry, heartbeats: buildHeartbeats(scada), recordedKwh, registerReads, technicalLossKwh };
 }
 
 /** Hourly check-ins over the last day. One transformer monitor went quiet nine hours before the demo clock. */

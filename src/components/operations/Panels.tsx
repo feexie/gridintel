@@ -11,7 +11,7 @@ import type {
   SupplyView,
 } from "@/services/operations/views";
 import { MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "./Metric";
-import { formatMetric, formatMoney, formatNumber, formatPercent, formatTime, levelHref } from "./format";
+import { formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatTime, levelHref } from "./format";
 
 /* Chart colours: categorical slots validated for this dark surface (blue, orange, aqua). */
 const SERIES = { technical: "#3987e5", commercial: "#d95926", collection: "#199e70" };
@@ -185,6 +185,20 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
             </tbody>
           </table>
           {losses.crossChecks.note ? <p className="mt-1 text-[11px] leading-snug text-slate-400">{losses.crossChecks.note}</p> : null}
+          <h3 className="mb-1 mt-3 text-[11px] uppercase tracking-wide text-slate-400">Purchased, not consumed</h3>
+          <table className="w-full border-collapse text-xs" data-table="energy-purchased">
+            <tbody>
+              <tr className="border-b border-slate-800/60">
+                <td className="py-1 pr-2 text-slate-200">{losses.crossChecks.energyPurchased.label}</td>
+                <td className="py-1 text-right">
+                  <MetricCell metric={losses.crossChecks.energyPurchased} />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          {losses.crossChecks.energyPurchased.note ? (
+            <p className="mt-1 text-[11px] leading-snug text-slate-400">{losses.crossChecks.energyPurchased.note}</p>
+          ) : null}
         </div>
 
         <div className="space-y-3">
@@ -334,7 +348,7 @@ export function RevenueGapPanel({ gap, below }: { gap: RevenueGapView; below: { 
                     <span className="ml-1.5 text-[10px] text-slate-500">{part.kind === "residual" ? "residual above the sections below" : part.scope.id}</span>
                   </td>
                   <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.ratePerKwh === null ? "—" : `${formatMoney(part.ratePerKwh, gap.currency)}/kWh`}</td>
+                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.ratePerKwh === null ? "—" : `${formatRate(part.ratePerKwh, gap.currency)}/kWh`}</td>
                   <td className="whitespace-nowrap py-1 text-right font-mono text-slate-50">{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</td>
                 </tr>
               ))}

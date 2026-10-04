@@ -53,8 +53,9 @@ describe("synthetic marker", () => {
 });
 
 describe("energy account and losses", () => {
-  it("measures everything it can on the fully metered transformer, and says the technical loss is an estimate", async () => {
+  it("measures everything it can on the transformer where every meter is AMI, and says the technical loss is an estimate", async () => {
     const { result } = await sectionLosses({ repos, scope: dt("DT-MKT-3"), period, context });
+    assert.deepEqual(result.account.consumptionCoverage, { servicePoints: 30, recorded: 30, incomplete: 0, withoutIntervalData: 0, unmetered: 0 });
     assert.equal(result.account.status, "calculated_with_estimates");
     assert.deepEqual(result.account.estimatedInputs, [{ name: "technical loss", quality: "estimated", share: 1 }]);
     assert.equal(result.account.crossChecks.status, "ok");
@@ -77,6 +78,11 @@ describe("energy account and losses", () => {
     assert.equal(result.account.crossChecks.status, "insufficient_data");
     assert.equal(result.account.downstreamMeasured.value, null);
     assert.ok(result.account.crossChecks.missingInputs.some((name) => name.startsWith("service_point meter for service_point")));
+    // Its metered connections are read by hand or not at all, so none of them is recorded either.
+    assert.deepEqual(result.account.consumptionCoverage, { servicePoints: 135, recorded: 0, incomplete: 0, withoutIntervalData: 61, unmetered: 74 });
+    assert.ok(result.account.crossChecks.missingInputs.some((name) => /conventional meter, not read on intervals/.test(name)));
+    // A meter that is not read on intervals is not a fault, and raises no warning.
+    assert.ok(!result.account.warnings.some((w) => w.code === "NO_INTERVAL_DATA"));
     assert.equal(result.atcc.atcc.status, "calculated_with_estimates");
     assert.deepEqual(result.atcc.atcc.estimatedInputs.map((input) => input.name), ["energyBilled"]);
     assert.equal(result.account.energyInput.status, "ok");
@@ -84,10 +90,27 @@ describe("energy account and losses", () => {
     assert.equal(result.account.energyBilled.quality, "estimated");
   });
 
-  it("reports a meter gap as missing input, not as zero consumption", async () => {
+  it("reports an AMI meter's gap as missing input, not as zero consumption", async () => {
     const { result } = await sectionLosses({ repos, scope: dt("DT-MKT-2"), period, context });
     assert.ok(result.account.warnings.some((w) => w.code === "INTERVAL_GAP"));
     assert.equal(result.account.recordedConsumption.value, null);
+    assert.equal(result.account.consumptionCoverage.incomplete, 1);
+  });
+
+  it("keeps the accounting chain whole where recorded consumption is not available, at every level", async () => {
+    for (const scope of [{ kind: "region", id: DEMO_REGION_ID } as ScopeRef, SUBSTATION, feeder("FD-GOV"), feeder("FD-FRM")]) {
+      const { account, billing } = (await sectionLosses({ repos, scope, period, context })).result;
+      // The chain reads boundary meters, billing records and the loss study; no customer meter's intervals.
+      assert.equal(account.status, "calculated_with_estimates", scope.id);
+      assert.deepEqual(account.missingInputs, [], scope.id);
+      assert.equal(account.recordedConsumption.status, "insufficient_data", scope.id);
+      assert.equal(account.recordedConsumption.value, null, scope.id);
+      const coverage = account.consumptionCoverage;
+      assert.equal(coverage.recorded + coverage.incomplete + coverage.withoutIntervalData + coverage.unmetered, coverage.servicePoints, scope.id);
+      assert.ok(coverage.withoutIntervalData > coverage.recorded, scope.id);
+      // Energy bought on vends is held apart: a billing total, never part of recorded consumption.
+      assert.ok((billing.byBasis.prepaid_vend.energyKwh as number) > 0, scope.id);
+    }
   });
 
   it("decomposes ATC&C into technical, commercial and collection parts that sum to it", async () => {

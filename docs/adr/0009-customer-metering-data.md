@@ -1,9 +1,9 @@
 # ADR 0009: What customer meters report
 
 Date: 2026-10-04
-Status: **Accepted by the Founder on 2026-10-04. Not implemented yet.**
-Nothing in the code follows this ADR yet; it is implemented at the start of
-Phase 6c, before the workspaces.
+Status: **Accepted by the Founder on 2026-10-04. Implemented on 2026-10-04,
+in Phase 6c-1.** See "As implemented" at the end; where it differs from the
+proposal below, the implementation is what the code does.
 
 Decisions taken on acceptance, which override the suggestions below where
 they differ:
@@ -145,7 +145,55 @@ Counts from the current dataset (30 days):
 - Data-integrity semantics are touched (what "recorded" means for a
   customer), so this is a decision gate.
 
-## Questions for the Founder
+## As implemented (2026-10-04)
+
+**The dataset.** 288 AMI meters (every maximum-demand account, and 4.7% of
+the other metered accounts) report hourly intervals. 1,425 postpaid meters
+hold two register readings each, 138 of them with an estimated closing
+reading. 2,518 prepaid meters hold nothing but their vends. Meter types are
+`smart` and `conventional` accordingly. One transformer, DT-MKT-3, is all
+AMI by design, so that the measured cross-checks can be seen working once.
+
+**Where a register reading is kept.** As two `TelemetryPoint` records on the
+meter, metric `energy_import_register_kwh`: a reading of the cumulative
+register, which is what a meter reader writes down. It is not stored as
+interval energy, because it is not energy for an interval of the period: it
+is a difference between two readings whose times are the readings' own.
+`registerAdvance` (analytics) gives that difference with the two readings it
+lies between. It is never summed into an energy account.
+
+**The proposal treated a postpaid meter like a prepaid one** ("no intervals,
+its monthly reading held on the bill"). The Founder's decision gives it
+register readings instead, some estimated. Two consequences the proposal did
+not have:
+
+- A bill raised on an estimated reading has basis `estimated`, like an
+  unmetered account's bill, with its own stated method. The estimated share
+  of energy billed therefore rises, and so does the number of estimated
+  charges.
+- The bill covers the time between the two readings, which ends at the
+  reading round and not at the end of the month. Energy billed moves a
+  little for that reason alone.
+
+**The recorded-consumption cross-check** counts interval data only, as
+proposed. A register advance is not added to it, although it is measured
+consumption, because its span is the readings' and not the period's. Adding
+it would need a rule for how far from the period's ends a reading may be,
+which is a methodology decision and has not been taken. `EnergyAccount`
+gains `consumptionCoverage`: how many connections have complete interval
+data, incomplete interval data, a meter with no interval data, or no meter.
+A conventional meter with no intervals is named as a missing input and
+raises no warning: it is not a fault.
+
+**Energy purchased** is on the level screens, beside the cross-checks under
+"Purchased, not consumed", and on the service point of a prepaid account. It
+is the prepaid-vend total that billing already computed.
+
+**Statuses.** No new status. The account status is unchanged at every scope.
+What was measured and is no longer is `not_available` at the service point
+(a meter that is not read) and `insufficient_data` in the cross-check.
+
+## Questions for the Founder (answered on acceptance; kept as asked)
 
 1. Is a postpaid meter without AMI modelled as a monthly register reading, as
    proposed?

@@ -16,7 +16,12 @@ const SHOTS: [string, string][] = [
   ["feeder-government-avenue", `${OPERATIONS}/feeders/FD-GOV`],
   ["feeder-farm-road", `${OPERATIONS}/feeders/FD-FRM`],
   ["transformer-riverbank", `${OPERATIONS}/transformers/DT-OLD-2`],
+  ["transformer-hilltop-close", `${OPERATIONS}/transformers/DT-MKT-3`],
   ["service-point", `${OPERATIONS}/service-points/SP-OLD2-002`],
+  ["service-point-prepaid", `${OPERATIONS}/service-points/SP-OLD2-004`],
+  ["service-point-register-reading", `${OPERATIONS}/service-points/SP-OLD2-001`],
+  ["service-point-estimated-reading", `${OPERATIONS}/service-points/SP-OLD2-005`],
+  ["service-point-ami", `${OPERATIONS}/service-points/SP-MKT2-005`],
 ];
 
 test.describe("screenshots", () => {

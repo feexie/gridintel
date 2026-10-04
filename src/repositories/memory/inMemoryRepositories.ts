@@ -1,4 +1,4 @@
-import type { IntervalEnergy, IsoTimestamp, Outage, OutageExposure, Period } from "@/domain";
+import type { IntervalEnergy, IsoTimestamp, Outage, OutageExposure, Period, TelemetryPoint } from "@/domain";
 import type { GridIntelRepositories } from "../ports/index.ts";
 import type { DomainDataset } from "./dataset.ts";
 
@@ -78,6 +78,21 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
     return byMeter.get(meterId) ?? [];
   };
 
+  // Likewise telemetry by the asset it was read at, each list in dataset order.
+  let bySource: Map<string, TelemetryPoint[]> | null = null;
+  const telemetryOf = (kind: string, id: string): readonly TelemetryPoint[] => {
+    if (bySource === null) {
+      bySource = new Map();
+      for (const point of dataset.telemetry) {
+        const key = `${point.source.kind}:${point.source.id}`;
+        const list = bySource.get(key);
+        if (list === undefined) bySource.set(key, [point]);
+        else list.push(point);
+      }
+    }
+    return bySource.get(`${kind}:${id}`) ?? [];
+  };
+
   return {
     registry: {
       async getSnapshot(query) {
@@ -103,15 +118,15 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
       async listTelemetry(query) {
         const fromMs = queryInstant("from", query.from);
         const asOfMs = queryInstant("asOf", query.asOf);
-        const records = dataset.telemetry.filter((point) => {
-          const selected = query.sources.some(
-            (source) => source.kind === point.source.kind && source.id === point.source.id,
-          );
-          if (!selected) return false;
-          const observedMs = epochMs(point.observedAt);
-          if (observedMs === null) return true;
-          return observedMs >= fromMs && observedMs <= asOfMs;
-        });
+        // Records are returned grouped by source, in the order the sources were asked for.
+        const sources = [...new Map(query.sources.map((source) => [`${source.kind}:${source.id}`, source])).values()];
+        const records = sources.flatMap((source) =>
+          telemetryOf(source.kind, source.id).filter((point) => {
+            const observedMs = epochMs(point.observedAt);
+            if (observedMs === null) return true;
+            return observedMs >= fromMs && observedMs <= asOfMs;
+          }),
+        );
         return { records, completeness: dataset.completeness.telemetry };
       },
     },

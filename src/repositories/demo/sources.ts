@@ -24,7 +24,7 @@ export const REGISTRY_SOURCE = source(
 export const METERING_SOURCE = source(
   "synthetic-metering",
   "Synthetic meter data",
-  "Stands in for a meter data management system: hourly interval energy for boundary and customer meters.",
+  "Stands in for a meter data management system: hourly interval energy for boundary meters and AMI customer meters, and monthly register readings of other postpaid meters.",
 );
 export const SCADA_SOURCE = source(
   "synthetic-scada",

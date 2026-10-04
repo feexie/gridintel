@@ -21,7 +21,7 @@ import { DEMO_DATA_SOURCES } from "./sources.ts";
 
 export function buildDemoDataset(): DomainDataset {
   const energy = buildEnergyModel();
-  const billing = buildDemoBilling(energy.recordedKwh);
+  const billing = buildDemoBilling(energy);
   return {
     registry: buildDemoRegistry(),
     registryCoverage: {
