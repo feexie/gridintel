@@ -3,9 +3,9 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-02. Status: **Phase 6a complete on branch `phase-6a`,
-awaiting the Founder's approval before it is merged to `main`. Phase 6b not
-started.**
+Last updated: 2026-10-04. Status: **Phase 6b complete on branch `phase-6b`,
+awaiting the Founder's review of the widened dataset and approval before it
+is merged to `main`. Phase 6c not started.**
 
 ## Completed
 
@@ -203,7 +203,7 @@ own low-voltage non-MD rate and keeps the 11 kV customer out of every rate
 (tested); no legacy import remains; typecheck, unit tests, lint, build and
 browser tests are green.
 
-### Phase 6b: Dataset widening (not started)
+### Phase 6b: Dataset widening (complete, awaiting approval; branch `phase-6b`)
 
 **Goal.** A synthetic network large enough that nothing about it is an
 artefact of being small.
@@ -221,6 +221,60 @@ caveat is gone; the region account equals the sum of two substations; every
 page stays under 500 ms; the assumptions file is complete.
 **Constraint.** Nothing added may assume every network is a DisCo network
 (see the blueprint note).
+
+**What was built.**
+
+| Item | Status |
+| --- | --- |
+| Second substation (Hillcrest) with two feeders: Government Avenue (Band B) and Farm Road (Band D) | Done |
+| 48 transformers, 10–14 per feeder; 6,448 connections; the six hand-designed transformers unchanged | Done |
+| Feeder peak loading 54–81% of rating; the feeder-loading caveat removed | Done |
+| Government (MDA) accounts as a customer category; billing and collection by customer class on every level | Done |
+| Accounts with no recorded demand class (19, Farm Road), excluded from the rate and counted on screen | Done |
+| Farm Road's chronic loss of upstream supply; three more individual outage events | Done |
+| Customer meters report daily; boundary meters stay hourly | Done |
+| Revenue gap on every network level, with the sections below it | Done |
+| "Where to look first": every feeder ranked by money; the screen shows the top three with the rest one click away | Done |
+| Topology index looks meters and service points up by asset instead of scanning the registry | Done |
+| `DATASET_ASSUMPTIONS.md` rewritten for the widened network | Done |
+
+**Page timings**, production build, one machine, median of five requests
+after the cache is warm, milliseconds (from the browser timing test):
+
+| Route | Median |
+| --- | --- |
+| Executive | 89 |
+| Operations home | 6 |
+| Region | 59 |
+| Substation, Riverside / Hillcrest | 50 / 52 |
+| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 71 / 70 / 69 / 75 |
+| Transformer, Riverbank (first 40 rows / all 135) | 94 / 197 |
+| Service point | 28 |
+
+The Executive page is now rendered on demand rather than prerendered, because
+it reads `?feeders=all`; its figures still come from the cache. Without the
+cache the Executive read model takes several seconds to compute on this
+dataset, so the warm-up at server start now matters more than it did.
+
+**Acceptance, as met.** Feeder peak loading is 54–81% of rating and carries
+no caveat (browser test); the region account is the sum of the two
+substations, each counted once, and its ATC&C is of the summed energy and
+revenue rather than an average of two percentages (tested); every route is
+under 500 ms (browser test, 12 routes); the assumptions file covers the
+widened network. Typecheck, 286 unit tests, lint, build and 20 browser tests
+are green.
+
+**For the Founder's review.**
+
+- Three generated transformers on Government Avenue (DT-GOV-3, DT-GOV-10,
+  DT-GOV-4) peak above their rating in office hours, because government load
+  comes on top of a customer count sized for the evening peak. They were not
+  designed by hand. They are kept and documented as a realistic case, so
+  asset risk now lists four transformers. The alternative is to size
+  Government Avenue's transformers for the daytime peak, leaving DT-OLD-2 as
+  the only overload.
+- The cut-off for the money ranking (top three feeders) is a constant in the
+  Executive component. It hides nothing: the full list is one click away.
 
 ### Phase 6c: Workspaces (not started)
 
