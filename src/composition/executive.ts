@@ -1,3 +1,4 @@
+import type { FeederListing } from "../services/executive/view.ts";
 import { executiveView } from "../services/executive/view.ts";
 import { cachedView } from "./runtime.ts";
 
@@ -9,7 +10,8 @@ import { cachedView } from "./runtime.ts";
 ========================================================== */
 
 export const executive = {
-  view: () => cachedView("executive", (runtime) => executiveView(runtime)),
+  /** The money ranking is cut to its top few by the read model unless every feeder is asked for. */
+  view: (feeders: FeederListing = "top") => cachedView(`executive:${feeders}`, (runtime) => executiveView(runtime, feeders)),
 };
 
 export { getDataNotice } from "./runtime.ts";

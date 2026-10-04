@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { AttentionSubject, ExecutiveView } from "@/services/executive/views";
+import type { AttentionSubject, ExecutiveView, WhereToLookView } from "@/services/executive/views";
 import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/operations/Metric";
 import { LossesPanel, NotAvailable, ReliabilityPanel, RevenueGapPanel } from "@/components/operations/Panels";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatPeriod, formatTime, levelHref } from "@/components/operations/format";
@@ -57,23 +57,9 @@ function Subject({ entry }: { entry: AttentionSubject }) {
   );
 }
 
-/** Feeders shown in the money ranking until the reader asks for all of them. */
-const TOP_FEEDERS = 3;
-
-function WhereToLook({
-  assetRisk,
-  ranked,
-  method,
-  showAll,
-}: {
-  assetRisk: AttentionSubject[];
-  ranked: AttentionSubject[];
-  method: string;
-  showAll: boolean;
-}) {
-  const everyFeeder = ranked.filter((entry) => entry.group === "money");
-  const money = showAll ? everyFeeder : everyFeeder.slice(0, TOP_FEEDERS);
-  const other = ranked.filter((entry) => entry.group === "other");
+function WhereToLook({ assetRisk, look, method }: { assetRisk: AttentionSubject[]; look: WhereToLookView; method: string }) {
+  // The read model has already cut the ranking and says how much of it this is.
+  const { money, other } = look;
   return (
     <Panel title="Where to look first" aside="Facts from fixed rules. No AI.">
       <div data-group="asset-risk">
@@ -95,7 +81,7 @@ function WhereToLook({
         <h3 className="flex items-center gap-2 border-t border-slate-800 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-200">
           Revenue{" "}
           <span className="font-normal normal-case tracking-normal text-slate-400">
-            {showAll || everyFeeder.length <= TOP_FEEDERS ? "Feeders" : `Top ${TOP_FEEDERS} of ${everyFeeder.length} feeders`}, ranked by estimated revenue not realised.
+            {look.complete ? "Feeders" : `Top ${look.moneyLimit} of ${look.moneyTotal} feeders`}, ranked by estimated revenue not realised.
           </span>
         </h3>
         {money.length === 0 ? (
@@ -109,13 +95,13 @@ function WhereToLook({
         )}
       </div>
 
-      {money.length < everyFeeder.length ? (
+      {look.complete ? null : (
         <p className="text-xs">
           <Link href="?feeders=all" className="text-cyan-300 hover:underline">
-            Show all {everyFeeder.length} feeders
+            Show all {look.moneyTotal} feeders
           </Link>
         </p>
-      ) : null}
+      )}
 
       {other.length > 0 ? (
         <div data-group="other">
@@ -134,7 +120,7 @@ function WhereToLook({
   );
 }
 
-export function Executive({ view, showAllFeeders = false }: { view: ExecutiveView; showAllFeeders?: boolean }) {
+export function Executive({ view }: { view: ExecutiveView }) {
   return (
     <div className="space-y-4">
       <header className="space-y-2">
@@ -170,7 +156,7 @@ export function Executive({ view, showAllFeeders = false }: { view: ExecutiveVie
         <Legend />
       </header>
 
-      <WhereToLook assetRisk={view.assetRisk} ranked={view.whereToLook} method={view.whereToLookMethod} showAll={showAllFeeders} />
+      <WhereToLook assetRisk={view.assetRisk} look={view.whereToLook} method={view.whereToLookMethod} />
 
       <RevenueGapPanel gap={view.revenueGap} below={{ title: "By feeder", rows: view.gapByFeeder }} />
 

@@ -1,11 +1,12 @@
 import type { ScopeRef } from "@/domain";
 import type { OperationsRuntime } from "../operations/levels.ts";
 import type { LoadingView, LossesView, MetricView, ReliabilityView, ReportedComparisonView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
-import type { FeederSignals, TransformerSignals } from "./attention.ts";
-import type { BandComplianceRow, ExecutiveView, TransformerLoadingRow } from "./views.ts";
+import type { AttentionSubject, FeederSignals, TransformerSignals } from "./attention.ts";
+import type { BandComplianceRow, ExecutiveView, TransformerLoadingRow, WhereToLookView } from "./views.ts";
+import { NO_CACHE } from "../analytics/cache.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
 import { ALARMS, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
-import { ATTENTION_METHOD, attention } from "./attention.ts";
+import { ATTENTION_METHOD, MONEY_RANK_LIMIT, attention } from "./attention.ts";
 
 /* ==========================================================
    SERVICES — EXECUTIVE READ MODEL
@@ -22,7 +23,31 @@ import { ATTENTION_METHOD, attention } from "./attention.ts";
    the portfolio is made of, each labelled with the section it is
    stated for. A substation's reported figure is never set beside a
    portfolio calculation.
+
+   THE CUT-OFF. The money ranking is cut to its top few here, in the
+   read model, unless all feeders are asked for. The view says how
+   many feeders there are and whether the list is complete, so the
+   screen neither counts nor cuts.
 ========================================================== */
+
+/** Which money-ranked feeders a view lists: the top few, or every one. */
+export type FeederListing = "top" | "all";
+
+/** The ranked list, cut to what is asked for. `ranked` is money-ranked feeders first, then the rest. */
+export function whereToLookView(ranked: readonly AttentionSubject[], feeders: FeederListing): WhereToLookView {
+  const everyFeeder = ranked.filter((entry) => entry.group === "money");
+  const money = feeders === "all" ? everyFeeder : everyFeeder.slice(0, MONEY_RANK_LIMIT);
+  return {
+    money,
+    moneyTotal: everyFeeder.length,
+    moneyLimit: MONEY_RANK_LIMIT,
+    complete: money.length === everyFeeder.length,
+    other: ranked.filter((entry) => entry.group === "other"),
+  };
+}
+
+/** The whole view with the ranking uncut: computed once, whichever listing is asked for. */
+type Portfolio = Omit<ExecutiveView, "whereToLook"> & { ranked: AttentionSubject[] };
 
 interface FeederFacts {
   id: string;
@@ -78,7 +103,13 @@ function transformerSignals(dt: TransformerFacts): TransformerSignals {
 
 const stated = (rows: ReportedComparisonView[], name: string): ReportedComparisonView[] => rows.map((row) => ({ ...row, statedFor: name }));
 
-export async function executiveView(runtime: OperationsRuntime): Promise<ExecutiveView> {
+export async function executiveView(runtime: OperationsRuntime, feeders: FeederListing = "top"): Promise<ExecutiveView> {
+  const key = `view:executive-portfolio|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
+  const { ranked, ...portfolio } = await (runtime.cache ?? NO_CACHE).get(key, () => portfolioView(runtime));
+  return { ...portfolio, whereToLook: whereToLookView(ranked, feeders) };
+}
+
+async function portfolioView(runtime: OperationsRuntime): Promise<Portfolio> {
   const loaded = await loadRegistry(runtime);
   const { index, snapshot, coverage } = loaded;
   const timeZone = timeZoneOf(snapshot);
@@ -185,7 +216,7 @@ export async function executiveView(runtime: OperationsRuntime): Promise<Executi
       { label: "Distribution transformers", value: `${transformers.length}${note("distributionTransformers")}` },
     ],
     assetRisk: look.assetRisk,
-    whereToLook: look.ranked,
+    ranked: look.ranked,
     whereToLookMethod: ATTENTION_METHOD,
     losses,
     lossesNote: null,

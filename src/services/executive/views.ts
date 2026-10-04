@@ -34,6 +34,20 @@ export interface TransformerLoadingRow {
   overloaded: boolean | null;
 }
 
+/** "Where to look first" below the asset-risk group, already cut to what the screen shows. */
+export interface WhereToLookView {
+  /** Feeders ranked by estimated revenue not realised, largest first: the top few, or all of them when asked for. */
+  money: AttentionSubject[];
+  /** How many feeders have a money figure to rank by, listed here or not. */
+  moneyTotal: number;
+  /** The number the list is cut to unless all are asked for. */
+  moneyLimit: number;
+  /** True when every ranked feeder is in `money`. */
+  complete: boolean;
+  /** Subjects with a finding but no money figure, in rule order. Never cut. */
+  other: AttentionSubject[];
+}
+
 export interface ExecutiveView {
   organization: string | null;
   period: { start: string; end: string };
@@ -42,7 +56,7 @@ export interface ExecutiveView {
   /** Equipment at risk of failure. Its own group, shown first, never ranked by money. */
   assetRisk: AttentionSubject[];
   /** Feeders ranked by estimated revenue not realised, then subjects with no money figure in rule order. */
-  whereToLook: AttentionSubject[];
+  whereToLook: WhereToLookView;
   /** How the lists are produced and ranked, shown with them. */
   whereToLookMethod: string;
   losses: LossesView | null;

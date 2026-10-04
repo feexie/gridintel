@@ -4,10 +4,16 @@ import type { OperationsRuntime } from "../operations/levels.ts";
 import { DEMO_CLOCK, DEMO_PERIOD, DEMO_REGION_ID, createDemoRepositories } from "../../repositories/demo/index.ts";
 import { SPARSE_AS_OF, SPARSE_PERIOD, sparseRepositories } from "../analytics/__fixtures__/sparse.ts";
 import { regionView } from "../operations/levels.ts";
-import { executiveView } from "./view.ts";
+import { createMemoryCache } from "../analytics/cache.ts";
+import { executiveView, whereToLookView } from "./view.ts";
 
 const runtime: OperationsRuntime = { repos: createDemoRepositories(), now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {} };
-const view = await executiveView(runtime);
+// The two listings are cut from one computation, as they are in the running application.
+const cached: OperationsRuntime = { ...runtime, cache: createMemoryCache() };
+const view = await executiveView(cached);
+/** Every ranked subject, uncut: money-ranked feeders, then the rest. */
+const uncut = (await executiveView(cached, "all")).whereToLook;
+const everything = [...uncut.money, ...uncut.other];
 
 describe("executive read model", () => {
   it("shows the same figures as the Operations drill-down, and says whose they are", async () => {
@@ -70,15 +76,39 @@ describe("executive read model", () => {
     assert.ok(peaks.every((peak) => peak > 1));
   });
 
+  it("cuts the money ranking to the top three in the read model, and says how many feeders there are", async () => {
+    assert.deepEqual(view.whereToLook.money.map((entry) => [entry.rank, entry.subject.id]), [[1, "FD-MKT"], [2, "FD-GOV"], [3, "FD-OLD"]]);
+    assert.equal(view.whereToLook.moneyTotal, 4);
+    assert.equal(view.whereToLook.moneyLimit, 3);
+    assert.equal(view.whereToLook.complete, false);
+    // What has no money figure is never cut, and keeps its place in the one sequence of ranks.
+    assert.deepEqual(view.whereToLook.other.map((entry) => [entry.rank, entry.subject.id]), [[5, "DT-OLD-14"]]);
+
+    const all = await executiveView(cached, "all");
+    assert.deepEqual(all.whereToLook.money.map((entry) => entry.subject.id), ["FD-MKT", "FD-GOV", "FD-OLD", "FD-FRM"]);
+    assert.equal(all.whereToLook.complete, true);
+    assert.equal(all.whereToLook.moneyTotal, 4);
+    assert.deepEqual(all.whereToLook.other, view.whereToLook.other);
+    // Nothing but the listing differs between the two.
+    assert.deepEqual({ ...all, whereToLook: null }, { ...view, whereToLook: null });
+  });
+
+  it("says a ranking no longer than the cut-off is complete", () => {
+    const three = whereToLookView(everything.slice(0, 3), "top");
+    assert.equal(three.complete, true);
+    assert.equal(three.moneyTotal, 3);
+    assert.deepEqual(whereToLookView([], "top"), { money: [], moneyTotal: 0, moneyLimit: 3, complete: true, other: [] });
+  });
+
   it("ranks every feeder by revenue not realised, each once, with every rule it triggered", () => {
-    assert.deepEqual(view.whereToLook.map((entry) => [entry.rank, entry.group, entry.subject.kind, entry.subject.id]), [
+    assert.deepEqual(everything.map((entry) => [entry.rank, entry.group, entry.subject.kind, entry.subject.id]), [
       [1, "money", "feeder", "FD-MKT"],
       [2, "money", "feeder", "FD-GOV"],
       [3, "money", "feeder", "FD-OLD"],
       [4, "money", "feeder", "FD-FRM"],
       [5, "other", "distribution_transformer", "DT-OLD-14"],
     ]);
-    const [market, government, oldTown, farm, transformer] = view.whereToLook;
+    const [market, government, oldTown, farm, transformer] = everything;
     const money = [market, government, oldTown, farm].map((entry) => entry.money?.value as number);
     assert.deepEqual(money, [...money].sort((a, b) => b - a));
     assert.deepEqual(market.findings.map((finding) => finding.rule), [
@@ -101,10 +131,10 @@ describe("executive read model", () => {
     assert.deepEqual(transformer.findings.map((finding) => finding.rule), ["Transformer with the highest commercial loss"]);
     assert.match(transformer.findings[0].context?.note ?? "", /part of Old Town 11 kV feeder's revenue not realised; not ranked separately/);
     // No subject is listed twice across the two lists.
-    const all = [...view.assetRisk, ...view.whereToLook].map((entry) => entry.subject.id);
+    const all = [...view.assetRisk, ...everything].map((entry) => entry.subject.id);
     assert.equal(new Set(all).size, all.length);
     assert.match(view.whereToLookMethod, /Asset risk is its own group, shown first and never ranked by money/);
-    for (const entry of [...view.assetRisk, ...view.whereToLook]) {
+    for (const entry of [...view.assetRisk, ...everything]) {
       for (const finding of entry.findings) assert.ok(finding.metric.value !== null, finding.title);
     }
   });
@@ -167,7 +197,7 @@ describe("executive read model", () => {
 
   it("ranks nothing it has no value for", async () => {
     const sparse = await executiveView({ repos: sparseRepositories(), now: SPARSE_AS_OF, period: SPARSE_PERIOD, caveats: {} });
-    assert.deepEqual(sparse.whereToLook, []);
+    assert.deepEqual(sparse.whereToLook, { money: [], moneyTotal: 0, moneyLimit: 3, complete: true, other: [] });
     assert.deepEqual(sparse.assetRisk, []);
     assert.equal(sparse.reliability.saidi.value, null);
     assert.equal(sparse.reliability.saidi.status, "insufficient_data");

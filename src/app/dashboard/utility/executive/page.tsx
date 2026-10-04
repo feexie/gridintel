@@ -6,7 +6,7 @@ export default async function ExecutiveDashboardPage({ searchParams }: { searchP
   return (
     <>
       <SyntheticBanner notice={getDataNotice()} />
-      <Executive view={await executive.view()} showAllFeeders={(await searchParams).feeders === "all"} />
+      <Executive view={await executive.view((await searchParams).feeders === "all" ? "all" : "top")} />
     </>
   );
 }
