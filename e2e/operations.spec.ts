@@ -5,6 +5,8 @@ import { OPERATIONS, ROUTES } from "./routes";
 const tile = (page: Page, label: string) => page.locator(`[data-metric="${label}"]`).first();
 
 test("every screen carries the SYNTHETIC DATA label", async ({ page }) => {
+  // One navigation per route, in a real browser and beside the other tests: allow for each.
+  test.setTimeout(ROUTES.length * 6_000);
   for (const route of ROUTES) {
     await page.goto(route);
     await expect(page.getByRole("note").getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();
