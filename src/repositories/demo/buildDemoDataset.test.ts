@@ -17,7 +17,7 @@ for (const interval of dataset.intervalEnergy) {
 }
 const sumFor = (meterId: string) => TOTAL.get(meterId) ?? 0;
 const BOUNDARY = [
-  ...SUBSTATIONS.map((s) => BOUNDARY_METERS.incomer(s.id)),
+  ...SUBSTATIONS.flatMap((s) => s.incomers.map((_, i) => BOUNDARY_METERS.incomer(s, i + 1))),
   ...FEEDERS.map((f) => BOUNDARY_METERS.feederHead(f.id)),
   ...TRANSFORMERS.map((t) => BOUNDARY_METERS.totalizer(t.id)),
 ];
@@ -76,7 +76,7 @@ describe("demo dataset: structure", () => {
   it("has the designed hierarchy", () => {
     assert.equal(registry.regions.length, 1);
     assert.equal(registry.substations.length, 2);
-    assert.equal(registry.powerTransformers.length, 2);
+    assert.equal(registry.powerTransformers.length, 3);
     assert.equal(registry.feeders.length, 4);
     assert.equal(registry.distributionTransformers.length, 48);
     assert.equal(registry.servicePoints.length, CONNECTIONS.length);
@@ -88,6 +88,34 @@ describe("demo dataset: structure", () => {
       ["FD-GOV", "SS-HIL", "B"],
       ["FD-FRM", "SS-HIL", "D"],
     ]);
+  });
+
+  it("gives Hillcrest two incomers, two power transformers and two bus sections, one feeder on each", () => {
+    const hillcrest = registry.powerTransformers.filter((pt) => pt.substationId === "SS-HIL");
+    assert.deepEqual(hillcrest.map((pt) => [pt.id, pt.busSection]), [["PT-HIL-1", "A"], ["PT-HIL-2", "B"]]);
+    const fedFrom = (feederId: string) => registry.feeders.find((f) => f.id === feederId)?.origin.powerTransformerId;
+    assert.equal(fedFrom("FD-GOV"), "PT-HIL-1");
+    assert.equal(fedFrom("FD-FRM"), "PT-HIL-2");
+    const incomers = registry.meters.filter((m) => m.installation.role === "substation_incomer" && m.installation.substationId === "SS-HIL");
+    assert.deepEqual(incomers.map((m) => m.id), ["M-SS-HIL-IN-1", "M-SS-HIL-IN-2"]);
+    // Each incomer carries its own bus section: more than that section's feeder head, by the transformer's loss.
+    assert.ok(sumFor("M-SS-HIL-IN-1") > sumFor(BOUNDARY_METERS.feederHead("FD-GOV")));
+    assert.ok(sumFor("M-SS-HIL-IN-2") > sumFor(BOUNDARY_METERS.feederHead("FD-FRM")));
+    assert.ok(sumFor("M-SS-HIL-IN-2") < sumFor(BOUNDARY_METERS.feederHead("FD-GOV")));
+    // Riverside is unchanged: one incomer, one transformer, no sectioned bus.
+    const riverside = registry.powerTransformers.filter((pt) => pt.substationId === "SS-RIV");
+    assert.deepEqual(riverside.map((pt) => [pt.id, pt.busSection]), [["PT-RIV-1", undefined]]);
+  });
+
+  it("puts the rural 33 kV line's interruptions on Farm Road's bus section only", () => {
+    const rural = dataset.outages.filter((outage) => outage.id.endsWith("-FD-FRM-33KV") || outage.id.endsWith("-FD-FRM-TS"));
+    // 16 faults on the line itself and 3 outages at the transmission station it comes from.
+    assert.equal(rural.length, 19);
+    const farm = new Set(TRANSFORMERS.filter((dt) => dt.feederId === "FD-FRM").map((dt) => dt.id));
+    for (const outage of rural) {
+      assert.equal(outage.exposures.length, farm.size);
+      assert.ok(outage.exposures.every((exposure) => "id" in exposure.affected && farm.has(exposure.affected.id)));
+    }
   });
 
   it("gives every feeder a realistic number of transformers", () => {
@@ -217,7 +245,8 @@ describe("demo dataset: outages and energy agree", () => {
   it("loses energy at every level, never gains it", () => {
     for (const substation of SUBSTATIONS) {
       const heads = FEEDERS.filter((f) => f.substationId === substation.id).reduce((s, f) => s + sumFor(BOUNDARY_METERS.feederHead(f.id)), 0);
-      assert.ok(sumFor(BOUNDARY_METERS.incomer(substation.id)) > heads, substation.id);
+      const incomers = substation.incomers.reduce((s, _, i) => s + sumFor(BOUNDARY_METERS.incomer(substation, i + 1)), 0);
+      assert.ok(incomers > heads, substation.id);
     }
     for (const feeder of FEEDERS) {
       const totalizers = TRANSFORMERS.filter((t) => t.feederId === feeder.id).reduce((s, t) => s + sumFor(BOUNDARY_METERS.totalizer(t.id)), 0);

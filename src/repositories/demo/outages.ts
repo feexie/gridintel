@@ -1,6 +1,6 @@
 import type { AssetRef, EntityRef, InterruptionCause, InterruptionOrigin, Outage, OutageExposure, ResponsibleParty } from "@/domain";
 import { DEMO_DAYS, HOUR_MS, at, hourStart, wat } from "./clock.ts";
-import { CONNECTIONS, FEEDERS, MV_CUSTOMER, TRANSFORMERS, activeAccounts } from "./network.ts";
+import { CONNECTIONS, FEEDERS, MV_CUSTOMER, SUBSTATIONS, TRANSFORMERS, activeAccounts, incomerOf } from "./network.ts";
 import { seeded } from "./rng.ts";
 import { OUTAGE_SOURCE, demoProvenance } from "./sources.ts";
 
@@ -113,8 +113,17 @@ function loadShedding(): EventPlan[] {
 }
 
 /** 33 kV lines and the transmission station are not registry assets, so they are named, not linked. */
-const RURAL_LINE: EntityRef = { kind: "feeder", label: "Hillcrest rural 33 kV line", context: "33 kV lines are not in the registry." };
-const RIVERSIDE_LINE: EntityRef = { kind: "feeder", label: "Riverside 33 kV line", context: "33 kV lines are not in the registry." };
+const line = (label: string): EntityRef => ({ kind: "feeder", label, context: "33 kV lines are not in the registry." });
+const FARM_ROAD = FEEDERS.find((feeder) => feeder.id === "FD-FRM") as (typeof FEEDERS)[number];
+const RIVERSIDE = SUBSTATIONS.find((substation) => substation.id === "SS-RIV") as (typeof SUBSTATIONS)[number];
+/** The line into the incomer whose bus section carries Farm Road. */
+const RURAL_LINE = line(incomerOf(FARM_ROAD).line);
+const RIVERSIDE_LINE = line(RIVERSIDE.incomers[0].line);
+
+/** The supplies on the bus section an incomer feeds: everything that goes off when its 33 kV line does. */
+function keysOnIncomer(substationId: string, incomer: number): string[] {
+  return FEEDERS.filter((feeder) => feeder.substationId === substationId && feeder.incomer === incomer).flatMap((feeder) => keys(feeder.id));
+}
 const TRANSMISSION_STATION: EntityRef = {
   kind: "substation",
   label: "132/33 kV transmission station",
@@ -122,7 +131,7 @@ const TRANSMISSION_STATION: EntityRef = {
 };
 
 /**
- * Farm Road's chronic problem: the long rural 33 kV line that supplies its bus section
+ * Farm Road's chronic problem: the long rural 33 kV line into Hillcrest's second incomer
  * faults on most days, for 2 to 5 hours in the evening, on top of load shedding. On those
  * days the feeder often falls below its band's 8-hour minimum. The line belongs to the
  * distribution business, so these are network interruptions. Every sixth loss of the line
@@ -139,7 +148,8 @@ function ruralLineInterruptions(): EventPlan[] {
     const minutes = 120 + Math.floor(random() * 180);
     if (!fails) continue;
     n += 1;
-    const parts = block(keys("FD-FRM"), at(day, 17, startMinute), at(day, 17, startMinute + minutes));
+    // The whole bus section goes off. That is Farm Road alone: Government Avenue is on the other.
+    const parts = block(keysOnIncomer(FARM_ROAD.substationId, FARM_ROAD.incomer), at(day, 17, startMinute), at(day, 17, startMinute + minutes));
     events.push(
       n % 6 === 0
         ? {
@@ -159,7 +169,7 @@ function ruralLineInterruptions(): EventPlan[] {
             planned: false,
             cause: "fault",
             responsibleParty: "distribution",
-            notes: "Fault on the rural 33 kV line supplying the bus section that feeds Farm Road.",
+            notes: "Fault on the rural 33 kV line into incomer 2; bus section B lost supply.",
             parts,
           },
     );

@@ -807,7 +807,14 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
           value:
             loaded.coverage.powerTransformers === "not_available"
               ? "not in registry"
-              : powerTransformers.map((pt) => `${pt.name} ${pt.ratingMva} MVA`).join(", ") || "none",
+              : powerTransformers
+                  .map((pt) => {
+                    const fed = feeders.filter((feeder) => feeder.origin.powerTransformerId === pt.id).map((feeder) => feeder.name);
+                    const section = pt.busSection === undefined ? "" : `, bus section ${pt.busSection}`;
+                    // Which feeders a transformer carries is said only where the substation has more than one.
+                    return `${pt.name} ${pt.ratingMva} MVA${section}${powerTransformers.length > 1 && fed.length > 0 ? ` (${fed.join(", ")})` : ""}`;
+                  })
+                  .join("; ") || "none",
         },
         { label: "Feeders", value: String(feeders.length) },
         { label: "Active accounts", value: count(activeAccountsUnder(loaded, scope)) },
@@ -842,6 +849,7 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
   const scope: ScopeRef = { kind: "feeder", id: feederId };
   const transformers = transformersOnFeeder(loaded.index, feederId);
   const direct = servicePointsDirectOnFeeder(loaded.index, feederId);
+  const source = loaded.snapshot.powerTransformers.find((pt) => pt.id === feeder.origin.powerTransformerId);
 
   const rows: ChildRow[] = [];
   for (const dt of transformers) {
@@ -867,6 +875,7 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
   return {
     header: header(runtime, loaded, "feeder", feederId, feeder.name, `${feeder.nominalVoltageKv} kV feeder`, [
       { label: "NERC service band", value: feeder.serviceBand ? `Band ${feeder.serviceBand}` : "not recorded" },
+      { label: "Fed from", value: source ? `${source.name}${source.busSection === undefined ? "" : `, bus section ${source.busSection}`}` : "not recorded" },
       { label: "Rated current", value: feeder.ratedCurrentA === undefined ? "not recorded" : `${feeder.ratedCurrentA} A` },
       { label: "Transformers", value: String(transformers.length) },
       { label: "Active accounts", value: count(activeAccountsUnder(loaded, scope)) },

@@ -35,16 +35,26 @@ It is identical on every build.
 | --- | --- |
 | Organization | Savanna Electricity Distribution (synthetic); invented |
 | Region | Northfield; invented |
-| Substations | Riverside and Hillcrest, both 33/11 kV injection substations, each with one 5 MVA power transformer |
+| Substations | Riverside and Hillcrest, both 33/11 kV injection substations. Riverside has one 33 kV incomer and one 5 MVA power transformer. Hillcrest has two incomers, two power transformers (T1 5 MVA, T2 2.5 MVA) and two sections of 11 kV busbar |
 | Feeders | Riverside: Market Road (Band A, 120 A) and Old Town (Band C, 120 A). Hillcrest: Government Avenue (Band B, 200 A) and Farm Road (Band D, 60 A). All 11 kV |
 | Distribution transformers | 48, rated 50–500 kVA, 11/0.415 kV: 12 on Market Road, 14 on Old Town, 12 on Government Avenue, 10 on Farm Road |
 | Connections | 6,448: 6,447 at low voltage and 1 customer supplied at 11 kV |
 
+- **Hillcrest is laid out as most Nigerian injection substations are.** Each
+  33 kV incomer has its own power transformer and its own section of the
+  11 kV busbar, and the two sections are run apart (no bus coupler is
+  modelled). The town 33 kV line feeds T1 and bus section A, which carries
+  Government Avenue. The rural 33 kV line feeds T2 and bus section B, which
+  carries Farm Road. Each incomer has its own boundary meter, and the
+  substation's energy received is the sum of the two. The ratings are
+  assumptions sized to the feeders: Government Avenue is rated 3.8 MVA and
+  Farm Road 1.1 MVA. The registry records the bus section on the power
+  transformer; a feeder is on the section of the transformer it is fed from.
 - **The four feeders are four different problems.** Market Road is
   commercial and well metered. Old Town is mostly unmetered with poor
   collection. Government Avenue is well metered and well run, but loses its
   collection to government accounts. Farm Road is rural, mostly unmetered,
-  and fed by an upstream supply that fails on most days.
+  and on a bus section whose 33 kV line fails on most days.
 - **Six transformers are designed by hand; 42 are generated.** The first
   three on Market Road and on Old Town keep the figures they had before the
   network was widened. Every other transformer is generated from its
@@ -91,8 +101,8 @@ day of 20 (A), 16 (B), 12 (C), 8 (D) and 4 (E).
 - Government Avenue is Band B (minimum 16 h). It averages about 17.7 hours a
   day and falls below 16 hours on 7 days.
 - Farm Road is Band D (minimum 8 h). It averages about 9.3 hours a day and
-  falls below 8 hours on 9 days, when the upstream supply fails on top of
-  load shedding.
+  falls below 8 hours on 9 days, when its 33 kV supply fails on top of load
+  shedding.
 - The band on a feeder is stored as a classification only. Hours of supply
   are calculated from the outage log, never read from the band.
 - The day-by-day test is a GridIntel reference calculation, not a regulatory
@@ -225,14 +235,17 @@ exact here; a real study would not.
   own class: a shortfall in the supply allocated, neither a network fault nor
   a loss of upstream supply.
 - **Farm Road loses the long rural 33 kV line that supplies it on about two
-  days in three** (20 times in the month), for 2–5 hours from about 17:00,
-  on top of load shedding. Seventeen of these are faults on the line itself:
+  days in three** (19 times in the month), for 2–5 hours from about 17:00,
+  on top of load shedding. Sixteen of these are faults on the line itself:
   the distribution company's, and network-attributable. Three (10, 18 and 29
   September) are outages at the transmission station the line comes from:
   the transmission company's, and upstream.
-- **Simplification:** the rural line's losses interrupt Farm Road only, as if
-  it fed a bus section of its own at Hillcrest, although Hillcrest is
-  modelled with a single power transformer. Government Avenue is unaffected.
+- The rural line's losses interrupt Farm Road only, because the line feeds
+  Hillcrest's second incomer and bus section B, and Farm Road is the only
+  feeder on that section. Government Avenue, on bus section A, is
+  unaffected. The three transmission-station outages are of the 33 kV
+  breaker that supplies the rural line, so they too interrupt bus section B
+  only.
 - Nine individual events: an 11 kV fault on Old Town restored in two stages,
   a three-minute feeder trip on Market Road, planned maintenance on DT-MKT-2,
   a fault on the 33 kV line feeding Riverside that took out the whole

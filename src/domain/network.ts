@@ -83,6 +83,13 @@ export interface PowerTransformer extends Audit {
   ratingMva: number;
   primaryVoltageKv: number;
   secondaryVoltageKv: number;
+  /**
+   * ELECTRICAL: the section of the secondary busbar this transformer
+   * feeds, as the source names it. Absent where the busbar is not
+   * sectioned or the source does not say. A feeder is on the section of
+   * the transformer its origin names.
+   */
+  busSection?: string;
   lifecycle: LifecycleStatus;
   provenance: Provenance;
 }

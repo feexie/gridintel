@@ -18,7 +18,8 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
                                (less than 1 where a meter is bypassed)
      transformer totalizer   = Σ consumption ÷ (1 − LV loss)
      feeder head             = (Σ totalizers + MV customer) ÷ (1 − MV loss)
-     substation incomer      = Σ feeder heads ÷ (1 − substation loss)
+     substation incomer      = Σ heads of the feeders on its bus
+                               section ÷ (1 − substation loss)
 
    Consumption is modelled hour by hour. Boundary meters (incomers,
    feeder heads, transformer totalizers) report it hourly. Customer
@@ -196,10 +197,12 @@ export function buildEnergyModel(): EnergyModel {
     telemetry.push({ source, metric, observedAt: HOUR_STARTS[h], value: round(value, 2), phase, quality: "measured", deviceId, provenance: scada });
 
   for (const substation of SUBSTATIONS) {
-    const incomer = zeros();
+    // One meter per incomer: each carries the feeders on the bus section its transformer feeds.
+    const incomers = substation.incomers.map(() => zeros());
     let substationConsumed = 0;
 
     for (const feeder of FEEDERS.filter((plan) => plan.substationId === substation.id)) {
+      const incomer = incomers[feeder.incomer - 1];
       const head = zeros();
       const headDemandKva = zeros();
       let feederConsumed = 0;
@@ -255,9 +258,13 @@ export function buildEnergyModel(): EnergyModel {
       }
     }
 
-    for (let h = 0; h < DEMO_HOURS; h++) incomer[h] /= 1 - SUBSTATION_LOSS;
-    pushHourly(BOUNDARY_METERS.incomer(substation.id), incomer);
-    technicalLossKwh.set(`substation:${substation.id}`, sum(incomer) - substationConsumed);
+    let received = 0;
+    incomers.forEach((incomer, i) => {
+      for (let h = 0; h < DEMO_HOURS; h++) incomer[h] /= 1 - SUBSTATION_LOSS;
+      pushHourly(BOUNDARY_METERS.incomer(substation, i + 1), incomer);
+      received += sum(incomer);
+    });
+    technicalLossKwh.set(`substation:${substation.id}`, received - substationConsumed);
   }
 
   return { intervalEnergy, telemetry, heartbeats: buildHeartbeats(scada), recordedKwh, technicalLossKwh };

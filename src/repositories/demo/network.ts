@@ -30,7 +30,11 @@ import { DEMO_ORGANIZATION_ID, REGISTRY_SOURCE, demoProvenance } from "./sources
      Old Town (Band C, mostly unmetered, poor collection);
    - Hillcrest: Government Avenue (Band B, well metered, with
      collection lost to government accounts) and Farm Road (Band D,
-     rural, with a chronically unreliable upstream supply).
+     rural, with a chronically unreliable 33 kV supply). Hillcrest
+     has two 33 kV incomers, each with its own power transformer and
+     its own section of the 11 kV busbar: Government Avenue is on
+     one, Farm Road on the other, so the loss of one 33 kV line
+     interrupts one feeder and not the other.
 
    Six transformers are designed by hand and keep fixed figures. The
    rest are generated from each feeder's profile, so that a feeder
@@ -52,12 +56,22 @@ export interface PaymentBehaviour {
   none: number;
 }
 
+/** One 33 kV supply into a substation, with the power transformer and the bus section it feeds. */
+export interface IncomerPlan {
+  /** The 33 kV line that arrives here, as outage records name it. Not a registry asset. */
+  line: string;
+  powerTransformer: { id: string; name: string; ratingMva: number };
+  /** The section of the 11 kV busbar the transformer feeds; absent where the busbar is not sectioned. */
+  busSection?: string;
+}
+
 export interface SubstationPlan {
   id: string;
   code: string;
   name: string;
   location: Coordinates;
-  powerTransformer: { id: string; name: string; ratingMva: number };
+  /** In order; a feeder names the one it is fed from by its position, from 1. */
+  incomers: readonly IncomerPlan[];
 }
 
 /** How the transformers a feeder's profile generates are sized and populated. */
@@ -85,6 +99,8 @@ export interface FeederPlan {
   prefix: string;
   name: string;
   substationId: string;
+  /** Which of the substation's incomers feeds the bus section this feeder is on, from 1. */
+  incomer: number;
   band: ServiceBand;
   /** MV line loss as a fraction of the energy entering the feeder. */
   mvLoss: number;
@@ -143,14 +159,19 @@ export const SUBSTATIONS: readonly SubstationPlan[] = [
     code: "RIV",
     name: "Riverside 33/11 kV injection substation",
     location: { latitude: 9.23, longitude: 12.46 },
-    powerTransformer: { id: "PT-RIV-1", name: "Riverside T1", ratingMva: 5 },
+    incomers: [{ line: "Riverside 33 kV line", powerTransformer: { id: "PT-RIV-1", name: "Riverside T1", ratingMva: 5 } }],
   },
   {
     id: "SS-HIL",
     code: "HIL",
     name: "Hillcrest 33/11 kV injection substation",
     location: { latitude: 9.275, longitude: 12.505 },
-    powerTransformer: { id: "PT-HIL-1", name: "Hillcrest T1", ratingMva: 5 },
+    // Two incomers, two transformers, two bus sections, as most injection substations have.
+    // The sections are run apart: each transformer carries its own section only.
+    incomers: [
+      { line: "Hillcrest town 33 kV line", powerTransformer: { id: "PT-HIL-1", name: "Hillcrest T1", ratingMva: 5 }, busSection: "A" },
+      { line: "Hillcrest rural 33 kV line", powerTransformer: { id: "PT-HIL-2", name: "Hillcrest T2", ratingMva: 2.5 }, busSection: "B" },
+    ],
   },
 ];
 
@@ -160,6 +181,7 @@ export const FEEDERS: readonly FeederPlan[] = [
     prefix: "MKT",
     name: "Market Road 11 kV feeder",
     substationId: "SS-RIV",
+    incomer: 1,
     band: "A",
     mvLoss: 0.02,
     tariffNgnPerKwh: 209.5,
@@ -189,6 +211,7 @@ export const FEEDERS: readonly FeederPlan[] = [
     prefix: "OLD",
     name: "Old Town 11 kV feeder",
     substationId: "SS-RIV",
+    incomer: 1,
     band: "C",
     mvLoss: 0.035,
     tariffNgnPerKwh: 50,
@@ -219,6 +242,7 @@ export const FEEDERS: readonly FeederPlan[] = [
     prefix: "GOV",
     name: "Government Avenue 11 kV feeder",
     substationId: "SS-HIL",
+    incomer: 1,
     band: "B",
     mvLoss: 0.022,
     tariffNgnPerKwh: 63,
@@ -244,11 +268,12 @@ export const FEEDERS: readonly FeederPlan[] = [
     },
   },
   {
-    // Rural, mostly unmetered, and fed by an upstream supply that fails often.
+    // Rural, mostly unmetered, and on the bus section fed by a 33 kV line that fails often.
     id: "FD-FRM",
     prefix: "FRM",
     name: "Farm Road 11 kV feeder",
     substationId: "SS-HIL",
+    incomer: 2,
     band: "D",
     mvLoss: 0.05,
     tariffNgnPerKwh: 43,
@@ -450,8 +475,16 @@ export interface ConnectionPlan {
   demandClass: "md" | "non_md" | undefined;
 }
 
+/** The incomer a feeder is fed from. */
+export function incomerOf(feeder: FeederPlan): IncomerPlan {
+  const substation = SUBSTATIONS.find((plan) => plan.id === feeder.substationId) as SubstationPlan;
+  return substation.incomers[feeder.incomer - 1];
+}
+
 export const BOUNDARY_METERS = {
-  incomer: (substationId: string) => `M-${substationId}-IN`,
+  /** The meter on incomer `n` (from 1). A substation with one incomer keeps the unnumbered id. */
+  incomer: (substation: SubstationPlan, n: number) =>
+    substation.incomers.length === 1 ? `M-${substation.id}-IN` : `M-${substation.id}-IN-${n}`,
   feederHead: (feederId: string) => `M-${feederId}-HEAD`,
   totalizer: (transformerId: string) => `M-${transformerId}-TOT`,
 };
@@ -557,17 +590,22 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
     lifecycle: "in_service",
     provenance,
   }));
-  const powerTransformers: PowerTransformer[] = SUBSTATIONS.map((plan) => ({
-    ...AUDIT,
-    id: plan.powerTransformer.id,
-    substationId: plan.id,
-    name: plan.powerTransformer.name,
-    ratingMva: plan.powerTransformer.ratingMva,
-    primaryVoltageKv: 33,
-    secondaryVoltageKv: 11,
-    lifecycle: "in_service",
-    provenance,
-  }));
+  const powerTransformers: PowerTransformer[] = SUBSTATIONS.flatMap((plan) =>
+    plan.incomers.map(
+      (incomer): PowerTransformer => ({
+        ...AUDIT,
+        id: incomer.powerTransformer.id,
+        substationId: plan.id,
+        name: incomer.powerTransformer.name,
+        ratingMva: incomer.powerTransformer.ratingMva,
+        primaryVoltageKv: 33,
+        secondaryVoltageKv: 11,
+        ...(incomer.busSection === undefined ? {} : { busSection: incomer.busSection }),
+        lifecycle: "in_service",
+        provenance,
+      }),
+    ),
+  );
   const feeders: Feeder[] = FEEDERS.map((plan) => {
     const substation = SUBSTATIONS.find((s) => s.id === plan.substationId) as SubstationPlan;
     return {
@@ -575,7 +613,7 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
       id: plan.id,
       code: plan.id,
       name: plan.name,
-      origin: { kind: "substation", substationId: plan.substationId, powerTransformerId: substation.powerTransformer.id },
+      origin: { kind: "substation", substationId: plan.substationId, powerTransformerId: incomerOf(plan).powerTransformer.id },
       serviceBand: plan.band,
       route: [substation.location, ...TRANSFORMERS.filter((dt) => dt.feederId === plan.id).map((dt) => dt.location)],
       nominalVoltageKv: 11,
@@ -604,16 +642,20 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
   const servicePoints: ServicePoint[] = [];
   const customers: Customer[] = [];
   const meters: Meter[] = [
-    ...SUBSTATIONS.map((plan): Meter => ({
-      ...AUDIT,
-      id: BOUNDARY_METERS.incomer(plan.id),
-      serialNumber: `SYN-${plan.code}-IN`,
-      meterType: "smart",
-      phases: 3,
-      installation: { role: "substation_incomer", substationId: plan.id },
-      lifecycle: "in_service",
-      provenance,
-    })),
+    ...SUBSTATIONS.flatMap((plan) =>
+      plan.incomers.map(
+        (_, i): Meter => ({
+          ...AUDIT,
+          id: BOUNDARY_METERS.incomer(plan, i + 1),
+          serialNumber: `SYN-${plan.code}-IN${plan.incomers.length === 1 ? "" : `-${i + 1}`}`,
+          meterType: "smart",
+          phases: 3,
+          installation: { role: "substation_incomer", substationId: plan.id },
+          lifecycle: "in_service",
+          provenance,
+        }),
+      ),
+    ),
     ...FEEDERS.map((plan): Meter => ({
       ...AUDIT,
       id: BOUNDARY_METERS.feederHead(plan.id),
