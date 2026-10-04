@@ -13,6 +13,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
+  // A navigation can take longer than the default 5 s on a busy machine. How fast a page
+  // answers is held to its own budget in timing.spec.ts; these tests are about what it shows.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",

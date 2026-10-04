@@ -1,7 +1,8 @@
 # ADR 0007: A figure is compared only with a figure on the same basis
 
 Date: 2026-10-01
-Status: Accepted (Founder instruction; data-integrity semantics)
+Status: Accepted (Founder instruction; data-integrity semantics).
+Amended 2026-10-04: see "Amendment: a basis may state its attribution rule".
 
 ## Context
 
@@ -58,6 +59,75 @@ read from the network model were being graded as "estimated".
   index `calculated_with_estimates`.
 - `InterruptionClass` moves to the domain, since a reported basis refers to
   it.
+
+## Amendment (2026-10-04): a basis may state its attribution rule
+
+Approved by the Founder as a decision gate (data-integrity semantics), at the
+Phase 6b checkpoint. Implemented in Phase 6c-1.
+
+**What was missing.** Decision 1 has a basis state which classes of
+interruption a figure counts. It does not say how an interruption was put in
+a class. Two parties can both report "network interruptions only" and
+classify the same fault differently: a utility that books faults on its own
+33 kV lines as loss of upstream supply leaves them out of its network
+figure, while the reference methodology (ADR 0006, amendment) puts them in.
+The comparison saw the same basis on both sides and showed a variance with
+nothing to say what it might be.
+
+**Decision.**
+
+- `KpiBasis.upstreamOrigins` (optional) is the attribution rule: the origin
+  points the figure treats as upstream of the business it measures. It is
+  what the source says, and is left out when the source does not say. It is
+  never inferred.
+- A calculated reliability figure always states the rule it was classified
+  under: the `upstreamOrigins` of its methodology.
+- The rule matters only for a figure that counts some, but not all, of the
+  classes an interruption can be moved between (network, upstream supply,
+  other). A total that counts every class is the same under any rule, and
+  load shedding is always its own class.
+- **When the reported figure states its rule**, the calculation is made on
+  that rule and the two are compared. The calculation is the reference
+  methodology with the reported origin points in place of its own
+  (`reliabilityOnStatedRule`); it carries its own methodology id, so it never
+  passes for a reference result. Where the rule differs from the reference
+  one, the figure on the reference rule is shown beside the comparison, so
+  the difference the rule makes is in plain view and nothing is hidden by
+  adopting the report's rule.
+- **When the reported figure does not state its rule**, the comparison is
+  still made, because both figures count the same classes, and it carries a
+  non-blocking note (`ATTRIBUTION_RULE_UNSPECIFIED`): the variance may
+  reflect a difference in classification rather than in what happened. The
+  rule is not assumed to match and is not assumed to differ.
+- If the two rules are stated and differ and no calculation on the reported
+  rule is supplied, the comparison is not comparable and gives no variance
+  (`ATTRIBUTION_RULE_MISMATCH`, blocking), as for any other basis mismatch.
+- "Same basis" (Decision 2) now means: no blocking basis issue. The note for
+  an unstated rule does not make a comparison "not comparable".
+
+**What does not change.** The headline indices and the attribution table on
+every screen stay on the reference methodology. A reported rule is used only
+for the calculation set beside that reported figure. Totals are the same
+under any rule; only the split between classes moves.
+
+**On the synthetic dataset.** The monthly report states its rule in its
+feeder tables (upstream includes the 33 kV lines) and not in its substation
+summary. So:
+
+| Scope | SAIDI reported | Compared with, before | Compared with, now | Note |
+| --- | --- | --- | --- | --- |
+| Riverside | 3.0 h | 6.9 h (+3.9) | 6.9 h (+3.9) | rule not stated; classification note |
+| Hillcrest | 1.9 h | 22.8 h (+20.9) | 22.8 h (+20.9) | rule not stated; classification note |
+| Market Road | 0.2 h | 3.8 h (+3.6) | 0.2 h (0.0) | on the report's rule; reference 3.8 h beside it |
+| Old Town | 5.0 h | 9.2 h (+4.2) | 5.6 h (+0.6) | on the report's rule; reference 9.2 h beside it |
+| Government Avenue | 2.7 h | 3.1 h (+0.4) | 3.1 h (+0.4) | on the report's rule; no 33 kV fault, so the same |
+| Farm Road | 0.4 h | 57.1 h (+56.7) | 0.4 h (0.0) | on the report's rule; reference 57.1 h beside it |
+
+The designed finding of ADR 0006 (the report leaves its own 33 kV faults out
+of its network figures) is still on every screen. At substation level it is
+a variance under a classification note. At feeder level it is the gap
+between the calculation on the report's rule and the reference figure shown
+beside it. The reported figures themselves were not changed.
 
 ## Consequences
 

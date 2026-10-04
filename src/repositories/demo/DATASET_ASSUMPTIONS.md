@@ -332,9 +332,9 @@ can be compared. Each figure states its basis:
 **The report deliberately misattributes 33 kV faults.** It is written as a
 utility would state it: faults on its own 33 kV lines are booked as loss of
 upstream supply, so its "network interruptions only" SAIDI and SAIFI leave
-them out. The calculation puts those faults on the network, where they
-belong. Both figures state the same basis, so they are compared, and the
-difference shows as a variance:
+them out. The reference calculation puts those faults on the network, where
+they belong. The table sets the reported figures beside the reference
+calculation:
 
 | Scope | SAIDI reported | SAIDI calculated, network | Variance | SAIFI reported | SAIFI calculated, network |
 | --- | --- | --- | --- | --- | --- |
@@ -348,6 +348,23 @@ difference shows as a variance:
 This variance is a designed finding, not an error. The reported figures must
 not be retuned to remove it. Government Avenue shows no such gap because no
 33 kV line fault interrupted it.
+
+**The report states its attribution rule in one place and not in another**
+(ADR 0007, amendment), so that both cases are on the screens:
+
+- Its **feeder tables** carry a definition of upstream that includes the
+  33 kV lines. Each feeder figure states that rule, and is compared with a
+  calculation made on it: Market Road 0.2 h against 0.2 h, Old Town 5.0 h
+  against 5.6 h, Government Avenue 2.7 h against 3.1 h, Farm Road 0.4 h
+  against 0.4 h. The reference figure from the table above is shown beside
+  each, which is where the finding now appears at feeder level.
+- Its **substation summary** carries no definition. The two substation
+  figures are compared with the reference calculation, as in the table
+  above, under a note that the variance may reflect a difference in
+  classification.
+
+Which part of the report states its rule is a choice made for the
+demonstration, not a claim about how utilities report.
 
 ## Not modelled
 

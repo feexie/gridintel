@@ -20,7 +20,17 @@ import { DEMO_ORGANIZATION_ID, REPORT_SOURCE, demoProvenance } from "./sources.t
      figures leave them out. The calculation puts them on the network,
      and the same-basis comparison shows the difference as a variance.
      That variance is a designed finding: do not retune these figures
-     to remove it. Its losses are a fraction of energy input; collection is
+     to remove it.
+     The report says HOW it classifies in one place only: its feeder
+     tables carry a definition of "upstream" that includes the 33 kV
+     lines, and its substation summary carries none. So the feeder
+     figures state their attribution rule and are compared with a
+     calculation on that rule, with the reference figure shown beside
+     it; the substation figures do not, and are compared with the
+     reference calculation under a note that the variance may be a
+     matter of classification. Both cases of the rule in ADR 0007 are
+     therefore on the screens.
+     Its losses are a fraction of energy input; collection is
      on a cash basis, except for Old Town, whose collection efficiency
      is on an accrual basis and so cannot be compared with the
      calculated cash-basis figure.
@@ -52,7 +62,13 @@ interface Headline {
 }
 
 const LOSS_BASIS = "energy_input_net_of_transfers_out" as const;
+/** The substation summary: which classes it counts, and nothing on how an interruption is put in one. */
 const NETWORK_ONLY: KpiBasis = { interruptionClasses: ["network"], plannedInterruptions: "included" };
+/** The feeder tables: the same classes, with the report's own definition of upstream, 33 kV lines included. */
+const NETWORK_ONLY_LINES_UPSTREAM: KpiBasis = {
+  ...NETWORK_ONLY,
+  upstreamOrigins: ["grid", "transmission_station", "subtransmission_line"],
+};
 
 const REPORTED_HEADLINES: readonly Headline[] = [
   ...headlines({ kind: "region", id: DEMO_REGION_ID }, { atcc: 26.0, collection: 88.0 }),
@@ -69,15 +85,16 @@ function headlines(
   figures: { atcc: number; collection: number; saidiHours?: number; saifi?: number },
   collectionEfficiencyBasis: "cash" | "accrual" = "cash",
 ): Headline[] {
+  const reliabilityBasis = scope.kind === "feeder" ? NETWORK_ONLY_LINES_UPSTREAM : NETWORK_ONLY;
   return [
     { scope, metric: "atcc", value: figures.atcc, unit: "percent", basis: { lossBasis: LOSS_BASIS, collection: "cash" } },
     { scope, metric: "collection_efficiency", value: figures.collection, unit: "percent", basis: { collection: collectionEfficiencyBasis } },
     ...(figures.saidiHours === undefined
       ? []
-      : [{ scope, metric: "saidi" as const, value: figures.saidiHours, unit: "hours" as const, basis: NETWORK_ONLY }]),
+      : [{ scope, metric: "saidi" as const, value: figures.saidiHours, unit: "hours" as const, basis: reliabilityBasis }]),
     ...(figures.saifi === undefined
       ? []
-      : [{ scope, metric: "saifi" as const, value: figures.saifi, unit: "interruptions_per_customer" as const, basis: NETWORK_ONLY }]),
+      : [{ scope, metric: "saifi" as const, value: figures.saifi, unit: "interruptions_per_customer" as const, basis: reliabilityBasis }]),
   ];
 }
 

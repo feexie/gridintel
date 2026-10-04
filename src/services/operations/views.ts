@@ -103,6 +103,12 @@ export interface ReportedComparisonView {
   reasons: string[];
   /** Things to bear in mind that do not stop the comparison. */
   caveats: string[];
+  /**
+   * Set when the reported figure states an attribution rule other than the reference one, and
+   * the calculation beside it was made on that rule: the same figure on the reference rule, so
+   * the difference the rule makes is in plain view.
+   */
+  onReferenceRule: MetricView | null;
   document: string | null;
 }
 

@@ -324,11 +324,44 @@ describe("reliability", () => {
     assert.equal(matched.sameBasis, true);
     assert.equal(matched.comparable, true);
     assert.ok((matched.variance.absolute as number) > 20 && (matched.variance.absolute as number) < 22);
+    // The substation summary does not say how it classifies, so the comparison says what the variance may be.
+    assert.equal(reported.basis?.upstreamOrigins, undefined);
+    const note = matched.issues.find((issue) => issue.code === "ATTRIBUTION_RULE_UNSPECIFIED");
+    assert.equal(note?.blocking, false);
 
     // The variance is the 33 kV line faults: without them the two figures are close.
     const line = reliability.components.breakdown.byOriginPoint.subtransmission_line?.customerMinutes as number;
     const lineHours = line / (reliability.saidi.inputs.customersServed.value as number) / 60;
     assert.ok(Math.abs((matched.variance.absolute as number) - lineHours) < 0.5);
+  });
+
+  it("compares a figure that states its attribution rule with a calculation on that rule, and changes no total", async () => {
+    const farm = feeder("FD-FRM");
+    const reported = (await repos.reported.listReportedKpis({ metrics: ["saidi"], scopes: [farm] })).records[0];
+    // The feeder tables define upstream as including the 33 kV lines.
+    assert.deepEqual(reported.basis?.upstreamOrigins, ["grid", "transmission_station", "subtransmission_line"]);
+
+    const reference = (await scopeReliability({ repos, scope: farm, period, context })).result.reliability;
+    const onRule = (await scopeReliability({ repos, scope: farm, period, context, upstreamOrigins: reported.basis?.upstreamOrigins })).result.reliability;
+    // Only the class of the line faults moves. The total, and load shedding, are the same events.
+    assert.ok(close(onRule.saidi.value, reference.saidi.value, 1e-6));
+    assert.equal(onRule.attribution.load_management.customerMinutes, reference.attribution.load_management.customerMinutes);
+    assert.ok((reference.attribution.network.saidi as number) / 60 > 50);
+    assert.ok((onRule.attribution.network.saidi as number) / 60 < 1);
+    assert.notEqual(onRule.saidi.methodology.id, reference.saidi.methodology.id);
+
+    // Against the reference calculation the two are on different rules: not comparable, no variance.
+    const acrossRules = compareOnBasis(reported, [reference.saidi, reliabilityOnBasis(reference, ["network"]).saidi]);
+    assert.equal(acrossRules.comparable, false);
+    assert.equal(acrossRules.variance.absolute, null);
+    assert.ok(acrossRules.issues.some((issue) => issue.code === "ATTRIBUTION_RULE_MISMATCH"));
+
+    // On its own rule the report is close to the records: 0.4 h reported.
+    const matched = compareOnBasis(reported, [onRule.saidi, reliabilityOnBasis(onRule, ["network"]).saidi]);
+    assert.equal(matched.sameBasis, true);
+    assert.equal(matched.comparable, true);
+    assert.ok(Math.abs(matched.variance.absolute as number) < 0.1);
+    assert.ok(!matched.issues.some((issue) => issue.code.startsWith("ATTRIBUTION_RULE")));
   });
 
   it("derives customer counts from the network model without calling the indices estimated", async () => {

@@ -11,6 +11,7 @@ import {
   SUPPLY_HOURS_REFERENCE,
   convertUnit,
   resultStatus,
+  statedRuleMethodology,
 } from "../../analytics/index.ts";
 
 /* ==========================================================
@@ -31,7 +32,7 @@ import {
 const METHODS = [ENERGY_REFERENCE, ATCC_REFERENCE, RELIABILITY_REFERENCE, LOADING_REFERENCE, SUPPLY_HOURS_REFERENCE, REVENUE_GAP_REFERENCE];
 
 export function methodView(ref: MethodologyRef): MethodView {
-  const known = METHODS.find((method) => method.id === ref.id && method.version === ref.version);
+  const known = METHODS.find((method) => method.id === ref.id && method.version === ref.version) ?? statedRuleMethodology(ref);
   return {
     id: ref.id,
     version: ref.version,

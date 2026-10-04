@@ -148,6 +148,33 @@ describe("operations read models", () => {
     assert.equal(transformer.reliability.supply.band, null);
   });
 
+  it("compare a report on its own attribution rule where it states one, and show the reference figure beside it", async () => {
+    const farm = (await feederView(runtime, "FD-FRM")) as NetworkLevelView;
+    const saidi = farm.reliability.reported.find((row) => row.label === "SAIDI");
+    assert.equal(saidi?.sameBasis, true);
+    assert.match(saidi?.reportedBasis ?? "", /treating as upstream: the grid, transmission stations, sub-transmission lines/);
+    assert.equal(saidi?.reportedBasis, saidi?.calculatedBasis);
+    assert.ok((saidi?.calculated.value as number) < 1);
+    assert.ok(Math.abs(saidi?.variance as number) < 0.1);
+    // The reference figure, which puts the line faults on the network, is shown and is the screen's own network SAIDI.
+    const network = farm.reliability.attribution.find((row) => row.key === "network");
+    assert.ok((saidi?.onReferenceRule?.value as number) > 50);
+    assert.ok(Math.abs((saidi?.onReferenceRule?.value as number) - (network?.saidiHours as number)) < 1e-9);
+    assert.ok(!saidi?.caveats.some((caveat) => /classification/.test(caveat)));
+    // The headline indices and the attribution table stay on the reference rule.
+    assert.equal(farm.reliability.saidi.method?.id, "gridintel.reliability.reference");
+    assert.match(saidi?.calculated.method?.name ?? "", /on a reported attribution rule/);
+
+    // A report that does not state its rule is compared with the reference figure, under a note.
+    const hillcrest = (await substationView(runtime, "SS-HIL")) as NetworkLevelView;
+    const summary = hillcrest.reliability.reported.find((row) => row.label === "SAIDI");
+    assert.equal(summary?.sameBasis, true);
+    assert.equal(summary?.onReferenceRule, null);
+    assert.ok((summary?.variance as number) > 20);
+    assert.ok(summary?.caveats.some((caveat) => /may reflect a difference in classification/.test(caveat)));
+    assert.doesNotMatch(summary?.reportedBasis ?? "", /treating as upstream/);
+  });
+
   it("carry the feeder-loading caveat on feeders and nowhere else", async () => {
     const feeder = (await feederView(runtime, "FD-MKT")) as NetworkLevelView;
     assert.equal(feeder.loading?.caveat, CAVEAT);

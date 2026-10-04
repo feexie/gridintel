@@ -104,7 +104,8 @@ responsibility follows from it rather than from the label.
   put in a class. Two parties can therefore state the same basis and classify
   the same event differently. The comparison cannot detect that; it can only
   show the variance. Whether a basis should also state its attribution rule
-  is left open.
+  was left open here and is now decided: it may, in `KpiBasis.upstreamOrigins`
+  (ADR 0007, amendment of 2026-10-04).
 - 33 kV lines and transmission stations are not registry assets. In the
   synthetic data their outages name them as unresolved references.
 

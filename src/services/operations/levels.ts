@@ -138,6 +138,15 @@ const CLASS_WORDS: Record<string, string> = {
   other: "other and unattributed interruptions",
 };
 
+const ORIGIN_WORDS: Record<string, string> = {
+  grid: "the grid",
+  transmission_station: "transmission stations",
+  subtransmission_line: "sub-transmission lines",
+  mv_feeder: "distribution feeders",
+  distribution_transformer: "distribution transformers",
+  lv_network: "the low-voltage network",
+};
+
 /** A basis in words, for the dimensions it states. */
 export function describeBasis(basis: KpiBasis | null): string | null {
   if (basis === null) return null;
@@ -147,6 +156,11 @@ export function describeBasis(basis: KpiBasis | null): string | null {
     parts.push(all ? "all interruptions, whatever their cause" : `${basis.interruptionClasses.map((name) => CLASS_WORDS[name]).join(", ")} only`);
   }
   if (basis.plannedInterruptions !== undefined) parts.push(`planned work ${basis.plannedInterruptions}`);
+  if (basis.upstreamOrigins !== undefined) {
+    // Always in the same order, from the grid down, however the source lists them.
+    const origins = Object.keys(ORIGIN_WORDS).filter((origin) => (basis.upstreamOrigins as readonly string[]).includes(origin));
+    parts.push(`treating as upstream: ${origins.map((origin) => ORIGIN_WORDS[origin]).join(", ") || "nothing"}`);
+  }
   if (basis.lossBasis !== undefined) parts.push(basis.lossBasis === "energy_input_gross" ? "fraction of gross energy input" : "fraction of energy input net of transfers out");
   if (basis.collection !== undefined) parts.push(`collection on ${basis.collection === "cash" ? "a cash" : "an accrual"} basis`);
   return parts.length === 0 ? null : parts.join("; ");
@@ -163,15 +177,19 @@ async function reportedComparisons(
   pairs: {
     metric: "atcc" | "collection_efficiency" | "saidi" | "saifi";
     label: string;
-    candidates: (basis: KpiBasis | null) => CalculatedKpi[];
+    candidates: (basis: KpiBasis | null) => CalculatedKpi[] | Promise<CalculatedKpi[]>;
+    /** The figure on the reference rule, for a comparison made on another attribution rule; null when it is the same. */
+    onReferenceRule?: (basis: KpiBasis | null, compared: CalculatedKpi) => CalculatedKpi | null;
   }[],
 ): Promise<ReportedComparisonView[]> {
   const reported = await runtime.repos.reported.listReportedKpis({ metrics: pairs.map((pair) => pair.metric), scopes: [scope] });
-  return pairs.flatMap((pair) =>
-    reported.records
-      .filter((kpi) => kpi.metric === pair.metric)
-      .map((kpi): ReportedComparisonView => {
-        const comparison = compareOnBasis(kpi, pair.candidates(kpi.basis));
+  const rows: ReportedComparisonView[] = [];
+  for (const pair of pairs) {
+    for (const kpi of reported.records.filter((record) => record.metric === pair.metric)) {
+      const comparison = compareOnBasis(kpi, await pair.candidates(kpi.basis));
+      const reference = pair.onReferenceRule?.(kpi.basis, comparison.calculated) ?? null;
+      rows.push(
+        ((): ReportedComparisonView => {
         const ratio = kpi.unit === "percent" || kpi.unit === "fraction";
         const reportedValue = kpi.unit === "percent" ? convertUnit(kpi.value, "percent", "fraction") : kpi.value;
         return {
@@ -200,10 +218,14 @@ async function reportedComparisons(
           varianceUnit: comparison.variance.absoluteUnit,
           reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
           caveats: comparison.issues.filter((issue) => !issue.blocking).map((issue) => issue.message),
+          onReferenceRule: reference === null ? null : kpiMetric(`${pair.label} (calculated, reference rule)`, reference),
           document: kpi.document?.title ?? null,
         };
-      }),
-  );
+        })(),
+      );
+    }
+  }
+  return rows;
 }
 
 export function lossesBlock(runtime: OperationsRuntime, scope: ScopeRef): Promise<LossesView> {
@@ -437,25 +459,37 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
       days: supply.days.map((day) => ({ date: localDate(day.start, timeZone), hours: day.hoursOfSupply, compliant: day.compliant })),
       note: supply.band === null ? null : supplyMethod.disclaimer,
     },
-    reported: await reportedComparisons(runtime, scope, [
-      // The total first, then the figure on the classes the reported figure says it counts.
-      {
-        metric: "saidi",
-        label: "SAIDI",
-        candidates: (basis) => [
-          reliability.saidi,
-          ...(basis?.interruptionClasses ? [reliabilityOnBasis(reliability, basis.interruptionClasses).saidi] : []),
-        ],
-      },
-      {
-        metric: "saifi",
-        label: "SAIFI",
-        candidates: (basis) => [
-          reliability.saifi,
-          ...(basis?.interruptionClasses ? [reliabilityOnBasis(reliability, basis.interruptionClasses).saifi] : []),
-        ],
-      },
-    ]),
+    reported: await reportedComparisons(
+      runtime,
+      scope,
+      (["saidi", "saifi"] as const).map((metric) => ({
+        metric,
+        label: metric === "saidi" ? "SAIDI" : "SAIFI",
+        // The total first, then the figure on the classes the reported figure says it counts. Where the
+        // reported figure states its attribution rule, both are calculated under that rule.
+        candidates: async (basis: KpiBasis | null) => {
+          const onRule =
+            basis?.upstreamOrigins === undefined
+              ? reliability
+              : (
+                  await scopeReliability({
+                    repos: runtime.repos,
+                    scope,
+                    period: runtime.period,
+                    context: context(runtime),
+                    cache: runtime.cache,
+                    upstreamOrigins: basis.upstreamOrigins,
+                  })
+                ).result.reliability;
+          return [onRule[metric], ...(basis?.interruptionClasses ? [reliabilityOnBasis(onRule, basis.interruptionClasses)[metric]] : [])];
+        },
+        // Shown beside a comparison made on another rule than the reference one.
+        onReferenceRule: (basis: KpiBasis | null, compared: CalculatedKpi) =>
+          basis?.interruptionClasses === undefined || compared.methodology.id === reliability[metric].methodology.id
+            ? null
+            : reliabilityOnBasis(reliability, basis.interruptionClasses)[metric],
+      })),
+    ),
   };
 }
 

@@ -1,4 +1,4 @@
-import type { Period, ScopeRef } from "@/domain";
+import type { InterruptionOrigin, Period, ScopeRef } from "@/domain";
 import type { Completeness, GridIntelRepositories } from "../../repositories/ports/index.ts";
 import type {
   CalculationContext,
@@ -10,7 +10,7 @@ import type {
 } from "../../analytics/index.ts";
 import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
-import { calculateReliability, calculateSupplyHours, customersServed, outagesForScope } from "../../analytics/index.ts";
+import { calculateReliability, calculateSupplyHours, customersServed, outagesForScope, reliabilityOnStatedRule } from "../../analytics/index.ts";
 import { NO_CACHE, resultKey } from "./cache.ts";
 import { SourceTrail } from "./sourcing.ts";
 import { loadTopology } from "./topology.ts";
@@ -26,6 +26,11 @@ import { loadTopology } from "./topology.ts";
    customer account. With a partial registry the count is not a
    total, so it is passed on as missing and the indices are
    insufficient_data rather than wrong.
+
+   The indices follow the reference methodology. `upstreamOrigins`
+   asks instead for the attribution rule a reported figure states, so
+   that a calculation can be set beside that figure on its own rule.
+   It changes which class an interruption is in, never the totals.
 
    Hours of supply per day are calculated from the same exposures.
    For a feeder they are tested against the minimum of the service
@@ -49,10 +54,13 @@ interface ReliabilityParams {
   period: Period;
   context: CalculationContext;
   cache?: ServiceCache;
+  /** The origin points to treat as upstream, when not the reference methodology's own. */
+  upstreamOrigins?: readonly InterruptionOrigin[];
 }
 
 export function scopeReliability(params: ReliabilityParams): Promise<Sourced<ScopeReliability>> {
-  return (params.cache ?? NO_CACHE).get(resultKey("reliability", params.scope, params.period, params.context.computedAt), () =>
+  const rule = params.upstreamOrigins === undefined ? "" : `|${reliabilityOnStatedRule(params.upstreamOrigins).id}`;
+  return (params.cache ?? NO_CACHE).get(`${resultKey("reliability", params.scope, params.period, params.context.computedAt)}${rule}`, () =>
     computeReliability(params),
   );
 }
@@ -89,6 +97,7 @@ async function computeReliability(params: ReliabilityParams): Promise<Sourced<Sc
     period,
     outages: scoped.outages,
     customersServed: servedInput,
+    ...(params.upstreamOrigins === undefined ? {} : { methodology: reliabilityOnStatedRule(params.upstreamOrigins) }),
     context,
   });
   const supply = calculateSupplyHours({

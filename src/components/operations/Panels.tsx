@@ -117,6 +117,11 @@ export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
                     {reason}
                   </span>
                 ))}
+                {row.onReferenceRule ? (
+                  <span className="block text-amber-100/90" data-reference-rule>
+                    Calculated on the report&apos;s own attribution rule. On the GridIntel reference rule: <MetricCell metric={row.onReferenceRule} />
+                  </span>
+                ) : null}
                 {row.caveats.map((caveat) => (
                   <span key={caveat} className="block text-slate-500">
                     Note: {caveat}

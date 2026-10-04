@@ -133,6 +133,23 @@ test("a report that books 33 kV line faults as upstream shows as a variance on t
   await expect(row).toContainText("+20.9 h");
   await expect(row).not.toContainText("Not comparable");
   await expect(page.getByText("including the lines that feed its substations")).toBeVisible();
+  // The substation summary does not say how it classifies, so the row says what the variance may be.
+  await expect(row).toContainText("The variance may reflect a difference in classification rather than in what happened.");
+  await expect(row.locator("[data-reference-rule]")).toHaveCount(0);
+});
+
+test("a report that states its attribution rule is compared on that rule, with the reference figure beside it", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/feeders/FD-FRM`);
+  const row = page.getByRole("row", { name: /^SAIDI/ });
+  await expect(row).toContainText("Same basis");
+  await expect(row).toContainText("treating as upstream: the grid, transmission stations, sub-transmission lines");
+  // 0.4 h reported, 0.4 h calculated on the report's own rule; 57.1 h on the reference rule.
+  await expect(row).toContainText("0.4 h");
+  await expect(row.locator("[data-reference-rule]")).toContainText("On the GridIntel reference rule");
+  await expect(row.locator("[data-reference-rule]")).toContainText("57.1 h");
+  await expect(row).not.toContainText("may reflect a difference in classification");
+  // The headline and the attribution table are still on the reference rule.
+  await expect(tile(page, "SAIDI")).toContainText("441.8 h");
 });
 
 test("a region is accounted as the sum of its sections, and alarms are an explicit not-available state", async ({ page }) => {
