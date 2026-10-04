@@ -237,19 +237,42 @@ page stays under 500 ms; the assumptions file is complete.
 | "Where to look first": every feeder ranked by money; the screen shows the top three with the rest one click away | Done |
 | Topology index looks meters and service points up by asset instead of scanning the registry | Done |
 | `DATASET_ASSUMPTIONS.md` rewritten for the widened network | Done |
+| Reopened 2026-10-04: interruptions attributed by where they began; 33 kV line faults are the network's, only the transmission station and the grid are upstream (ADR 0006, amendment; reliability methodology 0.2.0) | Done |
+| The synthetic report left booking 33 kV faults as upstream, so the same-basis comparison shows a designed variance | Done |
+| ADR 0009, what customer meters report | Proposal only; not implemented |
+
+**Attribution before and after the 33 kV correction** (SAIDI in hours / SAIFI).
+Totals and load shedding are unchanged; only the split between network and
+upstream moves.
+
+| Scope | Total | Load shedding | Network, before | Network, after | Upstream, before | Upstream, after |
+| --- | --- | --- | --- | --- | --- | --- |
+| Region | 240.9 | 225.3 / 42.28 | 2.8 / 0.68 | 13.9 / 3.81 | 12.8 / 3.61 | 1.7 / 0.48 |
+| Riverside | 208.7 | 201.8 / 43.32 | 3.4 / 0.65 | 6.9 / 1.65 | 3.6 / 1.00 | 0 / 0 |
+| Hillcrest | 282.0 | 255.3 / 40.95 | 2.1 / 0.72 | 22.8 / 6.56 | 24.6 / 6.93 | 3.9 / 1.09 |
+| Market Road | 73.8 | 70.0 / 20 | 0.2 / 0.05 | 3.8 / 1.05 | 3.6 / 1.00 | 0 / 0 |
+| Old Town | 305.2 | 296.0 / 60 | 5.6 / 1.08 | 9.2 / 2.08 | 3.6 / 1.00 | 0 / 0 |
+| Government Avenue | 190.1 | 187.0 / 30 | 3.1 / 1.08 | 3.1 / 1.08 | 0 / 0 | 0 / 0 |
+| Farm Road | 441.8 | 374.0 / 60 | 0.4 / 0.11 | 57.1 / 16.11 | 67.5 / 19.00 | 10.7 / 3.00 |
+
+Reported against calculated SAIDI on Hillcrest, both stated as "network
+interruptions only": 1.9 h reported, 22.8 h calculated, variance +20.9 h.
+The variance is the 33 kV line faults the report books as upstream.
 
 **Page timings**, production build, one machine, median of five requests
 after the cache is warm, milliseconds (from the browser timing test):
 
 | Route | Median |
 | --- | --- |
-| Executive | 89 |
+| Executive | 102 |
 | Operations home | 6 |
-| Region | 59 |
-| Substation, Riverside / Hillcrest | 50 / 52 |
-| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 71 / 70 / 69 / 75 |
-| Transformer, Riverbank (first 40 rows / all 135) | 94 / 197 |
-| Service point | 28 |
+| Region | 67 |
+| Substation, Riverside / Hillcrest | 60 / 97 |
+| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 104 / 101 / 125 / 73 |
+| Transformer, Riverbank (first 40 rows / all 135) | 89 / 215 |
+| Service point | 25 |
+
+Screenshots: `docs/screenshots/phase6b`.
 
 The Executive page is now rendered on demand rather than prerendered, because
 it reads `?feeders=all`; its figures still come from the cache. Without the
@@ -261,7 +284,7 @@ no caveat (browser test); the region account is the sum of the two
 substations, each counted once, and its ATC&C is of the summed energy and
 revenue rather than an average of two percentages (tested); every route is
 under 500 ms (browser test, 12 routes); the assumptions file covers the
-widened network. Typecheck, 286 unit tests, lint, build and 20 browser tests
+widened network. Typecheck, 298 unit tests, lint, build and 21 browser tests
 are green.
 
 **For the Founder's review.**
@@ -275,6 +298,15 @@ are green.
   the only overload.
 - The cut-off for the money ranking (top three feeders) is a constant in the
   Executive component. It hides nothing: the full list is one click away.
+- The loss of 33 kV supply to Riverside is modelled as a fault on Riverside's
+  own 33 kV line, so it is network-attributable. Had it begun at the
+  transmission station it would be upstream.
+- Farm Road's rural 33 kV line interrupts Farm Road only, although Hillcrest
+  is modelled with one power transformer. Giving the line its own power
+  transformer and incomer would remove the simplification.
+- Because Farm Road's line faults are now the network's, "highest
+  network-attributable SAIDI" moved from Old Town to Farm Road.
+- ADR 0009 (customer metering) is a proposal with four questions to answer.
 
 ### Phase 6c: Workspaces (not started)
 
