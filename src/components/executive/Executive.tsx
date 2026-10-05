@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AttentionSubject, ExecutiveView, WhereToLookView } from "@/services/executive/views";
 import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/operations/Metric";
-import { LossesPanel, NotAvailable, ReliabilityPanel, RevenueGapPanel } from "@/components/operations/Panels";
+import { AlarmsPanel, LossesPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/operations/Panels";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatPeriod, formatSigned, formatTime, levelHref } from "@/components/operations/format";
 
 function Subject({ entry }: { entry: AttentionSubject }) {
@@ -244,7 +244,7 @@ export function Executive({ view }: { view: ExecutiveView }) {
         </Panel>
       </div>
 
-      <NotAvailable view={view.alarms} />
+      <AlarmsPanel alarms={view.alarms} />
     </div>
   );
 }

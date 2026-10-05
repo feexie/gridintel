@@ -5,7 +5,7 @@ import type { AttentionSubject, FeederSignals, TransformerSignals } from "./atte
 import type { BandComplianceRow, ExecutiveView, TransformerLoadingRow, WhereToLookView } from "./views.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
-import { ALARMS, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
+import { alarmsBlock, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
 import { ATTENTION_METHOD, MONEY_RANK_LIMIT, attention } from "./attention.ts";
 
 /* ==========================================================
@@ -226,6 +226,6 @@ async function portfolioView(runtime: OperationsRuntime): Promise<Portfolio> {
     reliability,
     bandCompliance,
     transformerLoading,
-    alarms: ALARMS,
+    alarms: await alarmsBlock(runtime, loaded, portfolio),
   };
 }

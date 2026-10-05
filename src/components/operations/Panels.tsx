@@ -1,9 +1,13 @@
 import Link from "next/link";
 import type {
+  AlarmRowView,
+  AlarmSubjectView,
+  AlarmsView,
   ChildTable,
+  ConditionRowView,
   LoadingView,
   LossesView,
-  NotAvailableView,
+  PowerTransformerView,
   ReliabilityView,
   ReportedComparisonView,
   RuleFindingView,
@@ -612,6 +616,64 @@ export function LoadingPanel({ loading }: { loading: LoadingView }) {
   );
 }
 
+/** A substation's power transformers: what each carries, and how heavily it was loaded. */
+export function PowerTransformersPanel({ transformers }: { transformers: PowerTransformerView[] }) {
+  if (transformers.length === 0) return null;
+  return (
+    <Panel title={`Power transformers (${transformers.length})`} aside="Loading from the substation's telemetry, against rating">
+      <table className="w-full border-collapse text-xs" data-table="power-transformers">
+        <thead>
+          <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
+            <th className="py-1 pr-2 font-normal">Transformer</th>
+            <th className="py-1 pr-2 text-right font-normal">Rating</th>
+            <th className="py-1 pr-2 font-normal">Carries</th>
+            <th className="py-1 pr-2 text-right font-normal">Peak loading</th>
+            <th className="py-1 pr-2 text-right font-normal">Hours over rating</th>
+            <th className="py-1 text-right font-normal">Loading at the as-of time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transformers.map((pt) => (
+            <tr key={pt.id} className="border-b border-slate-800/60 align-top" data-power-transformer={pt.id}>
+              <td className="py-1 pr-2 text-slate-200">
+                {pt.name}
+                <span className="ml-1.5 text-[10px] text-slate-500">
+                  {pt.id}
+                  {pt.busSection ? ` · bus section ${pt.busSection}` : ""}
+                </span>
+              </td>
+              <td className="whitespace-nowrap py-1 pr-2 text-right font-mono tabular-nums text-slate-200">{formatNumber(pt.ratedKva / 1000, 1)} MVA</td>
+              <td className="py-1 pr-2">
+                {pt.feeders.length === 0 ? (
+                  <span className="text-slate-500">no feeder recorded</span>
+                ) : (
+                  pt.feeders.map((feeder, i) => (
+                    <span key={feeder.id}>
+                      {i > 0 ? ", " : ""}
+                      <Link href={levelHref("feeder", feeder.id)} className="text-cyan-300 hover:underline">
+                        {feeder.name}
+                      </Link>
+                    </span>
+                  ))
+                )}
+              </td>
+              <td className="py-1 pr-2 text-right">{pt.loading ? <MetricCell metric={pt.loading.peak} /> : <span className="text-slate-500">no telemetry</span>}</td>
+              <td className="whitespace-nowrap py-1 pr-2 text-right font-mono tabular-nums text-slate-100">
+                {pt.loading === null || pt.loading.hoursOverRating === null ? "—" : `${pt.loading.hoursOverRating} of ${pt.loading.hoursObserved ?? "—"}`}
+              </td>
+              <td className="py-1 text-right">{pt.loading ? <MetricCell metric={pt.loading.asOf} /> : <span className="text-slate-500">—</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-[10px] leading-snug text-slate-500">
+        Peak is the highest of the hourly readings in the period; a higher loading between readings would not be seen. A transformer is loaded by the feeders on its own bus
+        section only.
+      </p>
+    </Panel>
+  );
+}
+
 /* ---------------- Children and not-available ---------------- */
 
 const FOOTNOTE_MARKS = ["†", "‡", "§", "¶", "‖", "#"];
@@ -696,10 +758,180 @@ export function ChildrenTable({ table, showAll = true, allHref }: { table: Child
   );
 }
 
-export function NotAvailable({ view }: { view: NotAvailableView }) {
+/* ---------------- Alarms and derived conditions ---------------- */
+
+const SEVERITY_STYLE: Record<AlarmRowView["severity"], string> = {
+  critical: "border-rose-400/70 text-rose-200",
+  high: "border-rose-400/40 text-rose-200",
+  medium: "border-amber-400/50 text-amber-200",
+  low: "border-slate-600 text-slate-300",
+  info: "border-slate-700 text-slate-400",
+};
+
+function SubjectLink({ subject }: { subject: AlarmSubjectView }) {
   return (
-    <Panel title={view.title} aside={<StatusBadge status="not_available" />}>
-      <p className="text-xs leading-relaxed text-slate-400">{view.reason}</p>
+    <>
+      {subject.link ? (
+        <Link href={levelHref(subject.link.kind, subject.link.id)} className="text-cyan-300 hover:underline">
+          {subject.label}
+        </Link>
+      ) : (
+        <span className="text-slate-200">{subject.label}</span>
+      )}
+      <span className="ml-1.5 text-[10px] text-slate-500">
+        {subject.kindLabel} {subject.id === subject.label ? "" : subject.id}
+      </span>
+    </>
+  );
+}
+
+function AlarmRow({ alarm }: { alarm: AlarmRowView }) {
+  return (
+    <li className="py-1.5 text-xs" data-alarm={alarm.id} data-alarm-state={alarm.state}>
+      <p className="flex flex-wrap items-baseline gap-x-2">
+        <span className={`border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide ${SEVERITY_STYLE[alarm.severity]}`}>{alarm.severity}</span>
+        <SubjectLink subject={alarm.subject} />
+      </p>
+      <p className="mt-0.5 text-slate-200">
+        {alarm.message} <span className="font-mono text-[10px] text-slate-500">{alarm.code}</span>
+      </p>
+      <p className="mt-0.5 text-[11px] text-slate-400">
+        {alarm.raisedAt ? `Raised ${formatTime(alarm.raisedAt)}` : "Raise time not recorded by the source; whether it is active cannot be told"}
+        {alarm.clearedAt ? ` · cleared ${formatTime(alarm.clearedAt)}` : alarm.state === "active" ? " · not cleared" : ""}
+        {alarm.state === "time_not_recorded" ? "" : alarm.acknowledgedAt ? ` · acknowledged ${formatTime(alarm.acknowledgedAt)}` : " · not acknowledged"}
+      </p>
+    </li>
+  );
+}
+
+function ConditionRow({ condition }: { condition: ConditionRowView }) {
+  const loading = condition.rule === "loading_above_rating";
+  return (
+    <li className="py-1.5 text-xs" data-condition={`${condition.rule}:${condition.subject.id}`} data-condition-active={String(condition.activeNow)}>
+      <p className="flex flex-wrap items-baseline gap-x-2">
+        <span className="border border-slate-600 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-slate-200">Rule: {condition.ruleName}</span>
+        <SubjectLink subject={condition.subject} />
+      </p>
+      <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-slate-200">
+        {loading ? "Peak" : "Last check-in"}
+        {condition.figure.value === null ? <span className="text-slate-400">none held</span> : <MetricCell metric={condition.figure} />}
+        {loading ? null : <span className="text-slate-400">ago</span>}
+        {condition.occurrences === null ? null : (
+          <span className="text-slate-400">
+            · above rating at <span className="font-mono text-slate-100">{formatNumber(condition.occurrences)}</span> hourly reading(s)
+          </span>
+        )}
+      </p>
+      <p className="mt-0.5 text-[11px] text-slate-400">
+        {loading
+          ? `First ${condition.firstAt ? formatTime(condition.firstAt) : "—"} · last ${condition.lastAt ? formatTime(condition.lastAt) : "—"}`
+          : condition.lastAt
+            ? `Last heard from ${formatTime(condition.lastAt)}`
+            : "No check-in from this device is held"}
+        {" · "}
+        {condition.activeNow === null ? "state at the as-of time not known" : condition.activeNow ? "holds at the as-of time" : "does not hold at the as-of time"}
+      </p>
+    </li>
+  );
+}
+
+/**
+ * Alarms recorded by source systems beside conditions derived by GridIntel. Two lists with two
+ * headings and two origins; nothing is merged, and a derived condition is never called an alarm.
+ */
+export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
+  const { recorded, derived } = alarms;
+  const none = recorded.active.length + recorded.undated.length + recorded.clearedTotal === 0;
+  return (
+    <Panel title="Alarms and derived conditions" aside={`As of ${formatTime(alarms.asOf)} · two separate lists, never merged`}>
+      <div className="grid gap-3 xl:grid-cols-2">
+        <div data-alarms="recorded">
+          <h3 className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-200">
+            Alarms recorded by source systems <OriginTag origin="measured" />
+            {recorded.completeness === "not_available" ? <StatusBadge status="not_available" /> : null}
+          </h3>
+          <p className="mt-0.5 text-[11px] leading-snug text-slate-400">As the utility&apos;s own systems raised them. GridIntel reports them; it does not decide whether they are true.</p>
+          {recorded.note ? <p className="mt-1 border-l-2 border-amber-400/60 pl-2 text-xs text-amber-100/90">{recorded.note}</p> : null}
+          {recorded.completeness === "not_available" ? null : (
+            <>
+              <h4 className="mt-2 text-[10px] uppercase tracking-wide text-slate-500">Active ({recorded.active.length})</h4>
+              {recorded.active.length === 0 ? (
+                <p className="py-1 text-xs text-slate-400">
+                  {none && recorded.completeness === "complete" ? "No alarm was recorded for this scope in the period." : "No alarm is active at the as-of time."}
+                </p>
+              ) : (
+                <ul className="divide-y divide-slate-800/70">
+                  {recorded.active.map((alarm) => (
+                    <AlarmRow key={alarm.id} alarm={alarm} />
+                  ))}
+                </ul>
+              )}
+              {recorded.undated.length > 0 ? (
+                <>
+                  <h4 className="mt-2 text-[10px] uppercase tracking-wide text-slate-500">Time not recorded ({recorded.undated.length})</h4>
+                  <ul className="divide-y divide-slate-800/70">
+                    {recorded.undated.map((alarm) => (
+                      <AlarmRow key={alarm.id} alarm={alarm} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {recorded.clearedTotal > 0 ? (
+                <>
+                  <h4 className="mt-2 text-[10px] uppercase tracking-wide text-slate-500">
+                    Raised in the period and cleared ({recorded.clearedTotal})
+                    {recorded.cleared.length < recorded.clearedTotal ? `, the ${recorded.cleared.length} most recent` : ""}
+                  </h4>
+                  <ul className="divide-y divide-slate-800/70">
+                    {recorded.cleared.map((alarm) => (
+                      <AlarmRow key={alarm.id} alarm={alarm} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {recorded.unplaced > 0 ? (
+                <p className="mt-1 text-[11px] text-amber-100/90">
+                  {recorded.unplaced} alarm(s) name something not matched to the registry. They belong to no section and are listed at organization level only.
+                </p>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        <div data-alarms="derived">
+          <h3 className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-200">
+            Conditions derived by GridIntel <OriginTag origin="calculated" />
+          </h3>
+          <p className="mt-0.5 text-[11px] leading-snug text-slate-400">
+            Worked out from telemetry under the rules below. Not alarms: no source system raised them.
+          </p>
+          {derived.note ? <p className="mt-1 border-l-2 border-amber-400/60 pl-2 text-xs text-amber-100/90">{derived.note}</p> : null}
+          <h4 className="mt-2 text-[10px] uppercase tracking-wide text-slate-500">Found ({derived.conditions.length})</h4>
+          {derived.conditions.length === 0 ? (
+            <p className="py-1 text-xs text-slate-400">
+              No rule was met: {formatNumber(derived.assetsChecked)} asset(s) checked for loading and {formatNumber(derived.devicesChecked)} monitoring device(s) for check-ins.
+            </p>
+          ) : (
+            <ul className="divide-y divide-slate-800/70">
+              {derived.conditions.map((condition) => (
+                <ConditionRow key={`${condition.rule}:${condition.subject.id}`} condition={condition} />
+              ))}
+            </ul>
+          )}
+          <dl className="mt-2 space-y-0.5 text-[10px] leading-snug text-slate-500">
+            {derived.rules.map((rule) => (
+              <div key={rule.id}>
+                <dt className="inline font-semibold text-slate-400">Rule: {rule.name}. </dt>
+                <dd className="inline">{rule.statement}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-1 text-[10px] text-slate-500">
+            {derived.method.name} <span className="font-mono">({derived.method.id} v{derived.method.version})</span>. {derived.method.disclaimer}
+          </p>
+        </div>
+      </div>
+      <p className="text-[10px] text-slate-500">Data sources: {alarms.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ") || "none"}</p>
     </Panel>
   );
 }

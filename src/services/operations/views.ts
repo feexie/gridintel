@@ -302,6 +302,18 @@ export interface LoadingView {
   caveat: string | null;
 }
 
+/** A power transformer of a substation, with its loading where it has telemetry. */
+export interface PowerTransformerView {
+  id: string;
+  name: string;
+  ratedKva: number;
+  busSection: string | null;
+  /** The feeders it carries, by name. */
+  feeders: { id: string; name: string }[];
+  /** null when the transformer has no telemetry to calculate a loading from. */
+  loading: LoadingView | null;
+}
+
 /* ---------------- Tables of children ---------------- */
 
 export interface ChildRow {
@@ -335,9 +347,78 @@ export interface LevelHeader {
   location: { latitude: number; longitude: number } | null;
 }
 
-export interface NotAvailableView {
-  title: string;
-  reason: string;
+/* ---------------- Alarms and derived conditions ---------------- */
+
+/** The asset an alarm or a condition is about, and the screen that shows it. */
+export interface AlarmSubjectView {
+  id: string;
+  /** The asset's name, or the name as the source wrote it when it is not matched to the registry. */
+  label: string;
+  /** "Substation", "Power transformer", "Monitor on …". */
+  kindLabel: string;
+  /** The drill-down level to open; null when the subject is not in the registry. */
+  link: { kind: LevelKind; id: string } | null;
+}
+
+/** An alarm as a source system recorded it. */
+export interface AlarmRowView {
+  id: string;
+  code: string;
+  message: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  subject: AlarmSubjectView;
+  /** Its state at the as-of time. "time_not_recorded": the source did not say when it was raised, so its state cannot be told. */
+  state: "active" | "cleared" | "time_not_recorded";
+  raisedAt: string | null;
+  clearedAt: string | null;
+  acknowledgedAt: string | null;
+}
+
+/** A condition GridIntel derived from telemetry, with the rule that produced it. */
+export interface ConditionRowView {
+  rule: string;
+  ruleName: string;
+  subject: AlarmSubjectView;
+  /** Whether it holds at the as-of time; null when that cannot be told. */
+  activeNow: boolean | null;
+  /** The rule's figure: peak loading, or the time since the last check-in. */
+  figure: MetricView;
+  /** Readings at which it held; null where the rule does not count readings. */
+  occurrences: number | null;
+  firstAt: string | null;
+  lastAt: string | null;
+}
+
+/**
+ * Alarms recorded by source systems, and conditions derived by GridIntel. Two lists that are
+ * never merged: the first is observed, the second calculated.
+ */
+export interface AlarmsView {
+  sourcing: SourcingView;
+  asOf: string;
+  recorded: {
+    /** How completely the source holds alarms. "not_available": it holds none at all, and no list is implied. */
+    completeness: "complete" | "partial" | "not_available";
+    /** What must be said about the list: that it is partial, or not available. */
+    note: string | null;
+    active: AlarmRowView[];
+    /** Alarms whose raise time the source did not record. */
+    undated: AlarmRowView[];
+    /** The most recently raised of the alarms cleared by the as-of time; `clearedTotal` says how many there are. */
+    cleared: AlarmRowView[];
+    clearedTotal: number;
+    /** Alarms on a subject not matched to the registry; listed at organization level only. */
+    unplaced: number;
+  };
+  derived: {
+    rules: { id: string; name: string; statement: string }[];
+    method: MethodView;
+    conditions: ConditionRowView[];
+    /** Set when a rule could not be applied, e.g. no complete heartbeat record. */
+    note: string | null;
+    assetsChecked: number;
+    devicesChecked: number;
+  };
 }
 
 export interface NetworkLevelView {
@@ -350,8 +431,10 @@ export interface NetworkLevelView {
   revenueGapBelow: { title: string; rows: RevenueGapRow[] } | null;
   reliability: ReliabilityView;
   loading: LoadingView | null;
+  /** On a substation: its power transformers. null on every other level. */
+  powerTransformers: PowerTransformerView[] | null;
   children: ChildTable[];
-  alarms: NotAvailableView;
+  alarms: AlarmsView;
 }
 
 export interface OverviewView {
@@ -359,7 +442,7 @@ export interface OverviewView {
   period: { start: string; end: string };
   organization: string | null;
   regions: ChildTable;
-  alarms: NotAvailableView;
+  alarms: AlarmsView;
 }
 
 export interface ChargeView {

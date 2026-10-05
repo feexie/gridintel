@@ -168,7 +168,7 @@ test("a report that states its attribution rule is compared on that rule, and wh
   await expect(tile(page, "SAIDI")).toContainText("441.8 h");
 });
 
-test("a region is accounted as the sum of its sections, and alarms are an explicit not-available state", async ({ page }) => {
+test("a region is accounted as the sum of its sections", async ({ page }) => {
   await page.goto(`${OPERATIONS}/regions/demo-region-northfield`);
   await expect(page.getByText("Summed over 2 electrical section(s): SS-HIL, SS-RIV.")).toBeVisible();
   await expect(tile(page, "ATC&C")).toContainText("31.5%");
@@ -176,9 +176,98 @@ test("a region is accounted as the sum of its sections, and alarms are an explic
   const gap = page.locator("section", { has: page.getByRole("heading", { name: "Revenue gap", level: 2 }) });
   await expect(gap.getByRole("link", { name: "Riverside 33/11 kV injection substation" })).toBeVisible();
   await expect(gap.getByRole("link", { name: "Hillcrest 33/11 kV injection substation" })).toBeVisible();
-  const alarms = page.locator("section", { has: page.getByRole("heading", { name: "Alarms" }) });
-  await expect(alarms).toContainText("Not available");
-  await expect(alarms).toContainText("no alarms are shown rather than an invented list");
+});
+
+test("alarms recorded by source systems and conditions derived by GridIntel are two lists, never mixed", async ({ page }) => {
+  // Riverbank has one of each: its monitor's alarm for the blown fuses, and a loading condition GridIntel derived.
+  await page.goto(`${OPERATIONS}/transformers/DT-OLD-2`);
+  const panel = page.locator("section", { has: page.getByRole("heading", { name: "Alarms and derived conditions", level: 2 }) });
+  await expect(panel).toContainText("two separate lists, never merged");
+  const recorded = panel.locator('[data-alarms="recorded"]');
+  const derived = panel.locator('[data-alarms="derived"]');
+
+  await expect(recorded.getByRole("heading", { level: 3 })).toContainText("Alarms recorded by source systems");
+  await expect(recorded.getByRole("heading", { level: 3 })).toContainText("Measured");
+  await expect(recorded).toContainText("GridIntel reports them; it does not decide whether they are true.");
+  await expect(recorded.locator("[data-alarm]")).toHaveCount(1);
+  const fuse = recorded.locator('[data-alarm="ALM-2026-09-23-DT-OLD-2-FAULT"]');
+  await expect(fuse).toHaveAttribute("data-alarm-state", "cleared");
+  await expect(fuse).toContainText("Transformer monitor: loss of low-voltage supply on all phases.");
+  await expect(fuse).toContainText("Raised 23 Sep 2026, 16:30 WAT · cleared 23 Sep 2026, 23:10 WAT");
+  await expect(recorded).toContainText("No alarm is active at the as-of time.");
+
+  await expect(derived.getByRole("heading", { level: 3 })).toContainText("Conditions derived by GridIntel");
+  await expect(derived.getByRole("heading", { level: 3 })).toContainText("Calculated");
+  await expect(derived).toContainText("Not alarms: no source system raised them.");
+  const loading = derived.locator('[data-condition="loading_above_rating:DT-OLD-2"]');
+  await expect(loading).toContainText("Rule: Loaded above rating");
+  await expect(loading).toContainText("121.2%");
+  await expect(loading).toContainText("above rating at 69 hourly reading(s)");
+  await expect(loading).toContainText("does not hold at the as-of time");
+  // Each rule is stated in words under the list, with the methodology and what it is not.
+  await expect(derived).toContainText("Rule: Loaded above rating. Loading (apparent power ÷ rated capacity");
+  await expect(derived).toContainText("gridintel.conditions.reference");
+  await expect(derived).toContainText("It is not an alarm recorded by a source system.");
+  // Nothing derived appears among the alarms, and no alarm among the conditions.
+  await expect(recorded.locator("[data-condition]")).toHaveCount(0);
+  await expect(derived.locator("[data-alarm]")).toHaveCount(0);
+  await expect(recorded).not.toContainText("121.2%");
+});
+
+test("an alarm that is standing, one with no time, and a monitor that went quiet each say exactly what is known", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/substations/SS-RIV`);
+  const panel = page.locator("section", { has: page.getByRole("heading", { name: "Alarms and derived conditions", level: 2 }) });
+  const oil = panel.locator('[data-alarm="ALM-2026-09-26-PT-RIV-1-OIL"]');
+  await expect(oil).toHaveAttribute("data-alarm-state", "active");
+  await expect(oil).toContainText("Riverside T1");
+  await expect(oil).toContainText("not cleared");
+  await expect(oil).toContainText("acknowledged 26 Sep 2026, 20:12 WAT");
+  // The source did not say when this one was raised: it is listed apart and never called active.
+  const door = panel.locator('[data-alarm="ALM-SS-RIV-DOOR"]');
+  await expect(door).toHaveAttribute("data-alarm-state", "time_not_recorded");
+  await expect(door).toContainText("Raise time not recorded by the source; whether it is active cannot be told");
+  // No source system raised an alarm for the silent monitor; GridIntel derived the condition.
+  const quiet = panel.locator('[data-condition="monitor_quiet:ED-DT-OLD-3"]');
+  await expect(quiet).toContainText("Rule: Monitor quiet");
+  await expect(quiet).toContainText("Monitor on South Gate transformer");
+  await expect(quiet).toContainText("9.1 h");
+  await expect(quiet).toContainText("Last heard from 30 Sep 2026, 14:55 WAT");
+  await expect(quiet).toContainText("holds at the as-of time");
+  await expect(panel.locator('[data-alarms="recorded"]')).not.toContainText("South Gate transformer Monitoring");
+
+  // Hillcrest: one alarm standing and not acknowledged; of 21 cleared, the six most recent are listed.
+  await page.goto(`${OPERATIONS}/substations/SS-HIL`);
+  const dc = panel.locator('[data-alarm="ALM-2026-09-30-SS-HIL-DC"]');
+  await expect(dc).toContainText("high");
+  await expect(dc).toContainText("not cleared · not acknowledged");
+  await expect(panel).toContainText("Raised in the period and cleared (21), the 6 most recent");
+  await expect(panel.locator('[data-alarm-state="cleared"]')).toHaveCount(6);
+
+  // A transformer with neither says so, for both lists.
+  await page.goto(`${OPERATIONS}/transformers/DT-MKT-1`);
+  await expect(panel).toContainText("No alarm was recorded for this scope in the period.");
+  await expect(panel).toContainText("No rule was met: 1 asset(s) checked for loading and 1 monitoring device(s) for check-ins.");
+});
+
+test("a substation shows each power transformer with what it carries and how heavily it was loaded", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/substations/SS-HIL`);
+  const table = page.locator('[data-table="power-transformers"]');
+  const t1 = table.locator('[data-power-transformer="PT-HIL-1"]');
+  const t2 = table.locator('[data-power-transformer="PT-HIL-2"]');
+  await expect(t1).toContainText("Hillcrest T1");
+  await expect(t1).toContainText("bus section A");
+  await expect(t1).toContainText("5.0 MVA");
+  await expect(t1.getByRole("link", { name: "Government Avenue 11 kV feeder" })).toBeVisible();
+  await expect(t1).toContainText("55.7%");
+  await expect(t1).toContainText("0 of 720");
+  await expect(t2).toContainText("2.5 MVA");
+  await expect(t2.getByRole("link", { name: "Farm Road 11 kV feeder" })).toBeVisible();
+  await expect(t2).toContainText("24.8%");
+  await page.goto(`${OPERATIONS}/substations/SS-RIV`);
+  await expect(table.locator('[data-power-transformer="PT-RIV-1"]')).toContainText("72.2%");
+  // A feeder's screen has no such table.
+  await page.goto(`${OPERATIONS}/feeders/FD-GOV`);
+  await expect(table).toHaveCount(0);
 });
 
 test("an unmetered connection shows no measured energy and an estimated bill", async ({ page }) => {

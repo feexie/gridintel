@@ -1,18 +1,22 @@
-import type { IntervalEnergy, IsoTimestamp, KpiBasis, Meter, Period, ScopeRef, TelemetryPoint } from "@/domain";
+import type { EntityRef, IntervalEnergy, IsoTimestamp, KpiBasis, Meter, Period, ScopeRef, TelemetryPoint } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot, RegistryCoverage } from "../../repositories/ports/index.ts";
 import type { CalculatedKpi, CalculationContext, RevenueGap, TopologyIndex } from "../../analytics/index.ts";
 import type { ServiceCache } from "../analytics/cache.ts";
 import type {
+  AlarmRowView,
+  AlarmSubjectView,
+  AlarmsView,
   ChildRow,
   ChildTable,
+  ConditionRowView,
   Crumb,
   LevelHeader,
   LoadingView,
   LossesView,
   MetricView,
   NetworkLevelView,
-  NotAvailableView,
   OverviewView,
+  PowerTransformerView,
   ReliabilityView,
   ReportedComparisonView,
   RuleFindingView,
@@ -22,6 +26,7 @@ import type {
 } from "./views.ts";
 import {
   ATCC_REFERENCE,
+  CONDITIONS_REFERENCE,
   ENERGY_REFERENCE,
   calculateCollectionEfficiency,
   LOADING_REFERENCE,
@@ -46,6 +51,7 @@ import {
   sumMeterEnergy,
   transformersOnFeeder,
 } from "../../analytics/index.ts";
+import { scopeAlarms } from "../analytics/alarms.ts";
 import { registryCurrency } from "../analytics/billing.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { scopeRevenueGap } from "../analytics/revenueGap.ts";
@@ -88,12 +94,6 @@ export interface Loaded {
   coverage: RegistryCoverage;
 }
 
-export const ALARMS: NotAvailableView = {
-  title: "Alarms",
-  reason:
-    "Not available. The platform has no alarm data source yet, so no alarms are shown rather than an invented list. " +
-    "Alarms are planned for Phase 6.",
-};
 
 const CLASS_LABEL: Record<string, string> = {
   residential: "Residential",
@@ -632,14 +632,14 @@ async function withFindingsBelow(runtime: OperationsRuntime, reliability: Reliab
 
 export function loadingBlock(
   runtime: OperationsRuntime,
-  asset: { kind: "distribution_transformer" | "feeder"; id: string },
+  asset: { kind: "distribution_transformer" | "power_transformer" | "feeder"; id: string },
 ): Promise<LoadingView | null> {
   return block(runtime, "loading", asset, () => buildLoading(runtime, asset));
 }
 
 async function buildLoading(
   runtime: OperationsRuntime,
-  asset: { kind: "distribution_transformer" | "feeder"; id: string },
+  asset: { kind: "distribution_transformer" | "power_transformer" | "feeder"; id: string },
 ): Promise<LoadingView | null> {
   const { result, sourcing } = await assetLoading({
     repos: runtime.repos,
@@ -692,6 +692,129 @@ async function buildLoading(
     hoursObserved: peak === null ? null : peak.instantsComputed,
     overloaded: peak?.peak === null || peak === null ? null : peak.instantsOverloaded > 0,
     caveat,
+  };
+}
+
+/* ---------------- Alarms and derived conditions ---------------- */
+
+/** How many cleared alarms a screen lists; the view says how many there are in all. */
+const CLEARED_ALARM_LIMIT = 6;
+
+/** The asset an alarm or a condition names, in the words and with the link a screen shows. */
+function alarmSubject(loaded: Loaded, subject: EntityRef): AlarmSubjectView {
+  const { index, snapshot } = loaded;
+  if (!("id" in subject)) return { id: subject.label, label: subject.label, kindLabel: "Not matched to the registry", link: null };
+  const { kind, id } = subject;
+  switch (kind) {
+    case "substation":
+      return { id, label: index.substationById.get(id)?.name ?? id, kindLabel: "Substation", link: index.substationById.has(id) ? { kind: "substation", id } : null };
+    case "feeder":
+      return { id, label: index.feederById.get(id)?.name ?? id, kindLabel: "Feeder", link: index.feederById.has(id) ? { kind: "feeder", id } : null };
+    case "distribution_transformer":
+      return { id, label: index.transformerById.get(id)?.name ?? id, kindLabel: "Transformer", link: index.transformerById.has(id) ? { kind: "distribution_transformer", id } : null };
+    case "service_point":
+      return { id, label: id, kindLabel: "Service point", link: index.servicePointById.has(id) ? { kind: "service_point", id } : null };
+    case "power_transformer": {
+      // A power transformer has no screen of its own; it is on its substation's.
+      const transformer = snapshot.powerTransformers.find((candidate) => candidate.id === id);
+      return { id, label: transformer?.name ?? id, kindLabel: "Power transformer", link: transformer ? { kind: "substation", id: transformer.substationId } : null };
+    }
+    case "edge_device": {
+      const device = snapshot.edgeDevices.find((candidate) => candidate.id === id);
+      const on = device === undefined ? null : alarmSubject(loaded, device.attachedTo);
+      return { id, label: on === null ? id : `Monitor on ${on.label}`, kindLabel: "Monitoring device", link: on?.link ?? null };
+    }
+    case "meter":
+      return { id, label: id, kindLabel: "Meter", link: null };
+  }
+}
+
+export function alarmsBlock(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<AlarmsView> {
+  return block(runtime, "alarms", scope, () => buildAlarms(runtime, loaded, scope));
+}
+
+async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<AlarmsView> {
+  const { result, sourcing } = await scopeAlarms({ repos: runtime.repos, scope, period: runtime.period, asOf: runtime.now, context: context(runtime), cache: runtime.cache });
+  const { recorded, derived } = result;
+
+  const rows = recorded.alarms
+    .filter((entry) => entry.state !== "not_yet_raised")
+    .map(
+      ({ alarm, state }): AlarmRowView => ({
+        id: alarm.id,
+        code: alarm.code,
+        message: alarm.message,
+        severity: alarm.severity,
+        subject: alarmSubject(loaded, alarm.subject),
+        state: state as AlarmRowView["state"],
+        raisedAt: alarm.raisedAt ?? null,
+        clearedAt: alarm.clearedAt ?? null,
+        acknowledgedAt: alarm.acknowledgedAt ?? null,
+      }),
+    );
+  // Cleared alarms: the most recently raised first, whatever their severity.
+  const cleared = rows.filter((row) => row.state === "cleared").sort((a, b) => ((a.raisedAt ?? "") < (b.raisedAt ?? "") ? 1 : -1));
+
+  const rules = Object.fromEntries(derived.rules.map((rule) => [rule.id, rule]));
+  const loadingMethod = methodView(methodologyRef(LOADING_REFERENCE));
+  const conditionMethod = methodView(methodologyRef(CONDITIONS_REFERENCE));
+  const conditions = derived.conditions.map((condition): ConditionRowView => {
+    const rule = rules[condition.rule];
+    const loading = condition.rule === "loading_above_rating";
+    return {
+      rule: condition.rule,
+      ruleName: rule.name,
+      subject: alarmSubject(loaded, condition.subject),
+      activeNow: condition.activeAtAsOf,
+      figure: {
+        label: loading ? "Peak loading in the period" : "Time since the last check-in",
+        value: condition.value === null ? null : loading ? condition.value : convertUnit(condition.value, "minutes", "hours"),
+        unit: loading ? "fraction" : "hours",
+        currency: null,
+        status: condition.value === null ? "insufficient_data" : "ok",
+        origin: "calculated",
+        derivation: rule.statement,
+        method: loading ? loadingMethod : conditionMethod,
+        inputs: [],
+        estimatedInputs: [],
+        missingInputs: condition.value === null ? ["a check-in from the device"] : [],
+        warnings: [],
+        note: null,
+      },
+      occurrences: condition.occurrences,
+      firstAt: condition.firstAt,
+      lastAt: condition.lastAt,
+    };
+  });
+
+  return {
+    sourcing: sourcingView(sourcing),
+    asOf: result.asOf,
+    recorded: {
+      completeness: recorded.completeness,
+      note:
+        recorded.completeness === "not_available"
+          ? "Not available. The source holds no alarm records, so no alarms are shown rather than an invented list."
+          : recorded.completeness === "partial"
+            ? "The source's alarm record is partial: an alarm not listed here may still exist."
+            : null,
+      active: rows.filter((row) => row.state === "active"),
+      undated: rows.filter((row) => row.state === "time_not_recorded"),
+      cleared: cleared.slice(0, CLEARED_ALARM_LIMIT),
+      clearedTotal: cleared.length,
+      unplaced: recorded.unplaced,
+    },
+    derived: {
+      rules: derived.rules.map((rule) => ({ id: rule.id, name: rule.name, statement: rule.statement })),
+      method: conditionMethod,
+      conditions,
+      note:
+        derived.heartbeatCompleteness === "complete"
+          ? null
+          : "Whether a monitor has gone quiet cannot be told: the source's record of device check-ins is not complete, so a missing check-in may only be a missing record.",
+      assetsChecked: derived.assetsChecked,
+      devicesChecked: derived.devicesChecked,
+    },
   };
 }
 
@@ -909,8 +1032,14 @@ export async function overviewView(runtime: OperationsRuntime): Promise<Overview
       ],
       rows,
     },
-    alarms: ALARMS,
+    alarms: await alarmsBlock(runtime, loaded, overviewScope(loaded)),
   };
+}
+
+/** The scope of the Operations home: the organization, or the first region when the registry names none. */
+function overviewScope(loaded: Loaded): ScopeRef {
+  const organization = loaded.snapshot.organizations[0];
+  return organization ? { kind: "organization", id: organization.id } : { kind: "region", id: loaded.snapshot.regions[0]?.id ?? "" };
 }
 
 async function sectionRow(
@@ -986,8 +1115,9 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
     },
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: null,
+    powerTransformers: null,
     children: [{ title: "Substations", coverage: loaded.coverage.substations, columns: SECTION_COLUMNS, rows }],
-    alarms: ALARMS,
+    alarms: await alarmsBlock(runtime, loaded, scope),
   };
 }
 
@@ -1047,6 +1177,18 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
     },
     reliability: await withFindingsBelow(runtime, await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)), feeders.map((feeder) => feeder.id), timeZoneOf(loaded.snapshot)),
     loading: null,
+    powerTransformers: await Promise.all(
+      powerTransformers.map(
+        async (pt): Promise<PowerTransformerView> => ({
+          id: pt.id,
+          name: pt.name,
+          ratedKva: pt.ratingMva * 1000,
+          busSection: pt.busSection ?? null,
+          feeders: feeders.filter((feeder) => feeder.origin.powerTransformerId === pt.id).map((feeder) => ({ id: feeder.id, name: feeder.name })),
+          loading: await loadingBlock(runtime, { kind: "power_transformer", id: pt.id }),
+        }),
+      ),
+    ),
     children: [
       {
         title: "Feeders",
@@ -1055,7 +1197,7 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
         rows,
       },
     ],
-    alarms: ALARMS,
+    alarms: await alarmsBlock(runtime, loaded, scope),
   };
 }
 
@@ -1106,8 +1248,9 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
     },
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: await loadingBlock(runtime, { kind: "feeder", id: feederId }),
+    powerTransformers: null,
     children,
-    alarms: ALARMS,
+    alarms: await alarmsBlock(runtime, loaded, scope),
   };
 }
 
@@ -1355,8 +1498,9 @@ export async function transformerView(runtime: OperationsRuntime, transformerId:
     revenueGapBelow: null,
     reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
     loading: await loadingBlock(runtime, { kind: "distribution_transformer", id: transformerId }),
+    powerTransformers: null,
     children: [await servicePointTable(runtime, loaded, "Service points", points.map((sp) => sp.id))],
-    alarms: ALARMS,
+    alarms: await alarmsBlock(runtime, loaded, scope),
   };
 }
 

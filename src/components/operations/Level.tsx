@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
 import { Legend, MetricTile, OriginTag, Panel } from "./Metric";
-import { ChildrenTable, LoadingPanel, LossesPanel, NotAvailable, ReliabilityPanel, RevenueGapPanel } from "./Panels";
+import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "./Panels";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatPeriod, formatTime, levelHref } from "./format";
 
 export function SyntheticBanner({ notice }: { notice: { label: string; summary: string } | null }) {
@@ -84,10 +84,11 @@ export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevel
       <RevenueGapPanel gap={view.revenueGap} below={view.revenueGapBelow} />
       <ReliabilityPanel reliability={view.reliability} showBand={view.header.kind === "feeder"} scopeId={view.header.id} />
       {view.loading ? <LoadingPanel loading={view.loading} /> : null}
+      {view.powerTransformers ? <PowerTransformersPanel transformers={view.powerTransformers} /> : null}
       {view.children.map((table) => (
         <ChildrenTable key={table.title} table={table} showAll={showAllRows} allHref={`${levelHref(view.header.kind, view.header.id)}?rows=all`} />
       ))}
-      <NotAvailable view={view.alarms} />
+      <AlarmsPanel alarms={view.alarms} />
     </div>
   );
 }
@@ -112,7 +113,7 @@ export function Overview({ view }: { view: OverviewView }) {
         <Legend />
       </header>
       <ChildrenTable table={view.regions} />
-      <NotAvailable view={view.alarms} />
+      <AlarmsPanel alarms={view.alarms} />
     </div>
   );
 }

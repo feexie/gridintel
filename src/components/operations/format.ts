@@ -110,22 +110,36 @@ export const ORIGIN_HINT: Record<DisplayOrigin, string> = {
   derived: "A residual: what is left after subtracting other figures. It inherits their uncertainty.",
 };
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const WAT_PARTS = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Lagos",
+  day: "numeric",
+  month: "numeric",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/**
+ * The parts of an instant in West Africa Time. Month names are written here and not taken from
+ * the runtime, whose abbreviations differ between versions ("Sep" in one, "Sept" in another).
+ */
+function watParts(iso: string): { day: string; month: string; year: string; time: string } {
+  const parts = Object.fromEntries(WAT_PARTS.formatToParts(new Date(iso)).map((part) => [part.type, part.value]));
+  return { day: String(Number(parts.day)), month: MONTHS[Number(parts.month) - 1], year: parts.year, time: `${parts.hour}:${parts.minute}` };
+}
+
 /** A timestamp in West Africa Time, e.g. "30 Sep 2026, 20:00 WAT". */
 export function formatTime(iso: string): string {
-  const text = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Africa/Lagos",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(iso));
-  return `${text} WAT`;
+  const { day, month, year, time } = watParts(iso);
+  return `${day} ${month} ${year}, ${time} WAT`;
 }
 
 export function formatDay(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Lagos", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+  const { day, month, year } = watParts(iso);
+  return `${day} ${month} ${year}`;
 }
 
 /** A reporting period, e.g. "1 Sep 2026 – 30 Sep 2026" for [1 Sep, 1 Oct). */

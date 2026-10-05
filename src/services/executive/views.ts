@@ -1,4 +1,4 @@
-import type { LossesView, MetricView, NotAvailableView, ReliabilityView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
+import type { AlarmsView, LossesView, MetricView, ReliabilityView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
 import type { AttentionSubject } from "./attention.ts";
 
 /* ==========================================================
@@ -66,5 +66,5 @@ export interface ExecutiveView {
   reliability: ReliabilityView;
   bandCompliance: BandComplianceRow[];
   transformerLoading: TransformerLoadingRow[];
-  alarms: NotAvailableView;
+  alarms: AlarmsView;
 }

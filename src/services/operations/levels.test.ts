@@ -324,8 +324,69 @@ describe("operations read models", () => {
     assert.equal(atcc?.sameBasis, true);
   });
 
-  it("always present alarms as not available", async () => {
-    const view = (await substationView(runtime, "SS-RIV")) as NetworkLevelView;
-    assert.match(view.alarms.reason, /^Not available/);
+  it("show recorded alarms and derived conditions as two lists, each naming its asset and the screen that shows it", async () => {
+    const { alarms } = (await substationView(runtime, "SS-RIV")) as NetworkLevelView;
+    assert.equal(alarms.asOf, DEMO_CLOCK);
+    assert.equal(alarms.recorded.completeness, "complete");
+    assert.equal(alarms.recorded.note, null);
+    // One alarm stands, on the power transformer, which is shown on its substation's screen.
+    assert.deepEqual(alarms.recorded.active.map((row) => [row.id, row.severity, row.subject.label, row.subject.kindLabel, row.subject.link]), [
+      ["ALM-2026-09-26-PT-RIV-1-OIL", "medium", "Riverside T1", "Power transformer", { kind: "substation", id: "SS-RIV" }],
+    ]);
+    assert.equal(alarms.recorded.active[0].clearedAt, null);
+    assert.ok(alarms.recorded.active[0].acknowledgedAt !== null);
+    // One has no time: it is listed apart and is never called active.
+    assert.deepEqual(alarms.recorded.undated.map((row) => [row.id, row.state, row.raisedAt]), [["ALM-SS-RIV-DOOR", "time_not_recorded", null]]);
+    // Cleared alarms: the most recently raised first.
+    assert.equal(alarms.recorded.clearedTotal, 5);
+    assert.deepEqual(alarms.recorded.cleared.map((row) => row.id).slice(0, 2), ["ALM-2026-09-27-DT-OLD-3-STORM", "ALM-2026-09-23-DT-OLD-2-FAULT"]);
+
+    // Derived conditions carry their rule and a figure with a method, like any calculated number.
+    assert.deepEqual(alarms.derived.conditions.map((row) => [row.rule, row.ruleName, row.subject.label, row.activeNow]), [
+      ["monitor_quiet", "Monitor quiet", "Monitor on South Gate transformer", true],
+      ["loading_above_rating", "Loaded above rating", "Riverbank transformer", false],
+    ]);
+    const [quiet, loaded] = alarms.derived.conditions;
+    assert.deepEqual(quiet.subject.link, { kind: "distribution_transformer", id: "DT-OLD-3" });
+    assert.equal(quiet.figure.unit, "hours");
+    assert.ok(Math.abs((quiet.figure.value as number) - 545 / 60) < 1e-9);
+    assert.equal(quiet.figure.origin, "calculated");
+    assert.equal(quiet.figure.method?.id, "gridintel.conditions.reference");
+    assert.equal(loaded.figure.unit, "fraction");
+    assert.equal(loaded.figure.method?.id, "gridintel.loading.reference");
+    assert.equal(loaded.occurrences, 69);
+    assert.match(loaded.figure.derivation ?? "", /above 100% of rating at one or more telemetry readings/);
+    assert.deepEqual(alarms.derived.rules.map((rule) => rule.name), ["Loaded above rating", "Monitor quiet"]);
+    assert.match(alarms.derived.method.disclaimer, /not an alarm recorded by a source system/);
+    assert.equal(alarms.sourcing.synthetic, true);
+  });
+
+  it("list at most six cleared alarms and say how many there are", async () => {
+    const { alarms } = (await substationView(runtime, "SS-HIL")) as NetworkLevelView;
+    assert.equal(alarms.recorded.clearedTotal, 21);
+    assert.equal(alarms.recorded.cleared.length, 6);
+    // The alarm standing at Hillcrest has not been acknowledged.
+    assert.deepEqual(alarms.recorded.active.map((row) => [row.id, row.acknowledgedAt]), [["ALM-2026-09-30-SS-HIL-DC", null]]);
+  });
+
+  it("give a substation's power transformers with what each carries and its loading", async () => {
+    const hillcrest = (await substationView(runtime, "SS-HIL")) as NetworkLevelView;
+    assert.deepEqual(
+      hillcrest.powerTransformers?.map((pt) => [pt.id, pt.ratedKva, pt.busSection, pt.feeders.map((feeder) => feeder.id)]),
+      [["PT-HIL-1", 5000, "A", ["FD-GOV"]], ["PT-HIL-2", 2500, "B", ["FD-FRM"]]],
+    );
+    const [t1, t2] = hillcrest.powerTransformers ?? [];
+    assert.ok(Math.abs((t1.loading?.peak.value as number) - 0.557) < 0.001);
+    assert.ok(Math.abs((t2.loading?.peak.value as number) - 0.248) < 0.001);
+    assert.equal(t1.loading?.peak.status, "ok");
+    assert.equal(t1.loading?.peak.method?.id, "gridintel.loading.reference");
+    assert.equal(t1.loading?.hoursObserved, 720);
+    assert.equal(t1.loading?.overloaded, false);
+    assert.equal(t1.loading?.sourcing.synthetic, true);
+    const riverside = (await substationView(runtime, "SS-RIV")) as NetworkLevelView;
+    assert.deepEqual(riverside.powerTransformers?.map((pt) => [pt.id, pt.busSection, pt.feeders.length]), [["PT-RIV-1", null, 2]]);
+    assert.ok(Math.abs((riverside.powerTransformers?.[0].loading?.peak.value as number) - 0.722) < 0.001);
+    // Only a substation has them.
+    assert.equal(((await feederView(runtime, "FD-GOV")) as NetworkLevelView).powerTransformers, null);
   });
 });
