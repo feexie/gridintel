@@ -44,19 +44,29 @@ export interface EnergyParameters {
    *   as measured separately from the boundary are applied.
    */
   embeddedAdjustment: "none" | "separately_measured_only";
+  /**
+   * How far from an end of the period a register reading may be for the
+   * register's advance to count as consumption recorded in the period, in
+   * days, on either side of that end. The advance is taken as it is and is
+   * never pro-rated to the period (ADR 0010).
+   */
+  registerReadingWindowDays: number;
 }
 
 export const ENERGY_REFERENCE: Methodology<EnergyParameters> = {
   id: "gridintel.energy.reference",
-  version: "0.1.0",
+  // 0.2.0: a register advance counts toward recorded consumption within a reading window (ADR 0010).
+  version: "0.2.0",
   name: "GridIntel reference energy accounting",
   description:
     "Energy received is the net flow through the scope's input boundary meters. " +
-    "Missing intervals make totals unavailable; nothing is substituted.",
+    "Missing intervals make totals unavailable; nothing is substituted. " +
+    "Recorded consumption is interval energy plus the advance of registers read within " +
+    "3 days of both ends of the period, each kept as its own source; an advance is never pro-rated.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
-  parameters: { embeddedAdjustment: "none" },
+  parameters: { embeddedAdjustment: "none", registerReadingWindowDays: 3 },
 };
 
 /* ==========================================================

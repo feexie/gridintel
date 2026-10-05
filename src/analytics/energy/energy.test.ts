@@ -59,7 +59,7 @@ describe("energy accounting — known example (DT-1)", () => {
     assert.equal(result.recordedConsumption.value, 170);
     assert.equal(result.revenueCollected?.value, 1200);
     assert.equal(result.lossBasis, "energy_input_net_of_transfers_out");
-    assert.deepEqual(result.methodology, { id: "gridintel.energy.reference", version: "0.1.0" });
+    assert.deepEqual(result.methodology, { id: "gridintel.energy.reference", version: "0.2.0" });
     assert.equal(result.computedAt, CONTEXT.computedAt);
   });
 
@@ -229,14 +229,14 @@ describe("energy accounting — DER/BESS is not double counted", () => {
   });
 
   it("ignores DER energy that is not separately measured, even if the methodology allows adjustments", () => {
-    const methodology = { ...ENERGY_REFERENCE, parameters: { embeddedAdjustment: "separately_measured_only" as const } };
+    const methodology = { ...ENERGY_REFERENCE, parameters: { ...ENERGY_REFERENCE.parameters, embeddedAdjustment: "separately_measured_only" as const } };
     const result = account({ methodology, inputs: { ...DT1_INPUTS, embeddedAdjustments: [der] } });
     assert.equal(result.energyInput.value, 200);
     assert.ok(result.warnings.some((w) => w.code === "DER_ALREADY_IN_BOUNDARY"));
   });
 
   it("adds separately measured DER only when the methodology requires it", () => {
-    const methodology = { ...ENERGY_REFERENCE, parameters: { embeddedAdjustment: "separately_measured_only" as const } };
+    const methodology = { ...ENERGY_REFERENCE, parameters: { ...ENERGY_REFERENCE.parameters, embeddedAdjustment: "separately_measured_only" as const } };
     const result = account({
       methodology,
       inputs: { ...DT1_INPUTS, embeddedAdjustments: [{ ...der, measuredSeparately: true }] },

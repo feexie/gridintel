@@ -6,12 +6,14 @@ import type {
   MethodologyRef,
   Period,
   ScopeRef,
+  TelemetryPoint,
 } from "@/domain";
 import type { CalcStatus, EstimatedInput, InputValue, MonetaryInput, ResultStatus, Warning } from "../core/result.ts";
 import type { EnergyParameters, Methodology } from "../core/methodology.ts";
 import type { TopologyIndex } from "../topology/registry.ts";
 import type { BoundaryRequirement } from "./boundary.ts";
 import type { MeterEnergyTotal } from "./intervals.ts";
+import type { RegisterExclusion } from "./register.ts";
 import { ENERGY_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
 import { reportedInputWarnings } from "../core/result.ts";
@@ -19,6 +21,7 @@ import { convertUnit, dimensionOf } from "../core/units.ts";
 import { metersWithRole, servicePointsUnder } from "../topology/registry.ts";
 import { sectionBoundary } from "./boundary.ts";
 import { sumMeterEnergy } from "./intervals.ts";
+import { registerConsumption } from "./register.ts";
 
 /* ==========================================================
    ANALYTICS — ENERGY ACCOUNT
@@ -38,15 +41,27 @@ import { sumMeterEnergy } from "./intervals.ts";
    Alongside the chain, two measured cross-checks are reported:
    - downstream measured: net flow out through the downstream
      boundary meters;
-   - recorded consumption: import through every service-point
-     meter under the scope. It exists only where EVERY connection
-     under the scope has a meter that recorded intervals for the
-     whole period. A connection with no meter, or with a meter that
-     is read by hand or not at all, makes it unavailable: its
-     consumption is not known, and nothing stands in for it. A
-     register reading and a prepaid vend are other quantities and
-     are never added here. `consumptionCoverage` counts the
-     connections of each kind, so the screen can say why.
+   - recorded consumption: what the customer meters under the scope
+     measured in the period, from two sources that are kept apart
+     (ADR 0010):
+       intervals   the import of a meter that recorded intervals for
+                   the whole period;
+       register    the advance of a register read by hand, when both
+                   readings fall within the methodology's reading
+                   window of the period's ends. It is used as read
+                   and never pro-rated. An advance outside the
+                   window, or resting on an estimated reading, is
+                   excluded, with the reason.
+     Each source has its own figure, for the connections it covers
+     (`recordedBySource`), so it is always clear what was measured
+     how. The TOTAL exists only where EVERY connection under the
+     scope is covered by one source or the other. A connection with
+     no meter, with a meter that is not read, or with an excluded
+     advance makes the total unavailable: its consumption is not
+     known, and nothing stands in for it. A prepaid vend is a
+     purchase, not consumption, and is never added here.
+     `consumptionCoverage` counts the connections of each kind, so
+     the screen can say why.
 
    Every figure keeps its status, quality and the names of any
    missing inputs, so it can be traced back to its boundary. No
@@ -103,21 +118,65 @@ export interface EnergyFigure {
 /**
  * How much of the consumption under a scope the recorded-consumption
  * cross-check can see: each in-service service point is in exactly one
- * of the four groups.
+ * of the six groups. A connection with more than one meter is in the group
+ * of its least complete meter.
  */
 export interface ConsumptionCoverage {
   servicePoints: number;
-  /** A meter with a complete import channel for the period. */
-  recorded: number;
+  /** Recorded by intervals: a meter with a complete import channel for the period. */
+  byIntervals: number;
   /** A meter that records intervals, but not completely in the period. */
-  incomplete: number;
-  /** A meter that holds no interval record in the period: read by hand, or not read at all. */
-  withoutIntervalData: number;
+  intervalsIncomplete: number;
+  /** Recorded by register: a register advance whose two readings are within the reading window. */
+  byRegister: number;
+  /** Register readings are held, but the advance does not count; `registerExclusions` says why. */
+  registerExcluded: number;
+  /** A meter from which nothing is read: no interval record and no register reading. */
+  notRead: number;
   /** No meter. */
   unmetered: number;
+  /** The connections in `registerExcluded`, by reason. */
+  registerExclusions: Partial<Record<RegisterExclusion, number>>;
 }
 
-const NO_COVERAGE: ConsumptionCoverage = { servicePoints: 0, recorded: 0, incomplete: 0, withoutIntervalData: 0, unmetered: 0 };
+const NO_COVERAGE: ConsumptionCoverage = {
+  servicePoints: 0,
+  byIntervals: 0,
+  intervalsIncomplete: 0,
+  byRegister: 0,
+  registerExcluded: 0,
+  notRead: 0,
+  unmetered: 0,
+  registerExclusions: {},
+};
+
+function addCoverage(a: ConsumptionCoverage, b: ConsumptionCoverage): ConsumptionCoverage {
+  const registerExclusions: ConsumptionCoverage["registerExclusions"] = { ...a.registerExclusions };
+  for (const reason of Object.keys(b.registerExclusions) as RegisterExclusion[]) {
+    registerExclusions[reason] = (registerExclusions[reason] ?? 0) + (b.registerExclusions[reason] as number);
+  }
+  return {
+    servicePoints: a.servicePoints + b.servicePoints,
+    byIntervals: a.byIntervals + b.byIntervals,
+    intervalsIncomplete: a.intervalsIncomplete + b.intervalsIncomplete,
+    byRegister: a.byRegister + b.byRegister,
+    registerExcluded: a.registerExcluded + b.registerExcluded,
+    notRead: a.notRead + b.notRead,
+    unmetered: a.unmetered + b.unmetered,
+    registerExclusions,
+  };
+}
+
+/**
+ * Recorded consumption by the source that measured it. Each figure covers
+ * only the connections of its source (see `consumptionCoverage`), so
+ * neither is the scope's consumption on its own. A figure has no value
+ * when no connection under the scope is measured that way.
+ */
+export interface RecordedBySource {
+  intervals: EnergyFigure;
+  register: EnergyFigure;
+}
 
 /** DER/BESS energy that the caller asks to be added to energy received. */
 export interface EmbeddedAdjustment {
@@ -159,6 +218,8 @@ export interface EnergyAccount {
   technicalLoss: EnergyFigure;
   delivered: EnergyFigure;
   recordedConsumption: EnergyFigure;
+  /** The two measured sources of recorded consumption, each for the connections it covers. */
+  recordedBySource: RecordedBySource;
   /** Which connections the recorded consumption could and could not be measured at. */
   consumptionCoverage: ConsumptionCoverage;
   energyBilled: EnergyFigure;
@@ -313,18 +374,29 @@ function measureBoundary(
   };
 }
 
+/** A source's figure: the sum over the connections it covers, or no value when it covers none. */
+function sourceFigure(kwh: number, connections: number, of: number, qualities: DataQuality[], what: string): EnergyFigure {
+  const derivation = `${what}, at ${connections} of ${of} connection(s) under the scope`;
+  if (connections === 0) {
+    return { value: null, unit: "kWh", status: "insufficient_data", quality: null, derivation, missingInputs: [`a connection with ${what}`] };
+  }
+  return { value: kwh, unit: "kWh", status: "ok", quality: worstQuality(qualities), derivation, missingInputs: [] };
+}
+
 function recordedConsumptionFigure(
   index: TopologyIndex,
   scope: ScopeRef,
   intervals: IntervalsByMeter,
+  registerReadings: ReadonlyMap<string, TelemetryPoint[]>,
   period: Period,
-): { figure: EnergyFigure; coverage: ConsumptionCoverage } {
-  const derivation = "sum of import through service-point meters under the scope";
+  windowDays: number,
+): { figure: EnergyFigure; bySource: RecordedBySource; coverage: ConsumptionCoverage } {
   const points = servicePointsUnder(index, scope).value ?? [];
-  const coverage: ConsumptionCoverage = { ...NO_COVERAGE, servicePoints: points.length };
+  const coverage: ConsumptionCoverage = { ...NO_COVERAGE, servicePoints: points.length, registerExclusions: {} };
   const missingInputs: string[] = [];
-  const qualities: DataQuality[] = [];
-  let total = 0;
+  const intervalQualities: DataQuality[] = [];
+  let intervalKwh = 0;
+  let registerKwh = 0;
   for (const sp of points) {
     const meters = metersWithRole(index, "service_point", sp.id);
     if (meters.length === 0) {
@@ -332,32 +404,76 @@ function recordedConsumptionFigure(
       coverage.unmetered += 1;
       continue;
     }
-    let noData = false;
+    let notRead = false;
     let incomplete = false;
+    let exclusion: RegisterExclusion | null = null;
+    let fromIntervals = 0;
+    let fromRegister = 0;
+    let usedRegister = false;
+    const qualities: DataQuality[] = [];
     for (const meter of meters) {
       const sum = sumMeterEnergy(meter, intervals.get(meter.id) ?? [], period);
-      if (sum.importKwh === null) {
-        // A meter that holds no interval record is named as such, never assumed to report.
-        if (sum.recordsInPeriod === 0) {
-          noData = true;
-          missingInputs.push(...sum.missingInputs);
-        } else {
-          incomplete = true;
-          missingInputs.push(`complete import channel for meter ${meter.id}`);
-        }
+      if (sum.importKwh !== null) {
+        fromIntervals += sum.importKwh;
+        if (sum.quality !== null) qualities.push(sum.quality);
         continue;
       }
-      total += sum.importKwh;
-      if (sum.quality !== null) qualities.push(sum.quality);
+      if (sum.recordsInPeriod > 0) {
+        incomplete = true;
+        missingInputs.push(`complete import channel for meter ${meter.id}`);
+        continue;
+      }
+      // No interval record: the meter's register, if it is read, is the other measured source.
+      const register = registerConsumption(meter, registerReadings.get(meter.id) ?? [], period, windowDays);
+      if (register.counted) {
+        fromRegister += register.advanceKwh as number;
+        usedRegister = true;
+      } else if (register.exclusion === "no_readings") {
+        // A meter that holds nothing is named as such, never assumed to report.
+        notRead = true;
+        missingInputs.push(...sum.missingInputs);
+      } else {
+        exclusion ??= register.exclusion;
+        missingInputs.push(`register advance of meter ${meter.id} (not counted: ${register.reason})`);
+      }
     }
-    if (noData) coverage.withoutIntervalData += 1;
-    else if (incomplete) coverage.incomplete += 1;
-    else coverage.recorded += 1;
+    if (notRead) coverage.notRead += 1;
+    else if (exclusion !== null) {
+      coverage.registerExcluded += 1;
+      coverage.registerExclusions[exclusion] = (coverage.registerExclusions[exclusion] ?? 0) + 1;
+    } else if (incomplete) coverage.intervalsIncomplete += 1;
+    else {
+      // Only a connection measured in full adds to a source's figure.
+      intervalKwh += fromIntervals;
+      registerKwh += fromRegister;
+      intervalQualities.push(...qualities);
+      if (usedRegister) coverage.byRegister += 1;
+      else coverage.byIntervals += 1;
+    }
   }
+
+  const bySource: RecordedBySource = {
+    intervals: sourceFigure(intervalKwh, coverage.byIntervals, points.length, intervalQualities, "interval energy for the whole period"),
+    // A counted advance rests on two actual readings, so it is measured.
+    register: sourceFigure(registerKwh, coverage.byRegister, points.length, ["measured"], `a register advance read within ${windowDays} days of both ends of the period`),
+  };
+  const derivation = "interval energy plus counted register advances, at every connection under the scope";
   if (missingInputs.length > 0) {
-    return { figure: { value: null, unit: "kWh", status: "insufficient_data", quality: null, derivation, missingInputs }, coverage };
+    return { figure: { value: null, unit: "kWh", status: "insufficient_data", quality: null, derivation, missingInputs }, bySource, coverage };
   }
-  return { figure: { value: total, unit: "kWh", status: "ok", quality: worstQuality(qualities), derivation, missingInputs }, coverage };
+  const qualities = [...intervalQualities, ...(coverage.byRegister > 0 ? (["measured"] as DataQuality[]) : [])];
+  return { figure: { value: intervalKwh + registerKwh, unit: "kWh", status: "ok", quality: worstQuality(qualities), derivation, missingInputs }, bySource, coverage };
+}
+
+function groupReadings(readings: readonly TelemetryPoint[]): ReadonlyMap<string, TelemetryPoint[]> {
+  const groups = new Map<string, TelemetryPoint[]>();
+  for (const point of readings) {
+    if (point.source.kind !== "meter" || point.metric !== "energy_import_register_kwh") continue;
+    const group = groups.get(point.source.id);
+    if (group === undefined) groups.set(point.source.id, [point]);
+    else group.push(point);
+  }
+  return groups;
 }
 
 /* ==========================================================
@@ -423,6 +539,11 @@ export function computeEnergyAccount(params: {
   scope: ScopeRef;
   period: Period;
   intervals: readonly IntervalEnergy[];
+  /**
+   * Register readings of the customer meters that are read by hand, from the reading window
+   * before the period to the reading window after it. Without them no register advance counts.
+   */
+  registerReadings?: readonly TelemetryPoint[];
   inputs?: EnergyAccountInputs;
   methodology?: Methodology<EnergyParameters>;
   computedAt: IsoTimestamp;
@@ -471,10 +592,11 @@ export function computeEnergyAccount(params: {
   const energyBilled = inputFigure("energy billed", inputs.energyBilled, warnings);
   const unbilled = combine(delivered, energyBilled, "subtract", "energy delivered − energy billed");
   const totalLoss = combine(energyInput, energyBilled, "subtract", "energy input − energy billed");
-  const { figure: recordedConsumption, coverage: consumptionCoverage } =
+  const notComputable = { ...missingFigure("scope", ""), status: "not_computable" as const, missingInputs: [] };
+  const { figure: recordedConsumption, bySource: recordedBySource, coverage: consumptionCoverage } =
     boundary.status === "not_computable"
-      ? { figure: { ...missingFigure("scope", ""), status: "not_computable" as const, missingInputs: [] }, coverage: NO_COVERAGE }
-      : recordedConsumptionFigure(index, scope, intervals, period);
+      ? { figure: notComputable, bySource: { intervals: notComputable, register: notComputable }, coverage: NO_COVERAGE }
+      : recordedConsumptionFigure(index, scope, intervals, groupReadings(params.registerReadings ?? []), period, methodology.parameters.registerReadingWindowDays);
 
   if (unbilled.status === "ok" && (unbilled.value as number) < 0) {
     warnings.push({
@@ -551,6 +673,7 @@ export function computeEnergyAccount(params: {
     technicalLoss,
     delivered,
     recordedConsumption,
+    recordedBySource,
     consumptionCoverage,
     energyBilled,
     unbilled,
@@ -620,6 +743,29 @@ function sumFigures(figures: readonly EnergyFigure[], derivation: string): Energ
   return { value, unit: "kWh", status: "ok", quality, derivation, missingInputs: [], ...(estimated ? { estimatedShare } : {}) };
 }
 
+/**
+ * The sum of a source's figure over the sections that have one. A section with no connection
+ * of that source adds nothing; the figure still covers only the connections `coverage` counts.
+ */
+function sumSource(figures: readonly EnergyFigure[], connections: number, of: number, what: string): EnergyFigure {
+  const derivation = `${what}, at ${connections} of ${of} connection(s) under the scope`;
+  if (figures.some((figure) => figure.status === "not_computable")) {
+    return { value: null, unit: "kWh", status: "not_computable", quality: null, derivation, missingInputs: [] };
+  }
+  const present = figures.filter((figure) => figure.status === "ok");
+  if (present.length === 0) {
+    return { value: null, unit: "kWh", status: "insufficient_data", quality: null, derivation, missingInputs: [`a connection with ${what}`] };
+  }
+  return {
+    value: present.reduce((total, figure) => total + (figure.value as number), 0),
+    unit: "kWh",
+    status: "ok",
+    quality: worstQuality(present.map((figure) => figure.quality).filter((q): q is DataQuality => q !== null)),
+    derivation,
+    missingInputs: [],
+  };
+}
+
 function sumBoundaries(side: "input" | "downstream", parts: readonly BoundaryMeasurement[]): BoundaryMeasurement {
   const complete = parts.length > 0 && parts.every((part) => part.status === "ok");
   const coverages = parts.map((part) => part.coverage).filter((c): c is number => c !== null);
@@ -665,6 +811,17 @@ export function aggregateEnergyAccounts(params: {
   const energyBilled = sum((a) => a.energyBilled, "energy billed");
   const unbilled = sum((a) => a.unbilled, "unbilled energy");
   const totalLoss = sum((a) => a.totalLoss, "total loss");
+  // Each connection is in exactly one section, so the sections' counts add up.
+  const consumptionCoverage = accounts.reduce<ConsumptionCoverage>((total, a) => addCoverage(total, a.consumptionCoverage), NO_COVERAGE);
+  const recordedBySource: RecordedBySource = {
+    intervals: sumSource(accounts.map((a) => a.recordedBySource.intervals), consumptionCoverage.byIntervals, consumptionCoverage.servicePoints, "interval energy for the whole period"),
+    register: sumSource(
+      accounts.map((a) => a.recordedBySource.register),
+      consumptionCoverage.byRegister,
+      consumptionCoverage.servicePoints,
+      `a register advance read within ${methodology.parameters.registerReadingWindowDays} days of both ends of the period`,
+    ),
+  };
 
   const revenueBilled = params.revenueBilled ?? null;
   const revenueCollected = params.revenueCollected ?? null;
@@ -727,17 +884,8 @@ export function aggregateEnergyAccounts(params: {
     technicalLoss,
     delivered,
     recordedConsumption,
-    // Each connection is in exactly one section, so the sections' counts add up.
-    consumptionCoverage: accounts.reduce<ConsumptionCoverage>(
-      (total, a) => ({
-        servicePoints: total.servicePoints + a.consumptionCoverage.servicePoints,
-        recorded: total.recorded + a.consumptionCoverage.recorded,
-        incomplete: total.incomplete + a.consumptionCoverage.incomplete,
-        withoutIntervalData: total.withoutIntervalData + a.consumptionCoverage.withoutIntervalData,
-        unmetered: total.unmetered + a.consumptionCoverage.unmetered,
-      }),
-      NO_COVERAGE,
-    ),
+    recordedBySource,
+    consumptionCoverage,
     energyBilled,
     unbilled,
     totalLoss,

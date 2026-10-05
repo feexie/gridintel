@@ -1,7 +1,7 @@
 import type { DataQuality, IsoTimestamp, Meter, Period, TelemetryPoint } from "@/domain";
 import type { CalcStatus, Warning } from "../core/result.ts";
 import { worstQuality } from "../core/quality.ts";
-import { periodBounds, toEpochMs } from "../core/time.ts";
+import { MS_PER_MINUTE, periodBounds, toEpochMs } from "../core/time.ts";
 
 /* ==========================================================
    ANALYTICS — REGISTER ADVANCE
@@ -23,6 +23,23 @@ import { periodBounds, toEpochMs } from "../core/time.ts";
    no advance. A register that goes backwards (a meter change, a
    rollover) gives no advance either: the reason is not known here.
    An estimated reading makes the advance an estimate.
+
+   AS CONSUMPTION RECORDED IN A PERIOD (ADR 0010). A register advance
+   is measured consumption, but for the time between its two
+   readings, not for the period. It counts toward a period's recorded
+   consumption only when that time is close enough to the period:
+
+     the opening reading lies within the reading window of the
+     period's start, and the closing reading within the window of its
+     end, on either side.
+
+   The window is a parameter of the energy methodology (3 days in the
+   reference methodology). The advance is then used AS IT IS. It is
+   never pro-rated or stretched to the period: a reading taken two
+   days early stays two days short. An advance that does not qualify
+   is excluded, with the reason, and is never replaced by anything.
+   An advance resting on an estimated reading is excluded too: it is
+   an estimate, and this is a measured source.
 ========================================================== */
 
 export interface RegisterAdvance {
@@ -37,6 +54,98 @@ export interface RegisterAdvance {
   quality: DataQuality | null;
   missingInputs: string[];
   warnings: Warning[];
+}
+
+/** Why a register advance does not count toward a period's recorded consumption. */
+export type RegisterExclusion =
+  | "no_readings"
+  | "opening_outside_window"
+  | "closing_outside_window"
+  | "one_reading"
+  | "estimated_reading"
+  | "register_went_backwards"
+  | "invalid_period";
+
+export interface RegisterConsumption {
+  meterId: string;
+  /** True when the advance counts toward the period's recorded consumption. */
+  counted: boolean;
+  /** kWh between the two readings, exactly as read; null when not counted. */
+  advanceKwh: number | null;
+  opening: { at: IsoTimestamp; kwh: number } | null;
+  closing: { at: IsoTimestamp; kwh: number } | null;
+  exclusion: RegisterExclusion | null;
+  /** The reason in words; null when counted. */
+  reason: string | null;
+  windowDays: number;
+}
+
+const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE;
+
+/** The time span in which a register reading can open or close a period: the period widened by the window at both ends. */
+export function registerReadingSpan(period: Period, windowDays: number): { from: IsoTimestamp; to: IsoTimestamp } | null {
+  const bounds = periodBounds(period);
+  if (bounds === null) return null;
+  return {
+    from: new Date(bounds.startMs - windowDays * MS_PER_DAY).toISOString(),
+    to: new Date(bounds.endMs + windowDays * MS_PER_DAY).toISOString(),
+  };
+}
+
+/**
+ * A meter's register advance as consumption recorded in a period: counted
+ * only when its opening reading is within `windowDays` of the period's start
+ * and its closing reading within `windowDays` of the period's end. The
+ * reading nearest each end is used. Nothing is pro-rated.
+ */
+export function registerConsumption(meter: Meter, readings: readonly TelemetryPoint[], period: Period, windowDays: number): RegisterConsumption {
+  const days = `${windowDays} day${windowDays === 1 ? "" : "s"}`;
+  const excluded = (exclusion: RegisterExclusion, reason: string, partial: Partial<RegisterConsumption> = {}): RegisterConsumption => ({
+    meterId: meter.id,
+    counted: false,
+    advanceKwh: null,
+    opening: null,
+    closing: null,
+    exclusion,
+    reason,
+    windowDays,
+    ...partial,
+  });
+
+  const bounds = periodBounds(period);
+  if (bounds === null) return excluded("invalid_period", "the period is invalid, empty, or has no explicit time zone");
+
+  const usable = readings
+    .filter((point) => point.source.kind === "meter" && point.source.id === meter.id && point.metric === "energy_import_register_kwh")
+    .filter((point) => point.value !== null && point.quality !== "missing")
+    .map((point) => ({ point, ms: toEpochMs(point.observedAt) }))
+    .filter((entry): entry is { point: TelemetryPoint; ms: number } => entry.ms !== null);
+  if (usable.length === 0) return excluded("no_readings", "no register reading is held for the meter");
+
+  const windowMs = windowDays * MS_PER_DAY;
+  const inside = (ms: number) => ms >= bounds.startMs && ms <= bounds.endMs;
+  /** The reading nearest an end of the period, within the window; of two equally near, the one inside the period. */
+  const nearest = (endMs: number) =>
+    usable
+      .filter((entry) => Math.abs(entry.ms - endMs) <= windowMs)
+      .sort((a, b) => Math.abs(a.ms - endMs) - Math.abs(b.ms - endMs) || Number(inside(b.ms)) - Number(inside(a.ms)) || a.ms - b.ms)[0];
+
+  const first = nearest(bounds.startMs);
+  const last = nearest(bounds.endMs);
+  if (first === undefined) return excluded("opening_outside_window", `no register reading within ${days} of the start of the period`);
+  const opening = { at: first.point.observedAt, kwh: first.point.value as number };
+  if (last === undefined) return excluded("closing_outside_window", `no register reading within ${days} of the end of the period`, { opening });
+  if (last === first) return excluded("one_reading", "only one register reading is held near the period; an advance needs two", { opening });
+  const closing = { at: last.point.observedAt, kwh: last.point.value as number };
+  if (closing.kwh < opening.kwh) return excluded("register_went_backwards", "the register reads lower at the closing reading than at the opening one", { opening, closing });
+
+  const estimate = (quality: DataQuality) => quality === "estimated" || quality === "substituted";
+  if (estimate(first.point.quality) || estimate(last.point.quality)) {
+    const which = estimate(first.point.quality) && estimate(last.point.quality) ? "both readings are estimates" : `the ${estimate(last.point.quality) ? "closing" : "opening"} reading is an estimate`;
+    return excluded("estimated_reading", `${which}, not a reading of the meter`, { opening, closing });
+  }
+
+  return { meterId: meter.id, counted: true, advanceKwh: closing.kwh - opening.kwh, opening, closing, exclusion: null, reason: null, windowDays };
 }
 
 /** The advance of a meter's import register between its first and last reading within [start, end]. */

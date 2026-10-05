@@ -4,7 +4,7 @@ import type { DataQuality, TelemetryPoint } from "@/domain";
 import { buildTopologyIndex } from "../topology/registry.ts";
 import { computeEnergyAccount } from "./account.ts";
 import { sumMeterEnergy } from "./intervals.ts";
-import { registerAdvance } from "./register.ts";
+import { registerAdvance, registerConsumption, registerReadingSpan } from "./register.ts";
 import { CONTEXT, PERIOD, PROVENANCE, buildIntervals, buildRegistry, meter } from "../__fixtures__/network.ts";
 
 const METER = meter("M-SP1", { role: "service_point", servicePointId: "SP-1" }, { meterType: "conventional" });
@@ -75,6 +75,150 @@ describe("register advance", () => {
   });
 });
 
+describe("a register advance as consumption recorded in a period", () => {
+  // September 2026 in West Africa Time, and a three-day reading window.
+  const MONTH = { start: "2026-09-01T00:00:00+01:00", end: "2026-10-01T00:00:00+01:00" };
+  const on = (readings: TelemetryPoint[], windowDays = 3) => registerConsumption(METER, readings, MONTH, windowDays);
+
+  it("counts when both readings are within the window of the period's ends, and is taken exactly as read", () => {
+    const result = on([reading("2026-09-01T09:00:00+01:00", 1000), reading("2026-09-30T23:00:00+01:00", 1250)]);
+    assert.equal(result.counted, true);
+    assert.equal(result.advanceKwh, 250);
+    assert.equal(result.exclusion, null);
+    assert.equal(result.reason, null);
+    assert.deepEqual(result.opening, { at: "2026-09-01T09:00:00+01:00", kwh: 1000 });
+    assert.deepEqual(result.closing, { at: "2026-09-30T23:00:00+01:00", kwh: 1250 });
+  });
+
+  it("does not pro-rate: readings two days short of the month give the advance between them and nothing more", () => {
+    const short = on([reading("2026-09-03T00:00:00+01:00", 0), reading("2026-09-29T00:00:00+01:00", 260)]);
+    assert.equal(short.counted, true);
+    // 26 days at 10 kWh a day. Stretching it to 30 days would give 300; it stays 260.
+    assert.equal(short.advanceKwh, 260);
+  });
+
+  it("accepts a reading on either side of an end: last month's closing reading opens this month", () => {
+    const result = on([reading("2026-08-30T10:00:00+01:00", 500), reading("2026-10-02T10:00:00+01:00", 900)]);
+    assert.equal(result.counted, true);
+    assert.equal(result.advanceKwh, 400);
+  });
+
+  it("counts a reading exactly on the edge of the window, and excludes one a minute beyond it", () => {
+    assert.equal(on([reading("2026-09-04T00:00:00+01:00", 0), reading("2026-09-28T00:00:00+01:00", 10)]).counted, true);
+    const late = on([reading("2026-09-04T00:01:00+01:00", 0), reading("2026-09-28T00:00:00+01:00", 10)]);
+    assert.equal(late.counted, false);
+    assert.equal(late.exclusion, "opening_outside_window");
+    assert.equal(late.reason, "no register reading within 3 days of the start of the period");
+    assert.equal(late.advanceKwh, null);
+  });
+
+  it("excludes an advance whose closing reading is outside the window, with the reason, and never substitutes for it", () => {
+    const early = on([reading("2026-09-01T00:00:00+01:00", 100), reading("2026-09-25T12:00:00+01:00", 300)]);
+    assert.equal(early.counted, false);
+    assert.equal(early.exclusion, "closing_outside_window");
+    assert.equal(early.reason, "no register reading within 3 days of the end of the period");
+    assert.equal(early.advanceKwh, null);
+    assert.deepEqual(early.opening, { at: "2026-09-01T00:00:00+01:00", kwh: 100 });
+    assert.equal(early.closing, null);
+  });
+
+  it("uses the reading nearest each end when there are several", () => {
+    const result = on([
+      reading("2026-08-31T00:00:00+01:00", 90),
+      reading("2026-09-01T06:00:00+01:00", 100),
+      reading("2026-09-15T00:00:00+01:00", 180),
+      reading("2026-09-30T20:00:00+01:00", 300),
+      reading("2026-10-03T00:00:00+01:00", 330),
+    ]);
+    assert.equal(result.opening?.kwh, 100);
+    assert.equal(result.closing?.kwh, 300);
+    assert.equal(result.advanceKwh, 200);
+  });
+
+  it("excludes an advance that rests on an estimated reading: an estimate is not a measured source", () => {
+    const result = on([reading("2026-09-01T00:00:00+01:00", 100), reading("2026-09-30T23:00:00+01:00", 400, "estimated")]);
+    assert.equal(result.counted, false);
+    assert.equal(result.exclusion, "estimated_reading");
+    assert.equal(result.reason, "the closing reading is an estimate, not a reading of the meter");
+    assert.equal(result.advanceKwh, null);
+    assert.equal(on([reading("2026-09-01T00:00:00+01:00", 100, "substituted"), reading("2026-09-30T23:00:00+01:00", 400, "estimated")]).reason, "both readings are estimates, not a reading of the meter");
+  });
+
+  it("says when no reading is held, when only one is, and when the register went backwards", () => {
+    assert.equal(on([]).exclusion, "no_readings");
+    assert.equal(on([reading("2026-09-01T00:00:00+01:00", null, "missing")]).exclusion, "no_readings");
+    assert.equal(on([reading("2026-09-01T00:00:00+01:00", 100)]).exclusion, "closing_outside_window");
+    // A period shorter than the window: the one reading is nearest both ends.
+    assert.equal(registerConsumption(METER, [reading("2026-01-01T00:10:00Z", 5)], PERIOD, 3).exclusion, "one_reading");
+    assert.equal(on([reading("2026-09-01T00:00:00+01:00", 900), reading("2026-09-30T23:00:00+01:00", 20)]).exclusion, "register_went_backwards");
+    assert.equal(registerConsumption(METER, [reading("2026-01-01T00:00:00Z", 1)], { start: PERIOD.end, end: PERIOD.start }, 3).exclusion, "invalid_period");
+  });
+
+  it("takes its window from the caller: a wider window admits what a narrower one excludes", () => {
+    const readings = [reading("2026-09-01T00:00:00+01:00", 100), reading("2026-09-25T12:00:00+01:00", 300)];
+    assert.equal(on(readings, 3).counted, false);
+    assert.equal(on(readings, 7).counted, true);
+    assert.equal(on(readings, 7).windowDays, 7);
+  });
+
+  it("gives the span in which a reading can open or close the period", () => {
+    assert.deepEqual(registerReadingSpan(MONTH, 3), { from: "2026-08-28T23:00:00.000Z", to: "2026-10-03T23:00:00.000Z" });
+    assert.equal(registerReadingSpan({ start: MONTH.end, end: MONTH.start }, 3), null);
+  });
+});
+
+describe("recorded consumption from two measured sources", () => {
+  const scope = { kind: "distribution_transformer", id: "DT-1" } as const;
+  // SP-1's meter is read by hand; SP-2 keeps its interval meter.
+  const registry = () => {
+    const built = buildRegistry();
+    built.meters = built.meters.map((m) => (m.id === "M-SP1" ? { ...m, meterType: "conventional" as const } : m));
+    return built;
+  };
+  const account = (registerReadings: TelemetryPoint[]) =>
+    computeEnergyAccount({
+      index: buildTopologyIndex(registry()),
+      scope,
+      period: PERIOD,
+      intervals: buildIntervals().filter((interval) => interval.meterId !== "M-SP1"),
+      registerReadings,
+      computedAt: CONTEXT.computedAt,
+    });
+  const sp2 = sumMeterEnergy(buildRegistry().meters.find((m) => m.id === "M-SP2")!, buildIntervals().filter((interval) => interval.meterId === "M-SP2"), PERIOD).importKwh as number;
+
+  it("adds a counted register advance to interval energy for the total, and keeps each source's figure apart", () => {
+    const result = account([reading("2026-01-01T00:00:00Z", 1000), reading("2026-01-01T01:00:00Z", 1042.5)]);
+    assert.equal(result.consumptionCoverage.byIntervals, 1);
+    assert.equal(result.consumptionCoverage.byRegister, 1);
+    assert.equal(result.recordedBySource.intervals.value, sp2);
+    assert.equal(result.recordedBySource.register.value, 42.5);
+    assert.equal(result.recordedBySource.register.quality, "measured");
+    assert.match(result.recordedBySource.register.derivation, /at 1 of 2 connection\(s\)/);
+    assert.equal(result.recordedConsumption.status, "ok");
+    assert.equal(result.recordedConsumption.value, sp2 + 42.5);
+  });
+
+  it("leaves the total unavailable when an advance is excluded, and keeps the other source's figure", () => {
+    const result = account([reading("2026-01-01T00:00:00Z", 1000), reading("2026-01-01T01:00:00Z", 1042.5, "estimated")]);
+    assert.equal(result.recordedConsumption.value, null);
+    assert.equal(result.recordedConsumption.status, "insufficient_data");
+    assert.deepEqual(result.recordedConsumption.missingInputs, ["register advance of meter M-SP1 (not counted: the closing reading is an estimate, not a reading of the meter)"]);
+    assert.equal(result.consumptionCoverage.registerExcluded, 1);
+    assert.deepEqual(result.consumptionCoverage.registerExclusions, { estimated_reading: 1 });
+    assert.equal(result.recordedBySource.intervals.value, sp2);
+    // No connection is covered by the register source: it has no figure, not a zero.
+    assert.equal(result.recordedBySource.register.value, null);
+    assert.equal(result.recordedBySource.register.status, "insufficient_data");
+  });
+
+  it("counts no register advance when no reading is supplied", () => {
+    const result = account([]);
+    assert.equal(result.consumptionCoverage.notRead, 1);
+    assert.equal(result.consumptionCoverage.byRegister, 0);
+    assert.equal(result.recordedConsumption.value, null);
+  });
+});
+
 describe("a meter that is not read on intervals", () => {
   it("has no interval total, is named as missing, and raises no warning when it is a conventional meter", () => {
     const total = sumMeterEnergy(METER, [], PERIOD);
@@ -107,7 +251,7 @@ describe("a meter that is not read on intervals", () => {
     });
     assert.equal(account.recordedConsumption.value, null);
     assert.equal(account.recordedConsumption.status, "insufficient_data");
-    assert.deepEqual(account.consumptionCoverage, { servicePoints: 2, recorded: 0, incomplete: 0, withoutIntervalData: 1, unmetered: 1 });
+    assert.deepEqual(account.consumptionCoverage, { servicePoints: 2, byIntervals: 0, intervalsIncomplete: 0, byRegister: 0, registerExcluded: 0, notRead: 1, unmetered: 1, registerExclusions: {} });
     assert.deepEqual(account.recordedConsumption.missingInputs, [
       "interval energy for meter M-SP1 (conventional meter, not read on intervals)",
       "service_point meter for service_point SP-2",
@@ -128,6 +272,6 @@ describe("a meter that is not read on intervals", () => {
       intervals: buildIntervals(),
       computedAt: CONTEXT.computedAt,
     });
-    assert.deepEqual(account.consumptionCoverage, { servicePoints: 4, recorded: 4, incomplete: 0, withoutIntervalData: 0, unmetered: 0 });
+    assert.deepEqual(account.consumptionCoverage, { servicePoints: 4, byIntervals: 4, intervalsIncomplete: 0, byRegister: 0, registerExcluded: 0, notRead: 0, unmetered: 0, registerExclusions: {} });
   });
 });

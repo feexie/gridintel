@@ -5,6 +5,12 @@ Status: **Accepted by the Founder on 2026-10-04. Implemented on 2026-10-04,
 in Phase 6c-1.** See "As implemented" at the end; where it differs from the
 proposal below, the implementation is what the code does.
 
+**Superseded in part by ADR 0010 (2026-10-05):** a register advance now
+counts toward recorded consumption, as its own measured source, when both
+readings fall within 3 days of the period's ends. The statements below that
+a register advance is "never summed into an energy account" and "not added"
+to the cross-check describe Phase 6c-1 and no longer hold.
+
 Decisions taken on acceptance, which override the suggestions below where
 they differ:
 
