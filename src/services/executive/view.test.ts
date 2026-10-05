@@ -64,8 +64,6 @@ describe("executive read model", () => {
     assert.deepEqual(view.assetRisk.map((entry) => [entry.rank, entry.group, entry.subject.id, entry.money]), [
       [1, "asset_risk", "DT-OLD-2", null],
       [2, "asset_risk", "DT-GOV-3", null],
-      [3, "asset_risk", "DT-GOV-10", null],
-      [4, "asset_risk", "DT-GOV-4", null],
     ]);
     for (const entry of view.assetRisk) {
       assert.deepEqual(entry.findings.map((finding) => finding.rule), ["Transformer loaded above its rating"], entry.subject.id);

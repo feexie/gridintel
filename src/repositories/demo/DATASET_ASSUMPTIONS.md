@@ -63,44 +63,74 @@ It is identical on every build.
   79% of rating on Market Road, 81% on Old Town, 72% on Government Avenue
   and 54% on Farm Road. The caveat shown beside feeder loading when each
   feeder carried three transformers has been removed.
-- **Four transformers peak above their rating. One is designed; three are
-  incidental.** DT-OLD-2 has too many connections for its rating on purpose.
-  DT-GOV-3, DT-GOV-10 and DT-GOV-4 were not designed by anyone. They follow
-  from two rules of the generator that were written separately:
+- **Two transformers peak above their rating, each on purpose** (Founder
+  decision, Phase 6c-2). Which transformers are overloaded is a design
+  decision and no longer follows from the random draws.
 
-  1. A generated transformer's residential and commercial customers are
-     counted so that the **evening** peak falls at a loading drawn between
-     50% and 80% of rating. Government accounts are not in that sum.
-  2. Government accounts are then added at 0.03 per kVA of rating, each with
-     a mean peak of 14 kW **in office hours**. That is 0.42 kW of office-hours
-     load per kVA, about half the rating once losses and power factor are
-     allowed for, on every transformer on the feeder.
+  - **DT-OLD-2** has too many connections for its rating: an evening
+    overload from residential load (121.2% at 20:00 on 20 September, 69
+    hours over).
+  - **DT-GOV-3** is a daytime overload from government (MDA) load (110.6% at
+    14:00 on Tuesday 29 September, 53 hours over). It is left at the 300 kVA
+    the generator drew for it. Its nine government accounts draw their load
+    in office hours, on top of a customer count sized for the evening, so
+    its demand in office hours is 97% of rating before any variation and
+    goes over on working days.
 
-  So every one of Government Avenue's twelve transformers peaks in office
-  hours, not in the evening it was sized for. With the customer sizes as
-  drawn, office-hours loading is 71–97% of rating on the twelve before the
-  day-to-day (±8%) and hour-to-hour (±20% per connection) variation. The
-  three that go over are three of the four that start highest:
+  **Every other generated transformer on Government Avenue is sized for its
+  daytime peak.** The generator still counts a transformer's residential and
+  commercial customers so that the evening peak falls at a loading drawn
+  between 50% and 80% of the rating in the profile, and still adds
+  government accounts at 0.03 per kVA of that rating, each with a mean peak
+  of 14 kW in office hours. That is where the overloads used to come from:
+  the government load falls by day, not in the evening the count was drawn
+  for. The rating installed is now chosen afterwards:
 
-  | Transformer | Rating | Evening peak it was sized for | Office-hours loading as drawn | Peak observed | Hours over rating |
-  | --- | --- | --- | --- | --- | --- |
-  | DT-GOV-3 | 300 kVA | 75% | 97% | 110.6% (29 Sep, 14:00) | 53 |
-  | DT-GOV-10 | 200 kVA | 74% | 91% | 104.4% (22 Sep, 14:00) | 9 |
-  | DT-GOV-4 | 200 kVA | 82% | 92% | 101.3% (1 Sep, 13:00) | 8 |
-  | DT-GOV-5 (not over) | 500 kVA | 74% | 92% | 99.8% (24 Sep, 14:00) | 0 |
+  > the smallest standard rating (50, 100, 200, 300, 500, 750 or 1,000 kVA),
+  > not below the one in the profile, that is larger than the transformer's
+  > highest demand before variation × 1.296.
 
-  Which three go over depends on the random draws: on DT-GOV-3 the nine
-  government accounts happen to be drawn 14% larger than the mean, and
-  DT-GOV-5 stops 0.2 points short. Another seed would overload other
-  transformers on this feeder, or a different number of them. What is not
-  chance is that the whole feeder runs close to rating in office hours:
-  nine of its twelve transformers peak above 85%.
+  The highest demand before variation is the busiest hour of the week for
+  the connections as drawn, with the low-voltage loss and the power factor.
+  1.296 is the most the variation can add: the largest daily factor (1.08)
+  times the largest hourly noise (1.2). The bound uses the largest values
+  there can be, not the ones that were drawn, so **none of these eleven can
+  exceed its rating under any seed**. A test holds each to it.
+
+  | Transformer | Rating before | Rating now | Peak before | Peak now |
+  | --- | --- | --- | --- | --- |
+  | DT-GOV-1 | 300 kVA | 500 kVA | 85.1% | 51.1% |
+  | DT-GOV-2 | 200 kVA | 300 kVA | 91.1% | 60.7% |
+  | DT-GOV-3 (designed) | 300 kVA | 300 kVA | 110.6% | 110.6% |
+  | DT-GOV-4 | 200 kVA | 300 kVA | 101.3% | 67.6% |
+  | DT-GOV-5 | 500 kVA | 750 kVA | 99.8% | 66.5% |
+  | DT-GOV-6 | 200 kVA | 200 kVA | 84.8% | 84.8% |
+  | DT-GOV-7 | 300 kVA | 500 kVA | 92.4% | 55.4% |
+  | DT-GOV-8 | 200 kVA | 300 kVA | 86.7% | 57.8% |
+  | DT-GOV-9 | 300 kVA | 500 kVA | 95.9% | 57.5% |
+  | DT-GOV-10 | 200 kVA | 300 kVA | 104.4% | 69.6% |
+  | DT-GOV-11 | 100 kVA | 100 kVA | 80.4% | 80.4% |
+  | DT-GOV-12 | 200 kVA | 300 kVA | 96.0% | 64.0% |
+
+  Nine ratings were raised by one standard size. Nothing else changed: the
+  connections, their consumption, the bills, the payments, the outages and
+  the feeder's own loading (72.3% of its 200 A) are exactly as before, so no
+  energy, revenue or reliability figure moved.
+
+  The guarantee has a cost that should be seen: a rating must be 1.3 times
+  the demand before variation, so the eleven now peak at 51–85% of rating
+  where they peaked at 80–104%. Government Avenue no longer runs close to
+  rating by day. A rule that only made an overload unlikely would leave them
+  higher, and would bring the seed back in.
+
+  DT-GOV-3 is not guaranteed in the same way: it is overloaded with the
+  connections as drawn under the dataset's fixed seed, and a test holds it
+  there. The other feeders are unchanged. Their generated transformers are
+  sized for the evening at up to 82–88% of rating before variation, and none
+  goes over with the fixed seed.
 
   The case is realistic (a transformer in a government district that peaks
-  by day), and it is not a claim about any real asset. But it is an
-  artefact of the sizing rule and not a scenario that was chosen. Whether to
-  keep it as it is, design it deliberately, or size these transformers for
-  their daytime peak is a decision for the Founder (Phase 6c-1 checkpoint).
+  by day), and it is not a claim about any real asset.
 - **Coordinates** place the network near Yola so a map has somewhere to draw
   it. The assets do not exist. Hillcrest is placed about 7 km north-east of
   Riverside. Generated transformers are spaced along a straight heading from

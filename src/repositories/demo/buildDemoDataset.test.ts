@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import type { Provenance } from "@/domain";
 import { buildDemoDataset, createDemoRepositories, demoDataset } from "./index.ts";
 import { DEMO_CLOCK, DEMO_HOURS, DEMO_PERIOD, PERIOD_END_MS, PERIOD_START_MS } from "./clock.ts";
-import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, SUBSTATIONS, TRANSFORMERS } from "./network.ts";
+import { MAX_VARIATION } from "./load.ts";
+import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, SUBSTATIONS, TRANSFORMERS, demandBeforeVariationKva } from "./network.ts";
 import { SUPPLY_OFF } from "./outages.ts";
 
 const dataset = demoDataset();
@@ -135,6 +136,63 @@ describe("demo dataset: structure", () => {
     assert.ok(government.length > 50);
     assert.ok(government.every((c) => c.feederId === "FD-GOV" && c.metering === "postpaid" && c.demandClass === "md"));
     assert.ok(registry.customers.filter((c) => c.category === "government").every((c) => c.demandClass === "md"));
+  });
+
+  describe("overloaded transformers are a design decision", () => {
+    // The highest apparent power each transformer's monitor reported, and when.
+    const peak = new Map<string, { kva: number; at: string }>();
+    for (const point of dataset.telemetry) {
+      if (point.source.kind !== "distribution_transformer" || point.metric !== "apparent_power_kva" || point.value === null) continue;
+      if (point.value > (peak.get(point.source.id)?.kva ?? -1)) peak.set(point.source.id, { kva: point.value, at: point.observedAt });
+    }
+    const loading = (dt: (typeof TRANSFORMERS)[number]) => (peak.get(dt.id)?.kva ?? 0) / dt.ratingKva;
+
+    it("loads exactly two transformers above their rating, each on purpose", () => {
+      assert.deepEqual(TRANSFORMERS.filter((dt) => loading(dt) > 1).map((dt) => dt.id), ["DT-OLD-2", "DT-GOV-3"]);
+      assert.deepEqual(TRANSFORMERS.filter((dt) => dt.designedOverload !== undefined).map((dt) => dt.id), ["DT-GOV-3"]);
+    });
+
+    it("overloads DT-GOV-3 by day, on a working day, from government load", () => {
+      const dt = TRANSFORMERS.find((plan) => plan.id === "DT-GOV-3") as (typeof TRANSFORMERS)[number];
+      assert.equal(dt.ratingKva, 300);
+      assert.match(dt.designedOverload ?? "", /government \(MDA\) accounts/);
+      const at = new Date(peak.get("DT-GOV-3")?.at as string);
+      const hour = (at.getUTCHours() + 1) % 24;
+      const weekday = new Date(at.getTime() + 3_600_000).getUTCDay();
+      assert.ok(hour >= 9 && hour <= 16, `peaks at ${hour}:00 WAT`);
+      assert.ok(weekday >= 1 && weekday <= 5);
+      // Its busiest hour before variation is an office hour too, and government accounts are most of it.
+      const before = demandBeforeVariationKva(dt);
+      assert.ok(before.hour >= 9 && before.hour <= 16 && before.weekday >= 1 && before.weekday <= 5);
+      const connections = CONNECTIONS.filter((c) => c.supplyKey === dt.key);
+      const government = connections.filter((c) => c.category === "government");
+      assert.equal(government.length, 9);
+      const kw = (list: typeof connections) => list.reduce((total, c) => total + c.peakKw, 0);
+      assert.ok(kw(government) > kw(connections.filter((c) => c.category !== "government")) * 0.5);
+    });
+
+    it("gives every other generated transformer on Government Avenue a rating it cannot exceed, whatever is drawn", () => {
+      const sized = TRANSFORMERS.filter((dt) => dt.feederId === "FD-GOV" && dt.designedOverload === undefined);
+      assert.equal(sized.length, 11);
+      for (const dt of sized) {
+        // The bound uses the largest daily factor and hourly noise there can be, not the ones drawn.
+        const most = demandBeforeVariationKva(dt).kva * MAX_VARIATION;
+        assert.ok(most < dt.ratingKva, `${dt.id}: at most ${most.toFixed(1)} kVA on ${dt.ratingKva} kVA`);
+        assert.ok((peak.get(dt.id)?.kva as number) <= most, dt.id);
+        assert.ok([50, 100, 200, 300, 500, 750, 1000].includes(dt.ratingKva), dt.id);
+      }
+      // The rule is not slack: every one of them is loaded past half its rating at its peak.
+      assert.ok(sized.every((dt) => loading(dt) > 0.5));
+    });
+
+    it("changes no connection: only ratings were raised", () => {
+      assert.equal(CONNECTIONS.length, 6448);
+      assert.equal(CONNECTIONS.filter((c) => c.feederId === "FD-GOV").length, 1766);
+      assert.deepEqual(
+        TRANSFORMERS.filter((dt) => dt.feederId === "FD-GOV").map((dt) => dt.ratingKva),
+        [500, 300, 300, 300, 750, 200, 500, 300, 500, 300, 100, 300],
+      );
+    });
   });
 
   it("leaves the demand class of a few rural accounts unrecorded, and of no others", () => {

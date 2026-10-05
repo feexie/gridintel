@@ -14,6 +14,7 @@ import type {
 } from "@/domain";
 import type { NetworkRegistrySnapshot } from "../ports/index.ts";
 import { DEMO_PERIOD } from "./clock.ts";
+import { MAX_VARIATION, highestDemand } from "./load.ts";
 import { round, seeded } from "./rng.ts";
 import { DEMO_ORGANIZATION_ID, REGISTRY_SOURCE, demoProvenance } from "./sources.ts";
 
@@ -40,6 +41,14 @@ import { DEMO_ORGANIZATION_ID, REGISTRY_SOURCE, demoProvenance } from "./sources
    rest are generated from each feeder's profile, so that a feeder
    carries a realistic number of transformers and its loading means
    something.
+
+   WHICH TRANSFORMERS ARE OVERLOADED IS A DESIGN DECISION. Two are,
+   each on purpose: DT-OLD-2, which has too many connections for its
+   rating, and DT-GOV-3, where government (MDA) office load has
+   outgrown the transformer. On Government Avenue every other
+   transformer is given the rating its highest demand needs, so that
+   none of them can exceed its rating whatever the random draws are
+   (see `sizeForDemand`).
 ========================================================== */
 
 export const DEMO_REGION_ID = "demo-region-northfield";
@@ -76,7 +85,11 @@ export interface SubstationPlan {
 
 /** How the transformers a feeder's profile generates are sized and populated. */
 interface FeederProfile {
-  /** Ratings of the generated transformers, kVA, in order along the feeder. */
+  /**
+   * Ratings of the generated transformers, kVA, in order along the feeder. On a feeder with
+   * government accounts these are the ratings the customer counts are drawn for; the rating
+   * installed is then the one the transformer's highest demand needs.
+   */
   ratingsKva: readonly number[];
   /** Evening peak loading the customer count is sized for, as [low, high] fractions of rating. */
   targetLoading: readonly [number, number];
@@ -151,6 +164,8 @@ export interface TransformerPlan {
   disconnectedShare: number;
   /** True where every meter is an AMI meter, whatever the feeder's share. */
   allAmi?: boolean;
+  /** Set on a transformer that is overloaded on purpose: why. Its rating is never raised to fit its demand. */
+  designedOverload?: string;
 }
 
 /** The meter of a bypassed connection records this share of what is consumed. */
@@ -161,6 +176,18 @@ export const UNMETERED_USE_FACTOR = 1.25;
 export const SUBSTATION_LOSS = 0.01;
 /** Mean peak demand of a government (MDA) account, kW. They are low-voltage maximum-demand accounts. */
 const GOVERNMENT_PEAK_KW = 14;
+/** The distribution transformer ratings a rating can be raised to, kVA. */
+const STANDARD_RATINGS_KVA = [50, 100, 200, 300, 500, 750, 1000] as const;
+/**
+ * The one generated transformer left overloaded on purpose (Founder decision, Phase 6c-2). It
+ * keeps the rating the evening-peak rule drew for it, while its government accounts' office
+ * load has outgrown that rating.
+ */
+const DESIGNED_OVERLOADS: Readonly<Record<string, string>> = {
+  "DT-GOV-3":
+    "Left at 300 kVA on purpose. Its nine government (MDA) accounts draw their load in office hours, on top of a customer count " +
+    "sized for the evening, so it peaks above its rating on working days.",
+};
 
 export const SUBSTATIONS: readonly SubstationPlan[] = [
   {
@@ -449,12 +476,13 @@ function generate(feeder: FeederPlan): TransformerPlan[] {
       powerFactor: profile.powerFactor,
       disconnectedShare: profile.disconnectedShare,
       groups: groups.filter((group) => group.count > 0),
+      ...(DESIGNED_OVERLOADS[`DT-${feeder.prefix}-${n}`] === undefined ? {} : { designedOverload: DESIGNED_OVERLOADS[`DT-${feeder.prefix}-${n}`] }),
     };
   });
 }
 
-/** Every transformer, feeder by feeder: the designed ones first, then the generated ones. */
-export const TRANSFORMERS: readonly TransformerPlan[] = FEEDERS.flatMap((feeder) => [
+/** Every transformer as first drawn, feeder by feeder: the designed ones first, then the generated ones. */
+const DRAWN: readonly TransformerPlan[] = FEEDERS.flatMap((feeder) => [
   ...DESIGNED.filter((dt) => dt.feederId === feeder.id),
   ...generate(feeder),
 ]);
@@ -521,7 +549,7 @@ function pad(n: number): string {
 
 function planConnections(): ConnectionPlan[] {
   const connections: ConnectionPlan[] = [];
-  for (const dt of TRANSFORMERS) {
+  for (const dt of DRAWN) {
     const feeder = FEEDERS.find((f) => f.id === dt.feederId) as FeederPlan;
     const random = seeded(`connections:${dt.key}`);
     // A stream of its own, so that recording fewer demand classes changes nothing else.
@@ -578,6 +606,38 @@ function planConnections(): ConnectionPlan[] {
 
 /** Every connection in the design, in a stable order. */
 export const CONNECTIONS: readonly ConnectionPlan[] = planConnections();
+
+/**
+ * The highest apparent power a transformer's connections draw before day-to-day and hour-to-hour
+ * variation, kVA at the transformer: the busiest hour of the week for the connections as drawn,
+ * with the low-voltage loss and the power factor.
+ */
+export function demandBeforeVariationKva(dt: TransformerPlan): { kva: number; weekday: number; hour: number } {
+  const highest = highestDemand(CONNECTIONS.filter((connection) => connection.supplyKey === dt.key));
+  return { kva: highest.kw / (1 - dt.lvLoss) / dt.powerFactor, weekday: highest.weekday, hour: highest.hour };
+}
+
+/**
+ * The rating a generated transformer on a feeder with government accounts is given: the
+ * smallest standard rating, not below the one drawn, that its highest demand stays within even
+ * with the most the variation can add. Government load falls in office hours, not in the
+ * evening the customer count was drawn for, so the drawn rating can be too small by day.
+ *
+ * With this rule such a transformer cannot exceed its rating under any seed: the bound uses the
+ * largest daily factor and the largest hourly noise there can be, not the ones that were drawn.
+ */
+function sizeForDemand(dt: TransformerPlan): TransformerPlan {
+  const feeder = FEEDERS.find((plan) => plan.id === dt.feederId) as FeederPlan;
+  const generated = !DESIGNED.some((designed) => designed.id === dt.id);
+  if (!generated || feeder.governmentPerKva === 0 || dt.designedOverload !== undefined) return dt;
+  const needed = demandBeforeVariationKva(dt).kva * MAX_VARIATION;
+  const ratingKva = STANDARD_RATINGS_KVA.find((rating) => rating >= dt.ratingKva && rating > needed);
+  if (ratingKva === undefined) throw new Error(`No standard rating carries ${dt.id}: it needs more than ${Math.round(needed)} kVA.`);
+  return ratingKva === dt.ratingKva ? dt : { ...dt, ratingKva };
+}
+
+/** Every transformer as installed, feeder by feeder: the designed ones first, then the generated ones. */
+export const TRANSFORMERS: readonly TransformerPlan[] = DRAWN.map(sizeForDemand);
 
 const ACTIVE = new Map<string, number>();
 for (const connection of CONNECTIONS) {

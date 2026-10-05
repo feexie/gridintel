@@ -44,9 +44,9 @@ test("asset risk is its own group above the money ranking, and is not ranked by 
 
   await expect(assetRisk).toContainText("Asset risk");
   await expect(assetRisk).toContainText("Not ranked by money");
-  // Every transformer over its rating is listed, highest peak first.
+  // Every transformer over its rating is listed, highest peak first: the two that are overloaded by design.
   const risks = assetRisk.locator("[data-subject]");
-  await expect(risks).toHaveCount(4);
+  await expect(risks).toHaveCount(2);
   await expect(risks.nth(0)).toHaveAttribute("data-subject", "DT-OLD-2");
   await expect(risks.nth(1)).toHaveAttribute("data-subject", "DT-GOV-3");
   await expect(risks.nth(0)).toContainText("Loaded above its rating");

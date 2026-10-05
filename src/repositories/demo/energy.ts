@@ -1,6 +1,6 @@
 import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Period, Provenance, TelemetryPoint } from "@/domain";
-import type { CustomerCategory } from "./network.ts";
 import { DEMO_DAYS, DEMO_HOURS, PERIOD_END_MS, at, hourStart, wat, weekday } from "./clock.ts";
+import { DAY_FACTOR, HOURLY_NOISE, SHAPE, WEEK } from "./load.ts";
 import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, MV_CUSTOMER, SUBSTATIONS, SUBSTATION_LOSS, TRANSFORMERS } from "./network.ts";
 import { availability, energised } from "./outages.ts";
 import { round, seeded } from "./rng.ts";
@@ -40,35 +40,6 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
    inside this model. They size the bills, the vends and the boundary
    meters, and are never written out as observations.
 ========================================================== */
-
-/** Demand as a share of the category's peak, by hour of the day in WAT. */
-const SHAPE: Record<CustomerCategory, readonly number[]> = {
-  residential: [
-    0.35, 0.3, 0.28, 0.27, 0.28, 0.35, 0.5, 0.6, 0.5, 0.4, 0.38, 0.38,
-    0.42, 0.45, 0.42, 0.4, 0.45, 0.6, 0.8, 0.95, 1.0, 0.95, 0.75, 0.5,
-  ],
-  commercial: [
-    0.1, 0.1, 0.1, 0.1, 0.1, 0.12, 0.2, 0.4, 0.7, 0.9, 1.0, 1.0,
-    0.95, 0.95, 1.0, 0.95, 0.9, 0.8, 0.6, 0.4, 0.25, 0.15, 0.12, 0.1,
-  ],
-  industrial: [
-    0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.8, 1.0, 1.0, 1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7,
-  ],
-  // Offices: a working-day load with little outside office hours.
-  government: [
-    0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.15, 0.35, 0.8, 1.0, 1.0, 1.0,
-    0.95, 0.95, 1.0, 0.95, 0.7, 0.35, 0.2, 0.15, 0.12, 0.12, 0.12, 0.12,
-  ],
-};
-
-/** Demand on a day of the week relative to a weekday: [Sunday … Saturday]. */
-const WEEK: Record<CustomerCategory, readonly number[]> = {
-  residential: [1.06, 1, 1, 1, 1, 1, 1.06],
-  commercial: [0.5, 1, 1, 1, 1, 1, 0.85],
-  industrial: [0.6, 1, 1, 1, 1, 1, 0.9],
-  government: [0.2, 1, 1, 1, 1, 1, 0.25],
-};
 
 /** What the month-end reading round found at one postpaid meter that is not an AMI meter. */
 export interface RegisterRead {
@@ -215,7 +186,7 @@ export function buildEnergyModel(): EnergyModel {
     let factors = dayFactor.get(supplyKey);
     if (factors === undefined) {
       const random = seeded(`day:${supplyKey}`);
-      factors = Array.from({ length: DEMO_DAYS }, () => 0.92 + random() * 0.16);
+      factors = Array.from({ length: DEMO_DAYS }, () => DAY_FACTOR.low + random() * DAY_FACTOR.span);
       dayFactor.set(supplyKey, factors);
     }
     return factors;
@@ -242,7 +213,7 @@ export function buildEnergyModel(): EnergyModel {
     }
     for (let h = 0; h < DEMO_HOURS; h++) {
       const day = (h / 24) | 0;
-      const kw = connection.peakKw * shape[h % 24] * week[WEEKDAY[day]] * days[day] * (0.8 + noise() * 0.4);
+      const kw = connection.peakKw * shape[h % 24] * week[WEEKDAY[day]] * days[day] * (HOURLY_NOISE.low + noise() * HOURLY_NOISE.span);
       const actual = kw * availability(key, h);
       supplyDemand[h] += kw;
       supplyConsumed[h] += actual;
