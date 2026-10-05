@@ -1,6 +1,6 @@
 import { Executive } from "@/components/executive/Executive";
 import { SyntheticBanner } from "@/components/operations/Level";
-import { PreparingData } from "@/components/shared/PreparingData";
+import { PreparingData } from "@/components/system/PreparingData";
 import { executive, getDataNotice, isPreparing } from "@/composition/executive";
 
 export default async function ExecutiveDashboardPage({ searchParams }: { searchParams: Promise<{ feeders?: string }> }) {

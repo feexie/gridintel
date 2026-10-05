@@ -12,11 +12,11 @@ export default function UtilityWorkspacePage() {
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-white">
+          <h2 className="text-xl font-semibold text-ink">
             Utility Workspaces
           </h2>
 
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-4">
             Access utility-specific dashboards, operations, commercial
             intelligence, and decision-support capabilities.
           </p>

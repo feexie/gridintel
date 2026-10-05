@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
-import { Legend, MetricTile, OriginTag, Panel } from "./Metric";
-import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "./Panels";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatPeriod, formatTime, levelHref } from "./format";
+import { Legend, MetricTile, OriginTag, Panel } from "@/components/system/Metric";
+import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
+import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatPeriod, formatTime, levelHref } from "@/components/system/format";
 
 export function SyntheticBanner({ notice }: { notice: { label: string; summary: string } | null }) {
   if (!notice) return null;
   return (
-    <div role="note" className="sticky -top-6 z-40 -mx-6 -mt-6 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-amber-400/50 bg-amber-950/90 px-6 py-1.5 text-xs text-amber-100 backdrop-blur lg:-mx-8 lg:px-8">
-      <span className="border border-amber-300 px-1.5 py-px text-[11px] font-bold tracking-[0.18em] text-amber-200">{notice.label}</span>
+    <div role="note" className="sticky -top-6 z-40 -mx-6 -mt-6 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-caution-line/50 bg-caution-surface/90 px-6 py-1.5 text-xs text-caution-ink backdrop-blur lg:-mx-8 lg:px-8">
+      <span className="border border-caution-line px-1.5 py-px text-caption font-bold tracking-label text-caution">{notice.label}</span>
       <span>{notice.summary}</span>
     </div>
   );
@@ -17,17 +17,17 @@ export function SyntheticBanner({ notice }: { notice: { label: string; summary: 
 function LevelHead({ header }: { header: LevelHeader }) {
   return (
     <header className="space-y-2">
-      <nav aria-label="Drill-down path" className="flex flex-wrap items-center gap-1 text-xs text-slate-400">
-        <Link href={OPERATIONS_HOME} className="hover:text-cyan-200">
+      <nav aria-label="Drill-down path" className="flex flex-wrap items-center gap-1 text-xs text-ink-4">
+        <Link href={OPERATIONS_HOME} className="hover:text-link-hover">
           Operations
         </Link>
         {header.crumbs.map((crumb, i) => (
           <span key={`${crumb.kind}:${crumb.id}`} className="flex items-center gap-1">
             <span aria-hidden>›</span>
             {i === header.crumbs.length - 1 ? (
-              <span className="text-slate-100">{crumb.label}</span>
+              <span className="text-ink">{crumb.label}</span>
             ) : (
-              <Link href={levelHref(crumb.kind, crumb.id)} className="hover:text-cyan-200">
+              <Link href={levelHref(crumb.kind, crumb.id)} className="hover:text-link-hover">
                 {crumb.label}
               </Link>
             )}
@@ -36,32 +36,32 @@ function LevelHead({ header }: { header: LevelHeader }) {
       </nav>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/80">
+          <p className="text-micro font-semibold uppercase tracking-eyebrow text-link/80">
             {LEVEL_NAME[header.kind]} · {header.id}
           </p>
-          <h1 className="text-xl font-semibold text-white">{header.title}</h1>
-          <p className="text-xs text-slate-400">{header.subtitle}</p>
+          <h1 className="text-xl font-semibold text-ink">{header.title}</h1>
+          <p className="text-xs text-ink-4">{header.subtitle}</p>
         </div>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-slate-400">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
           <dt>Reporting period</dt>
-          <dd className="font-mono text-slate-200">{formatPeriod(header.period)}</dd>
+          <dd className="font-mono text-ink-2">{formatPeriod(header.period)}</dd>
           <dt>Data as of</dt>
-          <dd className="font-mono text-slate-200">{formatTime(header.asOf)}</dd>
+          <dd className="font-mono text-ink-2">{formatTime(header.asOf)}</dd>
           {header.location ? (
             <>
               <dt>Location</dt>
-              <dd className="font-mono text-slate-200">
+              <dd className="font-mono text-ink-2">
                 {formatNumber(header.location.latitude, 4)}, {formatNumber(header.location.longitude, 4)}
               </dd>
             </>
           ) : null}
         </dl>
       </div>
-      <dl className="flex flex-wrap gap-x-5 gap-y-1 border-y border-slate-800 py-1.5 text-xs">
+      <dl className="flex flex-wrap gap-x-5 gap-y-1 border-y border-line py-1.5 text-xs">
         {header.facts.map((fact) => (
           <div key={fact.label} className="flex gap-1.5">
-            <dt className="text-slate-500">{fact.label}</dt>
-            <dd className="text-slate-100">{fact.value}</dd>
+            <dt className="text-ink-5">{fact.label}</dt>
+            <dd className="text-ink">{fact.value}</dd>
           </div>
         ))}
       </dl>
@@ -78,7 +78,7 @@ export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevel
         <LossesPanel losses={view.losses} />
       ) : (
         <Panel title="Energy account and ATC&C">
-          <p className="text-xs text-slate-400">{view.lossesNote}</p>
+          <p className="text-xs text-ink-4">{view.lossesNote}</p>
         </Panel>
       )}
       <RevenueGapPanel gap={view.revenueGap} below={view.revenueGapBelow} />
@@ -99,15 +99,15 @@ export function Overview({ view }: { view: OverviewView }) {
       <header className="space-y-2">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/80">Utility Intelligence</p>
-            <h1 className="text-xl font-semibold text-white">Operations Center</h1>
-            <p className="text-xs text-slate-400">{view.organization ?? "Organization not recorded"} · drill from region to service point.</p>
+            <p className="text-micro font-semibold uppercase tracking-eyebrow text-link/80">Utility Intelligence</p>
+            <h1 className="text-xl font-semibold text-ink">Operations Center</h1>
+            <p className="text-xs text-ink-4">{view.organization ?? "Organization not recorded"} · drill from region to service point.</p>
           </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-slate-400">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
             <dt>Reporting period</dt>
-            <dd className="font-mono text-slate-200">{formatPeriod(view.period)}</dd>
+            <dd className="font-mono text-ink-2">{formatPeriod(view.period)}</dd>
             <dt>Data as of</dt>
-            <dd className="font-mono text-slate-200">{formatTime(view.asOf)}</dd>
+            <dd className="font-mono text-ink-2">{formatTime(view.asOf)}</dd>
           </dl>
         </div>
         <Legend />
@@ -125,42 +125,42 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Connection">
           <dl className="grid grid-cols-[10rem_1fr] gap-y-1 text-xs">
-            <dt className="text-slate-500">Account</dt>
-            <dd className="text-slate-100">{view.account ? `${view.account.id} (${view.account.accountNumber ?? "no account number"})` : "No account at this service point"}</dd>
-            <dt className="text-slate-500">Category</dt>
-            <dd className="text-slate-100">{view.account?.category ?? "—"}</dd>
-            <dt className="text-slate-500">Account status</dt>
-            <dd className="text-slate-100">{view.account?.status ?? "—"}</dd>
-            <dt className="text-slate-500">Metering</dt>
-            <dd className="text-slate-100">{view.metering}</dd>
-            <dt className="text-slate-500">Meter</dt>
-            <dd className="text-slate-100">
+            <dt className="text-ink-5">Account</dt>
+            <dd className="text-ink">{view.account ? `${view.account.id} (${view.account.accountNumber ?? "no account number"})` : "No account at this service point"}</dd>
+            <dt className="text-ink-5">Category</dt>
+            <dd className="text-ink">{view.account?.category ?? "—"}</dd>
+            <dt className="text-ink-5">Account status</dt>
+            <dd className="text-ink">{view.account?.status ?? "—"}</dd>
+            <dt className="text-ink-5">Metering</dt>
+            <dd className="text-ink">{view.metering}</dd>
+            <dt className="text-ink-5">Meter</dt>
+            <dd className="text-ink">
               {view.meter ? `${view.meter.id} · serial ${view.meter.serialNumber} · ${view.meter.type}${view.meter.phases ? ` · ${view.meter.phases}-phase` : ""}` : "None. Consumption at this connection is not measured."}
             </dd>
-            <dt className="text-slate-500">Customer name</dt>
-            <dd className="text-slate-400">Not shown. Personal data is not used in analytics views.</dd>
+            <dt className="text-ink-5">Customer name</dt>
+            <dd className="text-ink-4">Not shown. Personal data is not used in analytics views.</dd>
           </dl>
-          <p className="text-[11px] leading-snug text-slate-400">{view.reliabilityNote}</p>
+          <p className="text-caption leading-snug text-ink-4">{view.reliabilityNote}</p>
         </Panel>
         <Panel title="Energy recorded">
           <MetricTile metric={view.recorded} sourcing={view.sourcing} emphasis />
           {view.intervals ? (
-            <p className="text-[11px] text-slate-400">
-              Intervals usable: <span className="font-mono text-slate-100">{view.intervals.usable}</span> of{" "}
-              <span className="font-mono text-slate-100">{view.intervals.expected ?? "—"}</span> ({formatPercent(view.intervals.coverage)} coverage). A gap makes the total unavailable; nothing is filled in.
+            <p className="text-caption text-ink-4">
+              Intervals usable: <span className="font-mono text-ink">{view.intervals.usable}</span> of{" "}
+              <span className="font-mono text-ink">{view.intervals.expected ?? "—"}</span> ({formatPercent(view.intervals.coverage)} coverage). A gap makes the total unavailable; nothing is filled in.
             </p>
           ) : null}
           {view.register ? (
-            <p className="text-[11px] text-slate-400" data-register-readings>
-              Register read <span className="font-mono text-slate-100">{formatNumber(view.register.openingKwh, 1)} kWh</span> at{" "}
-              <span className="font-mono text-slate-100">{formatTime(view.register.openingAt)}</span> and{" "}
-              <span className="font-mono text-slate-100">{formatNumber(view.register.closingKwh, 1)} kWh</span> at{" "}
-              <span className="font-mono text-slate-100">{formatTime(view.register.closingAt)}</span>
+            <p className="text-caption text-ink-4" data-register-readings>
+              Register read <span className="font-mono text-ink">{formatNumber(view.register.openingKwh, 1)} kWh</span> at{" "}
+              <span className="font-mono text-ink">{formatTime(view.register.openingAt)}</span> and{" "}
+              <span className="font-mono text-ink">{formatNumber(view.register.closingKwh, 1)} kWh</span> at{" "}
+              <span className="font-mono text-ink">{formatTime(view.register.closingAt)}</span>
               {view.register.estimated ? " (estimated: the meter was not read)" : ""}. The figure is the difference, for the time between the two readings.
             </p>
           ) : null}
           {view.registerCounts ? (
-            <p className={`text-[11px] leading-snug ${view.registerCounts.counted ? "text-slate-300" : "text-amber-100/90"}`} data-register-counts={view.registerCounts.counted ? "yes" : "no"}>
+            <p className={`text-caption leading-snug ${view.registerCounts.counted ? "text-ink-3" : "text-caution-ink/90"}`} data-register-counts={view.registerCounts.counted ? "yes" : "no"}>
               {view.registerCounts.note}
             </p>
           ) : null}
@@ -170,11 +170,11 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
 
       <Panel title={`Charges in the period (${view.charges.length})`}>
         {view.charges.length === 0 ? (
-          <p className="text-xs text-slate-400">No charge was raised on this account in the period.</p>
+          <p className="text-xs text-ink-4">No charge was raised on this account in the period.</p>
         ) : (
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
                 <th className="py-1 pr-2 font-normal">Raised</th>
                 <th className="py-1 pr-2 font-normal">How billed</th>
                 <th className="py-1 pr-2 font-normal">Tariff</th>
@@ -184,12 +184,12 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
             </thead>
             <tbody>
               {view.charges.map((charge) => (
-                <tr key={charge.id} className="border-b border-slate-800/60" title={charge.id}>
-                  <td className="py-1 pr-2 font-mono text-slate-300">{formatTime(charge.billedAt)}</td>
-                  <td className="py-1 pr-2 text-slate-200">
+                <tr key={charge.id} className="border-b border-line/60" title={charge.id}>
+                  <td className="py-1 pr-2 font-mono text-ink-3">{formatTime(charge.billedAt)}</td>
+                  <td className="py-1 pr-2 text-ink-2">
                     {charge.basisLabel} <OriginTag origin={charge.estimated ? "estimated" : "measured"} />
                   </td>
-                  <td className="py-1 pr-2 text-slate-400">{charge.tariff ?? "—"}</td>
+                  <td className="py-1 pr-2 text-ink-4">{charge.tariff ?? "—"}</td>
                   <td className="py-1 pr-2 text-right font-mono tabular-nums">{charge.energyKwh === null ? "—" : `${formatNumber(charge.energyKwh, 1)} kWh`}</td>
                   <td className="py-1 text-right font-mono tabular-nums">{formatMoney(charge.amount, charge.currency)}</td>
                 </tr>
@@ -201,11 +201,11 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
 
       <Panel title={`Payments received in the period (${view.payments.length})`} aside="Cash basis">
         {view.payments.length === 0 ? (
-          <p className="text-xs text-slate-400">No payment was received from this account in the period.</p>
+          <p className="text-xs text-ink-4">No payment was received from this account in the period.</p>
         ) : (
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-700 text-left text-[10px] uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
                 <th className="py-1 pr-2 font-normal">Received</th>
                 <th className="py-1 pr-2 font-normal">Channel</th>
                 <th className="py-1 text-right font-normal">Amount</th>
@@ -213,16 +213,16 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
             </thead>
             <tbody>
               {view.payments.map((payment) => (
-                <tr key={payment.id} className="border-b border-slate-800/60" title={payment.id}>
-                  <td className="py-1 pr-2 font-mono text-slate-300">{formatTime(payment.receivedAt)}</td>
-                  <td className="py-1 pr-2 text-slate-200">{payment.channel ?? "—"}</td>
+                <tr key={payment.id} className="border-b border-line/60" title={payment.id}>
+                  <td className="py-1 pr-2 font-mono text-ink-3">{formatTime(payment.receivedAt)}</td>
+                  <td className="py-1 pr-2 text-ink-2">{payment.channel ?? "—"}</td>
                   <td className="py-1 text-right font-mono tabular-nums">{formatMoney(payment.amount, payment.currency)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-        <p className="text-[10px] text-slate-500">Data sources: {view.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ")}</p>
+        <p className="text-micro text-ink-5">Data sources: {view.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ")}</p>
       </Panel>
     </div>
   );

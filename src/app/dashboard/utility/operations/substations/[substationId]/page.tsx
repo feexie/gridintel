@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { NetworkLevel } from "@/components/operations/Level";
-import { PreparingData } from "@/components/shared/PreparingData";
+import { PreparingData } from "@/components/system/PreparingData";
 import { isPreparing, operations } from "@/composition/operations";
 
 export default async function SubstationPage({ params }: { params: Promise<{ substationId: string }> }) {

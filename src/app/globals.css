@@ -12,13 +12,70 @@ dd,
   font-variant-numeric: tabular-nums;
 }
 
+
+/* ==========================================================
+   GRIDINTEL DESIGN TOKENS
+
+   The one set of tokens the product screens are built from. A
+   component names a role (text-ink-4, border-line, text-caution),
+   never a palette colour or a pixel size. `static` keeps every
+   token in the stylesheet, so charts can use them in inline styles.
+========================================================== */
+@theme static {
+  /* Surfaces */
+  --color-app: oklch(12.9% 0.042 264.695);  /* The page behind everything. */
+  --color-panel: #0b1220;  /* A panel. */
+  --color-well: oklch(20.8% 0.042 265.755);  /* A tile or inset inside a panel; used at 40%. */
+
+  /* Lines */
+  --color-line: oklch(27.9% 0.041 260.031);  /* Panel borders and row rules (rows at 60%). */
+  --color-line-strong: oklch(37.2% 0.044 257.287);  /* Table head rules, tags. */
+  --color-line-bold: oklch(44.6% 0.043 257.281);  /* Neutral badges. */
+
+  /* Text, strongest to faintest */
+  --color-ink: oklch(98.4% 0.003 247.858);  /* Figures and headings. */
+  --color-ink-2: oklch(92.9% 0.013 255.508);  /* Labels and row names. */
+  --color-ink-3: oklch(86.9% 0.022 252.894);  /* Body text. */
+  --color-ink-4: oklch(70.4% 0.04 256.788);  /* Notes and captions. */
+  --color-ink-5: oklch(55.4% 0.046 257.417);  /* Table heads, units, fine print. */
+  --color-link: oklch(86.5% 0.127 207.078);  /* Links and the eyebrow accent. */
+  --color-link-hover: oklch(91.7% 0.08 205.041);
+
+  /* Status: one colour per meaning, always with a mark or a word, never colour alone */
+  --color-ok: oklch(84.5% 0.143 164.978);  /* Every input present and measured. */
+  --color-ok-line: oklch(69.6% 0.17 162.48);
+  --color-caution: oklch(92.4% 0.12 95.746);  /* Estimated inputs; a caveat; a finding. */
+  --color-caution-ink: oklch(96.2% 0.059 95.617);  /* Caveat text. */
+  --color-caution-line: oklch(82.8% 0.189 84.429);
+  --color-caution-surface: oklch(27.9% 0.077 45.635);  /* The SYNTHETIC DATA banner and finding boxes. */
+  --color-alert: oklch(89.2% 0.058 10.001);  /* Insufficient data; not comparable; over rating. */
+  --color-alert-ink: oklch(94.1% 0.03 12.58);
+  --color-alert-line: oklch(71.2% 0.194 13.428);
+
+  /* Chart series: categorical slots validated on the panel surface */
+  --color-series-technical: #3987e5;  /* Technical loss; the default single series. */
+  --color-series-commercial: #d95926;  /* Commercial loss. */
+  --color-series-collection: #199e70;  /* Collection loss. */
+  --color-series-rest: oklch(27.9% 0.041 260.031);  /* The remainder of a whole. */
+  --color-series-serious: #ec835a;  /* A day or a bar that failed its test. */
+
+  /* Type. Body text is text-xs (12px); these are the three sizes below it. */
+  --text-nano: 0.5625rem;  /* 9px: origin abbreviations in table cells */
+  --text-micro: 0.625rem;  /* 10px: table heads, tags, fine print */
+  --text-caption: 0.6875rem;  /* 11px: notes and captions */
+
+  /* Letter-spacing of the three kinds of capitals. */
+  --tracking-title: 0.14em;  /* panel titles */
+  --tracking-label: 0.18em;  /* the SYNTHETIC DATA label */
+  --tracking-eyebrow: 0.2em;  /* the line above a page title */
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* System font stacks: no font was ever loaded for the old self-referencing variables,
-     so the app fell back to the browser's serif default. */
-  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: Consolas, "SFMono-Regular", Menlo, "Cascadia Mono", ui-monospace, "Liberation Mono", monospace;
+  /* IBM Plex Sans for text and IBM Plex Mono for figures, self-hosted through next/font (see
+     app/layout.tsx, which sets the two variables). The system stacks follow as fallbacks. */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), Consolas, "SFMono-Regular", Menlo, "Cascadia Mono", ui-monospace, "Liberation Mono", monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
