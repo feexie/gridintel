@@ -14,4 +14,4 @@ export const executive = {
   view: (feeders: FeederListing = "top") => cachedView(`executive:${feeders}`, (runtime) => executiveView(runtime, feeders)),
 };
 
-export { getDataNotice } from "./runtime.ts";
+export { getDataNotice, isPreparing } from "./runtime.ts";

@@ -25,4 +25,4 @@ export const operations = {
   servicePoint: (id: string) => cachedView(`service-point:${id}`, (runtime) => servicePointView(runtime, id)),
 };
 
-export { getDataNotice } from "./runtime.ts";
+export { getDataNotice, isPreparing } from "./runtime.ts";

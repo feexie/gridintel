@@ -24,10 +24,37 @@ import { DEMO_CLOCK, DEMO_NOTICE, DEMO_PERIOD, createDemoRepositories } from "..
 interface ProcessState {
   repositories: GridIntelRepositories | null;
   results: ReturnType<typeof createMemoryCache>;
+  readiness: Readiness;
 }
 
+/**
+ * Where the start-up warm-up stands (see warm.ts):
+ * - not_started: no warm-up was begun in this process (a build, a test, a script);
+ * - warming: the screens are being computed; data routes answer with a "preparing data" page;
+ * - ready: the screens are computed;
+ * - failed: the warm-up stopped on an error; screens compute on request.
+ */
+export type Readiness = "not_started" | "warming" | "ready" | "failed";
+
 const globalState = globalThis as typeof globalThis & { __gridintel?: ProcessState };
-const state: ProcessState = (globalState.__gridintel ??= { repositories: null, results: createMemoryCache() });
+const state: ProcessState = (globalState.__gridintel ??= { repositories: null, results: createMemoryCache(), readiness: "not_started" });
+
+export function getReadiness(): Readiness {
+  return state.readiness;
+}
+
+export function setReadiness(readiness: Readiness): void {
+  state.readiness = readiness;
+}
+
+/**
+ * True while the warm-up is running. A data route then shows its "preparing data" page and
+ * calculates nothing, so the request is answered at once instead of waiting for the warm-up.
+ * In any other state the route calculates as usual.
+ */
+export function isPreparing(): boolean {
+  return state.readiness === "warming";
+}
 
 export function getRepositories(): GridIntelRepositories {
   state.repositories ??= createDemoRepositories();
