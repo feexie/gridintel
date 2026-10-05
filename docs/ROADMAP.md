@@ -3,10 +3,11 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-05. Status: **Phase 6c-1 (data and engine) approved and
-merged to `main` on 2026-10-05, tag `phase-6c-1`. Phase 6c-2 (decisions, design
-system, navigation, Reliability and Revenue workspaces) in progress on branch
-`phase-6c-2`.**
+Last updated: 2026-10-05. Status: **Phase 6c-1 approved and merged to `main`
+on 2026-10-05, tag `phase-6c-1`. Phase 6c-2 (decisions, design system,
+navigation, Reliability and Revenue workspaces) complete on branch
+`phase-6c-2`, awaiting the Founder's approval at its checkpoint. Phase 6c-3
+(Assets, Events / Alarms) not started.**
 
 ## Completed
 
@@ -310,7 +311,7 @@ are recorded under Phase 6c.
   network-attributable SAIDI" moved from Old Town to Farm Road.
 - ADR 0009 (customer metering) is a proposal with four questions to answer.
 
-### Phase 6c: Workspaces (6c-1 approved; 6c-2 in progress; 6c-3 not started)
+### Phase 6c: Workspaces (6c-1 approved; 6c-2 complete, awaiting approval; 6c-3 not started)
 
 Split by the Founder into three gated parts: 6c-1, the decisions below, on
 the data and the engine; 6c-2, further decisions, the design system,
@@ -477,7 +478,7 @@ browser tests are green. Screenshots: `docs/screenshots/phase6c1`.
   longer race it. Whether the server should refuse or hold traffic until it
   is warm is open.
 
-#### Phase 6c-2: Decisions, design system, navigation, Reliability and Revenue (in progress; branch `phase-6c-2`)
+#### Phase 6c-2: Decisions, design system, navigation, Reliability and Revenue (complete, awaiting approval; branch `phase-6c-2`)
 
 **Founder's decisions at the 6c-1 checkpoint (2026-10-05).** Items 1 to 6
 are built first, in this branch, before the workspaces.
@@ -530,16 +531,157 @@ of five) and a before-and-after for every figure that moved.
 
 | Item | Status | Commit |
 | --- | --- | --- |
-| 5. `npm run verify`; rule in `ENGINEERING_RULES.md` | In progress | |
-| 1. Attribution-rule difference as a named finding | Not started | |
-| 2. Register advance in recorded consumption | Not started | |
-| 3. Government Avenue: one designed overload | Not started | |
-| 4. Readiness page; "-0.0 h" | Not started | |
-| 6. Alarms of both kinds; power-transformer telemetry | Not started | |
-| 7. Typeface; design system and tokens | Not started | |
-| Navigation | Not started | |
-| Reliability workspace | Not started | |
-| Revenue workspace | Not started | |
+| 5. `npm run verify`; rule in `ENGINEERING_RULES.md` | Done | `0580d97` |
+| 1. Attribution-rule difference as a named finding (ADR 0007, second amendment) | Done | `fa22c87` (engine), `db831ff` (screens) |
+| 2. Register advance in recorded consumption (ADR 0010) | Done | `eeec750` (engine), `96b0435` (screens) |
+| 3. Government Avenue: one designed overload | Done | `5f85271` |
+| 4. Readiness page; "-0.0 h" | Done | `df736cb`; "-0.0" in `db831ff` |
+| 6. Alarms of both kinds; power-transformer telemetry (ADR 0011) | Done | `8cfc291` (engine), `e39776a` (screens) |
+| 7. Typeface; design system and tokens | Done | `8a73223` |
+| Navigation | Done | `fc037e4` |
+| Reliability workspace | Done | `084bbbb` (engine), `fc037e4` |
+| Revenue workspace | Done | `084bbbb` (engine), `fc037e4` |
+
+Item 5 was done first, so that every later commit was made after `verify`.
+
+**What was built, and what moved.**
+
+1. **Attribution-rule finding.** `attributionRuleDifference` (analytics)
+   gives the figure on the reference rule less the same figure on the
+   report's rule. It is shown as a finding above the attribution table on the
+   feeder's screen, on its substation's screen and in the Reliability
+   workspace, and is rule 8 of "Where to look first". Before: Farm Road's
+   comparison read 0.4 h against 0.4 h with "57.1 h on the reference rule"
+   in small type. After: "Rule treats sub-transmission lines as upstream:
+   +56.7 h SAIDI under the reference rule". Market Road and Old Town +3.6 h
+   each; Government Avenue states the same rule and it moved nothing, which
+   its screen says, and it is not in "Where to look first". No index moved.
+2. **Register advance.** Reference energy methodology 0.2.0, with the 3-day
+   window as a parameter. Region: 1,287 connections now recorded by register
+   advance (371,055 kWh) beside 287 by interval meters (404,652 kWh); 138
+   advances not counted because the closing reading is an estimate; 2,540
+   meters not read; 2,195 with no meter. Before, the 1,425 register meters
+   were among 3,965 "no interval data". The total is still available on
+   DT-MKT-3 only. No figure of the accounting chain moved.
+3. **Government Avenue.** DT-GOV-3 stays at 300 kVA on purpose (110.6%, 53
+   hours over). Nine of the other eleven ratings rise one standard size, so
+   none can exceed its rating under any seed; they now peak at 51–85% where
+   they peaked at 80–104%. Asset risk lists two transformers, not four. No
+   connection, energy, revenue or reliability figure moved; feeder loading
+   is unchanged at 72.3%. Full table in `DATASET_ASSUMPTIONS.md`.
+4. **Readiness.** The warm-up works in steps with a 10 ms pause between
+   them; data routes answer with a "preparing data" page that reloads
+   itself; `/api/ready` gives 503 while warming. Cold start, three runs: the
+   first data request was answered in 1.2 s (it held for 5 to 10 s before),
+   later ones in 0.05 to 0.6 s, and the screen was ready 6.4 to 6.8 s after
+   the server began listening.
+5. **Alarms.** 29 synthetic source alarms, 26 of them built from the outage
+   log; two derived rules (loaded above rating, monitor quiet); the two
+   shown as separate lists on every screen in place of "alarms: not
+   available". Power transformers peak at 72.2% (Riverside T1), 55.7%
+   (Hillcrest T1) and 24.8% (Hillcrest T2).
+6. **Design system.** Tokens for surfaces, lines, five text levels, status,
+   chart series and three type sizes (`globals.css`); every product component
+   names a token. Shared components in `src/components/system`. IBM Plex
+   Sans and Mono through `next/font/google`, which downloads the files at
+   build time and serves them from the app. Dates are written with fixed
+   month names.
+7. **Navigation.** Menu: Overview; Utility Intelligence with Executive,
+   Operations, Reliability, Revenue. The nine "Coming Soon" pages are out of
+   the menu and still reachable by address. One `h1` on every page (a
+   browser test checks 30 pages). The SYNTHETIC DATA label, the reporting
+   period and the as-of time are in one bar above every dashboard screen.
+8. **Reliability workspace** (`/dashboard/utility/reliability`). Feeders
+   ranked by network-attributable SAIDI (Farm Road 57.1 h, Old Town 9.2 h,
+   Market Road 3.8 h, Government Avenue 3.1 h), with upstream, load shedding
+   and total beside it; the rule findings and every reported figure at the
+   scope it is stated for; the portfolio split by class; by cause; by origin
+   point; the elements interruptions began at (the Hillcrest rural 33 kV
+   line: 16); day-by-day band compliance for each feeder.
+9. **Revenue workspace** (`/dashboard/utility/revenue`). The revenue gap and
+   its two parts by feeder; collection by customer class, portfolio and per
+   feeder, with government (MDA) accounts first: 90 accounts, 19.8%
+   collected, ₦13.8 M not collected, 45.0% of the shortfall; commercial
+   against collection loss by feeder, as shares and in money.
+
+**Page timings.** Production build, one machine, milliseconds, median of five
+requests after warm-up (the timing test). "Before" is `main` at the start of
+6c-2. Differences of this size are run-to-run noise; every route is far
+inside the 500 ms budget.
+
+| Route | Before | After |
+| --- | --- | --- |
+| Executive | 136 | 108 |
+| Reliability | new | 87 |
+| Revenue | new | 96 |
+| Operations home | 11 | 10 |
+| Region | 108 | 80 |
+| Substation, Riverside / Hillcrest | 104 / 85 | 80 / 84 |
+| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 92 / 92 / 102 / 90 | 109 / 108 / 85 / 107 |
+| Transformer, Riverbank (first 40 rows / all 135) | 85 / 158 | 96 / 187 |
+| Service point, register / prepaid / AMI | 17 / 22 / 20 | 18 / 19 / 16 |
+
+The warm-up takes about 6 s on an idle machine, about half a second of it
+the pauses that let requests through. The warmed server holds about 375 MB.
+
+**Acceptance, as met.** `npm run verify` green: typecheck, 404 unit tests,
+lint, build and 37 browser tests. Screenshots: `docs/screenshots/phase6c2`.
+
+**Decisions the engineer made, for the Founder to confirm or change.**
+
+- *A register advance resting on an estimated reading is not counted* (ADR
+  0010). The decision says "measured source"; an estimated reading is not
+  one. The alternative is to count it and mark the register figure partly
+  estimated.
+- *The sizing rule for Government Avenue is a hard guarantee*: a rating must
+  exceed the highest demand before variation by the most the variation can
+  add (×1.296). That is what makes it independent of the seed, and it is why
+  nine ratings rose and the feeder no longer runs close to rating by day. A
+  looser rule would leave them higher and bring the seed back in.
+- *A rule difference of zero is stated on the feeder's own screen and is not
+  in "Where to look first".*
+- *`/api/ready`* was added so the browser tests, and later a host's health
+  check, can tell warming from ready. It reports a state and no data.
+- *Derived conditions: two rules*, loaded above rating and monitor quiet
+  (120 minutes). The source alarms deliberately include no overload and no
+  communications alarm.
+- *The SYNTHETIC DATA bar is on every dashboard page*, placeholders
+  included, not only on data screens.
+- *The synthetic reading round was not spread over days*, so no reading is
+  outside the 3-day window and that exclusion is covered by unit tests
+  only. Spreading it would move energy billed.
+
+**Not done, by design.** The older tables inside the Operations panels keep
+their own markup; only the new workspaces use the table primitives. The
+valuation table on the Revenue screen lists all 48 transformers and is long.
+Both are for 6c-3.
+
+**Proposal only: a private, access-controlled hosted preview.** New
+infrastructure is the Founder's decision; nothing has been set up. Prices
+were read on 2026-10-05 and must be confirmed at sign-up.
+
+What the app needs: one always-on Node process (it computes its screens once
+at start and keeps them in memory, about 375 MB), so 1 GB of memory or more.
+A serverless host would warm up again on every cold start and is a poor fit.
+
+| Option | Monthly cost | What leaves the laptop | How access is restricted |
+| --- | --- | --- | --- |
+| A. Cloudflare Tunnel from the laptop, behind Cloudflare Access | $0 (Zero Trust free plan, up to 50 users). Needs a domain on Cloudflare, about $10 a year if none is held | Nothing is stored elsewhere. Pages pass through Cloudflare while the laptop is on and the tunnel is running | Cloudflare Access: a named list of email addresses, each signing in with a one-time code or Google |
+| B. A small VPS (Hetzner CX23: 2 vCPU, 4 GB, €5.99) running the build, behind Cloudflare Access | about €6, plus the domain | The built app and the code that generates the synthetic dataset, on a server in Germany or Finland | Cloudflare Access as in A; the server's firewall accepts only Cloudflare |
+| C. Render web service (Starter, $7, has 512 MB: too small; the next size up is needed) | $7 is not enough; expect the next tier, price to confirm | The source repository (Render builds from GitHub) and the built app, in the US or EU | No access control of its own at this tier: Cloudflare Access in front, or a password added to the app, which is an auth decision |
+| D. Vercel Pro with password protection | $20 + $20 per project | The source repository and the built app | One shared password, not named people. Serverless: every cold start warms up again |
+
+**Recommendation: B**, or A for a first look. A costs nothing and moves
+nothing off the laptop, but it is only up while the laptop is. B is always
+up for about €6 a month, with access limited to named people and no
+password to share. In both, no real data leaves the laptop, because there is
+none: the dataset is synthetic and is generated by the code itself. The
+SYNTHETIC DATA bar is in the dashboard layout, so it is on every screen of
+any hosted version and cannot be left off one screen.
+
+Each option is new infrastructure, and B to D put the code on someone else's
+machine. Access control in front of the app (A, B) adds no auth code to the
+app; a password inside the app (C) would, and is a separate decision.
 
 **The workspaces.**
 

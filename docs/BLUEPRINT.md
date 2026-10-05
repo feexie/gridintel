@@ -4,6 +4,42 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `FOUNDING_DIRECTIVE.md`.
 
+> **State at the Phase 6c-2 checkpoint (2026-10-05).** Since 6c-1:
+>
+> - **Workspaces.** `/dashboard/utility/reliability` and `/revenue` join
+>   Executive and Operations. Each has a read model (`src/services/reliability`,
+>   `src/services/revenue`) built from the same blocks as the drill-down, a
+>   binding in `src/composition`, and a component that composes the system
+>   components.
+> - **Design system.** Tokens in `src/app/globals.css` (`@theme static`):
+>   surfaces, lines, five text levels, status, chart series, three type
+>   sizes. Product components name tokens, never palette colours or pixel
+>   sizes. Shared components are in `src/components/system`: `Metric`
+>   (tiles, cells, badges, panel, legend), `Panels` (losses, revenue gap,
+>   reliability, loading, alarms, tables of children), `Table` (page head,
+>   table and note primitives, share bar), `DataBar`, `PreparingData`,
+>   `format`. IBM Plex Sans and Mono are self-hosted through `next/font`.
+> - **Shell.** One menu (`src/constants/navigation.ts`) of screens that
+>   exist; one `DataBar` in the dashboard layout with the SYNTHETIC DATA
+>   label, the reporting period and the as-of time; one `h1` per page.
+> - **Alarms and conditions (ADR 0011).** `EventRepository.listAlarms` and
+>   `ObservationRepository.listHeartbeats`; `src/analytics/conditions`
+>   derives conditions under named rules; `scopeAlarms` returns the recorded
+>   and the derived separately. `placeOfAsset` says which scope an asset is
+>   under. Loading accepts a power transformer.
+> - **Energy account (ADR 0010).** Recorded consumption has two measured
+>   sources, intervals and register advances within a reading window, each
+>   with its own figure and coverage.
+> - **Reliability.** `attributionRuleDifference` sizes what a reported
+>   attribution rule changes (ADR 0007, second amendment);
+>   `reliabilityBreakdown` and `interruptionsByOrigin` cut a result by cause,
+>   origin point and origin element.
+> - **Readiness.** The process has a readiness state; the warm-up yields
+>   between steps; data routes show a preparing page while it runs;
+>   `/api/ready` reports the state. This is the first route handler.
+> - **Process.** `npm run verify` runs all five checks; a commit follows only
+>   a green run.
+>
 > **State at the Phase 6c-1 checkpoint (2026-10-04).** Since Phase 6a:
 >
 > - The synthetic network has two substations, four feeders and 48
