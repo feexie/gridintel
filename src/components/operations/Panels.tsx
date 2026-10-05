@@ -6,12 +6,13 @@ import type {
   NotAvailableView,
   ReliabilityView,
   ReportedComparisonView,
+  RuleFindingView,
   RevenueGapRow,
   RevenueGapView,
   SupplyView,
 } from "@/services/operations/views";
 import { MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "./Metric";
-import { formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatTime, levelHref } from "./format";
+import { formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatSigned, formatTime, levelHref } from "./format";
 
 /* Chart colours: categorical slots validated for this dark surface (blue, orange, aqua). */
 const SERIES = { technical: "#3987e5", commercial: "#d95926", collection: "#199e70" };
@@ -72,7 +73,58 @@ function DecompositionBar({ losses }: { losses: LossesView }) {
 function formatVariance(row: ReportedComparisonView): string {
   if (row.variance === null) return "—";
   const unit = row.varianceUnit === "percentage_points" ? " pp" : row.varianceUnit === "hours" ? " h" : "";
-  return `${row.variance > 0 ? "+" : ""}${formatNumber(row.variance, 1)}${unit}`;
+  const text = formatNumber(row.variance, 1);
+  return `${row.variance > 0 && /[1-9]/.test(text) ? "+" : ""}${text}${unit}`;
+}
+
+/**
+ * What a reported attribution rule changes, each as a finding with its size. Shown as findings,
+ * above the comparison they belong to, and never as a note beside it.
+ */
+export function RuleFindings({ findings, scopeId }: { findings: RuleFindingView[]; scopeId?: string }) {
+  if (findings.length === 0) return null;
+  return (
+    <div className="border border-amber-400/50 bg-amber-950/30 px-3 py-2" data-rule-findings>
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-amber-200">
+        ▲ Finding: the report&apos;s attribution rule <span className="font-normal normal-case tracking-normal text-amber-100/80">differs from the GridIntel reference rule</span>
+      </h3>
+      <ul className="mt-1 space-y-1">
+        {findings.map((found) => {
+          const moved = found.difference.value !== null && found.difference.value !== 0;
+          return (
+            <li key={`${found.statedFor.id}:${found.figure}`} className="text-xs leading-snug text-slate-100" data-rule-finding={`${found.statedFor.id}:${found.figure}`}>
+              {found.statedFor.id === scopeId ? null : (
+                <>
+                  <Link href={levelHref(found.statedFor.kind, found.statedFor.id)} className="text-cyan-300 hover:underline">
+                    {found.statedFor.name}
+                  </Link>
+                  {". "}
+                </>
+              )}
+              {found.statement}:{" "}
+              {moved ? (
+                <>
+                  <span className="font-mono text-sm font-semibold tabular-nums text-amber-100">{formatSigned(found.difference)}</span> {found.figure} under the reference rule
+                </>
+              ) : found.difference.value === null ? (
+                <span className="text-slate-300">the size of the difference is not available for {found.figure}</span>
+              ) : (
+                <span className="text-slate-300">no difference to {found.figure} in this period, because no interruption began there</span>
+              )}
+              <span className="ml-1.5 inline-flex items-center gap-1.5 align-baseline">
+                <OriginTag origin={found.difference.origin} />
+                <StatusBadge status={found.difference.status} />
+              </span>
+              <span className="block text-[11px] text-slate-400">
+                {found.figure} on the report&apos;s rule <MetricCell metric={found.onReportedRule} />, on the reference rule <MetricCell metric={found.onReferenceRule} />. Same
+                interruptions, same classes counted; only the rule differs.
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 /** Reported figures beside the calculated figure on the same basis, or the reason there is none. */
@@ -117,9 +169,9 @@ export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
                     {reason}
                   </span>
                 ))}
-                {row.onReferenceRule ? (
-                  <span className="block text-amber-100/90" data-reference-rule>
-                    Calculated on the report&apos;s own attribution rule. On the GridIntel reference rule: <MetricCell metric={row.onReferenceRule} />
+                {row.ruleFinding ? (
+                  <span className="block text-amber-100/90" data-on-reported-rule>
+                    Calculated on the report&apos;s own attribution rule, which is not the reference rule. What the rule changes is the finding above.
                   </span>
                 ) : null}
                 {row.caveats.map((caveat) => (
@@ -425,7 +477,7 @@ function SupplyStrip({ supply }: { supply: SupplyView }) {
   );
 }
 
-export function ReliabilityPanel({ reliability, showBand }: { reliability: ReliabilityView; showBand: boolean }) {
+export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliability: ReliabilityView; showBand: boolean; scopeId?: string }) {
   return (
     <Panel title="Reliability and hours of supply" aside={<span>Customers served: <MetricCell metric={reliability.customersServed} /></span>}>
       {reliability.scopeNote ? <p className="border-l-2 border-amber-400/60 pl-2 text-xs text-amber-100/90">{reliability.scopeNote}</p> : null}
@@ -442,6 +494,8 @@ export function ReliabilityPanel({ reliability, showBand }: { reliability: Relia
           ) : null}
         </MetricTile>
       </div>
+
+      <RuleFindings findings={reliability.ruleFindings} scopeId={scopeId} />
 
       <div className="grid gap-3 xl:grid-cols-2">
         <div>

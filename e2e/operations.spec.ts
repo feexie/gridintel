@@ -135,19 +135,35 @@ test("a report that books 33 kV line faults as upstream shows as a variance on t
   await expect(page.getByText("including the lines that feed its substations")).toBeVisible();
   // The substation summary does not say how it classifies, so the row says what the variance may be.
   await expect(row).toContainText("The variance may reflect a difference in classification rather than in what happened.");
-  await expect(row.locator("[data-reference-rule]")).toHaveCount(0);
+  await expect(row.locator("[data-on-reported-rule]")).toHaveCount(0);
+  // Its feeders' reports do state their rule, and what that rule changes is a finding on the substation's screen too.
+  const findings = page.locator("[data-rule-findings]");
+  await expect(findings).toContainText("Finding: the report's attribution rule");
+  await expect(findings.locator('[data-rule-finding="FD-FRM:SAIDI"]')).toContainText(
+    "Farm Road 11 kV feeder. Rule treats sub-transmission lines as upstream: +56.7 h SAIDI under the reference rule",
+  );
+  await expect(findings.locator('[data-rule-finding="FD-GOV:SAIDI"]')).toContainText("no difference to SAIDI in this period");
 });
 
-test("a report that states its attribution rule is compared on that rule, with the reference figure beside it", async ({ page }) => {
+test("a report that states its attribution rule is compared on that rule, and what the rule changes is a named finding with its size", async ({ page }) => {
   await page.goto(`${OPERATIONS}/feeders/FD-FRM`);
   const row = page.getByRole("row", { name: /^SAIDI/ });
   await expect(row).toContainText("Same basis");
   await expect(row).toContainText("treating as upstream: the grid, transmission stations, sub-transmission lines");
-  // 0.4 h reported, 0.4 h calculated on the report's own rule; 57.1 h on the reference rule.
+  // 0.4 h reported, 0.4 h calculated on the report's own rule: no difference, and never "-0.0 h".
   await expect(row).toContainText("0.4 h");
-  await expect(row.locator("[data-reference-rule]")).toContainText("On the GridIntel reference rule");
-  await expect(row.locator("[data-reference-rule]")).toContainText("57.1 h");
+  await expect(row.getByRole("cell").nth(3)).toHaveText("0.0 h");
+  await expect(page.getByText("-0.0")).toHaveCount(0);
+  await expect(row.locator("[data-on-reported-rule]")).toContainText("What the rule changes is the finding above.");
   await expect(row).not.toContainText("may reflect a difference in classification");
+  // The finding: 57.1 h on the reference rule less 0.4 h on the report's. A figure with its origin and status, not a side note.
+  const finding = page.locator('[data-rule-finding="FD-FRM:SAIDI"]');
+  await expect(finding).toContainText("Rule treats sub-transmission lines as upstream: +56.7 h SAIDI under the reference rule");
+  await expect(finding).toContainText("Calculated");
+  await expect(finding).toContainText("57.1 h");
+  await expect(page.locator('[data-rule-finding="FD-FRM:SAIFI"]')).toContainText("+16.0 SAIFI under the reference rule");
+  // On its own screen the finding does not repeat the feeder's name.
+  await expect(finding.getByRole("link")).toHaveCount(0);
   // The headline and the attribution table are still on the reference rule.
   await expect(tile(page, "SAIDI")).toContainText("441.8 h");
 });

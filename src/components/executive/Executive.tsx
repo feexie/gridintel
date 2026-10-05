@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { AttentionSubject, ExecutiveView, WhereToLookView } from "@/services/executive/views";
 import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/operations/Metric";
 import { LossesPanel, NotAvailable, ReliabilityPanel, RevenueGapPanel } from "@/components/operations/Panels";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatPeriod, formatTime, levelHref } from "@/components/operations/format";
+import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatPeriod, formatSigned, formatTime, levelHref } from "@/components/operations/format";
 
 function Subject({ entry }: { entry: AttentionSubject }) {
   return (
@@ -40,7 +40,8 @@ function Subject({ entry }: { entry: AttentionSubject }) {
                 ) : null}
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="font-mono text-slate-100">{formatMetric(finding.metric)}</span>
+                <span className="font-mono text-slate-100">{finding.signed ? formatSigned(finding.metric) : formatMetric(finding.metric)}</span>
+                {finding.suffix ? <span className="text-slate-300">{finding.suffix}</span> : null}
                 {finding.detail ? (
                   <span className="font-mono text-slate-400">
                     · {formatNumber(finding.detail.value)} {finding.detail.label}

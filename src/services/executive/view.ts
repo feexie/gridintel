@@ -86,6 +86,7 @@ function feederSignals(feeder: FeederFacts): FeederSignals {
     collectionEfficiency: feeder.losses.collectionEfficiency,
     networkSaidi: networkSaidi(feeder.reliability),
     supply: { band: supply.band, minimumHours: supply.minimumHours, averageHours: supply.averageHours, daysBelowMinimum: supply.daysNonCompliant },
+    saidiRuleFinding: feeder.reliability.ruleFindings.find((found) => found.figure === "SAIDI" && found.statedFor.id === feeder.id) ?? null,
   };
 }
 

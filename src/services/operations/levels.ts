@@ -15,6 +15,7 @@ import type {
   OverviewView,
   ReliabilityView,
   ReportedComparisonView,
+  RuleFindingView,
   RevenueGapRow,
   RevenueGapView,
   ServicePointView,
@@ -24,8 +25,10 @@ import {
   ENERGY_REFERENCE,
   calculateCollectionEfficiency,
   LOADING_REFERENCE,
+  RELIABILITY_REFERENCE,
   REVENUE_GAP_REFERENCE,
   SUPPLY_HOURS_REFERENCE,
+  attributionRuleDifference,
   billingByAccount,
   compareOnBasis,
   convertUnit,
@@ -166,6 +169,80 @@ export function describeBasis(basis: KpiBasis | null): string | null {
   return parts.length === 0 ? null : parts.join("; ");
 }
 
+function scopeName(loaded: Loaded, scope: ScopeRef): string {
+  const { index, snapshot } = loaded;
+  return (
+    (scope.kind === "distribution_transformer"
+      ? index.transformerById.get(scope.id)?.name
+      : scope.kind === "feeder"
+        ? index.feederById.get(scope.id)?.name
+        : scope.kind === "substation"
+          ? index.substationById.get(scope.id)?.name
+          : scope.kind === "region"
+            ? index.regionById.get(scope.id)?.name
+            : snapshot.organizations.find((organization) => organization.id === scope.id)?.name) ?? scope.id
+  );
+}
+
+const originList = (origins: readonly string[]): string => origins.map((origin) => ORIGIN_WORDS[origin]).join(" and ");
+
+/**
+ * What a reported attribution rule changes, as a finding (ADR 0007, second amendment): the same
+ * figure on the reference rule less the figure on the reported rule. The difference is
+ * calculated by analytics; this only puts it into view-model form and words.
+ */
+function ruleFinding(
+  loaded: Loaded,
+  scope: ScopeRef,
+  figure: string,
+  document: string | null,
+  onReportedRule: CalculatedKpi,
+  onReferenceRule: CalculatedKpi,
+): RuleFindingView | null {
+  const found = attributionRuleDifference(onReportedRule, onReferenceRule);
+  if (found === null) return null;
+  const hours = found.unit === "minutes" || found.unit === "hours";
+  const reported = kpiMetric(`${figure} on the report's rule`, found.onReportedRule);
+  const reference = kpiMetric(`${figure} on the reference rule`, found.onReferenceRule);
+  const parts = [
+    found.upstreamOnlyOnReportedRule.length > 0 ? `treats ${originList(found.upstreamOnlyOnReportedRule)} as upstream` : "",
+    found.upstreamOnlyOnReferenceRule.length > 0 ? `does not treat ${originList(found.upstreamOnlyOnReferenceRule)} as upstream` : "",
+  ].filter(Boolean);
+  return {
+    figure,
+    statedFor: { kind: scope.kind as RuleFindingView["statedFor"]["kind"], id: scope.id, name: scopeName(loaded, scope) },
+    statement: `Rule ${parts.join(" and ")}`,
+    difference: {
+      label: `${figure} under the reference rule, less ${figure} under the report's rule`,
+      value: found.difference === null ? null : hours ? convertUnit(found.difference, found.unit, "hours") : found.difference,
+      unit: hours ? "hours" : "interruptions_per_customer",
+      currency: null,
+      status:
+        found.difference === null
+          ? "insufficient_data"
+          : reported.status === "calculated_with_estimates" || reference.status === "calculated_with_estimates"
+            ? "calculated_with_estimates"
+            : "ok",
+      origin: "calculated",
+      derivation:
+        "The figure on the GridIntel reference rule less the same figure on the rule the report states. The interruptions, the classes " +
+        "counted and the customers served are the same in both; only the rule that puts an interruption in a class differs.",
+      method: methodView(methodologyRef(RELIABILITY_REFERENCE)),
+      inputs: [
+        { name: reference.label, value: reference.value, unit: reference.unit, origin: "calculated", quality: found.onReferenceRule.quality ?? "missing", estimatedShare: null, ref: found.onReferenceRule.methodology.id },
+        { name: reported.label, value: reported.value, unit: reported.unit, origin: "calculated", quality: found.onReportedRule.quality ?? "missing", estimatedShare: null, ref: found.onReportedRule.methodology.id },
+      ],
+      estimatedInputs: [],
+      missingInputs: [...new Set([...found.onReferenceRule.missingInputs, ...found.onReportedRule.missingInputs])],
+      warnings: [],
+      note: null,
+    },
+    onReportedRule: reported,
+    onReferenceRule: reference,
+    document,
+  };
+}
+
 /**
  * Reported figures beside calculated ones. `candidates` gives, for a
  * reported figure, the calculated figures it could be matched with; the
@@ -178,16 +255,17 @@ async function reportedComparisons(
     metric: "atcc" | "collection_efficiency" | "saidi" | "saifi";
     label: string;
     candidates: (basis: KpiBasis | null) => CalculatedKpi[] | Promise<CalculatedKpi[]>;
-    /** The figure on the reference rule, for a comparison made on another attribution rule; null when it is the same. */
-    onReferenceRule?: (basis: KpiBasis | null, compared: CalculatedKpi) => CalculatedKpi | null;
+    /** The same figure on the reference attribution rule, for a reliability figure; null when there is none on the reported basis. */
+    onReferenceRule?: (basis: KpiBasis | null) => CalculatedKpi | null;
   }[],
 ): Promise<ReportedComparisonView[]> {
+  const loaded = await loadRegistry(runtime);
   const reported = await runtime.repos.reported.listReportedKpis({ metrics: pairs.map((pair) => pair.metric), scopes: [scope] });
   const rows: ReportedComparisonView[] = [];
   for (const pair of pairs) {
     for (const kpi of reported.records.filter((record) => record.metric === pair.metric)) {
       const comparison = compareOnBasis(kpi, await pair.candidates(kpi.basis));
-      const reference = pair.onReferenceRule?.(kpi.basis, comparison.calculated) ?? null;
+      const reference = pair.onReferenceRule?.(kpi.basis) ?? null;
       rows.push(
         ((): ReportedComparisonView => {
         const ratio = kpi.unit === "percent" || kpi.unit === "fraction";
@@ -218,7 +296,11 @@ async function reportedComparisons(
           varianceUnit: comparison.variance.absoluteUnit,
           reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
           caveats: comparison.issues.filter((issue) => !issue.blocking).map((issue) => issue.message),
-          onReferenceRule: reference === null ? null : kpiMetric(`${pair.label} (calculated, reference rule)`, reference),
+          // A finding only where the comparison was in fact made on the reported rule.
+          ruleFinding:
+            reference === null || !comparison.sameBasis
+              ? null
+              : ruleFinding(loaded, scope, pair.label, kpi.document?.title ?? null, comparison.calculated, reference),
           document: kpi.document?.title ?? null,
         };
         })(),
@@ -413,7 +495,7 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
   const { reliability, supply } = result;
   const supplyMethod = methodView(methodologyRef(SUPPLY_HOURS_REFERENCE));
   const supplyStatus = supply.status;
-  return {
+  const view: Omit<ReliabilityView, "reported" | "ruleFindings"> = {
     sourcing: sourcingView(sourcing),
     saidi: kpiMetric("SAIDI", reliability.saidi),
     saifi: kpiMetric("SAIFI", reliability.saifi),
@@ -459,7 +541,8 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
       days: supply.days.map((day) => ({ date: localDate(day.start, timeZone), hours: day.hoursOfSupply, compliant: day.compliant })),
       note: supply.band === null ? null : supplyMethod.disclaimer,
     },
-    reported: await reportedComparisons(
+  };
+  const reported = await reportedComparisons(
       runtime,
       scope,
       (["saidi", "saifi"] as const).map((metric) => ({
@@ -483,14 +566,19 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
                 ).result.reliability;
           return [onRule[metric], ...(basis?.interruptionClasses ? [reliabilityOnBasis(onRule, basis.interruptionClasses)[metric]] : [])];
         },
-        // Shown beside a comparison made on another rule than the reference one.
-        onReferenceRule: (basis: KpiBasis | null, compared: CalculatedKpi) =>
-          basis?.interruptionClasses === undefined || compared.methodology.id === reliability[metric].methodology.id
-            ? null
-            : reliabilityOnBasis(reliability, basis.interruptionClasses)[metric],
+        // The same classes on the reference rule: what a reported rule changes is measured against it.
+        onReferenceRule: (basis: KpiBasis | null) =>
+          basis?.interruptionClasses === undefined ? null : reliabilityOnBasis(reliability, basis.interruptionClasses)[metric],
       })),
-    ),
-  };
+    );
+  return { ...view, reported, ruleFindings: reported.flatMap((row) => (row.ruleFinding === null ? [] : [row.ruleFinding])) };
+}
+
+/** A substation's reliability with the attribution-rule findings of its feeders after its own. */
+async function withFindingsBelow(runtime: OperationsRuntime, reliability: ReliabilityView, feederIds: readonly string[], timeZone: string | undefined): Promise<ReliabilityView> {
+  const below: RuleFindingView[] = [];
+  for (const id of feederIds) below.push(...(await reliabilityBlock(runtime, { kind: "feeder", id }, timeZone)).ruleFindings);
+  return below.length === 0 ? reliability : { ...reliability, ruleFindings: [...reliability.ruleFindings, ...below] };
 }
 
 export function loadingBlock(
@@ -908,7 +996,7 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
       title: "By feeder",
       rows: await revenueGapRows(runtime, loaded, feeders.map((feeder) => ({ kind: "feeder", id: feeder.id, name: feeder.name }))),
     },
-    reliability: await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)),
+    reliability: await withFindingsBelow(runtime, await reliabilityBlock(runtime, scope, timeZoneOf(loaded.snapshot)), feeders.map((feeder) => feeder.id), timeZoneOf(loaded.snapshot)),
     loading: null,
     children: [
       {

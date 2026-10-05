@@ -85,6 +85,13 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   await expect(money.nth(3)).toContainText("Lowest collection efficiency among feeders (cash basis)");
   await expect(money.nth(3)).toContainText("Below its Band D minimum of 8 h");
 
+  // What the report's attribution rule changes is listed under the feeder, with its size.
+  await expect(money.nth(3)).toContainText("Reported figure's rule treats sub-transmission lines as upstream");
+  await expect(money.nth(3)).toContainText("+56.7 h");
+  await expect(money.nth(3)).toContainText("SAIDI under the reference rule");
+  // Government Avenue's report states the same rule, and it moved nothing there: no finding.
+  await expect(money.nth(1)).not.toContainText("sub-transmission lines");
+
   // No transformer competes in the money ranking, and no subject is listed twice.
   await expect(list.locator('[data-group="money"] [data-subject^="DT-"]')).toHaveCount(0);
   const subjects = await list.locator("[data-subject]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-subject")));

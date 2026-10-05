@@ -82,6 +82,25 @@ export interface Crumb {
 
 /* ---------------- Losses ---------------- */
 
+/**
+ * A finding: a reported figure states an attribution rule other than the reference one, and this
+ * is what that rule changes. It is a figure of its own, with its size, and is never shown as a
+ * side note to the comparison.
+ */
+export interface RuleFindingView {
+  /** The figure the finding is about, e.g. "SAIDI". */
+  figure: string;
+  /** The scope whose reported figure states the rule. */
+  statedFor: { kind: LevelKind; id: string; name: string };
+  /** What the reported rule does, e.g. "Rule treats sub-transmission lines as upstream". */
+  statement: string;
+  /** The figure on the reference rule less the same figure on the reported rule. Signed; zero when the rule moved nothing in the period. */
+  difference: MetricView;
+  onReportedRule: MetricView;
+  onReferenceRule: MetricView;
+  document: string | null;
+}
+
 export interface ReportedComparisonView {
   label: string;
   /** Set when the comparison is for another scope than the page's: the name of the scope the report is stated for. */
@@ -105,10 +124,9 @@ export interface ReportedComparisonView {
   caveats: string[];
   /**
    * Set when the reported figure states an attribution rule other than the reference one, and
-   * the calculation beside it was made on that rule: the same figure on the reference rule, so
-   * the difference the rule makes is in plain view.
+   * the calculation beside it was made on that rule: what the rule changes, as a finding.
    */
-  onReferenceRule: MetricView | null;
+  ruleFinding: RuleFindingView | null;
   document: string | null;
 }
 
@@ -237,6 +255,11 @@ export interface ReliabilityView {
   momentary: number;
   supply: SupplyView;
   reported: ReportedComparisonView[];
+  /**
+   * Attribution-rule findings: those of the scope's own reported figures, and on a substation
+   * those of the feeders below it, each naming the scope it is stated for.
+   */
+  ruleFindings: RuleFindingView[];
 }
 
 /* ---------------- Loading ---------------- */

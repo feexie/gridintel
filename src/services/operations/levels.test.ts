@@ -148,7 +148,7 @@ describe("operations read models", () => {
     assert.equal(transformer.reliability.supply.band, null);
   });
 
-  it("compare a report on its own attribution rule where it states one, and show the reference figure beside it", async () => {
+  it("compare a report on its own attribution rule where it states one, and state what the rule changes as a finding", async () => {
     const farm = (await feederView(runtime, "FD-FRM")) as NetworkLevelView;
     const saidi = farm.reliability.reported.find((row) => row.label === "SAIDI");
     assert.equal(saidi?.sameBasis, true);
@@ -158,8 +158,26 @@ describe("operations read models", () => {
     assert.ok(Math.abs(saidi?.variance as number) < 0.1);
     // The reference figure, which puts the line faults on the network, is shown and is the screen's own network SAIDI.
     const network = farm.reliability.attribution.find((row) => row.key === "network");
-    assert.ok((saidi?.onReferenceRule?.value as number) > 50);
-    assert.ok(Math.abs((saidi?.onReferenceRule?.value as number) - (network?.saidiHours as number)) < 1e-9);
+    const found = saidi?.ruleFinding;
+    assert.ok((found?.onReferenceRule.value as number) > 50);
+    assert.ok(Math.abs((found?.onReferenceRule.value as number) - (network?.saidiHours as number)) < 1e-9);
+    // The finding is the difference, with its size: 57.1 h on the reference rule less 0.4 h on the report's.
+    assert.equal(found?.statement, "Rule treats sub-transmission lines as upstream");
+    assert.equal(found?.figure, "SAIDI");
+    assert.deepEqual(found?.statedFor, { kind: "feeder", id: "FD-FRM", name: "Farm Road 11 kV feeder" });
+    assert.ok(Math.abs((found?.difference.value as number) - ((found?.onReferenceRule.value as number) - (found?.onReportedRule.value as number))) < 1e-9);
+    assert.ok(Math.abs((found?.difference.value as number) - 56.7) < 0.05);
+    assert.equal(found?.difference.unit, "hours");
+    assert.equal(found?.difference.origin, "calculated");
+    assert.equal(found?.difference.method?.id, "gridintel.reliability.reference");
+    assert.equal(found?.difference.inputs.length, 2);
+    // It is on the feeder's screen as a finding, for SAIDI and for SAIFI.
+    assert.deepEqual(farm.reliability.ruleFindings.map((entry) => entry.figure), ["SAIDI", "SAIFI"]);
+    assert.ok(Math.abs((farm.reliability.ruleFindings[1].difference.value as number) - 16) < 0.05);
+
+    // A rule that differs and moved nothing is still stated, with a difference of exactly zero.
+    const government = (await feederView(runtime, "FD-GOV")) as NetworkLevelView;
+    assert.deepEqual(government.reliability.ruleFindings.map((entry) => entry.difference.value), [0, 0]);
     assert.ok(!saidi?.caveats.some((caveat) => /classification/.test(caveat)));
     // The headline indices and the attribution table stay on the reference rule.
     assert.equal(farm.reliability.saidi.method?.id, "gridintel.reliability.reference");
@@ -169,7 +187,14 @@ describe("operations read models", () => {
     const hillcrest = (await substationView(runtime, "SS-HIL")) as NetworkLevelView;
     const summary = hillcrest.reliability.reported.find((row) => row.label === "SAIDI");
     assert.equal(summary?.sameBasis, true);
-    assert.equal(summary?.onReferenceRule, null);
+    assert.equal(summary?.ruleFinding, null);
+    // The substation's screen carries the findings of the feeders below it, each naming its feeder.
+    assert.deepEqual(
+      hillcrest.reliability.ruleFindings.map((entry) => [entry.statedFor.id, entry.figure]),
+      [["FD-FRM", "SAIDI"], ["FD-FRM", "SAIFI"], ["FD-GOV", "SAIDI"], ["FD-GOV", "SAIFI"]],
+    );
+    // A feeder's own screen has only its own.
+    assert.ok(farm.reliability.ruleFindings.every((entry) => entry.statedFor.id === "FD-FRM"));
     assert.ok((summary?.variance as number) > 20);
     assert.ok(summary?.caveats.some((caveat) => /may reflect a difference in classification/.test(caveat)));
     assert.doesNotMatch(summary?.reportedBasis ?? "", /treating as upstream/);

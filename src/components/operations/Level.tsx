@@ -82,7 +82,7 @@ export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevel
         </Panel>
       )}
       <RevenueGapPanel gap={view.revenueGap} below={view.revenueGapBelow} />
-      <ReliabilityPanel reliability={view.reliability} showBand={view.header.kind === "feeder"} />
+      <ReliabilityPanel reliability={view.reliability} showBand={view.header.kind === "feeder"} scopeId={view.header.id} />
       {view.loading ? <LoadingPanel loading={view.loading} /> : null}
       {view.children.map((table) => (
         <ChildrenTable key={table.title} table={table} showAll={showAllRows} allHref={`${levelHref(view.header.kind, view.header.id)}?rows=all`} />

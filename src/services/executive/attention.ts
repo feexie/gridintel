@@ -1,4 +1,4 @@
-import type { LevelKind, MetricView } from "../operations/views.ts";
+import type { LevelKind, MetricView, RuleFindingView } from "../operations/views.ts";
 
 /* ==========================================================
    SERVICES — WHERE TO LOOK FIRST
@@ -40,6 +40,8 @@ export interface FeederSignals {
   collectionEfficiency: MetricView;
   networkSaidi: MetricView;
   supply: { band: string | null; minimumHours: number | null; averageHours: MetricView; daysBelowMinimum: number | null };
+  /** What the attribution rule of the feeder's reported SAIDI changes, where the report states one other than the reference rule. */
+  saidiRuleFinding: RuleFindingView | null;
 }
 
 export interface TransformerSignals {
@@ -63,6 +65,10 @@ export interface Finding {
   detail: { label: string; value: number } | null;
   /** A related figure shown for context and never ranked by. */
   context: { metric: MetricView; note: string } | null;
+  /** Set when the figure is a difference: it is written with its sign. */
+  signed?: boolean;
+  /** Words that belong after the figure, e.g. "SAIDI under the reference rule". */
+  suffix?: string;
 }
 
 export type AttentionGroup = "asset_risk" | "money" | "other";
@@ -94,7 +100,8 @@ export const ATTENTION_METHOD =
   "How this list is made. Findings come from fixed rules: (1) a transformer loaded above its rating; (2) the feeder with the largest " +
   "revenue not realised; (3) the feeder with the highest ATC&C; (4) a feeder that fell below its service-band minimum on at least one " +
   "day; (5) the feeder with the lowest collection efficiency; (6) the transformer with the highest commercial loss; (7) the feeder " +
-  "with the highest network-attributable SAIDI. Asset risk is its own group, shown first and never ranked by money: transformers " +
+  "with the highest network-attributable SAIDI; (8) a feeder whose reported SAIDI states an attribution rule other than the " +
+  "GridIntel reference rule, where that rule changes the figure: the size of the change is the finding. Asset risk is its own group, shown first and never ranked by money: transformers " +
   "over rating, highest peak first. Every feeder with a money figure is then ranked by estimated revenue not realised, largest " +
   `first; the top ${MONEY_RANK_LIMIT} are listed and the full list is one click away. Only feeders are ` +
   "ranked by money, because a transformer's commercial gap is already part of its feeder's total. Subjects with no money figure " +
@@ -109,6 +116,7 @@ const RULES = {
   lowestCollection: "Feeder with the lowest collection efficiency",
   highestCommercial: "Transformer with the highest commercial loss",
   highestNetworkSaidi: "Feeder with the highest network-attributable SAIDI",
+  attributionRule: "Feeder whose reported SAIDI is on an attribution rule that changes the figure",
 } as const;
 
 const RULE_ORDER: readonly string[] = Object.values(RULES);
@@ -215,6 +223,22 @@ export function attention(feeders: readonly FeederSignals[], transformers: reado
       metric: worstNetwork.networkSaidi,
       detail: null,
       context: null,
+    });
+  }
+
+  // Rule 8: feeders whose reported SAIDI is on an attribution rule that changes the figure.
+  // A rule that moved nothing in the period produces no finding.
+  for (const feeder of [...feeders].sort(byId)) {
+    const found = feeder.saidiRuleFinding;
+    if (found === null || found.difference.value === null || found.difference.value === 0) continue;
+    add("feeder", feeder, {
+      rule: RULES.attributionRule,
+      title: `Reported figure's ${found.statement.charAt(0).toLowerCase()}${found.statement.slice(1)}`,
+      metric: found.difference,
+      detail: null,
+      context: null,
+      signed: true,
+      suffix: `${found.figure} under the reference rule`,
     });
   }
 

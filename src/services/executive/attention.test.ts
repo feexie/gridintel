@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import type { MetricView } from "../operations/views.ts";
+import type { MetricView, RuleFindingView } from "../operations/views.ts";
 import type { FeederSignals, TransformerSignals } from "./attention.ts";
 import { ATTENTION_METHOD, attention } from "./attention.ts";
 
@@ -20,9 +20,20 @@ const metric = (label: string, value: number | null, unit: MetricView["unit"] = 
   note: null,
 });
 
+/** A reported SAIDI on a rule that treats sub-transmission lines as upstream, and what that changes in hours. */
+const ruleFinding = (id: string, differenceHours: number | null): RuleFindingView => ({
+  figure: "SAIDI",
+  statedFor: { kind: "feeder", id, name: `Feeder ${id}` },
+  statement: "Rule treats sub-transmission lines as upstream",
+  difference: metric("SAIDI under the reference rule, less SAIDI under the report's rule", differenceHours, "hours"),
+  onReportedRule: metric("SAIDI on the report's rule", 0.4, "hours"),
+  onReferenceRule: metric("SAIDI on the reference rule", differenceHours === null ? null : 0.4 + differenceHours, "hours"),
+  document: "Monthly report",
+});
+
 const feeder = (
   id: string,
-  signals: { gap: number | null; atcc: number | null; collection: number | null; saidi?: number | null; daysBelow?: number | null },
+  signals: { gap: number | null; atcc: number | null; collection: number | null; saidi?: number | null; daysBelow?: number | null; ruleDifference?: number | null },
 ): FeederSignals => ({
   id,
   name: `Feeder ${id}`,
@@ -31,6 +42,7 @@ const feeder = (
   collectionEfficiency: metric("Collection efficiency", signals.collection),
   networkSaidi: metric("SAIDI, network-attributable", signals.saidi ?? null, "hours"),
   supply: { band: "A", minimumHours: 20, averageHours: metric("Hours of supply per day", 21, "hours_per_day"), daysBelowMinimum: signals.daysBelow ?? 0 },
+  saidiRuleFinding: signals.ruleDifference === undefined ? null : ruleFinding(id, signals.ruleDifference),
 });
 
 const transformer = (
@@ -151,6 +163,31 @@ describe("where to look first: one entry per subject", () => {
     const empty = attention([feeder("F-X", { gap: null, atcc: null, collection: null })], [transformer("T-X", "Feeder F-X", { peak: null, commercialLoss: null, commercialGap: null })]);
     assert.deepEqual(empty, { assetRisk: [], ranked: [] });
     assert.deepEqual(attention(FEEDERS, TRANSFORMERS), result);
+  });
+
+  it("lists what a reported attribution rule changes as a finding of its own, with its size and sign", () => {
+    const withRule = attention(
+      [
+        feeder("F-A", { gap: 2_600_000, atcc: 0.13, collection: 0.95, saidi: 2, ruleDifference: 56.7 }),
+        feeder("F-B", { gap: 1_200_000, atcc: 0.59, collection: 0.66, saidi: 8, ruleDifference: 0 }),
+        feeder("F-C", { gap: 900_000, atcc: 0.2, collection: 0.9, saidi: 1, ruleDifference: null }),
+        feeder("F-D", { gap: 800_000, atcc: 0.2, collection: 0.9, saidi: 1 }),
+      ],
+      [],
+    );
+    const found = withRule.ranked.find((entry) => entry.subject.id === "F-A")?.findings.find((finding) => /attribution rule/.test(finding.rule));
+    assert.equal(found?.title, "Reported figure's rule treats sub-transmission lines as upstream");
+    assert.equal(found?.metric.value, 56.7);
+    assert.equal(found?.signed, true);
+    assert.equal(found?.suffix, "SAIDI under the reference rule");
+    // It is the last rule, so it follows the feeder's other findings, and the feeder is still listed once, by money.
+    assert.equal(withRule.ranked.find((entry) => entry.subject.id === "F-A")?.findings.at(-1), found);
+    assert.equal(withRule.ranked.find((entry) => entry.subject.id === "F-A")?.group, "money");
+    // A rule that moved nothing, a difference with no value, and no stated rule: no finding.
+    for (const id of ["F-B", "F-C", "F-D"]) {
+      assert.ok(!withRule.ranked.find((entry) => entry.subject.id === id)?.findings.some((finding) => /attribution rule/.test(finding.rule)), id);
+    }
+    assert.match(ATTENTION_METHOD, /states an attribution rule other than the GridIntel reference rule, where that rule changes the figure/);
   });
 
   it("prints a method that says exactly this", () => {

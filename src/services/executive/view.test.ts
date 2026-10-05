@@ -111,13 +111,17 @@ describe("executive read model", () => {
     const [market, government, oldTown, farm, transformer] = everything;
     const money = [market, government, oldTown, farm].map((entry) => entry.money?.value as number);
     assert.deepEqual(money, [...money].sort((a, b) => b - a));
+    // The report books each feeder's 33 kV line faults as upstream. Where a feeder had one, what that rule changes is a finding.
+    const RULE = "Feeder whose reported SAIDI is on an attribution rule that changes the figure";
     assert.deepEqual(market.findings.map((finding) => finding.rule), [
       "Feeder with the largest revenue not realised",
       "Feeder below its service-band minimum on at least one day",
+      RULE,
     ]);
     // Ranked second on money alone: its gap is collection lost to government accounts, which no ratio rule picks out.
+    // Its report states the same rule, but no interruption began on its 33 kV line, so there is no finding.
     assert.deepEqual(government.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day"]);
-    assert.deepEqual(oldTown.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day"]);
+    assert.deepEqual(oldTown.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day", RULE]);
     // The worst ratios are on the smallest feeder, which is why ratios do not set the order.
     // Its 33 kV line faults are the utility's own, so it also has the highest network SAIDI.
     assert.deepEqual(farm.findings.map((finding) => finding.rule), [
@@ -125,7 +129,13 @@ describe("executive read model", () => {
       "Feeder below its service-band minimum on at least one day",
       "Feeder with the lowest collection efficiency",
       "Feeder with the highest network-attributable SAIDI",
+      RULE,
     ]);
+    const rule = farm.findings.at(-1);
+    assert.equal(rule?.title, "Reported figure's rule treats sub-transmission lines as upstream");
+    assert.ok(Math.abs((rule?.metric.value as number) - 56.7) < 0.05);
+    assert.equal(rule?.signed, true);
+    assert.equal(rule?.suffix, "SAIDI under the reference rule");
     // A transformer's commercial loss has no money rank of its own: it is part of its feeder's.
     assert.equal(transformer.money, null);
     assert.deepEqual(transformer.findings.map((finding) => finding.rule), ["Transformer with the highest commercial loss"]);

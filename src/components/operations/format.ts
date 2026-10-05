@@ -29,7 +29,9 @@ export const LEVEL_NAME: Record<LevelKind, string> = {
 const number = (digits: number) => new Intl.NumberFormat("en-NG", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
 export function formatNumber(value: number, digits = 0): string {
-  return number(digits).format(value);
+  // A value that rounds to zero is written as zero: never "-0.0".
+  const rounded = Number(value.toFixed(digits));
+  return number(digits).format(rounded === 0 ? 0 : rounded);
 }
 
 export function formatPercent(value: number | null, digits = 1): string {
@@ -68,6 +70,12 @@ export function formatMetric(metric: MetricView): string {
     case "count":
       return formatNumber(metric.value);
   }
+}
+
+/** A difference, written with its sign: "+56.7 h". A difference that rounds to zero has none. */
+export function formatSigned(metric: MetricView): string {
+  const text = formatMetric({ ...metric, value: metric.value });
+  return metric.value !== null && metric.value > 0 && /[1-9]/.test(text) ? `+${text}` : text;
 }
 
 export const STATUS_LABEL: Record<DisplayStatus, string> = {
