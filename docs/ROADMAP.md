@@ -3,11 +3,11 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-05. Status: **Phase 6c-1 approved and merged to `main`
-on 2026-10-05, tag `phase-6c-1`. Phase 6c-2 (decisions, design system,
-navigation, Reliability and Revenue workspaces) complete on branch
-`phase-6c-2`, awaiting the Founder's approval at its checkpoint. Phase 6c-3
-(Assets, Events / Alarms) not started.**
+Last updated: 2026-10-05. Status: **Phase 6c-2 (decisions, design system,
+navigation, Reliability and Revenue workspaces) approved and merged to
+`main` on 2026-10-05, tag `phase-6c-2`. Phase 6c-3 (the Founder's decisions
+at the 6c-2 checkpoint, then the Assets and Events / Alarms workspaces)
+approved to start on branch `phase-6c-3`; not started.**
 
 ## Completed
 
@@ -311,7 +311,7 @@ are recorded under Phase 6c.
   network-attributable SAIDI" moved from Old Town to Farm Road.
 - ADR 0009 (customer metering) is a proposal with four questions to answer.
 
-### Phase 6c: Workspaces (6c-1 approved; 6c-2 complete, awaiting approval; 6c-3 not started)
+### Phase 6c: Workspaces (6c-1 and 6c-2 approved; 6c-3 approved to start)
 
 Split by the Founder into three gated parts: 6c-1, the decisions below, on
 the data and the engine; 6c-2, further decisions, the design system,
@@ -478,7 +478,7 @@ browser tests are green. Screenshots: `docs/screenshots/phase6c1`.
   longer race it. Whether the server should refuse or hold traffic until it
   is warm is open.
 
-#### Phase 6c-2: Decisions, design system, navigation, Reliability and Revenue (complete, awaiting approval; branch `phase-6c-2`)
+#### Phase 6c-2: Decisions, design system, navigation, Reliability and Revenue (complete, approved 2026-10-05; tag `phase-6c-2`)
 
 **Founder's decisions at the 6c-1 checkpoint (2026-10-05).** Items 1 to 6
 are built first, in this branch, before the workspaces.
@@ -627,7 +627,9 @@ the pauses that let requests through. The warmed server holds about 375 MB.
 **Acceptance, as met.** `npm run verify` green: typecheck, 404 unit tests,
 lint, build and 37 browser tests. Screenshots: `docs/screenshots/phase6c2`.
 
-**Decisions the engineer made, for the Founder to confirm or change.**
+**Decisions the engineer made, for the Founder to confirm or change.** The
+Founder's answers of 2026-10-05 are under Phase 6c-3 below: all confirmed
+except the source alarms and the reading round, which change.
 
 - *A register advance resting on an estimated reading is not counted* (ADR
   0010). The decision says "measured source"; an estimated reading is not
@@ -682,6 +684,74 @@ any hosted version and cannot be left off one screen.
 Each option is new infrastructure, and B to D put the code on someone else's
 machine. Access control in front of the app (A, B) adds no auth code to the
 app; a password inside the app (C) would, and is a separate decision.
+
+**Founder's decision (2026-10-05): option A for now, B later.** Nothing is
+to be set up by the engineer; see Phase 6c-3 for the guide that is owed.
+
+#### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; not started)
+
+**Founder's answers at the 6c-2 checkpoint (2026-10-05).**
+
+Confirmed as built:
+
+- A register advance resting on an estimated reading is not counted (ADR
+  0010).
+- The Government Avenue sizing rule is a hard guarantee (×1.296).
+- A rule difference of zero is stated on the feeder's own screen and is not
+  in "Where to look first".
+- `/api/ready` stays: a state, no data.
+- The SYNTHETIC DATA bar is on every dashboard page, placeholders included.
+
+Changed:
+
+- **Source alarms.** The source alarms are to include the kinds real SCADA
+  raises: RTU communications failure and feeder overcurrent trip. The two
+  derived rules stay. This replaces the 6c-2 choice to leave overload and
+  communications alarms out of the source data (amend ADR 0011).
+
+**Scope, in this order.**
+
+1. **Source alarms of real SCADA kinds** (amend ADR 0011;
+   `DATASET_ASSUMPTIONS.md`). Add RTU communications failure and feeder
+   overcurrent trip to the synthetic source alarms. Design the data so the
+   screen shows both cases, each recognisable as such:
+   - a source alarm that a GridIntel derived condition agrees with;
+   - a derived condition that no source alarm raised, for example the
+     DT-GOV-3 daytime overload.
+
+   Source alarms and derived conditions remain two lists, never mixed;
+   agreement is shown as a relation between an entry in each, not by merging
+   them.
+2. **Spread the reading round.** Readings are taken over several days per
+   route, so that a few fall outside the 3-day window and their exclusion,
+   with its reason, shows on screen. Report at the checkpoint what moved in
+   energy billed, and in anything downstream of it, before and after.
+3. **Revenue valuation table.** The top 10 transformers, with the full list
+   one click away.
+4. **Operations tables.** Move the older tables inside the Operations panels
+   onto the system table primitives.
+5. **Typeface files in the repository.** Commit the IBM Plex Sans and IBM
+   Plex Mono font files and load them with `next/font/local`, so the build
+   needs no network.
+6. **The 6c-3 workspaces: Assets and Events / Alarms**, as in the workspace
+   table below.
+
+**Hosted preview.** Option A is chosen for now (Cloudflare Tunnel from the
+Founder's laptop, behind Cloudflare Access); B later. The engineer creates no
+account and runs nothing external. Owed at the 6c-3 checkpoint: a
+step-by-step setup guide for A, written for someone doing it for the first
+time on Windows, covering:
+
+- which accounts are needed;
+- whether a domain is needed and what it costs;
+- the exact commands;
+- how to add or remove a viewer's email address;
+- how to shut it down.
+
+The SYNTHETIC DATA bar stays on every screen of any hosted version.
+
+**At the checkpoint.** The usual report, screenshots, timings (median of
+five), before and after for anything that moved, and the guide above.
 
 **The workspaces.**
 
