@@ -128,11 +128,15 @@ docs.
 - Work only on the phase approved in `docs/ROADMAP.md`.
 - Work each phase or sub-phase on its own branch (`phase-6a`, `phase-6b`).
   Merge to `main` only at the checkpoint, after the Founder approves it.
-- Commit every time the four checks are green, so an interruption never
-  loses more than one step. Push the branch as you go.
-- The four checks are `npm run typecheck`, `npm test`, `npm run lint` and
-  `npm run build`. All must pass before every commit. Run the browser tests
-  (`npm run test:e2e`) before a checkpoint and whenever a screen changes.
+- `npm run verify` runs the five checks in order and stops at the first
+  failure: `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`
+  and the browser tests (`npm run test:e2e`).
+- Commit only after `npm run verify` passes, and commit every time it does,
+  so an interruption never loses more than one step. Push the branch as you
+  go.
+- The browser tests run against the build `verify` has just made. Stop any
+  server left running on the test port first, or they will test an old
+  build.
 - New analytics and services come with tests. Deterministic logic is tested
   with fixed inputs and fixed times.
 - Temporary analysis scripts are removed after use. Do not modify production
@@ -146,5 +150,6 @@ docs.
 
 At every stop, report:
 
-Done / Commits / Checks (typecheck, test, lint, build) / Decisions made /
+Done / Commits / Checks (`npm run verify`: typecheck, test, lint, build,
+browser tests) / Decisions made /
 Open questions / Next.

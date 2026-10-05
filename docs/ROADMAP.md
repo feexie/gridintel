@@ -3,9 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-04. Status: **Phase 6c-1 (data and engine) complete on
-branch `phase-6c`, awaiting the Founder's approval at its checkpoint. Phase
-6c-2 (workspaces) not started; its scope is proposed under Phase 6c.**
+Last updated: 2026-10-05. Status: **Phase 6c-1 (data and engine) approved and
+merged to `main` on 2026-10-05, tag `phase-6c-1`. Phase 6c-2 (decisions, design
+system, navigation, Reliability and Revenue workspaces) in progress on branch
+`phase-6c-2`.**
 
 ## Completed
 
@@ -309,10 +310,12 @@ are recorded under Phase 6c.
   network-attributable SAIDI" moved from Old Town to Farm Road.
 - ADR 0009 (customer metering) is a proposal with four questions to answer.
 
-### Phase 6c: Workspaces (6c-1 complete, awaiting approval; 6c-2 not started)
+### Phase 6c: Workspaces (6c-1 approved; 6c-2 in progress; 6c-3 not started)
 
-Split by the Founder into two gated parts: 6c-1, the decisions below, on the
-data and the engine; 6c-2, the workspaces themselves, after 6c-1 is approved.
+Split by the Founder into three gated parts: 6c-1, the decisions below, on
+the data and the engine; 6c-2, further decisions, the design system,
+navigation and the Reliability and Revenue workspaces; 6c-3, the Assets and
+Events / Alarms workspaces.
 
 **Goal.** Each user's question has a screen shaped for it.
 
@@ -357,7 +360,7 @@ the workspaces, in this order.
 Also confirmed: Farm Road having the highest network-attributable SAIDI is
 correct and expected.
 
-#### Phase 6c-1: Data and engine (complete, awaiting approval; branch `phase-6c`)
+#### Phase 6c-1: Data and engine (complete, approved 2026-10-05; tag `phase-6c-1`)
 
 | Decision | Status | Commit |
 | --- | --- | --- |
@@ -474,54 +477,93 @@ browser tests are green. Screenshots: `docs/screenshots/phase6c1`.
   longer race it. Whether the server should refuse or hold traffic until it
   is warm is open.
 
-#### Phase 6c-2: Workspaces (not started; proposed scope, for approval)
+#### Phase 6c-2: Decisions, design system, navigation, Reliability and Revenue (in progress; branch `phase-6c-2`)
 
-Each workspace is one screen shaped for one job, built on services that
-exist or are named here. Nothing below is built.
+**Founder's decisions at the 6c-1 checkpoint (2026-10-05).** Items 1 to 6
+are built first, in this branch, before the workspaces.
 
-| Workspace | User | The job it answers | Needs that do not exist yet |
+1. **An attribution-rule difference is a named finding** (data-integrity
+   semantics; ADR 0007, second amendment). When a reported figure states an
+   attribution rule that differs from the GridIntel reference methodology,
+   the difference the rule makes is shown as a finding with its size, for
+   example "Rule treats sub-transmission lines as upstream: +56.7 h SAIDI
+   under the reference rule". It is not a muted side figure. It is on the
+   feeder and substation screens and in "Where to look first".
+2. **A register advance counts toward recorded consumption** (ADR 0010) as
+   its own measured source, when both readings fall within 3 days of the
+   period's ends. It is not pro-rated. Interval coverage and register
+   coverage are shown separately. A reading outside the window is excluded,
+   with the reason.
+3. **Government Avenue has one deliberate daytime overload**, from MDA load,
+   documented. The other transformers are sized for their daytime peak, so
+   which transformers overload no longer depends on the random seed.
+4. **Readiness.** While the server warms up it serves a short "preparing
+   data" page instead of holding requests. "-0.0 h" is fixed.
+5. **Process.** `npm run verify` runs typecheck, unit tests, lint, build and
+   the browser tests, stopping at the first failure. A commit is made only
+   after it passes (`ENGINEERING_RULES.md`, section 8).
+6. **Alarms are both kinds, never mixed**: alarms recorded by a source
+   system, and conditions GridIntel derives from telemetry, each derived one
+   labelled with its rule. The dataset gains power-transformer telemetry, so
+   Hillcrest T1 and T2 have a loading.
+7. **Typeface.** IBM Plex Sans and IBM Plex Mono, self-hosted through
+   `next/font`.
+
+**Scope of 6c-2, in order.** Items 1 to 6; the design system and tokens;
+navigation (a Utility Intelligence menu, placeholder pages out of the menu,
+one `h1` per page); the Reliability workspace; the Revenue workspace (revenue
+gap, collection by customer class with MDA visible, commercial against
+collection loss by feeder).
+
+**Moved to 6c-3.** The Assets and Events / Alarms workspaces. Decision 6 puts
+the alarm data and the power-transformer loading in place in 6c-2; the
+workspaces that are shaped around them follow.
+
+**At the 6c-2 checkpoint, as a proposal only** (new infrastructure is the
+Founder's decision): a private, access-controlled hosted preview, with the
+options, the monthly cost at current prices, what would leave the laptop, and
+how access is restricted. The SYNTHETIC DATA banner stays on every screen of
+any hosted version.
+
+**The checkpoint reports** the usual items, screenshots, page timings (median
+of five) and a before-and-after for every figure that moved.
+
+| Item | Status | Commit |
+| --- | --- | --- |
+| 5. `npm run verify`; rule in `ENGINEERING_RULES.md` | In progress | |
+| 1. Attribution-rule difference as a named finding | Not started | |
+| 2. Register advance in recorded consumption | Not started | |
+| 3. Government Avenue: one designed overload | Not started | |
+| 4. Readiness page; "-0.0 h" | Not started | |
+| 6. Alarms of both kinds; power-transformer telemetry | Not started | |
+| 7. Typeface; design system and tokens | Not started | |
+| Navigation | Not started | |
+| Reliability workspace | Not started | |
+| Revenue workspace | Not started | |
+
+**The workspaces.**
+
+| Workspace | User | The job it answers | Phase |
 | --- | --- | --- | --- |
-| Events / Alarms | Operations engineer on shift | "What is wrong now, where, and who is affected?" | An alarm port and synthetic alarms; a port for device heartbeats (the records exist, no port reads them) |
-| Reliability | Network performance engineer | "Which feeders fail their customers, why, and is it ours to fix?" | Nothing new in the engine: causes and origin points are calculated and not yet shown |
-| Assets | Asset manager | "Which assets require attention?" | Loading of power transformers (no telemetry for them in the dataset); nothing on age, condition or maintenance |
+| Reliability | Network performance engineer | "Which feeders fail their customers, why, and is it ours to fix?" | 6c-2 |
+| Revenue | Revenue manager | "Where is revenue not realised, who is not paying, and is the loss commercial or collection?" | 6c-2 |
+| Assets | Asset manager | "Which assets require attention?" | 6c-3 |
+| Events / Alarms | Operations engineer on shift | "What is wrong now, where, and who is affected?" | 6c-3 |
 
-- **Events / Alarms.** Active alarms by severity and age, each linked to its
-  asset; interruptions in progress and recently restored, with where they
-  began, their class, customers affected and restoration stages; monitors
-  that have gone quiet. Read-only: no acknowledgement or assignment.
 - **Reliability.** Feeders ranked by network-attributable SAIDI and SAIFI;
   the split by class, cause and origin point; day-by-day band compliance;
   the assets interruptions most often begin at; reported against calculated,
-  with the attribution rule.
-- **Assets.** The transformer fleet: rating, peak loading, hours over
-  rating, interruptions that began there, commercial loss, and how its
-  connections are metered (AMI, read monthly, prepaid, unmetered). Power
-  transformers and feeders as their own lists. Age, condition and
-  maintenance shown as not available.
-- **Navigation.** A Utility Intelligence menu of Executive, Operations,
-  Reliability, Assets and Events / Alarms; the "Coming Soon" pages out of the
-  menu; one `h1` per page; the period and the SYNTHETIC DATA label in one
+  with the attribution rule and its finding.
+- **Revenue.** The revenue gap and its two parts; collection by customer
+  class with government (MDA) accounts visible; commercial loss against
+  collection loss by feeder.
+- **Navigation.** A Utility Intelligence menu; the "Coming Soon" pages out of
+  the menu; one `h1` per page; the period and the SYNTHETIC DATA label in one
   place.
 - **Design system and typeface.** One set of tokens for status, origin,
   type and spacing, taken from what the Operations panels already do; the
   metric, table and panel components moved out of `components/operations`
-  into a shared set. Typeface: IBM Plex Sans with IBM Plex Mono for figures,
-  self-hosted. Recommended; the choice is the Founder's.
-
-**Proposed order.** Design system and navigation; Reliability; Assets;
-Events / Alarms last, because it alone needs new domain data.
-
-**Questions that gate 6c-2.**
-
-1. Are alarms records from a source system, conditions GridIntel derives
-   from telemetry (over rating, monitor quiet), or both kept apart? The
-   recommendation is both, never mixed: one is observed, the other
-   calculated.
-2. Should the dataset gain telemetry for power transformers, so Hillcrest T1
-   and T2 have a loading?
-3. Is a Revenue workspace wanted in 6c-2? The roadmap lists three; the
-   revenue manager's job is today answered inside Operations.
-4. The typeface.
+  into a shared set.
 
 ## Phase 7: GIS and network intelligence
 
