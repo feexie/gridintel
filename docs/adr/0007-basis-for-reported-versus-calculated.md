@@ -3,6 +3,7 @@
 Date: 2026-10-01
 Status: Accepted (Founder instruction; data-integrity semantics).
 Amended 2026-10-04: see "Amendment: a basis may state its attribution rule".
+Amended 2026-10-05: see "Second amendment: a rule difference is a finding".
 
 ## Context
 
@@ -128,6 +129,71 @@ of its network figures) is still on every screen. At substation level it is
 a variance under a classification note. At feeder level it is the gap
 between the calculation on the report's rule and the reference figure shown
 beside it. The reported figures themselves were not changed.
+
+## Second amendment (2026-10-05): a rule difference is a finding
+
+Approved by the Founder as a decision gate (data-integrity semantics), at the
+Phase 6c-1 checkpoint. Implemented in Phase 6c-2.
+
+**What was wrong.** The first amendment compares a report on its own
+attribution rule and shows "the figure on the reference rule beside the
+comparison". On the screen that became a muted line inside the comparison
+row. Farm Road read: reported 0.4 h, calculated 0.4 h, difference 0.0 h,
+same basis; and, in small type, 57.1 h on the reference rule. The agreement
+was the headline and the 56.7 hours the rule removes from the feeder's
+network figure was the footnote. That is the wrong way round. A rule that
+moves a utility's own line faults out of its network figure is the most
+important thing that comparison has to say.
+
+**Decision.**
+
+- When a reported figure states an attribution rule that differs from the
+  reference methodology's, what the rule changes is a **finding**: a named
+  statement with its size. For example: "Rule treats sub-transmission lines
+  as upstream: +56.7 h SAIDI under the reference rule".
+- The size is calculated, not read off the screen
+  (`attributionRuleDifference`, analytics): the figure on the reference rule
+  less the same figure on the reported rule. Both are computed from the same
+  interruptions, for the same classes and the same customers served, so the
+  difference is the rule's effect and nothing else. It is positive when the
+  reported rule moves interruptions out of the classes the figure counts.
+- The name says which origin points the two rules treat differently, in
+  words, from the grid down.
+- The finding is a figure like any other: it has a status, an origin
+  (calculated), a method (the reference reliability methodology) and its two
+  inputs, each with the methodology it was calculated under.
+- **Where it is shown.** On the screen of the scope the report is stated
+  for, above the attribution table, as a finding and not inside the
+  comparison row. On a substation's screen, for each feeder below it, naming
+  the feeder. In "Where to look first", under the feeder, as fixed rule 8.
+- **A difference of zero.** A report can state a different rule that moved
+  nothing in the period, because no interruption began where the rules
+  differ. The scope's own screen still says the rule differs, and that it
+  made no difference in the period. It is not listed in "Where to look
+  first": a rule that changed nothing is nothing to look at.
+- **No finding** exists when the rules are the same, when the report does not
+  state its rule (the first amendment's classification note applies
+  instead), or when the figure counts every class an interruption can be
+  moved between.
+- The comparison itself is unchanged: on the report's rule, with its
+  variance. The row says that it was made on the report's rule and points to
+  the finding.
+
+**What does not change.** The headline indices and the attribution table stay
+on the reference methodology. Nothing reported is altered. Totals are the
+same under any rule.
+
+**On the synthetic dataset.** SAIDI, network interruptions only:
+
+| Feeder | On the report's rule | On the reference rule | Finding |
+| --- | --- | --- | --- |
+| Market Road | 0.2 h | 3.8 h | +3.6 h |
+| Old Town | 5.6 h | 9.2 h | +3.6 h |
+| Government Avenue | 3.1 h | 3.1 h | none in the period: no 33 kV fault |
+| Farm Road | 0.4 h | 57.1 h | +56.7 h |
+
+The substation summaries do not state their rule, so they have no finding of
+their own. Their screens carry their feeders' findings.
 
 ## Consequences
 

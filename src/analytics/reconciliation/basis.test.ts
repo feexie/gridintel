@@ -8,6 +8,7 @@ import { calculateCollectionEfficiency } from "../losses/collection.ts";
 import { RELIABILITY_REFERENCE, reliabilityOnStatedRule } from "../core/methodology.ts";
 import { calculateReliability, reliabilityOnBasis } from "../reliability/indices.ts";
 import { attributionRuleMatters, basisDimensions, basisIssues, compareKpi, compareOnBasis } from "./compare.ts";
+import { attributionRuleDifference } from "./ruleDifference.ts";
 
 const SCOPE = { kind: "feeder", id: "FD-1" } as const;
 const ALL = ["network", "upstream_supply", "load_management", "other"] as const;
@@ -312,5 +313,62 @@ describe("reliability on a stated attribution rule", () => {
     assert.deepEqual(stated.saidi.basis.upstreamOrigins, ["grid", "subtransmission_line", "transmission_station"]);
     assert.equal(stated.saidi.methodology.id, reliabilityOnStatedRule(LINES_UPSTREAM).id);
     assert.deepEqual(reliabilityOnBasis(stated, ["network"]).saidi.basis.upstreamOrigins, ["grid", "subtransmission_line", "transmission_station"]);
+  });
+
+  describe("what the rule changes", () => {
+    const reference = on();
+    const stated = on(reliabilityOnStatedRule(LINES_UPSTREAM));
+    const network = (result: typeof reference) => reliabilityOnBasis(result, ["network"]);
+
+    it("is the figure on the reference rule less the figure on the reported rule, with the origin points that moved", () => {
+      const finding = attributionRuleDifference(network(stated).saidi, network(reference).saidi);
+      assert.deepEqual(finding?.upstreamOnlyOnReportedRule, ["subtransmission_line"]);
+      assert.deepEqual(finding?.upstreamOnlyOnReferenceRule, []);
+      // 360 minutes on the reference rule, 120 on the report's: the line fault's 240 minutes.
+      assert.ok(approx(finding?.difference ?? null, 240));
+      assert.equal(finding?.unit, "minutes");
+      assert.equal(finding?.onReferenceRule.methodology.id, RELIABILITY_REFERENCE.id);
+      assert.notEqual(finding?.onReportedRule.methodology.id, RELIABILITY_REFERENCE.id);
+      // SAIFI: one interruption per customer moved.
+      assert.ok(approx(attributionRuleDifference(network(stated).saifi, network(reference).saifi)?.difference ?? null, 1));
+    });
+
+    it("is negative for a figure the rule moves interruptions into", () => {
+      const upstream = (result: typeof reference) => reliabilityOnBasis(result, ["upstream_supply"]).saidi;
+      assert.ok(approx(attributionRuleDifference(upstream(stated), upstream(reference))?.difference ?? null, -240));
+    });
+
+    it("names origin points on either side of the rule, from the grid down", () => {
+      const narrow = on(reliabilityOnStatedRule(["subtransmission_line", "grid"]));
+      const finding = attributionRuleDifference(network(narrow).saidi, network(reference).saidi);
+      assert.deepEqual(finding?.upstreamOnlyOnReportedRule, ["subtransmission_line"]);
+      assert.deepEqual(finding?.upstreamOnlyOnReferenceRule, ["transmission_station"]);
+    });
+
+    it("is zero, and still a finding, when the rules differ and no interruption began where they differ", () => {
+      const quiet = (methodology = RELIABILITY_REFERENCE) =>
+        reliabilityOnBasis(calculateReliability({ scope: SCOPE, period: DAY, outages: [OUTAGES[1]], customersServed: served, methodology, context: CONTEXT }), ["network"]).saidi;
+      const finding = attributionRuleDifference(quiet(reliabilityOnStatedRule(LINES_UPSTREAM)), quiet());
+      assert.equal(finding?.difference, 0);
+    });
+
+    it("does not exist when the rules are the same, a rule is not stated, or the figure counts every class", () => {
+      assert.equal(attributionRuleDifference(network(reference).saidi, network(reference).saidi), null);
+      const unstated = { ...network(stated).saidi, basis: { interruptionClasses: ["network"] as const, plannedInterruptions: "included" as const } };
+      assert.equal(attributionRuleDifference(unstated, network(reference).saidi), null);
+      assert.equal(attributionRuleDifference(stated.saidi, reference.saidi), null);
+    });
+
+    it("is not given across different classes or metrics: that difference would not be the rule's", () => {
+      assert.equal(attributionRuleDifference(reliabilityOnBasis(stated, ["network", "upstream_supply"]).saidi, network(reference).saidi), null);
+      assert.equal(attributionRuleDifference(network(stated).saifi, network(reference).saidi), null);
+    });
+
+    it("has no value when either figure has none", () => {
+      const missing = { ...network(stated).saidi, value: null };
+      const finding = attributionRuleDifference(missing, network(reference).saidi);
+      assert.equal(finding?.difference, null);
+      assert.deepEqual(finding?.upstreamOnlyOnReportedRule, ["subtransmission_line"]);
+    });
   });
 });
