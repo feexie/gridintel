@@ -5,6 +5,7 @@ import type {
   Feeder,
   IsoTimestamp,
   MethodologyRef,
+  PowerTransformer,
   TelemetryPoint,
 } from "@/domain";
 import type { LoadingParameters, Methodology } from "../core/methodology.ts";
@@ -33,6 +34,7 @@ import { apparentPowerKva, latestReading, withinSkew } from "./apparentPower.ts"
 
 export type LoadingTarget =
   | { kind: "distribution_transformer"; asset: DistributionTransformer }
+  | { kind: "power_transformer"; asset: PowerTransformer }
   | { kind: "feeder"; asset: Feeder };
 
 export type LoadingBasis = "apparent_power_vs_rated_capacity" | "current_vs_rated_current";
@@ -61,6 +63,9 @@ export interface LoadingResult {
 function ratings(target: LoadingTarget): { capacityKva: number | null; currentA: number | null } {
   if (target.kind === "distribution_transformer") {
     return { capacityKva: target.asset.ratingKva, currentA: null };
+  }
+  if (target.kind === "power_transformer") {
+    return { capacityKva: target.asset.ratingMva * 1000, currentA: null };
   }
   const feeder = target.asset;
   return {

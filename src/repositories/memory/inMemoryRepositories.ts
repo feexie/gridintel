@@ -1,4 +1,4 @@
-import type { IntervalEnergy, IsoTimestamp, Outage, OutageExposure, Period, TelemetryPoint } from "@/domain";
+import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, Outage, OutageExposure, Period, TelemetryPoint } from "@/domain";
 import type { GridIntelRepositories } from "../ports/index.ts";
 import type { DomainDataset } from "./dataset.ts";
 
@@ -93,6 +93,21 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
     return bySource.get(`${kind}:${id}`) ?? [];
   };
 
+  // And device check-ins by device.
+  let byDevice: Map<string, DeviceHeartbeat[]> | null = null;
+  const heartbeatsOf = (kind: string, id: string): readonly DeviceHeartbeat[] => {
+    if (byDevice === null) {
+      byDevice = new Map();
+      for (const heartbeat of dataset.heartbeats) {
+        const key = `${heartbeat.device.kind}:${heartbeat.device.id}`;
+        const list = byDevice.get(key);
+        if (list === undefined) byDevice.set(key, [heartbeat]);
+        else list.push(heartbeat);
+      }
+    }
+    return byDevice.get(`${kind}:${id}`) ?? [];
+  };
+
   return {
     registry: {
       async getSnapshot(query) {
@@ -129,6 +144,21 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
         );
         return { records, completeness: dataset.completeness.telemetry };
       },
+
+      async listHeartbeats(query) {
+        const fromMs = queryInstant("from", query.from);
+        const asOfMs = queryInstant("asOf", query.asOf);
+        // Records are returned grouped by device, in the order the devices were asked for.
+        const devices = [...new Map(query.devices.map((device) => [`${device.kind}:${device.id}`, device])).values()];
+        const records = devices.flatMap((device) =>
+          heartbeatsOf(device.kind, device.id).filter((heartbeat) => {
+            const receivedMs = epochMs(heartbeat.receivedAt);
+            if (receivedMs === null) return true;
+            return receivedMs >= fromMs && receivedMs <= asOfMs;
+          }),
+        );
+        return { records, completeness: dataset.completeness.heartbeats };
+      },
     },
 
     events: {
@@ -136,6 +166,19 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
         const { startMs, endMs } = queryBounds(query.period);
         const records = dataset.outages.filter((outage) => outageSelected(outage, startMs, endMs));
         return { records, completeness: dataset.completeness.outages };
+      },
+
+      async listAlarms(query) {
+        const { startMs, endMs } = queryBounds(query.period);
+        const records = dataset.alarms.filter((alarm) => {
+          const raisedMs = epochMs(alarm.raisedAt);
+          // An alarm with no usable raise time is returned, for analytics to report as undated.
+          if (raisedMs === null) return true;
+          if (raisedMs >= endMs) return false;
+          const clearedMs = epochMs(alarm.clearedAt);
+          return clearedMs === null || clearedMs > startMs;
+        });
+        return { records, completeness: dataset.completeness.alarms };
       },
     },
 

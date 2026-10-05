@@ -193,6 +193,29 @@ export function statedRuleMethodology(ref: MethodologyRef): { name: string; disc
 }
 
 /* ==========================================================
+   DERIVED CONDITIONS
+========================================================== */
+
+export interface ConditionParameters {
+  /** A monitoring device is quiet when its last check-in is older than this at the as-of time. */
+  quietAfterMinutes: number;
+}
+
+export const CONDITIONS_REFERENCE: Methodology<ConditionParameters> = {
+  id: "gridintel.conditions.reference",
+  version: "0.1.0",
+  name: "GridIntel reference derived conditions",
+  description:
+    "Conditions GridIntel derives from telemetry under fixed rules: an asset loaded above its rating at a reading in the " +
+    "period, and a monitoring device whose last check-in is too old. They are calculated, and are not alarms from any source system.",
+  authority: "gridintel_reference",
+  status: "draft",
+  disclaimer: "GridIntel derived condition, calculated from telemetry. It is not an alarm recorded by a source system.",
+  // Two missed check-ins of a device that reports hourly.
+  parameters: { quietAfterMinutes: 120 },
+};
+
+/* ==========================================================
    EQUIPMENT LOADING
 ========================================================== */
 

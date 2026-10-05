@@ -20,6 +20,10 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
      feeder head             = (Σ totalizers + MV customer) ÷ (1 − MV loss)
      substation incomer      = Σ heads of the feeders on its bus
                                section ÷ (1 − substation loss)
+     power transformer load  = Σ demand of the feeders on its bus
+                               section ÷ (1 − substation loss), as
+                               hourly apparent power from the
+                               substation's remote terminal unit
 
    Consumption is modelled hour by hour for every connection. What
    the dataset HOLDS is only what each kind of meter can report
@@ -246,6 +250,8 @@ export function buildEnergyModel(): EnergyModel {
   for (const substation of SUBSTATIONS) {
     // One meter per incomer: each carries the feeders on the bus section its transformer feeds.
     const incomers = substation.incomers.map(() => zeros());
+    // What each incomer's power transformer carries, kVA: the demand of the feeders on its section.
+    const transformerKva = substation.incomers.map(() => zeros());
     let substationConsumed = 0;
 
     for (const feeder of FEEDERS.filter((plan) => plan.substationId === substation.id)) {
@@ -297,6 +303,7 @@ export function buildEnergyModel(): EnergyModel {
       for (let h = 0; h < DEMO_HOURS; h++) {
         incomer[h] += head[h];
         const kva = headDemandKva[h] / (1 - feeder.mvLoss);
+        transformerKva[feeder.incomer - 1][h] += kva;
         const amps = kva / (Math.sqrt(3) * 11);
         telemetryPoint(source, "apparent_power_kva", h, kva, "total", device);
         telemetryPoint(source, "current_a", h, amps * 1.03, "A", device);
@@ -310,6 +317,11 @@ export function buildEnergyModel(): EnergyModel {
       for (let h = 0; h < DEMO_HOURS; h++) incomer[h] /= 1 - SUBSTATION_LOSS;
       pushHourly(BOUNDARY_METERS.incomer(substation, i + 1), incomer);
       received += sum(incomer);
+      // The transformer's loading, read at its 11 kV side by the substation's remote terminal unit.
+      const source = { kind: "power_transformer" as const, id: substation.incomers[i].powerTransformer.id };
+      for (let h = 0; h < DEMO_HOURS; h++) {
+        telemetryPoint(source, "apparent_power_kva", h, transformerKva[i][h] / (1 - SUBSTATION_LOSS), "total", `ED-${substation.id}`);
+      }
     });
     technicalLossKwh.set(`substation:${substation.id}`, received - substationConsumed);
   }

@@ -28,6 +28,7 @@ describe("demo dataset: synthetic and deterministic", () => {
     const again = buildDemoDataset();
     assert.deepEqual(again.registry, dataset.registry);
     assert.deepEqual(again.outages, dataset.outages);
+    assert.deepEqual(again.alarms, dataset.alarms);
     assert.deepEqual(again.billingRecords, dataset.billingRecords);
     assert.deepEqual(again.payments, dataset.payments);
     assert.deepEqual(again.reportedKpis, dataset.reportedKpis);
@@ -48,6 +49,7 @@ describe("demo dataset: synthetic and deterministic", () => {
       ...dataset.telemetry,
       ...dataset.heartbeats,
       ...dataset.outages,
+      ...dataset.alarms,
       ...dataset.reportedKpis,
       ...dataset.billingRecords,
       ...dataset.payments,
@@ -68,6 +70,7 @@ describe("demo dataset: synthetic and deterministic", () => {
       ...dataset.billingRecords.map((b) => Date.parse(b.billedAt)),
       ...dataset.payments.map((p) => Date.parse(p.receivedAt)),
       ...dataset.outages.flatMap((o) => o.exposures.flatMap((e) => (e.restoredAt ? [Date.parse(e.restoredAt)] : []))),
+      ...dataset.alarms.flatMap((a) => [a.raisedAt, a.clearedAt, a.acknowledgedAt].flatMap((time) => (time ? [Date.parse(time)] : []))),
     ];
     assert.ok(times.every((ms) => !Number.isNaN(ms) && ms <= clock));
   });
@@ -136,6 +139,69 @@ describe("demo dataset: structure", () => {
     assert.ok(government.length > 50);
     assert.ok(government.every((c) => c.feederId === "FD-GOV" && c.metering === "postpaid" && c.demandClass === "md"));
     assert.ok(registry.customers.filter((c) => c.category === "government").every((c) => c.demandClass === "md"));
+  });
+
+  describe("alarms recorded by the source systems", () => {
+    const byId = new Map(dataset.outages.map((outage) => [outage.id, outage]));
+
+    it("raises one alarm for each unplanned interruption that protection or a monitor would see, at the times of the outage log", () => {
+      const tied = dataset.alarms.filter((alarm) => byId.has(alarm.id.replace(/^ALM-/, "OUT-")));
+      // 19 losses of the rural 33 kV line, the Riverside line fault, three feeder faults and three transformer or LV faults.
+      assert.equal(tied.length, 26);
+      for (const alarm of tied) {
+        const outage = byId.get(alarm.id.replace(/^ALM-/, "OUT-"))!;
+        assert.equal(outage.planned, false, alarm.id);
+        assert.notEqual(outage.cause, "load_shedding", alarm.id);
+        const starts = outage.exposures.map((exposure) => Date.parse(exposure.interruptedAt as string));
+        const ends = outage.exposures.map((exposure) => Date.parse(exposure.restoredAt as string));
+        assert.equal(Date.parse(alarm.raisedAt as string), Math.min(...starts), alarm.id);
+        assert.equal(Date.parse(alarm.clearedAt as string), Math.max(...ends), alarm.id);
+      }
+    });
+
+    it("raises none for load shedding or planned work, and none for what GridIntel derives", () => {
+      const alarmed = new Set(dataset.alarms.map((alarm) => alarm.id.replace(/^ALM-/, "OUT-")));
+      for (const outage of dataset.outages) {
+        if (outage.cause === "load_shedding" || outage.planned === true) assert.ok(!alarmed.has(outage.id), outage.id);
+      }
+      // No overload alarm and no communications alarm: the source systems do not raise them.
+      assert.ok(!dataset.alarms.some((alarm) => /overload|rating|comm/i.test(alarm.code)));
+      assert.ok(!dataset.alarms.some((alarm) => "id" in alarm.subject && alarm.subject.kind === "edge_device"));
+    });
+
+    it("names only assets that are in the registry, and holds the three states a list must show", () => {
+      const known = new Set([...registry.substations, ...registry.powerTransformers, ...registry.feeders, ...registry.distributionTransformers].map((asset) => asset.id));
+      assert.ok(dataset.alarms.every((alarm) => "id" in alarm.subject && known.has(alarm.subject.id)));
+      const standing = dataset.alarms.filter((alarm) => alarm.raisedAt !== undefined && alarm.clearedAt === undefined);
+      assert.deepEqual(standing.map((alarm) => [alarm.id, alarm.acknowledgedAt !== undefined]), [["ALM-2026-09-26-PT-RIV-1-OIL", true], ["ALM-2026-09-30-SS-HIL-DC", false]]);
+      assert.deepEqual(dataset.alarms.filter((alarm) => alarm.raisedAt === undefined).map((alarm) => alarm.id), ["ALM-SS-RIV-DOOR"]);
+      assert.equal(dataset.alarms.length, 29);
+    });
+  });
+
+  describe("power transformer telemetry", () => {
+    it("gives each power transformer an hourly apparent power: the demand of the feeders on its bus section", () => {
+      const reading = (kind: string, id: string, h: number) =>
+        dataset.telemetry.find((point) => point.source.kind === kind && point.source.id === id && point.metric === "apparent_power_kva" && Date.parse(point.observedAt) === PERIOD_START_MS + h * 3_600_000)?.value as number;
+      for (const pt of registry.powerTransformers) {
+        const points = dataset.telemetry.filter((point) => point.source.kind === "power_transformer" && point.source.id === pt.id);
+        assert.equal(points.length, DEMO_HOURS, pt.id);
+        assert.ok(points.every((point) => point.metric === "apparent_power_kva" && point.deviceId === `ED-${pt.substationId}`), pt.id);
+      }
+      // At any hour a transformer carries its feeders' demand, plus the substation's own 1% loss.
+      for (const h of [10, 200, 475, 700]) {
+        assert.ok(Math.abs(reading("power_transformer", "PT-RIV-1", h) - (reading("feeder", "FD-MKT", h) + reading("feeder", "FD-OLD", h)) / 0.99) < 0.05, `Riverside T1, hour ${h}`);
+        assert.ok(Math.abs(reading("power_transformer", "PT-HIL-1", h) - reading("feeder", "FD-GOV", h) / 0.99) < 0.05, `Hillcrest T1, hour ${h}`);
+        assert.ok(Math.abs(reading("power_transformer", "PT-HIL-2", h) - reading("feeder", "FD-FRM", h) / 0.99) < 0.05, `Hillcrest T2, hour ${h}`);
+      }
+    });
+
+    it("loads no power transformer above its rating", () => {
+      for (const pt of registry.powerTransformers) {
+        const peak = Math.max(...dataset.telemetry.filter((point) => point.source.kind === "power_transformer" && point.source.id === pt.id).map((point) => point.value as number));
+        assert.ok(peak > 0 && peak < pt.ratingMva * 1000, `${pt.id}: ${peak.toFixed(0)} kVA on ${pt.ratingMva} MVA`);
+      }
+    });
   });
 
   describe("overloaded transformers are a design decision", () => {

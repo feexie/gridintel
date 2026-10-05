@@ -1,4 +1,5 @@
 import type {
+  Alarm,
   BillingRecord,
   DataSource,
   DeviceHeartbeat,
@@ -23,9 +24,10 @@ export interface DomainDataset {
   registryCoverage: RegistryCoverage;
   intervalEnergy: readonly IntervalEnergy[];
   telemetry: readonly TelemetryPoint[];
-  /** Held for a later consumer; no port reads heartbeats yet. */
   heartbeats: readonly DeviceHeartbeat[];
   outages: readonly Outage[];
+  /** Alarms as source systems recorded them. Derived conditions are never held here. */
+  alarms: readonly Alarm[];
   reportedKpis: readonly ReportedKpi[];
   billingRecords: readonly BillingRecord[];
   payments: readonly Payment[];
@@ -35,6 +37,7 @@ export interface DomainDataset {
     telemetry: Completeness;
     heartbeats: Completeness;
     outages: Completeness;
+    alarms: Completeness;
     reportedKpis: Completeness;
     billing: Completeness;
   };

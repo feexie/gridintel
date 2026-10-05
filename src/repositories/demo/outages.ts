@@ -282,6 +282,29 @@ function individualEvents(): EventPlan[] {
 
 const EVENTS: readonly EventPlan[] = [...loadShedding(), ...ruralLineInterruptions(), ...individualEvents()];
 
+/** An interruption that was not load shedding, as the alarm list needs it: what, where, and from when to when. */
+export interface InterruptionWindow {
+  id: string;
+  origin: EntityRef;
+  originPoint: InterruptionOrigin;
+  planned: boolean;
+  cause: InterruptionCause;
+  startMs: number;
+  /** When the last part was restored. */
+  endMs: number;
+}
+
+/** Every interruption that was not load shedding, in the order designed. Load shedding raises no alarm: the feeder is opened on purpose. */
+export const INTERRUPTION_WINDOWS: readonly InterruptionWindow[] = EVENTS.filter((event) => event.cause !== "load_shedding").map((event) => ({
+  id: event.id,
+  origin: event.origin,
+  originPoint: event.originPoint,
+  planned: event.planned,
+  cause: event.cause,
+  startMs: Math.min(...event.parts.map((part) => part.startMs)),
+  endMs: Math.max(...event.parts.map((part) => part.endMs)),
+}));
+
 const TRANSFORMER_ID = new Map(TRANSFORMERS.map((dt) => [dt.key, dt.id]));
 
 function affected(supplyKey: string): AssetRef {

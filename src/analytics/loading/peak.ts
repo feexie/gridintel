@@ -27,6 +27,9 @@ export interface PeakLoadingResult {
   instantsComputed: number;
   /** Instants at which loading was above the methodology's overload threshold. */
   instantsOverloaded: number;
+  /** The first and the last of those instants; null when there was none. */
+  firstOverloadedAt: IsoTimestamp | null;
+  lastOverloadedAt: IsoTimestamp | null;
 }
 
 export function peakLoading(params: {
@@ -39,7 +42,15 @@ export function peakLoading(params: {
   context: CalculationContext;
 }): PeakLoadingResult {
   const { target, window } = params;
-  const empty: PeakLoadingResult = { window, peak: null, instantsEvaluated: 0, instantsComputed: 0, instantsOverloaded: 0 };
+  const empty: PeakLoadingResult = {
+    window,
+    peak: null,
+    instantsEvaluated: 0,
+    instantsComputed: 0,
+    instantsOverloaded: 0,
+    firstOverloadedAt: null,
+    lastOverloadedAt: null,
+  };
   const bounds = periodBounds(window);
   if (bounds === null) return empty;
 
@@ -74,7 +85,12 @@ export function peakLoading(params: {
     });
     if (loading.status !== "ok" || loading.loadingFraction === null) continue;
     result.instantsComputed += 1;
-    if (loading.loadingFraction > params.overloadThreshold) result.instantsOverloaded += 1;
+    if (loading.loadingFraction > params.overloadThreshold) {
+      result.instantsOverloaded += 1;
+      // Instants are visited in time order.
+      result.firstOverloadedAt ??= loading.asOf;
+      result.lastOverloadedAt = loading.asOf;
+    }
     if (result.peak === null || loading.loadingFraction > (result.peak.loadingFraction as number)) result.peak = loading;
   }
   return result;

@@ -36,6 +36,11 @@ export const OUTAGE_SOURCE = source(
   "Synthetic outage log",
   "Stands in for an outage management system: interruptions with per-transformer restoration times.",
 );
+export const ALARM_SOURCE = source(
+  "synthetic-alarms",
+  "Synthetic alarm list",
+  "Stands in for a SCADA alarm list and the alarms of substation relays and transformer monitors.",
+);
 export const BILLING_SOURCE = source(
   "synthetic-billing",
   "Synthetic billing and vending",
@@ -52,6 +57,7 @@ export const DEMO_DATA_SOURCES: readonly DataSource[] = [
   METERING_SOURCE,
   SCADA_SOURCE,
   OUTAGE_SOURCE,
+  ALARM_SOURCE,
   BILLING_SOURCE,
   REPORT_SOURCE,
 ];

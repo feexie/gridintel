@@ -106,6 +106,7 @@ export function sparseDataset(): DomainDataset {
     telemetry: [],
     heartbeats: [],
     outages: [undatedOutage("O-1"), undatedOutage("O-2")],
+    alarms: [],
     reportedKpis: [
       reported(OPERATIONS, region("R-1"), "collection_efficiency", 91.8, "percent"),
       reported(EXECUTIVE, region("R-1"), "revenue_billed", 820_000_000, "currency"),
@@ -124,6 +125,7 @@ export function sparseDataset(): DomainDataset {
       telemetry: "partial",
       heartbeats: "not_available",
       outages: "partial",
+      alarms: "not_available",
       reportedKpis: "partial",
       billing: "not_available",
     },

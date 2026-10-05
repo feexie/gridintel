@@ -1,4 +1,5 @@
 import type { DomainDataset } from "../memory/dataset.ts";
+import { buildDemoAlarms } from "./alarms.ts";
 import { buildDemoBilling } from "./billing.ts";
 import { buildEnergyModel } from "./energy.ts";
 import { buildDemoRegistry } from "./network.ts";
@@ -40,6 +41,7 @@ export function buildDemoDataset(): DomainDataset {
     telemetry: energy.telemetry,
     heartbeats: energy.heartbeats,
     outages: buildDemoOutages(),
+    alarms: buildDemoAlarms(),
     reportedKpis: buildDemoReportedKpis(energy.technicalLossKwh),
     billingRecords: billing.billingRecords,
     payments: billing.payments,
@@ -49,6 +51,7 @@ export function buildDemoDataset(): DomainDataset {
       telemetry: "complete",
       heartbeats: "complete",
       outages: "complete",
+      alarms: "complete",
       reportedKpis: "complete",
       billing: "complete",
     },

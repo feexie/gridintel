@@ -24,11 +24,13 @@ import { loadTopology } from "./topology.ts";
 /* ==========================================================
    SERVICES — EQUIPMENT LOADING
 
-   Loading of a distribution transformer or a feeder at an as-of
-   time, from the telemetry readings recent enough for the
-   methodology, and optionally the highest loading observed over a
-   window.
+   Loading of a distribution transformer, a power transformer or a
+   feeder at an as-of time, from the telemetry readings recent enough
+   for the methodology, and optionally the highest loading observed
+   over a window.
 ========================================================== */
+
+export type LoadedAssetKind = "distribution_transformer" | "power_transformer" | "feeder";
 
 export interface AssetLoading {
   /** null when the asset is not in the registry. */
@@ -40,7 +42,7 @@ export interface AssetLoading {
 
 interface LoadingParams {
   repos: GridIntelRepositories;
-  asset: { kind: "distribution_transformer" | "feeder"; id: string };
+  asset: { kind: LoadedAssetKind; id: string };
   asOf: IsoTimestamp;
   /** Also report the highest loading observed in this window. */
   window?: Period;
@@ -56,9 +58,14 @@ export function assetLoading(params: LoadingParams): Promise<Sourced<AssetLoadin
 async function computeLoading(params: LoadingParams): Promise<Sourced<AssetLoading>> {
   const { repos, asset, asOf, window, context } = params;
   const trail = new SourceTrail();
-  const { index } = await loadTopology(repos.registry, asOf, params.cache);
+  const { index, snapshot } = await loadTopology(repos.registry, asOf, params.cache);
 
-  const record = asset.kind === "feeder" ? index.feederById.get(asset.id) : index.transformerById.get(asset.id);
+  const record =
+    asset.kind === "feeder"
+      ? index.feederById.get(asset.id)
+      : asset.kind === "power_transformer"
+        ? snapshot.powerTransformers.find((transformer) => transformer.id === asset.id && transformer.lifecycle === "in_service")
+        : index.transformerById.get(asset.id);
   const asOfMs = toEpochMs(asOf);
   if (record === undefined || asOfMs === null) {
     return { result: { loading: null, overload: null, peak: null }, sourcing: await trail.resolve(repos.sources) };

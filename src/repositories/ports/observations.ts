@@ -1,4 +1,4 @@
-import type { AssetRef, IntervalEnergy, IsoTimestamp, Period, TelemetryPoint } from "@/domain";
+import type { AssetRef, DeviceHeartbeat, IntervalEnergy, IsoTimestamp, Period, TelemetryPoint } from "@/domain";
 import type { RepositoryResult } from "./common.ts";
 
 /* ==========================================================
@@ -22,7 +22,16 @@ export interface TelemetryQuery {
   asOf: IsoTimestamp;
 }
 
+export interface HeartbeatQuery {
+  /** Edge devices or meters. */
+  devices: readonly AssetRef[];
+  /** Check-ins with from ≤ receivedAt ≤ asOf are returned. Which is the latest is for analytics to say. */
+  from: IsoTimestamp;
+  asOf: IsoTimestamp;
+}
+
 export interface ObservationRepository {
   listIntervalEnergy(query: IntervalEnergyQuery): Promise<RepositoryResult<IntervalEnergy>>;
   listTelemetry(query: TelemetryQuery): Promise<RepositoryResult<TelemetryPoint>>;
+  listHeartbeats(query: HeartbeatQuery): Promise<RepositoryResult<DeviceHeartbeat>>;
 }

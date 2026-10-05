@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import type { IntervalEnergy, Outage, OutageExposure, Provenance, ReportedKpi, TelemetryPoint } from "@/domain";
+import type { Alarm, DeviceHeartbeat, IntervalEnergy, Outage, OutageExposure, Provenance, ReportedKpi, TelemetryPoint } from "@/domain";
 import type { RegistryCoverage } from "../ports/index.ts";
 import type { DomainDataset } from "./dataset.ts";
 import { createInMemoryRepositories } from "./inMemoryRepositories.ts";
@@ -80,6 +80,7 @@ function dataset(overrides: Partial<DomainDataset> = {}): DomainDataset {
     telemetry: [],
     heartbeats: [],
     outages: [],
+    alarms: [],
     reportedKpis: [],
     billingRecords: [],
     payments: [],
@@ -89,12 +90,64 @@ function dataset(overrides: Partial<DomainDataset> = {}): DomainDataset {
       telemetry: "partial",
       heartbeats: "partial",
       outages: "partial",
+      alarms: "partial",
       reportedKpis: "not_available",
       billing: "not_available",
     },
     ...overrides,
   };
 }
+
+describe("in-memory alarms and heartbeats", () => {
+  const alarm = (id: string, raisedAt?: string, clearedAt?: string): Alarm => ({
+    id,
+    subject: { kind: "feeder", id: "FD-1" },
+    code: "X",
+    severity: "low",
+    message: id,
+    ...(raisedAt === undefined ? {} : { raisedAt }),
+    ...(clearedAt === undefined ? {} : { clearedAt }),
+    quality: "measured",
+    provenance: PROVENANCE,
+  });
+  const beat = (id: string, receivedAt: string): DeviceHeartbeat => ({ device: { kind: "edge_device", id }, receivedAt, provenance: PROVENANCE });
+
+  it("returns alarms raised before the end of the period and not cleared by its start, and every undated one", async () => {
+    const repos = createInMemoryRepositories(
+      dataset({
+        alarms: [
+          alarm("cleared-before", "2026-01-01T00:10:00Z", "2026-01-01T00:50:00Z"),
+          alarm("cleared-at-start", "2026-01-01T00:10:00Z", "2026-01-01T01:00:00Z"),
+          alarm("standing-from-before", "2026-01-01T00:10:00Z"),
+          alarm("cleared-inside", "2026-01-01T00:10:00Z", "2026-01-01T01:30:00Z"),
+          alarm("raised-inside", "2026-01-01T01:15:00Z", "2026-01-01T03:00:00Z"),
+          alarm("raised-at-end", "2026-01-01T02:00:00Z"),
+          alarm("undated"),
+          alarm("unreadable", "not a time"),
+        ],
+      }),
+    );
+    const result = await repos.events.listAlarms({ period: PERIOD });
+    assert.deepEqual(result.records.map((record) => record.id), ["standing-from-before", "cleared-inside", "raised-inside", "undated", "unreadable"]);
+    assert.equal(result.completeness, "partial");
+    await assert.rejects(repos.events.listAlarms({ period: { start: PERIOD.end, end: PERIOD.start } }), RangeError);
+  });
+
+  it("returns the check-ins of the devices asked for, within the closed time range, and picks no latest", async () => {
+    const repos = createInMemoryRepositories(
+      dataset({
+        heartbeats: [beat("ED-1", "2026-01-01T00:59:00Z"), beat("ED-1", "2026-01-01T01:00:00Z"), beat("ED-2", "2026-01-01T01:30:00Z"), beat("ED-1", "2026-01-01T02:00:00Z"), beat("ED-1", "2026-01-01T02:01:00Z"), beat("ED-3", "2026-01-01T01:30:00Z")],
+      }),
+    );
+    const result = await repos.observations.listHeartbeats({ devices: [{ kind: "edge_device", id: "ED-2" }, { kind: "edge_device", id: "ED-1" }, { kind: "edge_device", id: "ED-1" }], from: PERIOD.start, asOf: PERIOD.end });
+    assert.deepEqual(result.records.map((record) => [record.device.id, record.receivedAt]), [
+      ["ED-2", "2026-01-01T01:30:00Z"],
+      ["ED-1", "2026-01-01T01:00:00Z"],
+      ["ED-1", "2026-01-01T02:00:00Z"],
+    ]);
+    assert.equal(result.completeness, "partial");
+  });
+});
 
 describe("in-memory registry repository", () => {
   it("returns the snapshot and coverage, marked current-only, for any as-of time", async () => {
