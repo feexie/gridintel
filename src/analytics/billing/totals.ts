@@ -59,8 +59,14 @@ export interface BillingTotals {
    * The same totals by the account's customer category, to show where
    * billing and collection sit. "not_recorded" holds accounts with no
    * category. Amounts are in major currency units.
+   *
+   * `notCollected` is billed less collected in the period, on a cash basis;
+   * it is negative for a category that paid off more than it was billed.
+   * `shareOfNotCollected` is the category's share of what the categories
+   * with a shortfall left uncollected between them; null for a category
+   * with no shortfall, which is never set against the others.
    */
-  byCategory: Record<string, { accounts: number; revenueBilled: number; revenueCollected: number }>;
+  byCategory: Record<string, { accounts: number; revenueBilled: number; revenueCollected: number; notCollected: number; shareOfNotCollected: number | null }>;
   /** Accounts connected under the scope, whatever their status. */
   accountsInScope: number | null;
   /** Accounts with at least one charge in the period. */
@@ -220,7 +226,7 @@ export function billingTotals(params: {
   const categoryOf = new Map(connected.map((customer) => [customer.id, customer.category ?? "not_recorded"]));
   const byCategory: BillingTotals["byCategory"] = {};
   for (const id of accounts) {
-    const entry = (byCategory[categoryOf.get(id) as string] ??= { accounts: 0, revenueBilled: 0, revenueCollected: 0 });
+    const entry = (byCategory[categoryOf.get(id) as string] ??= { accounts: 0, revenueBilled: 0, revenueCollected: 0, notCollected: 0, shareOfNotCollected: null });
     entry.accounts += 1;
   }
 
@@ -262,6 +268,11 @@ export function billingTotals(params: {
     collectedMinor += payment.amount.amountMinor;
     byCategory[categoryOf.get(payment.customerId) as string].revenueCollected += payment.amount.amountMinor / MINOR_PER_MAJOR;
   }
+
+  const categories = Object.values(byCategory);
+  for (const entry of categories) entry.notCollected = entry.revenueBilled - entry.revenueCollected;
+  const shortfall = categories.reduce((total, entry) => total + Math.max(entry.notCollected, 0), 0);
+  for (const entry of categories) entry.shareOfNotCollected = entry.notCollected > 0 && shortfall > 0 ? entry.notCollected / shortfall : null;
 
   if (foreignCurrency) {
     warnings.push({
