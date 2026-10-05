@@ -195,12 +195,19 @@ The six hand-designed transformers, unchanged by the widening:
     covers 1 September 00:00 to 30 September 23:00, not the whole month.
     Reading every meter at the same instant, and at the first instant of the
     month, is a simplification: a real round takes days.
+  - **A register advance counts toward recorded consumption** when both
+    readings are within 3 days of the period's ends (ADR 0010). Every
+    synthetic reading is, so 1,287 advances count, as their own measured
+    source beside the 287 complete AMI meters. Because no synthetic reading
+    is outside the window, that exclusion is exercised by unit tests only.
   - **Some readings are estimated.** The round misses 5% of meters on Market
     Road and Government Avenue, 20% on Old Town and 25% on Farm Road: 138
     in all. The billing system then estimates the closing reading, between
     75% and 125% of what the meter actually registered. The reading is held
     with quality `estimated` and the bill raised on it has basis
-    `estimated`, each saying why.
+    `estimated`, each saying why. An advance resting on an estimated reading
+    is not counted toward recorded consumption: these 138 are the "register
+    advance not counted" connections on the screens.
   - **Prepaid meters that are not AMI are not read.** What the model knows
     they registered is used to size their vends and is never written out.
     Energy vended is shown as "energy purchased" and is never added to

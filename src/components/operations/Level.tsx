@@ -158,6 +158,11 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
               {view.register.estimated ? " (estimated: the meter was not read)" : ""}. The figure is the difference, for the time between the two readings.
             </p>
           ) : null}
+          {view.registerCounts ? (
+            <p className={`text-[11px] leading-snug ${view.registerCounts.counted ? "text-slate-300" : "text-amber-100/90"}`} data-register-counts={view.registerCounts.counted ? "yes" : "no"}>
+              {view.registerCounts.note}
+            </p>
+          ) : null}
           {view.purchased ? <MetricTile metric={view.purchased} sourcing={view.sourcing} /> : null}
         </Panel>
       </div>

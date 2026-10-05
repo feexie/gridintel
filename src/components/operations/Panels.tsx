@@ -242,6 +242,41 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
             </tbody>
           </table>
           {losses.crossChecks.note ? <p className="mt-1 text-[11px] leading-snug text-slate-400">{losses.crossChecks.note}</p> : null}
+          <h3 className="mb-1 mt-3 text-[11px] uppercase tracking-wide text-slate-400">Recorded consumption, by how it was measured</h3>
+          <table className="w-full border-collapse text-xs" data-table="recorded-by-source">
+            <thead>
+              <tr className="border-b border-slate-800 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                <th className="py-1 pr-2 font-normal">Source</th>
+                <th className="py-1 pr-2 text-right font-normal">Connections covered</th>
+                <th className="py-1 text-right font-normal">Energy recorded</th>
+              </tr>
+            </thead>
+            <tbody>
+              {losses.crossChecks.sources.map((source) => (
+                <tr key={source.key} className="border-b border-slate-800/60" data-source={source.key}>
+                  <td className="py-1 pr-2 text-slate-200">{source.label}</td>
+                  <td className="py-1 pr-2 text-right font-mono tabular-nums text-slate-100">
+                    {formatNumber(source.connections)} <span className="text-slate-500">of {formatNumber(losses.crossChecks.coverage.servicePoints)}</span>
+                  </td>
+                  <td className="py-1 text-right">
+                    <MetricCell metric={source.energy} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-1 text-[11px] leading-snug text-slate-400">
+            Each figure is for the connections its source covers, and neither is the consumption of the whole scope. {losses.crossChecks.registerRule}
+          </p>
+          {losses.crossChecks.registerExclusions.length > 0 ? (
+            <ul className="mt-1 text-[11px] leading-snug text-amber-100/90" data-register-exclusions>
+              {losses.crossChecks.registerExclusions.map((exclusion) => (
+                <li key={exclusion.reason}>
+                  <span className="font-mono">{formatNumber(exclusion.connections)}</span> register advance(s) not counted: {exclusion.reason}.
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <h3 className="mb-1 mt-3 text-[11px] uppercase tracking-wide text-slate-400">Purchased, not consumed</h3>
           <table className="w-full border-collapse text-xs" data-table="energy-purchased">
             <tbody>

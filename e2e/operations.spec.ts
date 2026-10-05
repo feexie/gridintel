@@ -209,6 +209,7 @@ test("a postpaid meter read by hand shows one register reading, and says when it
   await expect(recorded).toContainText("One register reading for the month, not interval data.");
   await expect(recorded).toContainText("Measured");
   await expect(page.locator("[data-register-readings]")).toContainText("The figure is the difference, for the time between the two readings.");
+  await expect(page.locator('[data-register-counts="yes"]')).toContainText("Counts toward recorded consumption at the levels above");
   await expect(tile(page, "Energy purchased")).toHaveCount(0);
 
   // The reading round missed this meter: the reading, and the bill raised on it, are estimates.
@@ -216,6 +217,7 @@ test("a postpaid meter read by hand shows one register reading, and says when it
   await expect(tile(page, "Energy recorded")).toContainText("Estimated");
   await expect(tile(page, "Energy recorded")).toContainText("The meter was not read this month");
   await expect(page.locator("[data-register-readings]")).toContainText("estimated: the meter was not read");
+  await expect(page.locator('[data-register-counts="no"]')).toContainText("Not counted toward recorded consumption at the levels above: a reading was estimated");
   await expect(page.getByRole("row", { name: /Estimated bills \(meter not read\)/ })).toBeVisible();
 });
 
@@ -232,8 +234,15 @@ test("a level shows energy purchased apart from recorded consumption, which it s
   await expect(purchased).toContainText("Energy purchased (prepaid vends)");
   await expect(purchased).toContainText("kWh");
   await expect(page.getByText("Purchased, not consumed")).toBeVisible();
-  await expect(page.getByText("934 with a meter that records no intervals (read about once a month, or prepaid and not read at all)")).toBeVisible();
+  await expect(page.getByText("279 with a register advance that counts; 67 with a register advance that does not count; 588 with a meter that is not read")).toBeVisible();
   await expect(page.getByRole("row", { name: /^Recorded consumption/ })).toContainText("insufficient data");
+  // The two measured sources are shown apart, each with the connections it covers; neither is called the total.
+  const sources = page.locator('[data-table="recorded-by-source"]');
+  await expect(sources.locator('[data-source="intervals"]')).toContainText("5 of 2,141");
+  await expect(sources.locator('[data-source="register"]')).toContainText("279 of 2,141");
+  await expect(sources.locator('[data-source="register"]')).toContainText("kWh");
+  await expect(page.getByText("It is taken as read and never pro-rated to the period.")).toBeVisible();
+  await expect(page.locator("[data-register-exclusions]")).toContainText("67 register advance(s) not counted: a reading was estimated, not read from the meter.");
   // The accounting chain does not depend on customer meters and is unchanged in status.
   await expect(tile(page, "ATC&C")).toContainText("Estimated inputs");
 });

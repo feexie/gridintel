@@ -251,6 +251,8 @@ describe("operations read models", () => {
     assert.ok(Math.abs((read?.recorded.value as number) - ((read?.register?.closingKwh as number) - (read?.register?.openingKwh as number))) < 1e-6);
     assert.ok(Math.abs((read?.recorded.value as number) - (read?.charges[0].energyKwh as number)) < 1e-6);
     assert.equal(read?.purchased, null);
+    assert.equal(read?.registerCounts?.counted, true);
+    assert.match(read?.registerCounts?.note ?? "", /both readings are within 3 days of the period's ends\. It is counted as read, not pro-rated/);
 
     const missed = await servicePointView(runtime, "SP-OLD2-005");
     assert.equal(missed?.recordedFrom, "register_readings");
@@ -259,6 +261,9 @@ describe("operations read models", () => {
     assert.equal(missed?.register?.estimated, true);
     assert.equal(missed?.charges[0].estimated, true);
     assert.equal(missed?.charges[0].basisLabel, "Estimated bills (meter not read)");
+    assert.equal(missed?.registerCounts?.counted, false);
+    assert.match(missed?.registerCounts?.note ?? "", /Not counted toward recorded consumption at the levels above: a reading was estimated/);
+    assert.equal(prepaid?.registerCounts, null);
 
     // Garden Estate: an AMI meter, whose intervals are summed as before.
     const ami = await servicePointView(runtime, "SP-MKT2-005");
@@ -281,9 +286,20 @@ describe("operations read models", () => {
     assert.ok((checks?.energyPurchased.value as number) > 0);
     assert.match(checks?.energyPurchased.note ?? "", /never added to recorded consumption/);
     const coverage = checks?.coverage;
-    assert.equal((coverage?.recorded ?? 0) + (coverage?.incomplete ?? 0) + (coverage?.withoutIntervalData ?? 0) + (coverage?.unmetered ?? 0), coverage?.servicePoints);
-    assert.match(checks?.note ?? "", /Of 2141 connection\(s\): 5 with interval data for the whole period; 934 with a meter that records no intervals/);
+    assert.equal(
+      (coverage?.byIntervals ?? 0) + (coverage?.intervalsIncomplete ?? 0) + (coverage?.byRegister ?? 0) + (coverage?.registerExcluded ?? 0) + (coverage?.notRead ?? 0) + (coverage?.unmetered ?? 0),
+      coverage?.servicePoints,
+    );
+    assert.match(checks?.note ?? "", /Of 2141 connection\(s\): 5 with interval data for the whole period; 279 with a register advance that counts; 67 with a register advance that does not count; 588 with a meter that is not read/);
     assert.match(checks?.note ?? "", /1202 with no meter/);
+    // The two measured sources are shown apart, each with the connections it covers.
+    assert.deepEqual(checks?.sources.map((source) => [source.key, source.connections, source.energy.status, source.energy.origin]), [
+      ["intervals", 5, "ok", "measured"],
+      ["register", 279, "ok", "measured"],
+    ]);
+    assert.match(checks?.sources[1].energy.note ?? "", /Covers 279 of 2141 connection\(s\)\. It is not the consumption of the whole scope\./);
+    assert.match(checks?.registerRule ?? "", /within 3 days of the start of the period and its closing reading within 3 days of the end\. It is taken as read and never pro-rated/);
+    assert.deepEqual(checks?.registerExclusions, [{ reason: "a reading was estimated, not read from the meter", connections: 67 }]);
     // The chain above it is untouched by what customer meters report.
     assert.equal(feeder.losses?.status, "calculated_with_estimates");
     assert.ok(feeder.losses?.chain.every((metric) => metric.value !== null));
@@ -292,6 +308,9 @@ describe("operations read models", () => {
     const hilltop = (await transformerView(runtime, "DT-MKT-3")) as NetworkLevelView;
     assert.equal(hilltop.losses?.crossChecks.status, "ok");
     assert.equal(hilltop.losses?.crossChecks.note, null);
+    // A source that covers no connection has no figure, rather than a zero.
+    assert.equal(hilltop.losses?.crossChecks.sources[1].energy.status, "not_available");
+    assert.equal(hilltop.losses?.crossChecks.sources[1].energy.value, null);
   });
 
   it("mark a comparison across different bases as not comparable, with the reason and no difference", async () => {

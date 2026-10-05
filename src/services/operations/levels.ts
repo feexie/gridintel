@@ -37,6 +37,8 @@ import {
   metersWithRole,
   methodologyRef,
   registerAdvance,
+  registerConsumption,
+  registerReadingSpan,
   reliabilityOnBasis,
   servicePointsDirectOnFeeder,
   servicePointsOnTransformer,
@@ -107,6 +109,23 @@ const BASIS_LABEL: Record<string, string> = {
   meter_reading: "Billed from meter reading",
   prepaid_vend: "Prepaid vends",
   estimated: "Estimated bills (no meter, or meter not read)",
+};
+
+const REGISTER_WINDOW_DAYS = ENERGY_REFERENCE.parameters.registerReadingWindowDays;
+
+const REGISTER_RULE =
+  `A register advance counts when its opening reading is within ${REGISTER_WINDOW_DAYS} days of the start of the period and its closing reading within ` +
+  `${REGISTER_WINDOW_DAYS} days of the end. It is taken as read and never pro-rated to the period. An advance outside that window, or resting on an estimated ` +
+  "reading, is not counted.";
+
+/** Why register advances were left out, in the words shown on screen. */
+const EXCLUSION_WORDS: Record<string, string> = {
+  estimated_reading: "a reading was estimated, not read from the meter",
+  opening_outside_window: `no reading within ${REGISTER_WINDOW_DAYS} days of the start of the period`,
+  closing_outside_window: `no reading within ${REGISTER_WINDOW_DAYS} days of the end of the period`,
+  one_reading: "only one reading is held near the period",
+  register_went_backwards: "the register reads lower at the closing reading than at the opening one",
+  invalid_period: "the period is not valid",
 };
 
 const PURCHASED_NOTE =
@@ -327,6 +346,10 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
   const coverage = account.consumptionCoverage;
   // Boundary meters below the section (feeder heads, totalizers) that gave no total.
   const boundaryMissing = account.boundary.downstream.requirements.filter((req) => req.role !== "service_point" && req.netKwh === null).length;
+  const sourceMetric = (label: string, figure: typeof account.recordedBySource.intervals, connections: number, none: string): MetricView =>
+    connections === 0 && figure.status !== "not_computable"
+      ? unavailable(label, "kWh", none)
+      : { ...figureMetric(label, figure, "measured", energy), note: `Covers ${connections} of ${coverage.servicePoints} connection(s). It is not the consumption of the whole scope.` };
   const vends = billing.byBasis.prepaid_vend;
   const energyPurchased: MetricView =
     billing.accountsInScope === null
@@ -405,14 +428,14 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
         account.crossChecks.missingInputs.length === 0
           ? null
           : [
-              `Recorded consumption needs interval data from every connection. Of ${coverage.servicePoints} connection(s): ` +
+              `The total needs a measured figure from every connection. Of ${coverage.servicePoints} connection(s): ` +
                 [
-                  `${coverage.recorded} with interval data for the whole period`,
-                  coverage.withoutIntervalData > 0
-                    ? `${coverage.withoutIntervalData} with a meter that records no intervals (read about once a month, or prepaid and not read at all)`
-                    : "",
+                  `${coverage.byIntervals} with interval data for the whole period`,
+                  `${coverage.byRegister} with a register advance that counts`,
+                  coverage.registerExcluded > 0 ? `${coverage.registerExcluded} with a register advance that does not count` : "",
+                  coverage.notRead > 0 ? `${coverage.notRead} with a meter that is not read (no interval data and no register reading is held)` : "",
                   coverage.unmetered > 0 ? `${coverage.unmetered} with no meter` : "",
-                  coverage.incomplete > 0 ? `${coverage.incomplete} with intervals missing in the period` : "",
+                  coverage.intervalsIncomplete > 0 ? `${coverage.intervalsIncomplete} with intervals missing in the period` : "",
                 ]
                   .filter(Boolean)
                   .join("; ") +
@@ -422,7 +445,33 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
             ]
               .filter(Boolean)
               .join(" "),
-      coverage: { ...coverage },
+      coverage: {
+        servicePoints: coverage.servicePoints,
+        byIntervals: coverage.byIntervals,
+        intervalsIncomplete: coverage.intervalsIncomplete,
+        byRegister: coverage.byRegister,
+        registerExcluded: coverage.registerExcluded,
+        notRead: coverage.notRead,
+        unmetered: coverage.unmetered,
+      },
+      sources: [
+        {
+          key: "intervals",
+          label: "Interval meters (AMI)",
+          connections: coverage.byIntervals,
+          energy: sourceMetric("Recorded by interval meters", account.recordedBySource.intervals, coverage.byIntervals, "No connection under this scope has interval data for the whole period."),
+        },
+        {
+          key: "register",
+          label: "Register advance (meters read by hand)",
+          connections: coverage.byRegister,
+          energy: sourceMetric("Recorded by register advance", account.recordedBySource.register, coverage.byRegister, "No connection under this scope has a register advance that counts."),
+        },
+      ],
+      registerRule: REGISTER_RULE,
+      registerExclusions: Object.keys(EXCLUSION_WORDS)
+        .filter((reason) => (coverage.registerExclusions[reason as keyof typeof coverage.registerExclusions] ?? 0) > 0)
+        .map((reason) => ({ reason: EXCLUSION_WORDS[reason], connections: coverage.registerExclusions[reason as keyof typeof coverage.registerExclusions] as number })),
       energyPurchased,
     },
     atcc: kpiMetric("ATC&C", atcc.atcc),
@@ -1068,6 +1117,7 @@ interface Recorded {
   from: ServicePointView["recordedFrom"];
   intervals: ServicePointView["intervals"];
   register: ServicePointView["register"];
+  registerCounts: ServicePointView["registerCounts"];
 }
 
 /**
@@ -1085,7 +1135,7 @@ function recordedAt(
 ): Recorded {
   const label = "Energy recorded";
   if (!meter) {
-    return { metric: unavailable(label, "kWh", "No meter at this connection; consumption is not measured."), from: "no_meter", intervals: null, register: null };
+    return { metric: unavailable(label, "kWh", "No meter at this connection; consumption is not measured."), from: "no_meter", intervals: null, register: null, registerCounts: null };
   }
   const total = sumMeterEnergy(meter, intervals, runtime.period);
   if (total.recordsInPeriod > 0 || meter.meterType !== "conventional") {
@@ -1108,6 +1158,7 @@ function recordedAt(
       from: "intervals",
       intervals: { expected: total.expectedIntervals, usable: total.usableIntervals, coverage: total.coverage },
       register: null,
+      registerCounts: null,
     };
   }
 
@@ -1124,8 +1175,11 @@ function recordedAt(
       from: "not_read",
       intervals: null,
       register: null,
+      registerCounts: null,
     };
   }
+  // Whether the advance counts toward the recorded consumption of the levels above (ADR 0010).
+  const counted = registerConsumption(meter, registerReadings, runtime.period, REGISTER_WINDOW_DAYS);
   const estimated = advance.quality === "estimated" || advance.quality === "substituted";
   const span = advance.opening && advance.closing ? `${advance.opening.kwh} kWh at ${advance.opening.at} and ${advance.closing.kwh} kWh at ${advance.closing.at}` : null;
   return {
@@ -1152,18 +1206,28 @@ function recordedAt(
       advance.opening && advance.closing
         ? { openingAt: advance.opening.at, openingKwh: advance.opening.kwh, closingAt: advance.closing.at, closingKwh: advance.closing.kwh, estimated }
         : null,
+    registerCounts: counted.counted
+      ? {
+          counted: true,
+          note: `Counts toward recorded consumption at the levels above: both readings are within ${REGISTER_WINDOW_DAYS} days of the period's ends. It is counted as read, not pro-rated.`,
+        }
+      : { counted: false, note: `Not counted toward recorded consumption at the levels above: ${EXCLUSION_WORDS[counted.exclusion ?? ""] ?? counted.reason}.` },
   };
 }
 
-/** Register readings of the meters that are read by hand, by meter. Meters that record intervals are not asked for. */
+/**
+ * Register readings of the meters that are read by hand, by meter, from the reading window before the
+ * period to the reading window after it. Meters that record intervals are not asked for.
+ */
 async function registerReadingsOf(runtime: OperationsRuntime, meters: readonly Meter[]): Promise<Map<string, TelemetryPoint[]>> {
   const byHand = meters.filter((meter) => meter.meterType === "conventional");
   const byMeter = new Map<string, TelemetryPoint[]>();
-  if (byHand.length === 0) return byMeter;
+  const span = registerReadingSpan(runtime.period, REGISTER_WINDOW_DAYS);
+  if (byHand.length === 0 || span === null) return byMeter;
   const readings = await runtime.repos.observations.listTelemetry({
     sources: byHand.map((meter) => ({ kind: "meter" as const, id: meter.id })),
-    from: runtime.period.start,
-    asOf: runtime.period.end,
+    from: span.from,
+    asOf: span.to,
   });
   for (const point of readings.records) {
     const list = byMeter.get(point.source.id);
@@ -1378,6 +1442,7 @@ export async function servicePointView(runtime: OperationsRuntime, servicePointI
     recordedFrom: recorded.from,
     intervals: recorded.intervals,
     register: recorded.register,
+    registerCounts: recorded.registerCounts,
     purchased,
     charges: ownCharges
       .map((record) => ({

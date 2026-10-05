@@ -145,8 +145,30 @@ export interface LossesView {
     metrics: MetricView[];
     missingCount: number;
     note: string | null;
-    /** Connections under the scope by what their meter can report. The four kinds add up to `servicePoints`. */
-    coverage: { servicePoints: number; recorded: number; incomplete: number; withoutIntervalData: number; unmetered: number };
+    /** Connections under the scope by what is held for their meter. The six kinds add up to `servicePoints`. */
+    coverage: {
+      servicePoints: number;
+      /** Recorded by a meter with interval data for the whole period. */
+      byIntervals: number;
+      intervalsIncomplete: number;
+      /** Recorded by a register advance whose two readings are within the reading window of the period's ends. */
+      byRegister: number;
+      /** Register readings are held, but the advance does not count. */
+      registerExcluded: number;
+      /** A meter from which nothing is read. */
+      notRead: number;
+      unmetered: number;
+    };
+    /**
+     * Recorded consumption by the source that measured it, each for the connections it covers
+     * and never added to anything else on screen. "not_available" when no connection under the
+     * scope is measured that way.
+     */
+    sources: { key: "intervals" | "register"; label: string; connections: number; energy: MetricView }[];
+    /** The rule by which a register advance counts, in words. */
+    registerRule: string;
+    /** Register advances that do not count, by reason. Empty when there is none. */
+    registerExclusions: { reason: string; connections: number }[];
     /**
      * Energy bought on prepaid vends in the period. Shown beside the cross-checks and labelled as
      * purchased: it is not consumption and is never added to recorded consumption.
@@ -383,6 +405,11 @@ export interface ServicePointView {
   intervals: { expected: number | null; usable: number; coverage: number | null } | null;
   /** Set when the figure is a register advance: the two readings it lies between. */
   register: { openingAt: string; openingKwh: number; closingAt: string; closingKwh: number; estimated: boolean } | null;
+  /**
+   * For a meter read by hand: whether its register advance counts toward the recorded
+   * consumption of the levels above, and the reason when it does not. Null for any other meter.
+   */
+  registerCounts: { counted: boolean; note: string } | null;
   /** Energy bought on prepaid vends in the period; null for an account with no vend. Purchased, not consumed. */
   purchased: MetricView | null;
   charges: ChargeView[];

@@ -12,6 +12,7 @@ import type {
 import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
 import {
+  ENERGY_REFERENCE,
   aggregateEnergyAccounts,
   atccInputsFromAccount,
   calculateAtcc,
@@ -19,6 +20,7 @@ import {
   computeEnergyAccount,
   decomposeAtcc,
   metersWithRole,
+  registerReadingSpan,
   sectionBoundary,
   sectionsForScope,
   servicePointsUnder,
@@ -36,7 +38,10 @@ import { loadTopology } from "./topology.ts";
    For an electrical section (a distribution transformer, a feeder
    or a substation) and a period:
    - interval energy for the section's boundary meters and for the
-     customer meters under it → the energy account;
+     customer meters under it, and the register readings of the
+     customer meters that are read by hand, from the reading window
+     before the period to the reading window after it → the energy
+     account;
    - charges and payments of the accounts under it → energy billed,
      revenue billed and revenue collected;
    - the technical loss a loss study reports for exactly this scope
@@ -103,13 +108,23 @@ async function sectionAccount(params: LossParams): Promise<Sourced<SectionLosses
   const { index, snapshot } = await loadTopology(repos.registry, period.end, params.cache);
 
   const boundary = sectionBoundary(index, scope);
-  const customerMeters = (servicePointsUnder(index, scope).value ?? []).flatMap((sp) =>
-    metersWithRole(index, "service_point", sp.id).map((meter) => meter.id),
-  );
+  const customers = (servicePointsUnder(index, scope).value ?? []).flatMap((sp) => metersWithRole(index, "service_point", sp.id));
+  const customerMeters = customers.map((meter) => meter.id);
   const boundaryMeters = [...boundary.input, ...boundary.downstream].flatMap((req) => req.meterIds);
   const meterIds = [...new Set([...boundaryMeters, ...customerMeters])];
   const intervals = await repos.observations.listIntervalEnergy({ meterIds, period });
   trail.add(intervals.records);
+
+  // A reading taken a little before or after the period can still open or close it (ADR 0010).
+  const readByHand = customers.filter((meter) => meter.meterType === "conventional");
+  const span = registerReadingSpan(period, ENERGY_REFERENCE.parameters.registerReadingWindowDays);
+  const registerReadings =
+    readByHand.length === 0 || span === null
+      ? []
+      : (await repos.observations.listTelemetry({ sources: readByHand.map((meter) => ({ kind: "meter" as const, id: meter.id })), from: span.from, asOf: span.to })).records.filter(
+          (point) => point.metric === "energy_import_register_kwh",
+        );
+  trail.add(registerReadings);
 
   const billing = await fetchBillingTotals({ repos, index, snapshot, scope, period, trail });
 
@@ -140,6 +155,7 @@ async function sectionAccount(params: LossParams): Promise<Sourced<SectionLosses
     scope,
     period,
     intervals: intervals.records,
+    registerReadings,
     inputs: {
       technicalLoss,
       energyBilled: billing.energyBilled,

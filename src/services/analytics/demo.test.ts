@@ -55,7 +55,19 @@ describe("synthetic marker", () => {
 describe("energy account and losses", () => {
   it("measures everything it can on the transformer where every meter is AMI, and says the technical loss is an estimate", async () => {
     const { result } = await sectionLosses({ repos, scope: dt("DT-MKT-3"), period, context });
-    assert.deepEqual(result.account.consumptionCoverage, { servicePoints: 30, recorded: 30, incomplete: 0, withoutIntervalData: 0, unmetered: 0 });
+    assert.deepEqual(result.account.consumptionCoverage, {
+      servicePoints: 30,
+      byIntervals: 30,
+      intervalsIncomplete: 0,
+      byRegister: 0,
+      registerExcluded: 0,
+      notRead: 0,
+      unmetered: 0,
+      registerExclusions: {},
+    });
+    // Every connection is measured by intervals, so the interval source is the whole total and the register source has nothing.
+    assert.equal(result.account.recordedBySource.intervals.value, result.account.recordedConsumption.value);
+    assert.equal(result.account.recordedBySource.register.value, null);
     assert.equal(result.account.status, "calculated_with_estimates");
     assert.deepEqual(result.account.estimatedInputs, [{ name: "technical loss", quality: "estimated", share: 1 }]);
     assert.equal(result.account.crossChecks.status, "ok");
@@ -78,9 +90,26 @@ describe("energy account and losses", () => {
     assert.equal(result.account.crossChecks.status, "insufficient_data");
     assert.equal(result.account.downstreamMeasured.value, null);
     assert.ok(result.account.crossChecks.missingInputs.some((name) => name.startsWith("service_point meter for service_point")));
-    // Its metered connections are read by hand or not at all, so none of them is recorded either.
-    assert.deepEqual(result.account.consumptionCoverage, { servicePoints: 135, recorded: 0, incomplete: 0, withoutIntervalData: 61, unmetered: 74 });
+    // Of its metered connections, 14 have a register advance that counts, 6 an advance resting on an estimated
+    // reading, and 41 a meter that is not read at all. The total is still not available.
+    assert.deepEqual(result.account.consumptionCoverage, {
+      servicePoints: 135,
+      byIntervals: 0,
+      intervalsIncomplete: 0,
+      byRegister: 14,
+      registerExcluded: 6,
+      notRead: 41,
+      unmetered: 74,
+      registerExclusions: { estimated_reading: 6 },
+    });
+    assert.equal(result.account.recordedConsumption.value, null);
+    assert.equal(result.account.recordedBySource.register.status, "ok");
+    assert.equal(result.account.recordedBySource.register.quality, "measured");
+    assert.ok((result.account.recordedBySource.register.value as number) > 1000);
+    assert.match(result.account.recordedBySource.register.derivation, /at 14 of 135 connection\(s\)/);
+    assert.equal(result.account.recordedBySource.intervals.value, null);
     assert.ok(result.account.crossChecks.missingInputs.some((name) => /conventional meter, not read on intervals/.test(name)));
+    assert.ok(result.account.crossChecks.missingInputs.some((name) => /register advance of meter .* \(not counted: the closing reading is an estimate/.test(name)));
     // A meter that is not read on intervals is not a fault, and raises no warning.
     assert.ok(!result.account.warnings.some((w) => w.code === "NO_INTERVAL_DATA"));
     assert.equal(result.atcc.atcc.status, "calculated_with_estimates");
@@ -94,7 +123,32 @@ describe("energy account and losses", () => {
     const { result } = await sectionLosses({ repos, scope: dt("DT-MKT-2"), period, context });
     assert.ok(result.account.warnings.some((w) => w.code === "INTERVAL_GAP"));
     assert.equal(result.account.recordedConsumption.value, null);
-    assert.equal(result.account.consumptionCoverage.incomplete, 1);
+    assert.equal(result.account.consumptionCoverage.intervalsIncomplete, 1);
+    // The meter with the gap is in neither source's figure; the others are.
+    assert.equal(result.account.consumptionCoverage.byIntervals, 3);
+    assert.equal(result.account.recordedBySource.intervals.status, "ok");
+  });
+
+  it("counts a register advance as its own measured source, apart from interval energy, and never as a total", async () => {
+    const region = (await sectionLosses({ repos, scope: { kind: "region", id: DEMO_REGION_ID }, period, context })).result.account;
+    const coverage = region.consumptionCoverage;
+    assert.deepEqual(
+      [coverage.byIntervals, coverage.intervalsIncomplete, coverage.byRegister, coverage.registerExcluded, coverage.notRead, coverage.unmetered],
+      [287, 1, 1287, 138, 2540, 2195],
+    );
+    // The 138 are the readings the round missed: estimates are not a measured source.
+    assert.deepEqual(coverage.registerExclusions, { estimated_reading: 138 });
+    assert.equal(region.recordedBySource.intervals.status, "ok");
+    assert.equal(region.recordedBySource.register.status, "ok");
+    assert.equal(region.recordedConsumption.value, null);
+    // The region's sources are the sums of its two substations' sources.
+    const parts = await Promise.all(["SS-RIV", "SS-HIL"].map(async (id) => (await sectionLosses({ repos, scope: { kind: "substation", id }, period, context })).result.account));
+    for (const source of ["intervals", "register"] as const) {
+      const sum = parts.reduce((total, part) => total + (part.recordedBySource[source].value as number), 0);
+      assert.ok(close(region.recordedBySource[source].value, sum, 1e-6), source);
+    }
+    // No reading in the synthetic data lies outside the window (both are taken within a day of the
+    // period's ends), which is why "estimated_reading" is the only reason above.
   });
 
   it("keeps the accounting chain whole where recorded consumption is not available, at every level", async () => {
@@ -106,8 +160,12 @@ describe("energy account and losses", () => {
       assert.equal(account.recordedConsumption.status, "insufficient_data", scope.id);
       assert.equal(account.recordedConsumption.value, null, scope.id);
       const coverage = account.consumptionCoverage;
-      assert.equal(coverage.recorded + coverage.incomplete + coverage.withoutIntervalData + coverage.unmetered, coverage.servicePoints, scope.id);
-      assert.ok(coverage.withoutIntervalData > coverage.recorded, scope.id);
+      assert.equal(
+        coverage.byIntervals + coverage.intervalsIncomplete + coverage.byRegister + coverage.registerExcluded + coverage.notRead + coverage.unmetered,
+        coverage.servicePoints,
+        scope.id,
+      );
+      assert.ok(coverage.notRead > coverage.byIntervals, scope.id);
       // Energy bought on vends is held apart: a billing total, never part of recorded consumption.
       assert.ok((billing.byBasis.prepaid_vend.energyKwh as number) > 0, scope.id);
     }
