@@ -83,6 +83,13 @@ export function getClock(): RuntimeClock {
   return { now: DEMO_CLOCK, reportingPeriod: DEMO_PERIOD };
 }
 
+/** What the bar above every screen shows: what the data is, the reporting period and the as-of time. */
+export function getDataContext(): { notice: { label: string; summary: string } | null; period: Period; asOf: IsoTimestamp } {
+  const notice = getDataNotice();
+  const clock = getClock();
+  return { notice: notice === null ? null : { label: notice.label, summary: notice.summary }, period: clock.reportingPeriod, asOf: clock.now };
+}
+
 /* ==========================================================
    RESULT CACHE AND ITS INVALIDATION RULE
 

@@ -2,17 +2,8 @@ import Link from "next/link";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
 import { Legend, MetricTile, OriginTag, Panel } from "@/components/system/Metric";
 import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatPeriod, formatTime, levelHref } from "@/components/system/format";
+import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatTime, levelHref } from "@/components/system/format";
 
-export function SyntheticBanner({ notice }: { notice: { label: string; summary: string } | null }) {
-  if (!notice) return null;
-  return (
-    <div role="note" className="sticky -top-6 z-40 -mx-6 -mt-6 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-caution-line/50 bg-caution-surface/90 px-6 py-1.5 text-xs text-caution-ink backdrop-blur lg:-mx-8 lg:px-8">
-      <span className="border border-caution-line px-1.5 py-px text-caption font-bold tracking-label text-caution">{notice.label}</span>
-      <span>{notice.summary}</span>
-    </div>
-  );
-}
 
 function LevelHead({ header }: { header: LevelHeader }) {
   return (
@@ -42,20 +33,14 @@ function LevelHead({ header }: { header: LevelHeader }) {
           <h1 className="text-xl font-semibold text-ink">{header.title}</h1>
           <p className="text-xs text-ink-4">{header.subtitle}</p>
         </div>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
-          <dt>Reporting period</dt>
-          <dd className="font-mono text-ink-2">{formatPeriod(header.period)}</dd>
-          <dt>Data as of</dt>
-          <dd className="font-mono text-ink-2">{formatTime(header.asOf)}</dd>
-          {header.location ? (
-            <>
-              <dt>Location</dt>
-              <dd className="font-mono text-ink-2">
-                {formatNumber(header.location.latitude, 4)}, {formatNumber(header.location.longitude, 4)}
-              </dd>
-            </>
-          ) : null}
-        </dl>
+        {header.location ? (
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
+            <dt>Location</dt>
+            <dd className="font-mono text-ink-2">
+              {formatNumber(header.location.latitude, 4)}, {formatNumber(header.location.longitude, 4)}
+            </dd>
+          </dl>
+        ) : null}
       </div>
       <dl className="flex flex-wrap gap-x-5 gap-y-1 border-y border-line py-1.5 text-xs">
         {header.facts.map((fact) => (
@@ -103,12 +88,6 @@ export function Overview({ view }: { view: OverviewView }) {
             <h1 className="text-xl font-semibold text-ink">Operations Center</h1>
             <p className="text-xs text-ink-4">{view.organization ?? "Organization not recorded"} · drill from region to service point.</p>
           </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
-            <dt>Reporting period</dt>
-            <dd className="font-mono text-ink-2">{formatPeriod(view.period)}</dd>
-            <dt>Data as of</dt>
-            <dd className="font-mono text-ink-2">{formatTime(view.asOf)}</dd>
-          </dl>
         </div>
         <Legend />
       </header>

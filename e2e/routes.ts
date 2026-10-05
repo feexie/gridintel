@@ -4,6 +4,8 @@ export const OPERATIONS = "/dashboard/utility/operations";
 
 export const ROUTES = [
   "/dashboard/utility/executive",
+  "/dashboard/utility/reliability",
+  "/dashboard/utility/revenue",
   OPERATIONS,
   `${OPERATIONS}/regions/demo-region-northfield`,
   `${OPERATIONS}/substations/SS-RIV`,

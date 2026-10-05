@@ -25,7 +25,7 @@ const SERIOUS = "var(--color-series-serious)";
 
 /* ---------------- Losses ---------------- */
 
-function DecompositionBar({ losses }: { losses: LossesView }) {
+export function DecompositionBar({ losses }: { losses: LossesView }) {
   const parts = [
     { key: "technical", label: "Technical", metric: losses.parts.technical, color: SERIES.technical },
     { key: "commercial", label: "Commercial", metric: losses.parts.commercial, color: SERIES.commercial },
@@ -462,7 +462,7 @@ export function RevenueGapPanel({ gap, below }: { gap: RevenueGapView; below: { 
 
 /* ---------------- Reliability ---------------- */
 
-function SupplyStrip({ supply }: { supply: SupplyView }) {
+export function SupplyStrip({ supply }: { supply: SupplyView }) {
   if (supply.days.length === 0) return null;
   const failing = supply.days.filter((day) => day.compliant === false);
   return (

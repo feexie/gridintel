@@ -502,6 +502,8 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
           accounts: totals.accounts,
           revenueBilled: totals.revenueBilled,
           revenueCollected: totals.revenueCollected,
+          notCollected: totals.notCollected,
+          shareOfNotCollected: totals.shareOfNotCollected,
           collection: kpiMetric(
             "Collection efficiency",
             calculateCollectionEfficiency({
@@ -534,6 +536,29 @@ const ATTRIBUTION_LABELS = [
   { key: "load_management", label: "Load shedding", description: "Supply withheld under load management." },
   { key: "other", label: "Other", description: "Customer, third party, or not known." },
 ] as const;
+
+const ATTRIBUTED_WORDS = {
+  network: "the distribution network: faults, planned work and weather. Load shedding and loss of upstream supply are not in it",
+  upstream_supply: "loss of supply that began at the transmission station or on the grid",
+  load_management: "supply withheld under load management",
+  other: "the customer, a third party, or a cause that is not known",
+} as const;
+
+/**
+ * One attribution class's part of SAIDI or SAIFI as a figure of its own, with the total's
+ * status, method and inputs. The value is the one in the attribution table.
+ */
+export function attributedIndex(reliability: ReliabilityView, key: keyof typeof ATTRIBUTED_WORDS, index: "saidi" | "saifi"): MetricView {
+  const row = reliability.attribution.find((entry) => entry.key === key);
+  const total = reliability[index];
+  const name = index === "saidi" ? "SAIDI" : "SAIFI";
+  return {
+    ...total,
+    label: `${name}, ${key === "network" ? "network-attributable" : (row?.label ?? key).toLowerCase()}`,
+    value: (index === "saidi" ? row?.saidiHours : row?.saifi) ?? null,
+    derivation: `The part of ${name} attributed to ${ATTRIBUTED_WORDS[key]}.`,
+  };
+}
 
 export function reliabilityBlock(runtime: OperationsRuntime, scope: ScopeRef, timeZone: string | undefined): Promise<ReliabilityView> {
   return block(runtime, `reliability:${timeZone ?? "UTC"}`, scope, () => buildReliability(runtime, scope, timeZone));
@@ -701,7 +726,7 @@ async function buildLoading(
 const CLEARED_ALARM_LIMIT = 6;
 
 /** The asset an alarm or a condition names, in the words and with the link a screen shows. */
-function alarmSubject(loaded: Loaded, subject: EntityRef): AlarmSubjectView {
+export function alarmSubject(loaded: Loaded, subject: EntityRef): AlarmSubjectView {
   const { index, snapshot } = loaded;
   if (!("id" in subject)) return { id: subject.label, label: subject.label, kindLabel: "Not matched to the registry", link: null };
   const { kind, id } = subject;

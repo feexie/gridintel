@@ -1,11 +1,11 @@
 import type { ScopeRef } from "@/domain";
 import type { OperationsRuntime } from "../operations/levels.ts";
-import type { LoadingView, LossesView, MetricView, ReliabilityView, ReportedComparisonView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
+import type { LoadingView, LossesView, ReliabilityView, ReportedComparisonView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
 import type { AttentionSubject, FeederSignals, TransformerSignals } from "./attention.ts";
 import type { BandComplianceRow, ExecutiveView, TransformerLoadingRow, WhereToLookView } from "./views.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
-import { alarmsBlock, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
+import { alarmsBlock, attributedIndex, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
 import { ATTENTION_METHOD, MONEY_RANK_LIMIT, attention } from "./attention.ts";
 
 /* ==========================================================
@@ -66,15 +66,6 @@ interface TransformerFacts {
   gap: RevenueGapView;
 }
 
-function networkSaidi(reliability: ReliabilityView): MetricView {
-  const network = reliability.attribution.find((row) => row.key === "network");
-  return {
-    ...reliability.saidi,
-    label: "SAIDI, network-attributable",
-    value: network?.saidiHours ?? null,
-    derivation: "The part of SAIDI attributed to the distribution network: faults, planned work and weather. Load shedding and loss of upstream supply are not in it.",
-  };
-}
 
 function feederSignals(feeder: FeederFacts): FeederSignals {
   const supply = feeder.reliability.supply;
@@ -84,7 +75,7 @@ function feederSignals(feeder: FeederFacts): FeederSignals {
     revenueNotRealised: feeder.gap.notRealised,
     atcc: feeder.losses.atcc,
     collectionEfficiency: feeder.losses.collectionEfficiency,
-    networkSaidi: networkSaidi(feeder.reliability),
+    networkSaidi: attributedIndex(feeder.reliability, "network", "saidi"),
     supply: { band: supply.band, minimumHours: supply.minimumHours, averageHours: supply.averageHours, daysBelowMinimum: supply.daysNonCompliant },
     saidiRuleFinding: feeder.reliability.ruleFindings.find((found) => found.figure === "SAIDI" && found.statedFor.id === feeder.id) ?? null,
   };

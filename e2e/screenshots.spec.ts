@@ -7,6 +7,9 @@ const target = process.env.SCREENSHOTS;
 const OPERATIONS = "/dashboard/utility/operations";
 const SHOTS: [string, string][] = [
   ["executive", "/dashboard/utility/executive"],
+  ["reliability", "/dashboard/utility/reliability"],
+  ["revenue", "/dashboard/utility/revenue"],
+  ["utility-hub", "/dashboard/utility"],
   ["operations", OPERATIONS],
   ["region", `${OPERATIONS}/regions/demo-region-northfield`],
   ["substation", `${OPERATIONS}/substations/SS-RIV`],

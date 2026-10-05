@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { AttentionSubject, ExecutiveView, WhereToLookView } from "@/services/executive/views";
 import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/system/Metric";
 import { AlarmsPanel, LossesPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatPeriod, formatSigned, formatTime, levelHref } from "@/components/system/format";
+import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatSigned, levelHref } from "@/components/system/format";
 
 function Subject({ entry }: { entry: AttentionSubject }) {
   return (
@@ -131,12 +131,7 @@ export function Executive({ view }: { view: ExecutiveView }) {
             <h1 className="text-xl font-semibold text-ink">Executive</h1>
             <p className="text-xs text-ink-4">{view.organization ?? "Organization not recorded"} · what is happening across the portfolio, and where to look first.</p>
           </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
-            <dt>Reporting period</dt>
-            <dd className="font-mono text-ink-2">{formatPeriod(view.period)}</dd>
-            <dt>Data as of</dt>
-            <dd className="font-mono text-ink-2">{formatTime(view.asOf)}</dd>
-          </dl>
+
         </div>
         <dl className="flex flex-wrap gap-x-5 gap-y-1 border-y border-line py-1.5 text-xs">
           {view.facts.map((fact) => (

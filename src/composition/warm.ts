@@ -1,6 +1,8 @@
 import { getRepositories, getClock, getReadiness, setReadiness } from "./runtime.ts";
 import { executive } from "./executive.ts";
 import { operations } from "./operations.ts";
+import { reliability } from "./reliability.ts";
+import { revenue } from "./revenue.ts";
 
 /* ==========================================================
    COMPOSITION — WARM-UP
@@ -47,6 +49,8 @@ export async function warmResults(): Promise<void> {
       ...snapshot.regions.map((region) => () => operations.region(region.id)),
       () => operations.overview(),
       () => executive.view(),
+      () => reliability.view(),
+      () => revenue.view(),
     ];
     for (const step of steps) {
       await yieldToRequests();

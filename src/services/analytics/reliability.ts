@@ -1,8 +1,10 @@
 import type { InterruptionOrigin, Period, ScopeRef } from "@/domain";
 import type { Completeness, GridIntelRepositories } from "../../repositories/ports/index.ts";
 import type {
+  BreakdownRow,
   CalculationContext,
   InputValue,
+  OriginTotals,
   ReliabilityResult,
   SupplyHoursResult,
   UnattributableExposure,
@@ -10,7 +12,15 @@ import type {
 } from "../../analytics/index.ts";
 import type { ServiceCache } from "./cache.ts";
 import type { Sourced } from "./sourcing.ts";
-import { calculateReliability, calculateSupplyHours, customersServed, outagesForScope, reliabilityOnStatedRule } from "../../analytics/index.ts";
+import {
+  calculateReliability,
+  calculateSupplyHours,
+  customersServed,
+  interruptionsByOrigin,
+  outagesForScope,
+  reliabilityBreakdown,
+  reliabilityOnStatedRule,
+} from "../../analytics/index.ts";
 import { NO_CACHE, resultKey } from "./cache.ts";
 import { SourceTrail } from "./sourcing.ts";
 import { loadTopology } from "./topology.ts";
@@ -41,6 +51,11 @@ export interface ScopeReliability {
   reliability: ReliabilityResult;
   /** Hours of supply per day, and for a feeder its compliance with its service band. */
   supply: SupplyHoursResult;
+  /** The counted interruptions by cause and by the part of the system where they began, largest first. */
+  byCause: BreakdownRow[];
+  byOriginPoint: BreakdownRow[];
+  /** The counted interruptions by the element they began at, most interruptions first. */
+  origins: OriginTotals[];
   /** Exposures recorded on an element above the scope, or on one that could not be placed. */
   unattributable: UnattributableExposure[];
   /** Whether the outage log is complete; an index from a partial log is a lower bound. */
@@ -109,7 +124,16 @@ async function computeReliability(params: ReliabilityParams): Promise<Sourced<Sc
     context,
   });
   return {
-    result: { reliability, supply, unattributable: scoped.unattributable, outageCompleteness: outages.completeness, warnings },
+    result: {
+      reliability,
+      supply,
+      byCause: reliabilityBreakdown(reliability, "byCause"),
+      byOriginPoint: reliabilityBreakdown(reliability, "byOriginPoint"),
+      origins: interruptionsByOrigin(reliability, scoped.outages),
+      unattributable: scoped.unattributable,
+      outageCompleteness: outages.completeness,
+      warnings,
+    },
     sourcing: await trail.resolve(repos.sources),
   };
 }

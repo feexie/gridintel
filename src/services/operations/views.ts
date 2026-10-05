@@ -183,8 +183,22 @@ export interface LossesView {
   revenueCollected: MetricView;
   collectionBasis: "cash";
   billingByBasis: { basis: string; label: string; records: number; energyKwh: number | null; amount: number }[];
-  /** Billing and collection by customer class, largest billing first. */
-  byCustomerClass: { category: string; label: string; accounts: number; revenueBilled: number; revenueCollected: number; collection: MetricView }[];
+  /**
+   * Billing and collection by customer class, largest billing first. `notCollected` is billed
+   * less collected (cash basis; negative when a class paid off more than it was billed) and
+   * `shareOfNotCollected` the class's share of what the classes with a shortfall left
+   * uncollected between them; null for a class with no shortfall.
+   */
+  byCustomerClass: {
+    category: string;
+    label: string;
+    accounts: number;
+    revenueBilled: number;
+    revenueCollected: number;
+    notCollected: number;
+    shareOfNotCollected: number | null;
+    collection: MetricView;
+  }[];
   accounts: { inScope: number | null; billed: number };
   reported: ReportedComparisonView[];
 }
