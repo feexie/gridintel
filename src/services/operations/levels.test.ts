@@ -329,16 +329,18 @@ describe("operations read models", () => {
     assert.equal(alarms.asOf, DEMO_CLOCK);
     assert.equal(alarms.recorded.completeness, "complete");
     assert.equal(alarms.recorded.note, null);
-    // One alarm stands, on the power transformer, which is shown on its substation's screen.
+    // Two alarms stand: the silent monitor's, and one on the power transformer, which is shown on its substation's screen.
     assert.deepEqual(alarms.recorded.active.map((row) => [row.id, row.severity, row.subject.label, row.subject.kindLabel, row.subject.link]), [
+      ["ALM-2026-09-30-ED-DT-OLD-3-COMMS", "medium", "Monitor on South Gate transformer", "Monitoring device", { kind: "distribution_transformer", id: "DT-OLD-3" }],
       ["ALM-2026-09-26-PT-RIV-1-OIL", "medium", "Riverside T1", "Power transformer", { kind: "substation", id: "SS-RIV" }],
     ]);
-    assert.equal(alarms.recorded.active[0].clearedAt, null);
-    assert.ok(alarms.recorded.active[0].acknowledgedAt !== null);
+    assert.equal(alarms.recorded.active[1].clearedAt, null);
+    assert.ok(alarms.recorded.active[1].acknowledgedAt !== null);
+    assert.deepEqual(alarms.recorded.active.map((row) => row.kindName), ["communications failure", "equipment condition"]);
     // One has no time: it is listed apart and is never called active.
     assert.deepEqual(alarms.recorded.undated.map((row) => [row.id, row.state, row.raisedAt]), [["ALM-SS-RIV-DOOR", "time_not_recorded", null]]);
     // Cleared alarms: the most recently raised first.
-    assert.equal(alarms.recorded.clearedTotal, 5);
+    assert.equal(alarms.recorded.clearedTotal, 6);
     assert.deepEqual(alarms.recorded.cleared.map((row) => row.id).slice(0, 2), ["ALM-2026-09-27-DT-OLD-3-STORM", "ALM-2026-09-23-DT-OLD-2-FAULT"]);
 
     // Derived conditions carry their rule and a figure with a method, like any calculated number.
@@ -359,6 +361,21 @@ describe("operations read models", () => {
     assert.deepEqual(alarms.derived.rules.map((rule) => rule.name), ["Loaded above rating", "Monitor quiet"]);
     assert.match(alarms.derived.method.disclaimer, /not an alarm recorded by a source system/);
     assert.equal(alarms.sourcing.synthetic, true);
+
+    // The relation between the two lists: each side names the other and stays where it is.
+    assert.deepEqual(quiet.sourceAlarm, {
+      status: "agrees",
+      kindName: "communications failure",
+      alarms: [{ id: "ALM-2026-09-30-ED-DT-OLD-3-COMMS", code: "RTU-COMMS-FAIL", raisedAt: "2026-09-30T16:55:00+01:00" }],
+      reason: null,
+    });
+    assert.deepEqual(alarms.recorded.active[0].agreedBy, [{ key: quiet.key, ruleName: "Monitor quiet" }]);
+    assert.deepEqual(loaded.sourceAlarm, { status: "none_raised", kindName: "overload", alarms: [], reason: null });
+    assert.deepEqual(alarms.recorded.active[1].agreedBy, []);
+    assert.deepEqual(alarms.derived.agreement, { agrees: 1, noneRaised: 1, cannotTell: 0 });
+    assert.deepEqual(alarms.derived.rules.map((rule) => rule.alarmKindName), ["overload", "communications failure"]);
+    // The door alarm's code is not mapped to a kind, and the view says so with null, not a guess.
+    assert.equal(alarms.recorded.undated[0].kindName, null);
   });
 
   it("list at most six cleared alarms and say how many there are", async () => {

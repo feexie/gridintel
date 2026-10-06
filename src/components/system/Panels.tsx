@@ -794,20 +794,57 @@ function AlarmRow({ alarm }: { alarm: AlarmRowView }) {
       </p>
       <p className="mt-0.5 text-ink-2">
         {alarm.message} <span className="font-mono text-micro text-ink-5">{alarm.code}</span>
+        <span className="ml-1.5 text-micro text-ink-5">{alarm.kindName ? `Kind: ${alarm.kindName}` : "Kind not mapped from the source's code"}</span>
       </p>
       <p className="mt-0.5 text-caption text-ink-4">
         {alarm.raisedAt ? `Raised ${formatTime(alarm.raisedAt)}` : "Raise time not recorded by the source; whether it is active cannot be told"}
         {alarm.clearedAt ? ` · cleared ${formatTime(alarm.clearedAt)}` : alarm.state === "active" ? " · not cleared" : ""}
         {alarm.state === "time_not_recorded" ? "" : alarm.acknowledgedAt ? ` · acknowledged ${formatTime(alarm.acknowledgedAt)}` : " · not acknowledged"}
       </p>
+      {alarm.agreedBy.map((condition) => (
+        <p key={condition.key} className="mt-0.5 border-l-2 border-ok-line/60 pl-2 text-caption text-ink-3" data-agrees-with={condition.key}>
+          A GridIntel derived condition agrees: <span className="text-ink-2">{condition.ruleName}</span>, in the other list.
+        </p>
+      ))}
     </li>
+  );
+}
+
+/** Whether a source system raised the matching kind of alarm for a condition. The alarm itself stays in the other list. */
+function SourceAlarmLine({ relation }: { relation: ConditionRowView["sourceAlarm"] }) {
+  const tone = relation.status === "agrees" ? "border-ok-line/60" : relation.status === "none_raised" ? "border-line-bold" : "border-caution-line/60";
+  return (
+    <p className={`mt-0.5 border-l-2 pl-2 text-caption text-ink-3 ${tone}`} data-source-alarm={relation.status}>
+      {relation.status === "agrees" ? (
+        <>
+          A source alarm agrees ({relation.kindName}):{" "}
+          {relation.alarms.map((alarm, i) => (
+            <span key={alarm.id}>
+              {i > 0 ? "; " : ""}
+              <span className="font-mono text-micro text-ink-2">{alarm.code}</span>
+              {alarm.raisedAt ? `, raised ${formatTime(alarm.raisedAt)}` : ""}
+            </span>
+          ))}
+          , in the other list.
+        </>
+      ) : relation.status === "none_raised" ? (
+        <>
+          No source alarm: none of the kind &ldquo;{relation.kindName}&rdquo; stood on this subject while the condition held, and the source&apos;s alarm record is complete.
+        </>
+      ) : (
+        <>
+          Whether a source alarm of the kind &ldquo;{relation.kindName}&rdquo; was raised cannot be told: {relation.reason}
+          {relation.alarms.length > 0 ? ` (${relation.alarms.map((alarm) => alarm.code).join(", ")})` : ""}.
+        </>
+      )}
+    </p>
   );
 }
 
 function ConditionRow({ condition }: { condition: ConditionRowView }) {
   const loading = condition.rule === "loading_above_rating";
   return (
-    <li className="py-1.5 text-xs" data-condition={`${condition.rule}:${condition.subject.id}`} data-condition-active={String(condition.activeNow)}>
+    <li className="py-1.5 text-xs" data-condition={condition.key} data-condition-active={String(condition.activeNow)}>
       <p className="flex flex-wrap items-baseline gap-x-2">
         <span className="border border-line-bold px-1.5 py-px text-micro font-medium uppercase tracking-wide text-ink-2">Rule: {condition.ruleName}</span>
         <SubjectLink subject={condition.subject} />
@@ -831,6 +868,7 @@ function ConditionRow({ condition }: { condition: ConditionRowView }) {
         {" · "}
         {condition.activeNow === null ? "state at the as-of time not known" : condition.activeNow ? "holds at the as-of time" : "does not hold at the as-of time"}
       </p>
+      <SourceAlarmLine relation={condition.sourceAlarm} />
     </li>
   );
 }
@@ -838,6 +876,7 @@ function ConditionRow({ condition }: { condition: ConditionRowView }) {
 /**
  * Alarms recorded by source systems beside conditions derived by GridIntel. Two lists with two
  * headings and two origins; nothing is merged, and a derived condition is never called an alarm.
+ * Where a source alarm and a condition agree, each row says so and stays in its own list.
  */
 export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
   const { recorded, derived } = alarms;
@@ -903,10 +942,15 @@ export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
             Conditions derived by GridIntel <OriginTag origin="calculated" />
           </h3>
           <p className="mt-0.5 text-caption leading-snug text-ink-4">
-            Worked out from telemetry under the rules below. Not alarms: no source system raised them.
+            Worked out from telemetry under the rules below. They are not alarms. Each says whether a source system raised an alarm of the matching kind.
           </p>
           {derived.note ? <p className="mt-1 border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90">{derived.note}</p> : null}
-          <h4 className="mt-2 text-micro uppercase tracking-wide text-ink-5">Found ({derived.conditions.length})</h4>
+          <h4 className="mt-2 text-micro uppercase tracking-wide text-ink-5">
+            Found ({derived.conditions.length})
+            {derived.conditions.length === 0
+              ? ""
+              : `: a source alarm agrees with ${derived.agreement.agrees}, none was raised for ${derived.agreement.noneRaised}${derived.agreement.cannotTell > 0 ? `, cannot be told for ${derived.agreement.cannotTell}` : ""}`}
+          </h4>
           {derived.conditions.length === 0 ? (
             <p className="py-1 text-xs text-ink-4">
               No rule was met: {formatNumber(derived.assetsChecked)} asset(s) checked for loading and {formatNumber(derived.devicesChecked)} monitoring device(s) for check-ins.
@@ -914,7 +958,7 @@ export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
           ) : (
             <ul className="divide-y divide-line/70">
               {derived.conditions.map((condition) => (
-                <ConditionRow key={`${condition.rule}:${condition.subject.id}`} condition={condition} />
+                <ConditionRow key={condition.key} condition={condition} />
               ))}
             </ul>
           )}
@@ -922,7 +966,9 @@ export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
             {derived.rules.map((rule) => (
               <div key={rule.id}>
                 <dt className="inline font-semibold text-ink-4">Rule: {rule.name}. </dt>
-                <dd className="inline">{rule.statement}</dd>
+                <dd className="inline">
+                  {rule.statement} Matching kind of source alarm: {rule.alarmKindName}.
+                </dd>
               </div>
             ))}
           </dl>

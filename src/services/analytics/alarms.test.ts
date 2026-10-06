@@ -18,11 +18,11 @@ describe("alarms and derived conditions for a scope", () => {
     const { result, sourcing } = await at({ kind: "organization", id: DEMO_ORGANIZATION_ID });
     // Recorded: records from the alarm list, each with its state at the as-of time.
     assert.equal(result.recorded.completeness, "complete");
-    assert.equal(result.recorded.alarms.length, 29);
+    assert.equal(result.recorded.alarms.length, 31);
     assert.ok(result.recorded.alarms.every((entry) => entry.alarm.provenance.sourceSystem === "synthetic-alarms"));
-    assert.deepEqual(ids(result.recorded.alarms.filter((entry) => entry.state === "active")), ["ALM-2026-09-30-SS-HIL-DC", "ALM-2026-09-26-PT-RIV-1-OIL"]);
+    assert.deepEqual(ids(result.recorded.alarms.filter((entry) => entry.state === "active")), ["ALM-2026-09-30-SS-HIL-DC", "ALM-2026-09-30-ED-DT-OLD-3-COMMS", "ALM-2026-09-26-PT-RIV-1-OIL"]);
     assert.deepEqual(ids(result.recorded.alarms.filter((entry) => entry.state === "time_not_recorded")), ["ALM-SS-RIV-DOOR"]);
-    assert.equal(result.recorded.alarms.filter((entry) => entry.state === "cleared").length, 26);
+    assert.equal(result.recorded.alarms.filter((entry) => entry.state === "cleared").length, 27);
     assert.equal(result.recorded.unplaced, 0);
 
     // Derived: calculated by rule, never a record of the alarm list.
@@ -46,13 +46,58 @@ describe("alarms and derived conditions for a scope", () => {
     assert.deepEqual(ids(result.recorded.alarms), ["ALM-2026-09-23-DT-OLD-2-FAULT"]);
     assert.deepEqual(result.derived.conditions.map((condition) => condition.rule), ["loading_above_rating"]);
     assert.equal(result.derived.conditions[0].occurrences, 69);
-    // No source system raised an overload alarm or a communications alarm: those are derived only.
+    // No source system raises an overload alarm: loading above rating is derived only.
     const all = (await at({ kind: "organization", id: DEMO_ORGANIZATION_ID })).result.recorded.alarms;
-    assert.ok(!all.some((entry) => /overload|above rating|communication|check-in/i.test(`${entry.alarm.code} ${entry.alarm.message}`)));
-    // South Gate's monitor went quiet; its alarm list has only the storm.
+    assert.ok(!all.some((entry) => entry.alarm.kind === "overload" || /overload|above rating/i.test(`${entry.alarm.code} ${entry.alarm.message}`)));
+    // South Gate's monitor went quiet. The alarm list holds the source's communications failure and the storm;
+    // the condition is still derived, and is still not in the alarm list.
     const southGate = (await at({ kind: "distribution_transformer", id: "DT-OLD-3" })).result;
-    assert.deepEqual(ids(southGate.recorded.alarms), ["ALM-2026-09-27-DT-OLD-3-STORM"]);
+    assert.deepEqual(ids(southGate.recorded.alarms), ["ALM-2026-09-30-ED-DT-OLD-3-COMMS", "ALM-2026-09-27-DT-OLD-3-STORM"]);
     assert.deepEqual(southGate.derived.conditions.map((condition) => [condition.rule, condition.lastAt, condition.value]), [["monitor_quiet", "2026-09-30T14:55:00+01:00", 545]]);
+  });
+
+  it("says, for each condition, whether a source alarm of the matching kind stood beside it", async () => {
+    const { result } = await at({ kind: "organization", id: DEMO_ORGANIZATION_ID });
+    assert.deepEqual(result.derived.sourceAlarms, {
+      // The SCADA front end alarmed the same silent device: the two agree.
+      "monitor_quiet:ED-DT-OLD-3": { status: "agrees", kind: "communications_failure", alarmIds: ["ALM-2026-09-30-ED-DT-OLD-3-COMMS"] },
+      // No source system raised an overload alarm, and the alarm record is complete, so that can be said.
+      "loading_above_rating:DT-OLD-2": { status: "none_raised", kind: "overload" },
+      "loading_above_rating:DT-GOV-3": { status: "none_raised", kind: "overload" },
+    });
+    assert.deepEqual(result.recorded.agreedBy, { "ALM-2026-09-30-ED-DT-OLD-3-COMMS": ["monitor_quiet:ED-DT-OLD-3"] });
+    // The alarm was raised two missed polls after the last check-in the condition rests on.
+    const comms = result.recorded.alarms.find((entry) => entry.alarm.id === "ALM-2026-09-30-ED-DT-OLD-3-COMMS")!;
+    assert.deepEqual([comms.alarm.raisedAt, comms.state, comms.alarm.kind], ["2026-09-30T16:55:00+01:00", "active", "communications_failure"]);
+
+    // Riverside's RTU lost its link for 33 minutes and recovered: an alarm with no condition beside it, which contradicts nothing.
+    const riverside = (await at({ kind: "substation", id: "SS-RIV" })).result;
+    const rtu = riverside.recorded.alarms.find((entry) => entry.alarm.id === "ALM-2026-09-12-ED-SS-RIV-COMMS")!;
+    assert.deepEqual([rtu.state, rtu.alarm.kind, rtu.alarm.raisedAt, rtu.alarm.clearedAt], ["cleared", "communications_failure", "2026-09-12T10:08:00+01:00", "2026-09-12T10:41:00+01:00"]);
+    assert.ok(!riverside.derived.conditions.some((condition) => condition.subject.id === "ED-SS-RIV"));
+    assert.equal(riverside.recorded.agreedBy[rtu.alarm.id], undefined);
+    // It is at the substation, and under none of its feeders.
+    assert.ok(!ids((await at({ kind: "feeder", id: "FD-OLD" })).result.recorded.alarms).includes(rtu.alarm.id));
+
+    // The relation is the same at every scope that holds both entries.
+    for (const scope of [{ kind: "feeder", id: "FD-OLD" }, { kind: "distribution_transformer", id: "DT-OLD-3" }] as ScopeRef[]) {
+      assert.equal((await at(scope)).result.derived.sourceAlarms["monitor_quiet:ED-DT-OLD-3"].status, "agrees", scope.id);
+    }
+    assert.equal((await at({ kind: "feeder", id: "FD-GOV" })).result.derived.sourceAlarms["loading_above_rating:DT-GOV-3"].status, "none_raised");
+  });
+
+  it("names the protection that operated on a feeder trip", async () => {
+    const all = (await at({ kind: "organization", id: DEMO_ORGANIZATION_ID })).result.recorded.alarms;
+    const trips = all.filter((entry) => "id" in entry.alarm.subject && entry.alarm.subject.kind === "feeder").map((entry) => [entry.alarm.id, entry.alarm.code, entry.alarm.kind]);
+    assert.deepEqual(trips.sort(), [
+      ["ALM-2026-09-06-FD-OLD-FAULT", "FDR-EF-TRIP", "earth_fault_trip"],
+      ["ALM-2026-09-09-FD-MKT-TRIP", "FDR-OC-TRIP", "overcurrent_trip"],
+      ["ALM-2026-09-15-FD-GOV-FAULT", "FDR-OC-TRIP", "overcurrent_trip"],
+    ]);
+    // An overcurrent trip has no rule beside it: GridIntel derives no condition from it, and none is implied.
+    assert.ok(!Object.keys((await at({ kind: "feeder", id: "FD-GOV" })).result.recorded.agreedBy).includes("ALM-2026-09-15-FD-GOV-FAULT"));
+    // The alarm entered by hand has a code that is not mapped, so it has no kind.
+    assert.equal(all.find((entry) => entry.alarm.id === "ALM-SS-RIV-DOOR")?.alarm.kind, undefined);
   });
 
   it("gives each scope the alarms of the assets under it, and no others", async () => {
@@ -65,7 +110,7 @@ describe("alarms and derived conditions for a scope", () => {
     assert.ok(ids(riverside.recorded.alarms).includes("ALM-2026-09-26-PT-RIV-1-OIL"));
     assert.ok(ids(riverside.recorded.alarms).includes("ALM-2026-09-18-SS-RIV-33KV"));
     const oldTown = (await at({ kind: "feeder", id: "FD-OLD" })).result;
-    assert.deepEqual(ids(oldTown.recorded.alarms).sort(), ["ALM-2026-09-06-FD-OLD-FAULT", "ALM-2026-09-23-DT-OLD-2-FAULT", "ALM-2026-09-27-DT-OLD-3-STORM"]);
+    assert.deepEqual(ids(oldTown.recorded.alarms).sort(), ["ALM-2026-09-06-FD-OLD-FAULT", "ALM-2026-09-23-DT-OLD-2-FAULT", "ALM-2026-09-27-DT-OLD-3-STORM", "ALM-2026-09-30-ED-DT-OLD-3-COMMS"]);
     // The feeder's conditions are those of its transformers and their monitors.
     assert.deepEqual(oldTown.derived.conditions.map((condition) => condition.subject.id), ["ED-DT-OLD-3", "DT-OLD-2"]);
     assert.equal(oldTown.derived.assetsChecked, 15);
@@ -111,5 +156,7 @@ describe("alarms and derived conditions for a scope", () => {
     assert.equal(result.derived.heartbeatCompleteness, "not_available");
     assert.equal(result.derived.devicesChecked, 0);
     assert.ok(!result.derived.conditions.some((condition) => condition.rule === "monitor_quiet"));
+    // With no alarm record, no condition is said to have had no alarm raised.
+    assert.ok(Object.values(result.derived.sourceAlarms).every((relation) => relation.status === "cannot_tell" && relation.reason === "alarm_record_incomplete"));
   });
 });

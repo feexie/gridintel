@@ -203,11 +203,14 @@ export interface ConditionParameters {
 
 export const CONDITIONS_REFERENCE: Methodology<ConditionParameters> = {
   id: "gridintel.conditions.reference",
-  version: "0.1.0",
+  // 0.2.0: each rule names the kind of source alarm it corresponds to, and a condition says whether one was raised.
+  version: "0.2.0",
   name: "GridIntel reference derived conditions",
   description:
     "Conditions GridIntel derives from telemetry under fixed rules: an asset loaded above its rating at a reading in the " +
-    "period, and a monitoring device whose last check-in is too old. They are calculated, and are not alarms from any source system.",
+    "period, and a monitoring device whose last check-in is too old. They are calculated, and are not alarms from any source system. " +
+    "Each rule names the kind of source alarm that is about the same thing, and each condition says whether an alarm of that kind " +
+    "was standing on the same subject while it held.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: "GridIntel derived condition, calculated from telemetry. It is not an alarm recorded by a source system.",

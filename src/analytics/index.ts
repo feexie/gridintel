@@ -31,5 +31,6 @@ export * from "./loading/apparentPower.ts";
 export * from "./loading/loading.ts";
 export * from "./loading/peak.ts";
 export * from "./conditions/conditions.ts";
+export * from "./conditions/correspondence.ts";
 export * from "./reconciliation/compare.ts";
 export * from "./reconciliation/ruleDifference.ts";

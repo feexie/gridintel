@@ -198,12 +198,19 @@ test("alarms recorded by source systems and conditions derived by GridIntel are 
 
   await expect(derived.getByRole("heading", { level: 3 })).toContainText("Conditions derived by GridIntel");
   await expect(derived.getByRole("heading", { level: 3 })).toContainText("Calculated");
-  await expect(derived).toContainText("Not alarms: no source system raised them.");
+  await expect(derived).toContainText("They are not alarms. Each says whether a source system raised an alarm of the matching kind.");
   const loading = derived.locator('[data-condition="loading_above_rating:DT-OLD-2"]');
   await expect(loading).toContainText("Rule: Loaded above rating");
   await expect(loading).toContainText("121.2%");
   await expect(loading).toContainText("above rating at 69 hourly reading(s)");
   await expect(loading).toContainText("does not hold at the as-of time");
+  // No source system raised an overload alarm for it, and that can be said because the alarm record is complete.
+  await expect(loading.locator("[data-source-alarm]")).toHaveAttribute("data-source-alarm", "none_raised");
+  await expect(loading).toContainText("No source alarm: none of the kind “overload” stood on this subject while the condition held, and the source's alarm record is complete.");
+  await expect(derived).toContainText("Found (1): a source alarm agrees with 0, none was raised for 1");
+  // The fuse alarm is of another kind; no condition is said to agree with it.
+  await expect(fuse).toContainText("Kind: loss of supply");
+  await expect(fuse.locator("[data-agrees-with]")).toHaveCount(0);
   // Each rule is stated in words under the list, with the methodology and what it is not.
   await expect(derived).toContainText("Rule: Loaded above rating. Loading (apparent power ÷ rated capacity");
   await expect(derived).toContainText("gridintel.conditions.reference");
@@ -226,14 +233,39 @@ test("an alarm that is standing, one with no time, and a monitor that went quiet
   const door = panel.locator('[data-alarm="ALM-SS-RIV-DOOR"]');
   await expect(door).toHaveAttribute("data-alarm-state", "time_not_recorded");
   await expect(door).toContainText("Raise time not recorded by the source; whether it is active cannot be told");
-  // No source system raised an alarm for the silent monitor; GridIntel derived the condition.
+  // The SCADA front end alarmed the silent monitor, and GridIntel derived the same thing from its check-ins.
+  // They agree, each says so, and each stays in its own list.
   const quiet = panel.locator('[data-condition="monitor_quiet:ED-DT-OLD-3"]');
   await expect(quiet).toContainText("Rule: Monitor quiet");
   await expect(quiet).toContainText("Monitor on South Gate transformer");
   await expect(quiet).toContainText("9.1 h");
   await expect(quiet).toContainText("Last heard from 30 Sep 2026, 14:55 WAT");
   await expect(quiet).toContainText("holds at the as-of time");
-  await expect(panel.locator('[data-alarms="recorded"]')).not.toContainText("South Gate transformer Monitoring");
+  await expect(quiet.locator("[data-source-alarm]")).toHaveAttribute("data-source-alarm", "agrees");
+  await expect(quiet).toContainText("A source alarm agrees (communications failure): RTU-COMMS-FAIL, raised 30 Sep 2026, 16:55 WAT, in the other list.");
+  const comms = panel.locator('[data-alarms="recorded"] [data-alarm="ALM-2026-09-30-ED-DT-OLD-3-COMMS"]');
+  await expect(comms).toHaveAttribute("data-alarm-state", "active");
+  await expect(comms).toContainText("has not answered 2 consecutive polls");
+  await expect(comms.locator('[data-agrees-with="monitor_quiet:ED-DT-OLD-3"]')).toContainText("A GridIntel derived condition agrees: Monitor quiet");
+  await expect(panel.locator('[data-alarms="derived"] [data-alarm]')).toHaveCount(0);
+  await expect(panel.locator('[data-alarms="recorded"] [data-condition]')).toHaveCount(0);
+  // The RTU whose link dropped and came back: a cleared source alarm with no condition beside it.
+  const rtu = panel.locator('[data-alarm="ALM-2026-09-12-ED-SS-RIV-COMMS"]');
+  await expect(rtu).toHaveAttribute("data-alarm-state", "cleared");
+  await expect(rtu.locator("[data-agrees-with]")).toHaveCount(0);
+  // The alarm entered by hand: its code is not mapped to a kind, and the row says so.
+  await expect(door).toContainText("Kind not mapped from the source's code");
+
+  // Government Avenue: the designed daytime overload is derived, and no source alarm raised it. A feeder
+  // overcurrent trip is in the alarm list, and no condition is set beside it.
+  await page.goto(`${OPERATIONS}/feeders/FD-GOV`);
+  const overload = panel.locator('[data-condition="loading_above_rating:DT-GOV-3"]');
+  await expect(overload.locator("[data-source-alarm]")).toHaveAttribute("data-source-alarm", "none_raised");
+  const trip = panel.locator('[data-alarm="ALM-2026-09-15-FD-GOV-FAULT"]');
+  await expect(trip).toContainText("tripped on overcurrent (phase fault) and locked out");
+  await expect(trip).toContainText("FDR-OC-TRIP");
+  await expect(trip).toContainText("Kind: overcurrent trip");
+  await expect(trip.locator("[data-agrees-with]")).toHaveCount(0);
 
   // Hillcrest: one alarm standing and not acknowledged; of 21 cleared, the six most recent are listed.
   await page.goto(`${OPERATIONS}/substations/SS-HIL`);

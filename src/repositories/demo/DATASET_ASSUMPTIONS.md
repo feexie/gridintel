@@ -380,6 +380,42 @@ exact here; a real study would not.
 - One transformer monitor (DT-OLD-3) stops sending heartbeats nine hours
   before the demo clock.
 
+## Alarms
+
+The alarm list a utility's SCADA and monitors would hold (ADR 0011 and its
+amendment). 31 alarms, each with the source's code and the kind it maps to.
+
+- **26 follow from the outage log**, raised when supply was lost and cleared
+  when the last part was restored: 19 losses of the rural 33 kV line and the
+  Riverside line fault (`INCOMER-UV`), three feeder trips, three transformer
+  or low-voltage faults (`DT-LV-LOSS`). Load shedding and planned work raise
+  none.
+- **Feeder trips name the protection that operated.** Overcurrent
+  (`FDR-OC-TRIP`): the three-minute trip and reclose on Market Road, and the
+  cable fault on Government Avenue, which locked out. Earth fault
+  (`FDR-EF-TRIP`): the conductor down on Old Town.
+- **Communications failures** (`RTU-COMMS-FAIL`). The front end polls every
+  remote unit hourly, substation RTUs and transformer monitors alike, and
+  alarms on the second missed poll.
+  - The monitor on DT-OLD-3: raised 16:55 on 30 September, two polls after
+    its last check-in at 14:55; acknowledged; standing at the demo clock.
+    *Designed so a source alarm and a derived condition agree.*
+  - Riverside's RTU: 10:08 to 10:41 on 12 September. It falls between two
+    hourly readings, so no reading is missing. Heartbeats are held for the
+    last day only, so it leaves no trace there.
+- **No overload alarm.** The source systems have none. *Designed so the
+  loading conditions on DT-GOV-3 and DT-OLD-2 are derived conditions that no
+  source alarm raised.*
+- **Three alarms for the states a list must show**: one standing and
+  unacknowledged (Hillcrest DC supply), one standing and acknowledged
+  (Riverside T1 oil temperature), one entered by hand with no raise time
+  (`DOOR-OPEN`). The last has a code that is not mapped to a kind.
+- The alarm record is complete. That is what lets a screen say "no source
+  alarm was raised"; from a partial record it could only say it cannot tell.
+- Simplification: the source's alarm rule for a silent unit (two missed
+  hourly polls) and the reference rule (120 minutes) give the same instant.
+  A real front end polls far more often than a monitor checks in.
+
 ## Reported figures
 
 A synthetic monthly report states ATC&C, collection efficiency, SAIDI and
@@ -435,6 +471,6 @@ demonstration, not a claim about how utilities report.
 
 ## Not modelled
 
-Alarms, maintenance records, DER, embedded generation, reactive power flows,
+Overload alarms, maintenance records, DER, embedded generation, reactive power flows,
 voltage, tariff classes within a band, arrears, customer movement between
 service points and topology changes.

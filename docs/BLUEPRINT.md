@@ -26,7 +26,10 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 >   `ObservationRepository.listHeartbeats`; `src/analytics/conditions`
 >   derives conditions under named rules; `scopeAlarms` returns the recorded
 >   and the derived separately. `placeOfAsset` says which scope an asset is
->   under. Loading accepts a power transformer.
+>   under. Loading accepts a power transformer. Amended in 6c-3: an alarm
+>   has a canonical `kind`, and `relateToSourceAlarms` says for each
+>   condition whether a source alarm of the matching kind stood beside it
+>   (agrees, none raised, cannot tell). The lists stay two.
 > - **Energy account (ADR 0010).** Recorded consumption has two measured
 >   sources, intervals and register advances within a reading window, each
 >   with its own figure and coverage.

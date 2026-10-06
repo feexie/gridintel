@@ -12,13 +12,40 @@ import type { AssetRef, EntityRef } from "./refs";
 ========================================================== */
 
 /**
+ * What an alarm is about, in GridIntel's vocabulary. Source systems name
+ * their alarms in their own codes; the adapter for a source maps each code
+ * it knows to one of these:
+ * - communications_failure: a remote unit (a substation RTU, a transformer
+ *   monitor) stopped answering the system that polls it;
+ * - overcurrent_trip: a breaker opened on phase overcurrent protection;
+ * - earth_fault_trip: a breaker opened on earth-fault protection;
+ * - loss_of_supply: voltage was lost at the point named;
+ * - overload: loading above a rating or a setting;
+ * - equipment: the condition of a piece of plant (temperature, auxiliary
+ *   supply), not of the supply through it.
+ */
+export type AlarmKind =
+  | "communications_failure"
+  | "overcurrent_trip"
+  | "earth_fault_trip"
+  | "loss_of_supply"
+  | "overload"
+  | "equipment";
+
+/**
  * An alarm on an asset or on an unresolved source-data reference.
  * It is active while raised and not cleared.
  */
 export interface Alarm {
   id: string;
   subject: EntityRef;
+  /** The source's own code for the alarm, as it wrote it. */
   code: string;
+  /**
+   * Undefined when the adapter has no mapping for the source's code. It is
+   * never inferred from the message.
+   */
+  kind?: AlarmKind;
   severity: Severity;
   message: string;
   raisedAt?: IsoTimestamp;

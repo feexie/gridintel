@@ -386,10 +386,31 @@ export interface AlarmRowView {
   raisedAt: string | null;
   clearedAt: string | null;
   acknowledgedAt: string | null;
+  /** What the alarm is about, in words; null when the source's code is not mapped to a kind. */
+  kindName: string | null;
+  /** The derived conditions that agree with this alarm. Empty for most: GridIntel derives under two rules only. */
+  agreedBy: { key: string; ruleName: string }[];
+}
+
+/**
+ * Whether a source system raised an alarm of the kind that matches a derived condition, on the
+ * same subject, while the condition held. A relation between the two lists; neither is changed.
+ */
+export interface SourceAlarmRelationView {
+  /** "none_raised" is said only when the source's alarm record is complete. */
+  status: "agrees" | "none_raised" | "cannot_tell";
+  /** The matching kind of alarm, in words: "communications failure", "overload". */
+  kindName: string;
+  /** The alarms that agree; or, when it cannot be told, the alarms that leave it open. */
+  alarms: { id: string; code: string; raisedAt: string | null }[];
+  /** Why it cannot be told; null otherwise. */
+  reason: string | null;
 }
 
 /** A condition GridIntel derived from telemetry, with the rule that produced it. */
 export interface ConditionRowView {
+  /** `rule:subject id`, as an alarm that agrees refers to it. */
+  key: string;
   rule: string;
   ruleName: string;
   subject: AlarmSubjectView;
@@ -401,11 +422,13 @@ export interface ConditionRowView {
   occurrences: number | null;
   firstAt: string | null;
   lastAt: string | null;
+  sourceAlarm: SourceAlarmRelationView;
 }
 
 /**
  * Alarms recorded by source systems, and conditions derived by GridIntel. Two lists that are
- * never merged: the first is observed, the second calculated.
+ * never merged: the first is observed, the second calculated. Where an entry in one agrees
+ * with an entry in the other, each says so and both stay where they are.
  */
 export interface AlarmsView {
   sourcing: SourcingView;
@@ -425,13 +448,16 @@ export interface AlarmsView {
     unplaced: number;
   };
   derived: {
-    rules: { id: string; name: string; statement: string }[];
+    /** Each rule, and the kind of source alarm that is about the same thing. */
+    rules: { id: string; name: string; statement: string; alarmKindName: string }[];
     method: MethodView;
     conditions: ConditionRowView[];
     /** Set when a rule could not be applied, e.g. no complete heartbeat record. */
     note: string | null;
     assetsChecked: number;
     devicesChecked: number;
+    /** How many conditions a source alarm agrees with, how many none was raised for, and how many cannot be told. */
+    agreement: { agrees: number; noneRaised: number; cannotTell: number };
   };
 }
 

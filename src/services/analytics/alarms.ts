@@ -1,10 +1,10 @@
 import type { AssetRef, IsoTimestamp, Period, ScopeRef } from "@/domain";
 import type { Completeness, GridIntelRepositories } from "../../repositories/ports/index.ts";
-import type { CalculationContext, ClassifiedAlarm, ConditionRule, DerivedCondition } from "../../analytics/index.ts";
+import type { CalculationContext, ClassifiedAlarm, ConditionRule, DerivedCondition, SourceAlarmRelation } from "../../analytics/index.ts";
 import type { ServiceCache } from "./cache.ts";
 import type { LoadedAssetKind } from "./loading.ts";
 import type { Sourced } from "./sourcing.ts";
-import { classifyAlarms, conditionRules, loadingCondition, placeInScope, placeOfAsset, quietMonitorCondition, sortConditions } from "../../analytics/index.ts";
+import { alarmCorrespondence, classifyAlarms, conditionRules, loadingCondition, placeInScope, placeOfAsset, quietMonitorCondition, sortConditions } from "../../analytics/index.ts";
 import { NO_CACHE, resultKey } from "./cache.ts";
 import { assetLoading } from "./loading.ts";
 import { SourceTrail } from "./sourcing.ts";
@@ -28,7 +28,11 @@ import { loadTopology } from "./topology.ts";
      Calculated, each under a named rule.
 
    Nothing here turns one into the other, or drops one because the
-   other exists.
+   other exists. What is added is a RELATION between the two lists:
+   for each condition, whether a source alarm of the matching kind
+   stood on the same subject while it held, and for each such alarm,
+   the condition that agrees with it. "None raised" is said only
+   when the source's alarm record is complete.
 
    WHICH SCOPE AN ALARM BELONGS TO. An alarm is under a scope when
    the asset it names sits under that scope in the current topology.
@@ -46,9 +50,13 @@ export interface ScopeAlarms {
     /** Alarms on a subject not matched to the registry. Listed only at organization scope. */
     unplaced: number;
     completeness: Completeness;
+    /** By alarm id: the keys (`conditionKey`) of the derived conditions that agree with it. Absent when none does. */
+    agreedBy: Record<string, string[]>;
   };
   derived: {
     conditions: DerivedCondition[];
+    /** By `conditionKey`: whether a source alarm of the matching kind stood on the same subject while the condition held. */
+    sourceAlarms: Record<string, SourceAlarmRelation>;
     rules: ConditionRule[];
     /** A quiet monitor can be told only from a complete heartbeat record. */
     heartbeatCompleteness: Completeness;
@@ -122,12 +130,18 @@ async function computeAlarms(params: AlarmParams): Promise<Sourced<ScopeAlarms>>
     }
   }
 
+  const alarms = classifyAlarms(inScope, asOf);
+  const sorted = sortConditions(conditions);
+  // A condition and an alarm on the same subject are under the same scopes, so relating within the scope loses nothing.
+  const correspondence = alarmCorrespondence({ conditions: sorted, alarms, alarmRecordComplete: listed.completeness === "complete" });
+
   return {
     result: {
       asOf,
-      recorded: { alarms: classifyAlarms(inScope, asOf), unplaced, completeness: listed.completeness },
+      recorded: { alarms, unplaced, completeness: listed.completeness, agreedBy: correspondence.agreedBy },
       derived: {
-        conditions: sortConditions(conditions),
+        conditions: sorted,
+        sourceAlarms: correspondence.byCondition,
         rules: Object.values(conditionRules()),
         heartbeatCompleteness: heartbeats.completeness,
         assetsChecked: assets.length,

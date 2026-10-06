@@ -1,7 +1,7 @@
 import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Period, Provenance, TelemetryPoint } from "@/domain";
 import { DEMO_DAYS, DEMO_HOURS, PERIOD_END_MS, at, hourStart, wat, weekday } from "./clock.ts";
 import { DAY_FACTOR, HOURLY_NOISE, SHAPE, WEEK } from "./load.ts";
-import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, MV_CUSTOMER, SUBSTATIONS, SUBSTATION_LOSS, TRANSFORMERS } from "./network.ts";
+import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, MV_CUSTOMER, QUIET_MONITOR, SUBSTATIONS, SUBSTATION_LOSS, TRANSFORMERS } from "./network.ts";
 import { availability, energised } from "./outages.ts";
 import { round, seeded } from "./rng.ts";
 import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
@@ -335,9 +335,9 @@ function buildHeartbeats(provenance: Provenance): DeviceHeartbeat[] {
   const devices = [...SUBSTATIONS.map((plan) => `ED-${plan.id}`), ...TRANSFORMERS.map((dt) => `ED-${dt.id}`)];
   const signal = seeded("heartbeats");
   for (const deviceId of devices) {
-    const lastHour = deviceId === "ED-DT-OLD-3" ? 14 : 23;
+    const lastHour = deviceId === QUIET_MONITOR.deviceId ? QUIET_MONITOR.lastCheckIn.hour : 23;
     for (let hour = 0; hour <= lastHour; hour++) {
-      const ms = at(29, hour, 55);
+      const ms = at(QUIET_MONITOR.lastCheckIn.day, hour, QUIET_MONITOR.lastCheckIn.minute);
       if (ms >= PERIOD_END_MS) continue;
       heartbeats.push({
         device: { kind: "edge_device", id: deviceId },

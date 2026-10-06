@@ -849,3 +849,10 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
     edgeDevices,
   };
 }
+
+/**
+ * The one monitoring device that stops reporting: the transformer monitor on South Gate
+ * (DT-OLD-3). Its last check-in is at 14:55 on the last day. The heartbeats stop there, and
+ * the SCADA alarm list raises a communications failure for it two missed polls later.
+ */
+export const QUIET_MONITOR = { deviceId: "ED-DT-OLD-3", lastCheckIn: { day: 29, hour: 14, minute: 55 } } as const;

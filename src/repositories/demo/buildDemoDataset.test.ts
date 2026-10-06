@@ -159,23 +159,59 @@ describe("demo dataset: structure", () => {
       }
     });
 
-    it("raises none for load shedding or planned work, and none for what GridIntel derives", () => {
+    it("raises none for load shedding or planned work, and no overload alarm", () => {
       const alarmed = new Set(dataset.alarms.map((alarm) => alarm.id.replace(/^ALM-/, "OUT-")));
       for (const outage of dataset.outages) {
         if (outage.cause === "load_shedding" || outage.planned === true) assert.ok(!alarmed.has(outage.id), outage.id);
       }
-      // No overload alarm and no communications alarm: the source systems do not raise them.
-      assert.ok(!dataset.alarms.some((alarm) => /overload|rating|comm/i.test(alarm.code)));
-      assert.ok(!dataset.alarms.some((alarm) => "id" in alarm.subject && alarm.subject.kind === "edge_device"));
+      // No overload alarm: the source systems do not raise one, so loading above rating is derived only.
+      assert.ok(!dataset.alarms.some((alarm) => alarm.kind === "overload" || /overload|rating/i.test(alarm.code)));
+    });
+
+    it("raises a communications failure for a remote unit that misses two polls, in step with the heartbeats", () => {
+      const comms = dataset.alarms.filter((alarm) => alarm.kind === "communications_failure");
+      assert.deepEqual(comms.map((alarm) => [alarm.id, alarm.code, "id" in alarm.subject ? alarm.subject.id : null, alarm.clearedAt === undefined]), [
+        ["ALM-2026-09-12-ED-SS-RIV-COMMS", "RTU-COMMS-FAIL", "ED-SS-RIV", false],
+        ["ALM-2026-09-30-ED-DT-OLD-3-COMMS", "RTU-COMMS-FAIL", "ED-DT-OLD-3", true],
+      ]);
+      // The standing one is raised exactly two hourly polls after the device's last check-in.
+      const last = Math.max(...dataset.heartbeats.filter((beat) => beat.device.id === "ED-DT-OLD-3").map((beat) => Date.parse(beat.receivedAt)));
+      assert.equal(Date.parse(comms[1].raisedAt as string) - last, 2 * 60 * 60 * 1000);
+      // Every other device checked in to the end, and has no standing communications alarm.
+      const lastOf = new Map<string, number>();
+      for (const beat of dataset.heartbeats) lastOf.set(beat.device.id, Math.max(lastOf.get(beat.device.id) ?? 0, Date.parse(beat.receivedAt)));
+      assert.deepEqual([...lastOf].filter(([, ms]) => ms < Date.parse(dataset.heartbeats[0].receivedAt) + 23 * 60 * 60 * 1000).map(([id]) => id), ["ED-DT-OLD-3"]);
+      // The link that dropped and came back did so between two hourly readings: no telemetry reading is missing for it.
+      const [raised, cleared] = [Date.parse(comms[0].raisedAt as string), Date.parse(comms[0].clearedAt as string)];
+      assert.ok(!dataset.telemetry.some((point) => point.deviceId === "ED-SS-RIV" && Date.parse(point.observedAt) >= raised && Date.parse(point.observedAt) <= cleared));
+      assert.equal(new Date(raised).getUTCHours(), new Date(cleared).getUTCHours());
+    });
+
+    it("maps each source code it knows to a kind, and leaves the rest without one", () => {
+      const kinds = new Map<string, Set<string | undefined>>();
+      for (const alarm of dataset.alarms) kinds.set(alarm.code, (kinds.get(alarm.code) ?? new Set()).add(alarm.kind));
+      assert.deepEqual(
+        [...kinds].map(([code, set]) => [code, [...set]]).sort(),
+        [
+          ["DC-SUPPLY-LOW", ["equipment"]],
+          ["DOOR-OPEN", [undefined]],
+          ["DT-LV-LOSS", ["loss_of_supply"]],
+          ["FDR-EF-TRIP", ["earth_fault_trip"]],
+          ["FDR-OC-TRIP", ["overcurrent_trip"]],
+          ["INCOMER-UV", ["loss_of_supply"]],
+          ["PT-OIL-TEMP-HIGH", ["equipment"]],
+          ["RTU-COMMS-FAIL", ["communications_failure"]],
+        ],
+      );
     });
 
     it("names only assets that are in the registry, and holds the three states a list must show", () => {
-      const known = new Set([...registry.substations, ...registry.powerTransformers, ...registry.feeders, ...registry.distributionTransformers].map((asset) => asset.id));
+      const known = new Set([...registry.substations, ...registry.powerTransformers, ...registry.feeders, ...registry.distributionTransformers, ...registry.edgeDevices].map((asset) => asset.id));
       assert.ok(dataset.alarms.every((alarm) => "id" in alarm.subject && known.has(alarm.subject.id)));
       const standing = dataset.alarms.filter((alarm) => alarm.raisedAt !== undefined && alarm.clearedAt === undefined);
-      assert.deepEqual(standing.map((alarm) => [alarm.id, alarm.acknowledgedAt !== undefined]), [["ALM-2026-09-26-PT-RIV-1-OIL", true], ["ALM-2026-09-30-SS-HIL-DC", false]]);
+      assert.deepEqual(standing.map((alarm) => [alarm.id, alarm.acknowledgedAt !== undefined]), [["ALM-2026-09-26-PT-RIV-1-OIL", true], ["ALM-2026-09-30-ED-DT-OLD-3-COMMS", true], ["ALM-2026-09-30-SS-HIL-DC", false]]);
       assert.deepEqual(dataset.alarms.filter((alarm) => alarm.raisedAt === undefined).map((alarm) => alarm.id), ["ALM-SS-RIV-DOOR"]);
-      assert.equal(dataset.alarms.length, 29);
+      assert.equal(dataset.alarms.length, 31);
     });
   });
 

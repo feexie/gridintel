@@ -1,6 +1,6 @@
 import type { EntityRef, IntervalEnergy, IsoTimestamp, KpiBasis, Meter, Period, ScopeRef, TelemetryPoint } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot, RegistryCoverage } from "../../repositories/ports/index.ts";
-import type { CalculatedKpi, CalculationContext, RevenueGap, TopologyIndex } from "../../analytics/index.ts";
+import type { CalculatedKpi, CalculationContext, CannotTellReason, RevenueGap, TopologyIndex } from "../../analytics/index.ts";
 import type { ServiceCache } from "../analytics/cache.ts";
 import type {
   AlarmRowView,
@@ -32,10 +32,13 @@ import {
   LOADING_REFERENCE,
   RELIABILITY_REFERENCE,
   REVENUE_GAP_REFERENCE,
+  RULE_ALARM_KIND,
   SUPPLY_HOURS_REFERENCE,
+  alarmKindName,
   attributionRuleDifference,
   billingByAccount,
   compareOnBasis,
+  conditionKey,
   convertUnit,
   feedersOfSubstation,
   isComputed,
@@ -725,6 +728,14 @@ async function buildLoading(
 /** How many cleared alarms a screen lists; the view says how many there are in all. */
 const CLEARED_ALARM_LIMIT = 6;
 
+/** Why it cannot be said whether a source alarm was raised for a condition, in the words a screen shows. */
+const CANNOT_TELL: Record<CannotTellReason, string> = {
+  alarm_record_incomplete: "the source's alarm record is not complete, so an alarm that is not listed may still exist",
+  undated_alarm: "an alarm of this kind is on the same subject, but the source did not record when it was raised",
+  unclassified_alarm: "an alarm on the same subject carries a code that is not mapped to a kind, so it may or may not be of this kind",
+  condition_time_unknown: "when the condition held is not known, so it cannot be set against the alarm's times",
+};
+
 /** The asset an alarm or a condition names, in the words and with the link a screen shows. */
 export function alarmSubject(loaded: Loaded, subject: EntityRef): AlarmSubjectView {
   const { index, snapshot } = loaded;
@@ -762,6 +773,10 @@ async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: Sc
   const { result, sourcing } = await scopeAlarms({ repos: runtime.repos, scope, period: runtime.period, asOf: runtime.now, context: context(runtime), cache: runtime.cache });
   const { recorded, derived } = result;
 
+  const rules = Object.fromEntries(derived.rules.map((rule) => [rule.id, rule]));
+  const ruleNameOf = new Map(derived.conditions.map((condition) => [conditionKey(condition), rules[condition.rule].name]));
+  const alarmById = new Map(recorded.alarms.map((entry) => [entry.alarm.id, entry.alarm]));
+
   const rows = recorded.alarms
     .filter((entry) => entry.state !== "not_yet_raised")
     .map(
@@ -775,18 +790,21 @@ async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: Sc
         raisedAt: alarm.raisedAt ?? null,
         clearedAt: alarm.clearedAt ?? null,
         acknowledgedAt: alarm.acknowledgedAt ?? null,
+        kindName: alarm.kind === undefined ? null : alarmKindName(alarm.kind),
+        agreedBy: (recorded.agreedBy[alarm.id] ?? []).map((key) => ({ key, ruleName: ruleNameOf.get(key) ?? key })),
       }),
     );
   // Cleared alarms: the most recently raised first, whatever their severity.
   const cleared = rows.filter((row) => row.state === "cleared").sort((a, b) => ((a.raisedAt ?? "") < (b.raisedAt ?? "") ? 1 : -1));
 
-  const rules = Object.fromEntries(derived.rules.map((rule) => [rule.id, rule]));
   const loadingMethod = methodView(methodologyRef(LOADING_REFERENCE));
   const conditionMethod = methodView(methodologyRef(CONDITIONS_REFERENCE));
   const conditions = derived.conditions.map((condition): ConditionRowView => {
     const rule = rules[condition.rule];
     const loading = condition.rule === "loading_above_rating";
+    const relation = derived.sourceAlarms[conditionKey(condition)];
     return {
+      key: conditionKey(condition),
       rule: condition.rule,
       ruleName: rule.name,
       subject: alarmSubject(loaded, condition.subject),
@@ -809,8 +827,18 @@ async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: Sc
       occurrences: condition.occurrences,
       firstAt: condition.firstAt,
       lastAt: condition.lastAt,
+      sourceAlarm: {
+        status: relation.status,
+        kindName: alarmKindName(relation.kind),
+        alarms: (relation.status === "none_raised" ? [] : relation.alarmIds).map((id) => {
+          const alarm = alarmById.get(id);
+          return { id, code: alarm?.code ?? id, raisedAt: alarm?.raisedAt ?? null };
+        }),
+        reason: relation.status === "cannot_tell" ? CANNOT_TELL[relation.reason] : null,
+      },
     };
   });
+  const count = (status: ConditionRowView["sourceAlarm"]["status"]) => conditions.filter((row) => row.sourceAlarm.status === status).length;
 
   return {
     sourcing: sourcingView(sourcing),
@@ -830,7 +858,7 @@ async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: Sc
       unplaced: recorded.unplaced,
     },
     derived: {
-      rules: derived.rules.map((rule) => ({ id: rule.id, name: rule.name, statement: rule.statement })),
+      rules: derived.rules.map((rule) => ({ id: rule.id, name: rule.name, statement: rule.statement, alarmKindName: alarmKindName(RULE_ALARM_KIND[rule.id]) })),
       method: conditionMethod,
       conditions,
       note:
@@ -839,6 +867,7 @@ async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: Sc
           : "Whether a monitor has gone quiet cannot be told: the source's record of device check-ins is not complete, so a missing check-in may only be a missing record.",
       assetsChecked: derived.assetsChecked,
       devicesChecked: derived.devicesChecked,
+      agreement: { agrees: count("agrees"), noneRaised: count("none_raised"), cannotTell: count("cannot_tell") },
     },
   };
 }

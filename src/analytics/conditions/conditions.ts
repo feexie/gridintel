@@ -22,9 +22,9 @@ import { MS_PER_MINUTE, toEpochMs } from "../core/time.ts";
      and is never stored or shown as an alarm.
 
    One asset can have both at once. They are returned as separate
-   lists, and nothing here merges, deduplicates or reconciles them:
-   a derived condition is not evidence that an alarm was missed, and
-   an alarm is not evidence that a condition holds.
+   lists, and nothing here merges or deduplicates them. Whether a
+   source alarm of the matching kind stood beside a condition is a
+   relation between the two lists, worked out in correspondence.ts.
 ========================================================== */
 
 /* ---------------- Alarms: state at a time ---------------- */
@@ -89,6 +89,11 @@ export interface ConditionRule {
   name: string;
   /** The rule in words, as it is shown wherever a condition is. */
   statement: string;
+}
+
+/** A condition's identity within one result: one rule can hold once for a subject. */
+export function conditionKey(condition: { rule: ConditionRuleId; subject: AssetRef }): string {
+  return `${condition.rule}:${condition.subject.id}`;
 }
 
 /** The rules, with the methodology's own parameters written into their statements. */
