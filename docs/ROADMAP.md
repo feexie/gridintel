@@ -688,6 +688,10 @@ app; a password inside the app (C) would, and is a separate decision.
 **Founder's decision (2026-10-05): option A for now, B later.** Nothing is
 to be set up by the engineer; see Phase 6c-3 for the guide that is owed.
 
+**Corrected by the Founder (2026-10-06): the preview is on Vercel, not
+option A.** The Cloudflare guide is dropped. What is owed instead is under
+Phase 6c-3.
+
 #### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; not started)
 
 **Founder's answers at the 6c-2 checkpoint (2026-10-05).**
@@ -736,22 +740,26 @@ Changed:
 6. **The 6c-3 workspaces: Assets and Events / Alarms**, as in the workspace
    table below.
 
-**Hosted preview.** Option A is chosen for now (Cloudflare Tunnel from the
-Founder's laptop, behind Cloudflare Access); B later. The engineer creates no
-account and runs nothing external. Owed at the 6c-3 checkpoint: a
-step-by-step setup guide for A, written for someone doing it for the first
-time on Windows, covering:
+**Hosted preview (corrected 2026-10-06).** The Founder uses Vercel, not
+option A; the Cloudflare guide is not wanted. The engineer changes no Vercel
+setting and creates nothing external. Owed at the 6c-3 checkpoint:
 
-- which accounts are needed;
-- whether a domain is needed and what it costs;
-- the exact commands;
-- how to add or remove a viewer's email address;
-- how to shut it down.
+- whether the repository holds a Vercel setup (`vercel.json`, a `.vercel`
+  folder, any deploy configuration), and whether pushes to `main` deploy
+  automatically;
+- how GridIntel behaves on Vercel: the warm-up and the cache on serverless
+  cold starts, memory needs, and whether the "preparing data" page is what a
+  viewer sees on a cold start;
+- a step-by-step guide, for someone doing it for the first time on Windows,
+  to restricting access to the deployment: the Deployment Protection options
+  by plan, current pricing from Vercel's own site, how to add or remove a
+  viewer, and how to take it offline;
+- whether demonstrating to prospects fits the Hobby plan's terms.
 
 The SYNTHETIC DATA bar stays on every screen of any hosted version.
 
 **At the checkpoint.** The usual report, screenshots, timings (median of
-five), before and after for anything that moved, and the guide above.
+five), before and after for anything that moved, and the Vercel items above.
 
 **The workspaces.**
 
