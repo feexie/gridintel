@@ -1,6 +1,7 @@
 import type { ScopeRef } from "@/domain";
 import type { OperationsRuntime } from "../operations/levels.ts";
-import type { CustomerClassRow, FeederRevenueRow, RevenueWorkspaceView } from "./views.ts";
+import type { RevenueGapPartView } from "../operations/views.ts";
+import type { CustomerClassRow, FeederRevenueRow, RevenueWorkspaceView, ValuationView } from "./views.ts";
 import { feedersOfSubstation } from "../../analytics/index.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { loadRegistry, lossesBlock, revenueGapBlock } from "../operations/levels.ts";
@@ -23,19 +24,49 @@ import { loadRegistry, lossesBlock, revenueGapBlock } from "../operations/levels
    here. A customer class is ordered by its shortfall, which
    analytics computes; a class that paid more than it was billed is
    last and is never set against the others.
+
+   The valuation of the commercial gap has one row for each
+   distribution transformer. It is ordered by amount and cut to the
+   largest few here, with the whole list one click away, so that the
+   screen neither orders nor cuts.
 ========================================================== */
+
+/** Which sections the valuation lists: the largest few, or every one. */
+export type ValuationListing = "top" | "all";
+
+/** How many sections the short valuation listing shows. */
+export const VALUATION_LIMIT = 10;
+
+/** The valuation, cut to what is asked for. Sections by amount, largest first; one with no amount is last. */
+export function valuationView(parts: readonly RevenueGapPartView[], listing: ValuationListing): ValuationView {
+  const every = parts
+    .filter((part) => part.kind === "section")
+    .sort((a, b) => (b.amount ?? -Infinity) - (a.amount ?? -Infinity) || (a.scope.id < b.scope.id ? -1 : 1));
+  const sections = listing === "all" ? every : every.slice(0, VALUATION_LIMIT);
+  return {
+    sections,
+    sectionsTotal: every.length,
+    limit: VALUATION_LIMIT,
+    complete: sections.length === every.length,
+    residuals: parts.filter((part) => part.kind === "residual"),
+  };
+}
+
+/** The whole view with the valuation uncut: computed once, whichever listing is asked for. */
+type Workspace = Omit<RevenueWorkspaceView, "valuation">;
 
 /** Largest shortfall first; classes with no shortfall after them, largest billing first. */
 function byShortfall(rows: readonly CustomerClassRow[]): CustomerClassRow[] {
   return [...rows].sort((a, b) => b.notCollected - a.notCollected || b.revenueBilled - a.revenueBilled || (a.category < b.category ? -1 : 1));
 }
 
-export async function revenueWorkspaceView(runtime: OperationsRuntime): Promise<RevenueWorkspaceView> {
+export async function revenueWorkspaceView(runtime: OperationsRuntime, valuation: ValuationListing = "top"): Promise<RevenueWorkspaceView> {
   const key = `view:revenue-workspace|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
-  return (runtime.cache ?? NO_CACHE).get(key, () => build(runtime));
+  const workspace = await (runtime.cache ?? NO_CACHE).get(key, () => build(runtime));
+  return { ...workspace, valuation: valuationView(workspace.gap.parts, valuation) };
 }
 
-async function build(runtime: OperationsRuntime): Promise<RevenueWorkspaceView> {
+async function build(runtime: OperationsRuntime): Promise<Workspace> {
   const loaded = await loadRegistry(runtime);
   const { index, snapshot } = loaded;
   const organization = snapshot.organizations[0];

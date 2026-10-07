@@ -58,6 +58,22 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
   await expect(tile(page, "Revenue not realised")).toContainText("₦46,310,113");
   await expect(tile(page, "Collection gap")).toContainText("Cash basis");
 
+  // The valuation lists the ten largest transformers, says so, and has the rest one click away.
+  const valuation = page.locator("[data-valuation]");
+  const sections = valuation.locator('[data-table="gap-valuation"] [data-row^="section:"]');
+  await expect(valuation).toHaveAttribute("data-valuation", "top");
+  await expect(sections).toHaveCount(10);
+  await expect(sections.nth(0)).toHaveAttribute("data-row", "section:DT-MKT-5");
+  await expect(valuation).toContainText("The 10 largest of 48 sections by amount, then the residuals above them. The rows shown do not add up to the commercial gap.");
+  await expect(valuation.locator('[data-row^="residual:"]')).toHaveCount(4);
+  await valuation.getByRole("link", { name: "Show all 48" }).click();
+  await expect(page).toHaveURL(/\/revenue\?valuation=all$/);
+  await expect(sections).toHaveCount(48);
+  await expect(valuation).toContainText("All 48 sections, largest amount first");
+  await expect(tile(page, "Revenue not realised")).toContainText("₦46,310,113");
+  await valuation.getByRole("link", { name: "Show the 10 largest" }).click();
+  await expect(sections).toHaveCount(10);
+
   // Government (MDA) accounts are their own class and lead the list: 90 accounts, 19.8% collected, 45% of the shortfall.
   const classes = page.locator('[data-table="class-portfolio"] tbody tr');
   await expect(classes.nth(0)).toHaveAttribute("data-row", "government");

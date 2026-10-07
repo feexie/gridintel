@@ -15,7 +15,9 @@ import type {
   RevenueGapView,
   SupplyView,
 } from "@/services/operations/views";
+import type { ValuationView } from "@/services/revenue/views";
 import { MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "./Metric";
+import { HeadRow, Row, SubHead, Table, Td, Th } from "./Table";
 import { formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatSigned, formatTime, levelHref } from "./format";
 
 /* Chart colours are design tokens (globals.css): categorical slots validated for the panel surface. */
@@ -368,8 +370,13 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
 
 /* ---------------- Revenue gap ---------------- */
 
-/** The revenue gap of a scope: two separate parts, how the commercial part is valued, and the sections below. */
-export function RevenueGapPanel({ gap, below }: { gap: RevenueGapView; below: { title: string; rows: RevenueGapRow[] } | null }) {
+/**
+ * The revenue gap of a scope: two separate parts, how the commercial part is valued, and the sections below.
+ * Given a valuation listing, the valuation table shows what the listing holds (its sections, then the
+ * residuals) and offers the other listing; without one it shows every part.
+ */
+export function RevenueGapPanel({ gap, below, valuation }: { gap: RevenueGapView; below: { title: string; rows: RevenueGapRow[] } | null; valuation?: ValuationView }) {
+  const parts = valuation ? [...valuation.sections, ...valuation.residuals] : gap.parts;
   return (
     <Panel title="Revenue gap" aside={<span>Estimate of revenue not realised · monthly, not annualised</span>}>
       <p className="border-l-2 border-caution-line/60 pl-2 text-xs leading-snug text-caution-ink/90">
@@ -391,65 +398,71 @@ export function RevenueGapPanel({ gap, below }: { gap: RevenueGapView; below: { 
 
       <div className="grid gap-3 xl:grid-cols-2">
         {below && below.rows.length > 0 ? (
-        <div>
-          <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">{below.title}</h3>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Section</th>
-                <th className="py-1 pr-2 text-right font-normal">Commercial gap</th>
-                <th className="py-1 pr-2 text-right font-normal">Collection gap</th>
-                <th className="py-1 text-right font-normal">Not realised</th>
-              </tr>
-            </thead>
-            <tbody>
-              {below.rows.map((row) => (
-                <tr key={row.id} className="border-b border-line/60">
-                  <td className="py-1 pr-2">
-                    <Link href={levelHref(row.kind, row.id)} className="text-link hover:underline">
-                      {row.name}
-                    </Link>
-                  </td>
-                  <td className="py-1 pr-2 text-right">
-                    <MetricCell metric={row.commercial} />
-                  </td>
-                  <td className="py-1 pr-2 text-right">
-                    <MetricCell metric={row.collection} />
-                  </td>
-                  <td className="py-1 text-right">
-                    <MetricCell metric={row.notRealised} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <div>
+            <SubHead>{below.title}</SubHead>
+            <Table name="gap-below">
+              <HeadRow>
+                <Th>Section</Th>
+                <Th right>Commercial gap</Th>
+                <Th right>Collection gap</Th>
+                <Th right>Not realised</Th>
+              </HeadRow>
+              <tbody>
+                {below.rows.map((row) => (
+                  <Row key={row.id} id={row.id}>
+                    <Td>
+                      <Link href={levelHref(row.kind, row.id)} className="text-link hover:underline">
+                        {row.name}
+                      </Link>
+                    </Td>
+                    <Td right>
+                      <MetricCell metric={row.commercial} />
+                    </Td>
+                    <Td right>
+                      <MetricCell metric={row.collection} />
+                    </Td>
+                    <Td right>
+                      <MetricCell metric={row.notRealised} />
+                    </Td>
+                  </Row>
+                ))}
+              </tbody>
+            </Table>
+          </div>
         ) : null}
-        <div>
-          <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">How the commercial gap is valued</h3>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Where the loss occurs</th>
-                <th className="py-1 pr-2 text-right font-normal">Unbilled energy</th>
-                <th className="py-1 pr-2 text-right font-normal">LV non-MD rate{gap.caveat ? " †" : ""}</th>
-                <th className="py-1 text-right font-normal">Amount</th>
-              </tr>
-            </thead>
+        <div data-valuation={valuation ? (valuation.complete ? "all" : "top") : "every-part"}>
+          <SubHead>How the commercial gap is valued</SubHead>
+          {valuation && valuation.sectionsTotal > valuation.limit ? (
+            <p className="mb-1 text-caption leading-snug text-ink-3">
+              {valuation.complete
+                ? `All ${valuation.sectionsTotal} sections, largest amount first, then the residuals above them.`
+                : `The ${valuation.limit} largest of ${valuation.sectionsTotal} sections by amount, then the residuals above them. The rows shown do not add up to the commercial gap.`}{" "}
+              <Link href={valuation.complete ? "?" : "?valuation=all"} className="text-link hover:underline">
+                {valuation.complete ? `Show the ${valuation.limit} largest` : `Show all ${valuation.sectionsTotal}`}
+              </Link>
+            </p>
+          ) : null}
+          <Table name="gap-valuation">
+            <HeadRow>
+              <Th>Where the loss occurs</Th>
+              <Th right>Unbilled energy</Th>
+              <Th right>LV non-MD rate{gap.caveat ? " †" : ""}</Th>
+              <Th right>Amount</Th>
+            </HeadRow>
             <tbody>
-              {gap.parts.map((part) => (
-                <tr key={`${part.kind}:${part.scope.id}`} className="border-b border-line/60">
-                  <td className="py-1 pr-2 text-ink-2">
+              {parts.map((part) => (
+                <Row key={`${part.kind}:${part.scope.id}`} id={`${part.kind}:${part.scope.id}`}>
+                  <Td>
                     {part.scope.name}
                     <span className="ml-1.5 text-micro text-ink-5">{part.kind === "residual" ? "residual above the sections below" : part.scope.id}</span>
-                  </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono">{part.ratePerKwh === null ? "—" : `${formatRate(part.ratePerKwh, gap.currency)}/kWh`}</td>
-                  <td className="whitespace-nowrap py-1 text-right font-mono text-ink">{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</td>
-                </tr>
+                  </Td>
+                  <Td figure>{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</Td>
+                  <Td figure>{part.ratePerKwh === null ? "—" : `${formatRate(part.ratePerKwh, gap.currency)}/kWh`}</Td>
+                  <Td figure>{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           <p className="mt-1 text-micro leading-snug text-ink-5">
             Each loss is valued at the average rate billed to low-voltage, non-maximum-demand customers where it occurs. Customers supplied at 11 kV are in no rate.
           </p>

@@ -5,7 +5,7 @@ import type { NetworkLevelView } from "../operations/views.ts";
 import { DEMO_CLOCK, DEMO_PERIOD, createDemoRepositories } from "../../repositories/demo/index.ts";
 import { createMemoryCache } from "../analytics/cache.ts";
 import { feederView } from "../operations/levels.ts";
-import { revenueWorkspaceView } from "../revenue/view.ts";
+import { revenueWorkspaceView, valuationView } from "../revenue/view.ts";
 import { reliabilityWorkspaceView } from "./view.ts";
 
 const runtime: OperationsRuntime = { repos: createDemoRepositories(), now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {}, cache: createMemoryCache() };
@@ -132,5 +132,29 @@ describe("revenue workspace", async () => {
     // The portfolio's gap is the one the Executive page shows, and the feeders' not-realised figures are its rows.
     assert.deepEqual(view.gapByFeeder.map((row) => row.notRealised.value), view.feeders.map((feeder) => feeder.notRealised.value));
     assert.equal(view.sourcing.synthetic, true);
+  });
+
+  it("cuts the valuation to the ten largest transformers in the read model, and says how many there are", async () => {
+    const { valuation } = view;
+    assert.deepEqual([valuation.sections.length, valuation.sectionsTotal, valuation.limit, valuation.complete], [10, 48, 10, false]);
+    assert.deepEqual(valuation.sections.slice(0, 4).map((part) => part.scope.id), ["DT-MKT-5", "DT-MKT-11", "DT-MKT-8", "DT-OLD-6"]);
+    const amounts = valuation.sections.map((part) => part.amount as number);
+    assert.deepEqual(amounts, [...amounts].sort((a, b) => b - a));
+    // The residuals above the transformers are never cut, and are not ranked among them.
+    assert.deepEqual(valuation.residuals.map((part) => part.scope.kind).sort(), ["feeder", "feeder", "feeder", "substation"]);
+
+    const all = await revenueWorkspaceView(runtime, "all");
+    assert.deepEqual([all.valuation.sections.length, all.valuation.complete], [48, true]);
+    assert.deepEqual(all.valuation.sections.slice(0, 10), valuation.sections);
+    // Both listings hold every part between them and the screen's gap is the same: nothing but the listing differs.
+    assert.equal(all.valuation.sections.length + all.valuation.residuals.length, view.gap.parts.length);
+    assert.deepEqual({ ...all, valuation: null }, { ...view, valuation: null });
+  });
+
+  it("says a valuation no longer than the cut-off is complete, and puts a section with no amount last", () => {
+    const part = (id: string, amount: number | null) => ({ scope: { kind: "distribution_transformer" as const, id, name: id }, kind: "section" as const, energyKwh: null, ratePerKwh: null, amount });
+    const few = valuationView([part("A", 1), part("B", null), part("C", 5)], "top");
+    assert.deepEqual([few.sections.map((entry) => entry.scope.id), few.complete, few.sectionsTotal], [["C", "A", "B"], true, 3]);
+    assert.deepEqual(valuationView([], "top"), { sections: [], sectionsTotal: 0, limit: 10, complete: true, residuals: [] });
   });
 });

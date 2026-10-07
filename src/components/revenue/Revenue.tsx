@@ -51,7 +51,7 @@ export function Revenue({ view }: { view: RevenueWorkspaceView }) {
         <Legend />
       </div>
 
-      <RevenueGapPanel gap={view.gap} below={{ title: "By feeder", rows: view.gapByFeeder }} />
+      <RevenueGapPanel gap={view.gap} below={{ title: "By feeder", rows: view.gapByFeeder }} valuation={view.valuation} />
 
       <Panel title="Collection by customer class" aside="Cash basis: received in the period against billed in the period">
         <div className="grid gap-2 md:grid-cols-3">

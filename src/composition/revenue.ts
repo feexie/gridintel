@@ -1,3 +1,4 @@
+import type { ValuationListing } from "../services/revenue/view.ts";
 import { revenueWorkspaceView } from "../services/revenue/view.ts";
 import { cachedView } from "./runtime.ts";
 
@@ -9,7 +10,8 @@ import { cachedView } from "./runtime.ts";
 ========================================================== */
 
 export const revenue = {
-  view: () => cachedView("revenue", (runtime) => revenueWorkspaceView(runtime)),
+  /** The valuation is cut to its largest few sections by the read model unless every one is asked for. */
+  view: (valuation: ValuationListing = "top") => cachedView(`revenue:${valuation}`, (runtime) => revenueWorkspaceView(runtime, valuation)),
 };
 
 export { isPreparing } from "./runtime.ts";

@@ -1,4 +1,4 @@
-import type { LossesView, MetricView, RevenueGapRow, RevenueGapView, SourcingView } from "../operations/views.ts";
+import type { LossesView, MetricView, RevenueGapPartView, RevenueGapRow, RevenueGapView, SourcingView } from "../operations/views.ts";
 
 /* ==========================================================
    SERVICES — REVENUE WORKSPACE VIEW MODEL
@@ -25,6 +25,23 @@ export interface FeederRevenueRow {
   byCustomerClass: CustomerClassRow[];
 }
 
+/**
+ * How the commercial gap is valued, as a listing. The sections valued whole (the distribution
+ * transformers) are ordered by amount and cut to the largest few unless all are asked for; the
+ * screen neither orders nor cuts. The residuals above them are few and are never cut.
+ */
+export interface ValuationView {
+  /** Largest amount first; a section with no amount is last. */
+  sections: RevenueGapPartView[];
+  /** How many sections there are, whichever listing is shown. */
+  sectionsTotal: number;
+  /** The cut-off of the short listing. */
+  limit: number;
+  /** True when every section is in `sections`. */
+  complete: boolean;
+  residuals: RevenueGapPartView[];
+}
+
 export interface RevenueWorkspaceView {
   organization: string | null;
   period: { start: string; end: string };
@@ -33,6 +50,8 @@ export interface RevenueWorkspaceView {
   /** The portfolio's revenue gap, and each feeder's. */
   gap: RevenueGapView;
   gapByFeeder: RevenueGapRow[];
+  /** The valuation of the portfolio's commercial gap, section by section. */
+  valuation: ValuationView;
   /** The portfolio's billing and collection. */
   revenueBilled: MetricView;
   revenueCollected: MetricView;
