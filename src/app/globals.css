@@ -72,7 +72,7 @@ dd,
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* IBM Plex Sans for text and IBM Plex Mono for figures, self-hosted through next/font (see
+  /* IBM Plex Sans for text and IBM Plex Mono for figures, from the files in app/fonts, loaded by next/font (see
      app/layout.tsx, which sets the two variables). The system stacks follow as fallbacks. */
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-plex-mono), Consolas, "SFMono-Regular", Menlo, "Cascadia Mono", ui-monospace, "Liberation Mono", monospace;
