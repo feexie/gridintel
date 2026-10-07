@@ -692,6 +692,32 @@ to be set up by the engineer; see Phase 6c-3 for the guide that is owed.
 option A.** The Cloudflare guide is dropped. What is owed instead is under
 Phase 6c-3.
 
+**Hosting notes (Founder's decisions, 2026-10-07).**
+
+- *Production is public, by the Founder's choice.* Deployment Protection is
+  Standard Protection: preview (branch) URLs are behind a Vercel login, the
+  production URL is open to anyone.
+- *How it deploys.* The repository holds no Vercel configuration; the
+  project is connected through the Vercel GitHub app. A push to `main`
+  deploys to production; a push to any other branch makes a preview. A merge
+  to `main` is therefore a publication.
+- *Not indexed until launch.* Every page carries `noindex, nofollow`
+  (`metadata.robots` in `src/app/layout.tsx`) and `/robots.txt` disallows
+  everything (`src/app/robots.ts`). Both are removed only on the Founder's
+  decision to launch.
+- *The SYNTHETIC DATA bar is on every screen*, including the page a visitor
+  lands on: `/` redirects to `/dashboard`, which is inside the dashboard
+  layout that holds the bar. A browser test holds this.
+- *The repository stays public during development.* No secret is ever
+  committed. Strategy notes are not kept in the repository: they are in
+  `private/`, which is in `.gitignore`.
+- *Cold start.* Each new function instance on Vercel computes the screens
+  again, and a visitor sees "Preparing data" while it does (observed on the
+  live site, 2026-10-07). `/api/ready` on Vercel reports one instance's
+  state and is not a health signal for the deployment. The warm-up is not to
+  be patched; ADR 0012 proposes building every screen ahead of time
+  instead.
+
 #### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; not started)
 
 **Founder's answers at the 6c-2 checkpoint (2026-10-05).**
@@ -754,7 +780,7 @@ setting and creates nothing external. Owed at the 6c-3 checkpoint:
   to restricting access to the deployment: the Deployment Protection options
   by plan, current pricing from Vercel's own site, how to add or remove a
   viewer, and how to take it offline;
-- whether demonstrating to prospects fits the Hobby plan's terms.
+- whether the intended use fits the Hobby plan's terms.
 
 The SYNTHETIC DATA bar stays on every screen of any hosted version.
 

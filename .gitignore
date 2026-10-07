@@ -38,6 +38,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# the Founder's private notes: never committed (the repository is public)
+/private/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

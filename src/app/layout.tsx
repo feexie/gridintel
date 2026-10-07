@@ -1,6 +1,7 @@
 import "./globals.css";
 import localFont from "next/font/local";
 import Providers from "./providers";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 /* The typeface: IBM Plex Sans for text, IBM Plex Mono for figures. The font files are in this
@@ -28,6 +29,14 @@ const plexMono = localFont({
   display: "swap",
   adjustFontFallback: false,
 });
+
+/* The site is public but not launched: every page asks search engines not to index it or
+   follow its links, and app/robots.ts disallows crawling. Both stay until the Founder decides
+   to launch (docs/ROADMAP.md, hosting notes). */
+export const metadata: Metadata = {
+  title: "GridIntel",
+  robots: { index: false, follow: false },
+};
 
 export default function RootLayout({
   children,
