@@ -9,6 +9,8 @@ const SHOTS: [string, string][] = [
   ["executive", "/dashboard/utility/executive"],
   ["reliability", "/dashboard/utility/reliability"],
   ["revenue", "/dashboard/utility/revenue"],
+  ["assets", "/dashboard/utility/assets"],
+  ["events", "/dashboard/utility/events"],
   ["utility-hub", "/dashboard/utility"],
   ["operations", OPERATIONS],
   ["region", `${OPERATIONS}/regions/demo-region-northfield`],

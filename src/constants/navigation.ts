@@ -20,6 +20,8 @@ export const UTILITY_WORKSPACES: NavigationItem[] = [
   { label: "Operations", href: "/dashboard/utility/operations", description: "What does the network look like, level by level, from region to service point?" },
   { label: "Reliability", href: "/dashboard/utility/reliability", description: "Which feeders fail their customers, why, and is it ours to fix?" },
   { label: "Revenue", href: "/dashboard/utility/revenue", description: "Where is revenue not realised, who is not paying, and is the loss commercial or collection?" },
+  { label: "Assets", href: "/dashboard/utility/assets", description: "Which assets require attention?" },
+  { label: "Events / Alarms", href: "/dashboard/utility/events", description: "What is wrong now, where, and who is affected?" },
 ];
 
 export const navigationGroups: NavigationGroup[] = [

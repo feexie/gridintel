@@ -1,4 +1,4 @@
-import type { EntityRef, IntervalEnergy, IsoTimestamp, KpiBasis, Meter, Period, ScopeRef, TelemetryPoint } from "@/domain";
+import type { AssetRef, EntityRef, IntervalEnergy, IsoTimestamp, KpiBasis, Meter, Period, ScopeRef, TelemetryPoint } from "@/domain";
 import type { GridIntelRepositories, NetworkRegistrySnapshot, RegistryCoverage } from "../../repositories/ports/index.ts";
 import type { CalculatedKpi, CalculationContext, CannotTellReason, RevenueGap, TopologyIndex } from "../../analytics/index.ts";
 import type { ServiceCache } from "../analytics/cache.ts";
@@ -725,7 +725,7 @@ async function buildLoading(
 
 /* ---------------- Alarms and derived conditions ---------------- */
 
-/** How many cleared alarms a screen lists; the view says how many there are in all. */
+/** How many cleared alarms a drill-down screen lists; the view says how many there are in all. */
 const CLEARED_ALARM_LIMIT = 6;
 
 /** Why it cannot be said whether a source alarm was raised for a condition, in the words a screen shows. */
@@ -738,8 +738,12 @@ const CANNOT_TELL: Record<CannotTellReason, string> = {
 
 /** The asset an alarm or a condition names, in the words and with the link a screen shows. */
 export function alarmSubject(loaded: Loaded, subject: EntityRef): AlarmSubjectView {
+  if (!("id" in subject)) return { id: subject.label, label: subject.label, assetKind: null, kindLabel: "Not matched to the registry", link: null };
+  return { assetKind: subject.kind, ...subjectWords(loaded, subject) };
+}
+
+function subjectWords(loaded: Loaded, subject: AssetRef): Omit<AlarmSubjectView, "assetKind"> {
   const { index, snapshot } = loaded;
-  if (!("id" in subject)) return { id: subject.label, label: subject.label, kindLabel: "Not matched to the registry", link: null };
   const { kind, id } = subject;
   switch (kind) {
     case "substation":
@@ -766,10 +770,15 @@ export function alarmSubject(loaded: Loaded, subject: EntityRef): AlarmSubjectVi
 }
 
 export function alarmsBlock(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<AlarmsView> {
-  return block(runtime, "alarms", scope, () => buildAlarms(runtime, loaded, scope));
+  return block(runtime, "alarms", scope, () => buildAlarms(runtime, loaded, scope, CLEARED_ALARM_LIMIT));
 }
 
-async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<AlarmsView> {
+/** The same block with every cleared alarm listed, for a screen whose subject is the alarms themselves. */
+export function allAlarmsBlock(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef): Promise<AlarmsView> {
+  return block(runtime, "alarms-all", scope, () => buildAlarms(runtime, loaded, scope, Infinity));
+}
+
+async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: ScopeRef, clearedLimit: number): Promise<AlarmsView> {
   const { result, sourcing } = await scopeAlarms({ repos: runtime.repos, scope, period: runtime.period, asOf: runtime.now, context: context(runtime), cache: runtime.cache });
   const { recorded, derived } = result;
 
@@ -853,7 +862,7 @@ async function buildAlarms(runtime: OperationsRuntime, loaded: Loaded, scope: Sc
             : null,
       active: rows.filter((row) => row.state === "active"),
       undated: rows.filter((row) => row.state === "time_not_recorded"),
-      cleared: cleared.slice(0, CLEARED_ALARM_LIMIT),
+      cleared: cleared.slice(0, clearedLimit),
       clearedTotal: cleared.length,
       unplaced: recorded.unplaced,
     },
@@ -1032,7 +1041,7 @@ function header(
   };
 }
 
-function activeAccountsUnder(loaded: Loaded, scope: ScopeRef): number | null {
+export function activeAccountsUnder(loaded: Loaded, scope: ScopeRef): number | null {
   if (loaded.coverage.customers !== "complete") return null;
   const points = new Set((servicePointsUnder(loaded.index, scope).value ?? []).map((sp) => sp.id));
   return loaded.snapshot.customers.filter(

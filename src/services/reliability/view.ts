@@ -29,7 +29,7 @@ import { sourcingView } from "../operations/metric.ts";
    here; units are converted through analytics.
 ========================================================== */
 
-const CAUSE_LABEL: Record<string, string> = {
+export const CAUSE_LABEL: Record<string, string> = {
   load_shedding: "Load shedding",
   fault: "Fault",
   planned_maintenance: "Planned maintenance",

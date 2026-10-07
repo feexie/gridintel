@@ -19,10 +19,18 @@ test("the menu lists the Utility Intelligence workspaces that exist, and no plac
   await page.goto("/dashboard/utility");
   const menu = page.getByRole("navigation", { name: "Main" });
   const utility = menu.getByRole("region", { name: "Utility Intelligence" });
-  await expect(utility.getByRole("link")).toHaveText(["Executive", "Operations", "Reliability", "Revenue"]);
+  await expect(utility.getByRole("link")).toHaveText(["Executive", "Operations", "Reliability", "Revenue", "Assets", "Events / Alarms"]);
   // Every link in the menu leads to a screen that works: none says "Coming Soon".
   const links = await menu.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
-  expect(links).toEqual(["/dashboard", "/dashboard/utility/executive", OPERATIONS, "/dashboard/utility/reliability", "/dashboard/utility/revenue"]);
+  expect(links).toEqual([
+    "/dashboard",
+    "/dashboard/utility/executive",
+    OPERATIONS,
+    "/dashboard/utility/reliability",
+    "/dashboard/utility/revenue",
+    "/dashboard/utility/assets",
+    "/dashboard/utility/events",
+  ]);
   for (const href of links) {
     await page.goto(href);
     await expect(page.getByText("Coming Soon"), href).toHaveCount(0);
@@ -32,7 +40,7 @@ test("the menu lists the Utility Intelligence workspaces that exist, and no plac
   // The hub offers the same workspaces, each with the question it answers.
   await page.goto("/dashboard/utility");
   const hub = page.getByRole("main");
-  await expect(hub.getByRole("link")).toHaveText(["Executive", "Operations", "Reliability", "Revenue"]);
+  await expect(hub.getByRole("link")).toHaveText(["Executive", "Operations", "Reliability", "Revenue", "Assets", "Events / Alarms"]);
   await expect(hub).toContainText("Which feeders fail their customers, why, and is it ours to fix?");
 });
 
@@ -42,6 +50,8 @@ test("the menu marks the workspace the reader is in, at any depth", async ({ pag
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Operations"]);
   await page.goto("/dashboard/utility/revenue");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Revenue"]);
+  await page.goto("/dashboard/utility/events");
+  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Events / Alarms"]);
   // The overview is not marked on the pages below it.
   await page.goto("/dashboard");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Overview"]);
@@ -57,7 +67,8 @@ test("every page has exactly one h1", async ({ page }) => {
 });
 
 test("the reporting period and the SYNTHETIC DATA label are in one bar, once, on every dashboard page", async ({ page }) => {
-  for (const route of ["/dashboard", "/dashboard/utility", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/utility/reliability", "/dashboard/utility/revenue", "/dashboard/reports"]) {
+  // "/" is where a visitor lands; it leads to the overview, which carries the bar like every other screen.
+  for (const route of ["/", "/dashboard", "/dashboard/utility", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/utility/reliability", "/dashboard/utility/revenue", "/dashboard/utility/assets", "/dashboard/utility/events", "/dashboard/reports"]) {
     await page.goto(route);
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar, route).toHaveCount(1);
@@ -68,4 +79,16 @@ test("the reporting period and the SYNTHETIC DATA label are in one bar, once, on
     await expect(page.getByText("Reporting period", { exact: true }), route).toHaveCount(1);
     await expect(page.getByText("SYNTHETIC DATA", { exact: true }), route).toHaveCount(1);
   }
+});
+
+test("the site asks not to be indexed: a robots meta on every page and a robots.txt that disallows everything", async ({ page, request }) => {
+  for (const route of ["/", "/dashboard", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/reports", `${OPERATIONS}/feeders/NOPE`]) {
+    await page.goto(route);
+    // A not-found page carries Next's own "noindex" tags as well; the first is the layout's.
+    await expect(page.locator('meta[name="robots"]').first(), route).toHaveAttribute("content", "noindex, nofollow");
+  }
+  const robots = await request.get("/robots.txt");
+  expect(robots.ok()).toBe(true);
+  const lines = (await robots.text()).split("\n").map((line) => line.trim()).filter(Boolean);
+  expect(lines).toEqual(["User-Agent: *", "Disallow: /"]);
 });

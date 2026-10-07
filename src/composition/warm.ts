@@ -1,4 +1,6 @@
 import { getRepositories, getClock, getReadiness, setReadiness } from "./runtime.ts";
+import { assets } from "./assets.ts";
+import { events } from "./events.ts";
 import { executive } from "./executive.ts";
 import { operations } from "./operations.ts";
 import { reliability } from "./reliability.ts";
@@ -51,6 +53,8 @@ export async function warmResults(): Promise<void> {
       () => executive.view(),
       () => reliability.view(),
       () => revenue.view(),
+      () => assets.view(),
+      () => events.view(),
     ];
     for (const step of steps) {
       await yieldToRequests();

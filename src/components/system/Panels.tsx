@@ -759,7 +759,7 @@ export function ChildrenTable({ table, showAll = true, allHref }: { table: Child
 
 /* ---------------- Alarms and derived conditions ---------------- */
 
-const SEVERITY_STYLE: Record<AlarmRowView["severity"], string> = {
+export const SEVERITY_STYLE: Record<AlarmRowView["severity"], string> = {
   critical: "border-alert-line/70 text-alert",
   high: "border-alert-line/40 text-alert",
   medium: "border-caution-line/50 text-caution",
@@ -767,7 +767,7 @@ const SEVERITY_STYLE: Record<AlarmRowView["severity"], string> = {
   info: "border-line-strong text-ink-4",
 };
 
-function SubjectLink({ subject }: { subject: AlarmSubjectView }) {
+export function SubjectLink({ subject }: { subject: AlarmSubjectView }) {
   return (
     <>
       {subject.link ? (

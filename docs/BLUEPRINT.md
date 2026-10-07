@@ -4,6 +4,30 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `FOUNDING_DIRECTIVE.md`.
 
+> **State at the Phase 6c-3 checkpoint (2026-10-07).** Since 6c-2:
+>
+> - **Workspaces.** `/dashboard/utility/assets` and `/events` complete the
+>   six. Read models in `src/services/assets` and `src/services/events`,
+>   bindings in `src/composition`, components that compose the system
+>   components. Both are built from the blocks the drill-down already
+>   shows; what "attention", "in progress" and "affected" mean is in ADR
+>   0013.
+> - **Interruptions open at a time.** `openExposuresAt`
+>   (`src/analytics/reliability/open.ts`) and the `openInterruptions`
+>   service: in progress, restoration not recorded and start not recorded
+>   are three cases, never merged.
+> - **Alarms.** `allAlarmsBlock` lists every cleared alarm for the Events
+>   screen; the drill-down still lists the most recent six. A subject view
+>   names the kind of registry record it is.
+> - **Tables.** Every table on a data screen is built from the table
+>   primitives in `src/components/system/Table.tsx`.
+> - **Typeface.** The IBM Plex files are in `src/app/fonts` and loaded with
+>   `next/font/local`; a build fetches nothing.
+> - **Hosting.** The preview is public on Vercel (ROADMAP, hosting notes).
+>   Every page is `noindex, nofollow` and `/robots.txt` disallows all
+>   (`src/app/layout.tsx`, `src/app/robots.ts`). ADR 0012 proposes building
+>   every screen ahead of time on a fixed dataset; it is not implemented.
+>
 > **State at the Phase 6c-2 checkpoint (2026-10-05).** Since 6c-1:
 >
 > - **Workspaces.** `/dashboard/utility/reliability` and `/revenue` join
@@ -302,9 +326,8 @@ intelligence.
 
 ## 13. Assumptions that would make the platform DisCo-only
 
-The first paying customers may be mini-grid developers reporting for
-results-based financing, not distribution companies. Nothing has been built
-for them, and nothing should be designed against them. These are the places
+The platform is also meant for mini-grids. Nothing has been built for them,
+and nothing should be designed against them. These are the places
 where the domain or the services currently assume a distribution utility.
 None is hard to change; each needs a decision before mini-grid work starts.
 
@@ -314,14 +337,14 @@ None is hard to change; each needs a decision before mini-grid work starts.
 | `MeterInstallation` roles | Boundary meters are substation incomer, feeder head, transformer totalizer and grid interface. Energy enters from upstream. | Roles for **generation** (PV, generator), storage in and out, and site output. |
 | Energy account | Energy input is the net flow at the input boundary meters. Embedded generation is ignored unless a methodology allows a separately measured adjustment (default: none). | **Generation as the energy-account input**: energy generated, less storage losses and curtailment, equals energy available for sale. |
 | `sectionsForScope` (the cut) | Sections are substations, feeders and transformers. | A site as a section in its own right. The cut's own comment says so. |
-| Reliability, hours of supply | Customer-weighted from outage exposures per transformer. | The same calculation works, but RBF reporting usually wants **availability of the site's supply** and hours per day per customer tier. |
+| Reliability, hours of supply | Customer-weighted from outage exposures per transformer. | The same calculation works, but mini-grid reporting usually wants **availability of the site's supply** and hours per day per customer tier. |
 | `Feeder.serviceBand` | NERC Service-Based Tariff bands A to E. | Mini-grid tariffs are set per site under the mini-grid regulation; no bands. The field is optional, so it does not block, but band compliance has no meaning there. |
 | `KpiKey` | ATC&C, SAIDI, SAIFI, collection and loading. | Generation, renewable fraction, capacity utilisation, connections, energy sold per connection, uptime. |
 | `MetricKey` (telemetry) | Voltage, current, power, frequency, temperature, energy registers. | State of charge, irradiance, inverter and generator state, fuel. |
 | Billing | Bills, vends and payments per customer; tariff as a code on the charge. | Mostly prepaid per-kWh or per-tier tariffs; the model fits. Connection fees and subsidy receipts are not modelled. |
 | Revenue gap | Unbilled energy valued at the low-voltage non-MD rate of the transformer where it occurs. | The "where it occurs" level would be the site or its distribution segment. The valuation rule itself carries over. |
 | Organization | `OrganizationKind` already includes `minigrid_operator` and `der_developer`. | Nothing. |
-| Reported figures | `ReportedKpi` with a basis; compared only on the same basis. | Fits RBF reporting directly: a claimed figure beside a calculated one, with the basis stated. This is the strongest fit. |
+| Reported figures | `ReportedKpi` with a basis; compared only on the same basis. | Fits directly: a claimed figure beside a calculated one, with the basis stated. |
 
 **What 6a and 6b must not do.** Add a required link from an asset to a
 substation; add a rule that energy always enters from upstream; hard-code the
