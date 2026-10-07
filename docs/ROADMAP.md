@@ -3,11 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-05. Status: **Phase 6c-2 (decisions, design system,
-navigation, Reliability and Revenue workspaces) approved and merged to
-`main` on 2026-10-05, tag `phase-6c-2`. Phase 6c-3 (the Founder's decisions
-at the 6c-2 checkpoint, then the Assets and Events / Alarms workspaces)
-approved to start on branch `phase-6c-3`; not started.**
+Last updated: 2026-10-07. Status: **Phase 6c-3 (the Founder's decisions at
+the 6c-2 checkpoint, then the Assets and Events / Alarms workspaces) is at
+its checkpoint on branch `phase-6c-3`, awaiting the Founder's review. Not
+merged to `main`. Phase 6c-2 was merged on 2026-10-05, tag `phase-6c-2`.**
 
 ## Completed
 
@@ -718,7 +717,7 @@ Phase 6c-3.
   be patched; ADR 0012 proposes building every screen ahead of time
   instead.
 
-#### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; not started)
+#### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; at its checkpoint 2026-10-07)
 
 **Founder's answers at the 6c-2 checkpoint (2026-10-05).**
 
@@ -786,6 +785,111 @@ The SYNTHETIC DATA bar stays on every screen of any hosted version.
 
 **At the checkpoint.** The usual report, screenshots, timings (median of
 five), before and after for anything that moved, and the Vercel items above.
+
+**Phase 6c-3 checkpoint (2026-10-07). Awaiting the Founder's review; not
+merged to `main`.** A merge to `main` publishes to the public site.
+
+**Done, in the order of the scope.**
+
+1. *Source alarms of real SCADA kinds* (ADR 0011, amendment). 31 alarms;
+   `RTU-COMMS-FAIL` and `FDR-OC-TRIP` / `FDR-EF-TRIP`. The agreement case is
+   the monitor on DT-OLD-3; the derived conditions with no source alarm are
+   DT-GOV-3 and DT-OLD-2. No reliability figure moved.
+2. *The reading round is spread* (ADR 0010, amendment). 24 advances are
+   outside the 3-day window (8 on Farm Road with no opening reading in it,
+   16 on Old Town with no closing one) and each shows on its service-point
+   screen with the reason. What moved is in the table below.
+3. *Revenue valuation table*: the ten largest transformers, the residuals
+   never cut, all 48 one click away.
+4. *Operations tables* on the system table primitives, with the Executive
+   and service-point tables.
+5. *Typeface files in the repository*, loaded with `next/font/local`.
+6. *Assets and Events / Alarms workspaces* (ADR 0013), in the menu and the
+   hub. The six workspaces of Phase 6c now exist.
+
+Also, by the Founder's decisions of 2026-10-07: the hosting notes above;
+`noindex` and `robots.txt`; strategy notes moved out of the public docs into
+`private/` (not committed); ADR 0012, a proposal.
+
+**What moved when the reading round was spread.** Before is `main` at the
+start of 6c-3. Energy received, technical loss, energy delivered, recorded
+interval consumption and every reliability figure did not move.
+
+| Portfolio | Before | After |
+| --- | --- | --- |
+| Energy billed (kWh) | 1,719,723 | 1,720,971 |
+| Unbilled energy (kWh) | 188,619 | 187,371 |
+| Recorded by register advance (kWh) | 371,055 | 369,681 |
+| ATC&C loss | 31.50% | 31.45% |
+| Commercial part | 8.96% | 8.90% |
+| Collection part | 13.20% | 13.21% |
+| Billing efficiency | 81.70% | 81.76% |
+| Collection efficiency | 83.84% | 83.84% (unchanged to two places) |
+| Revenue billed (₦) | 190,022,569 | 190,320,427 |
+| Revenue collected (₦) | 159,323,296 | 159,570,252 |
+| Revenue not realised (₦) | 46,557,069 | 46,310,113 |
+| Commercial gap (₦) | 15,857,796 | 15,559,938 |
+| Collection gap (₦) | 30,699,273 | 30,750,175 |
+
+| By feeder, before → after | Market Road | Old Town | Government Avenue | Farm Road |
+| --- | --- | --- | --- | --- |
+| Energy billed (kWh) | 587,278 → 588,776 | 242,099 → 241,797 | 829,900 → 829,744 | 60,446 → 60,654 |
+| ATC&C loss | 18.72% → 18.54% | 62.77% → 62.81% | 36.88% → 36.89% | 70.94% → 70.81% |
+| Register advance counted (kWh) | 112,274 → 113,728 | 44,000 → 41,550 | 208,289 → 208,117 | 6,493 → 6,285 |
+| Revenue not realised (₦) | 17,208,978 → 16,950,851 | 10,209,852 → 10,218,143 | 16,945,754 → 16,953,603 | 2,192,524 → 2,187,555 |
+
+Government Avenue now ranks first on revenue not realised, ahead of Market
+Road by ₦2,752 (under 0.1%). The two were ₦263,224 apart the other way
+before. A ranking that close is not a finding, and the Executive screen
+should not be read as if it were.
+
+**Page timings.** Production build, one machine, milliseconds, median of five
+requests after warm-up. Before is the 6c-2 checkpoint. Every route is inside
+the 500 ms budget; differences of this size between runs are noise, and the
+machine was also running the browser tests' second server.
+
+| Route | Before | After |
+| --- | --- | --- |
+| Executive | 108 | 145 |
+| Reliability | 87 | 82 |
+| Revenue | 96 | 59 |
+| Assets (ten transformers / all 48) | new | 52 / 117 |
+| Events / Alarms | new | 58 |
+| Operations home | 10 | 12 |
+| Region | 80 | 134 |
+| Substation, Riverside / Hillcrest | 80 / 84 | 85 / 81 |
+| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 109 / 108 / 85 / 107 | 109 / 109 / 106 / 94 |
+| Transformer, Riverbank (first 40 rows / all 135) | 96 / 187 | 97 / 232 |
+| Service point, register / prepaid / AMI | 18 / 19 / 16 | 23 / 24 / 26 |
+
+**Choices made, for the Founder to confirm** (ADR 0013).
+
+- *An outage record with no restoration time is not called in progress.* It
+  is listed apart as "Restoration not recorded". On live data most
+  interruptions in progress would fall there.
+- *For an alarm, "who is affected" is "active accounts behind it"*, from the
+  registry, and is said not to be customers without supply.
+- *"Requires attention" has no score*: three facts in three columns and a
+  fixed, printed order.
+- *The agreement case stays on a transformer monitor* (carried from the ADR
+  0011 amendment, still open).
+
+**Not done, and known.**
+
+- The address `/anything-that-does-not-exist` shows the framework's plain
+  "not found" page, outside the dashboard layout, so it has no SYNTHETIC
+  DATA bar. It shows no data. A not-found inside the dashboard has the bar.
+- The strategy text moved on 2026-10-07 is still in the git history on
+  GitHub. Removing it means rewriting the history of `main` and every phase
+  branch, which is the Founder's decision.
+- `docs/FOUNDING_DIRECTIVE.md` (the product vision) is still public. It was
+  not moved: it is the reference the engineering rules point to.
+- ADR 0012 is a proposal. Until it is decided, a visitor to the public site
+  still sees "Preparing data" on a cold start.
+
+**Acceptance, as met.** `npm run verify` green: typecheck, 443 unit tests,
+lint, build and 41 browser tests. Screenshots:
+`docs/screenshots/phase6c3`.
 
 **The workspaces.**
 
