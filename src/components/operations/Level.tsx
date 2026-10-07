@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
 import { Legend, MetricTile, OriginTag, Panel } from "@/components/system/Metric";
 import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
+import { HeadRow, Row, Table, Td, Th } from "@/components/system/Table";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatTime, levelHref } from "@/components/system/format";
 
 
@@ -151,30 +152,28 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
         {view.charges.length === 0 ? (
           <p className="text-xs text-ink-4">No charge was raised on this account in the period.</p>
         ) : (
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Raised</th>
-                <th className="py-1 pr-2 font-normal">How billed</th>
-                <th className="py-1 pr-2 font-normal">Tariff</th>
-                <th className="py-1 pr-2 text-right font-normal">Energy</th>
-                <th className="py-1 text-right font-normal">Amount</th>
-              </tr>
-            </thead>
+          <Table name="charges">
+            <HeadRow>
+                <Th>Raised</Th>
+                <Th>How billed</Th>
+                <Th>Tariff</Th>
+                <Th right>Energy</Th>
+                <Th right>Amount</Th>
+            </HeadRow>
             <tbody>
               {view.charges.map((charge) => (
-                <tr key={charge.id} className="border-b border-line/60" title={charge.id}>
-                  <td className="py-1 pr-2 font-mono text-ink-3">{formatTime(charge.billedAt)}</td>
-                  <td className="py-1 pr-2 text-ink-2">
+                <Row key={charge.id} id={charge.id}>
+                  <Td className="font-mono text-ink-3">{formatTime(charge.billedAt)}</Td>
+                  <Td>
                     {charge.basisLabel} <OriginTag origin={charge.estimated ? "estimated" : "measured"} />
-                  </td>
-                  <td className="py-1 pr-2 text-ink-4">{charge.tariff ?? "—"}</td>
-                  <td className="py-1 pr-2 text-right font-mono tabular-nums">{charge.energyKwh === null ? "—" : `${formatNumber(charge.energyKwh, 1)} kWh`}</td>
-                  <td className="py-1 text-right font-mono tabular-nums">{formatMoney(charge.amount, charge.currency)}</td>
-                </tr>
+                  </Td>
+                  <Td className="text-ink-4">{charge.tariff ?? "—"}</Td>
+                  <Td figure>{charge.energyKwh === null ? "—" : `${formatNumber(charge.energyKwh, 1)} kWh`}</Td>
+                  <Td figure>{formatMoney(charge.amount, charge.currency)}</Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
         )}
       </Panel>
 
@@ -182,24 +181,22 @@ export function ServicePoint({ view }: { view: ServicePointView }) {
         {view.payments.length === 0 ? (
           <p className="text-xs text-ink-4">No payment was received from this account in the period.</p>
         ) : (
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Received</th>
-                <th className="py-1 pr-2 font-normal">Channel</th>
-                <th className="py-1 text-right font-normal">Amount</th>
-              </tr>
-            </thead>
+          <Table name="payments">
+            <HeadRow>
+                <Th>Received</Th>
+                <Th>Channel</Th>
+                <Th right>Amount</Th>
+            </HeadRow>
             <tbody>
               {view.payments.map((payment) => (
-                <tr key={payment.id} className="border-b border-line/60" title={payment.id}>
-                  <td className="py-1 pr-2 font-mono text-ink-3">{formatTime(payment.receivedAt)}</td>
-                  <td className="py-1 pr-2 text-ink-2">{payment.channel ?? "—"}</td>
-                  <td className="py-1 text-right font-mono tabular-nums">{formatMoney(payment.amount, payment.currency)}</td>
-                </tr>
+                <Row key={payment.id} id={payment.id}>
+                  <Td className="font-mono text-ink-3">{formatTime(payment.receivedAt)}</Td>
+                  <Td>{payment.channel ?? "—"}</Td>
+                  <Td figure>{formatMoney(payment.amount, payment.currency)}</Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
         )}
         <p className="text-micro text-ink-5">Data sources: {view.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ")}</p>
       </Panel>

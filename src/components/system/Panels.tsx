@@ -138,32 +138,30 @@ export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
   if (rows.length === 0) return null;
   return (
     <div>
-      <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">Reported versus calculated</h3>
-      <table className="w-full border-collapse text-xs">
-        <thead>
-          <tr className="border-b border-line text-left text-micro uppercase tracking-wide text-ink-5">
-            <th className="py-1 pr-2 font-normal">Figure</th>
-            <th className="py-1 pr-2 text-right font-normal">Reported</th>
-            <th className="py-1 pr-2 text-right font-normal">Calculated, same basis</th>
-            <th className="py-1 pr-2 text-right font-normal">Difference</th>
-            <th className="py-1 font-normal">Basis</th>
-          </tr>
-        </thead>
+      <SubHead>Reported versus calculated</SubHead>
+      <Table>
+        <HeadRow>
+            <Th>Figure</Th>
+            <Th right>Reported</Th>
+            <Th right>Calculated, same basis</Th>
+            <Th right>Difference</Th>
+            <Th>Basis</Th>
+        </HeadRow>
         <tbody>
           {rows.map((row) => (
-            <tr key={`${row.statedFor ?? ""}:${row.label}`} className="border-b border-line/60 align-top">
-              <td className="py-1 pr-2 text-ink-2">
+            <Row key={`${row.statedFor ?? ""}:${row.label}`}>
+              <Td>
                 {row.label}
                 {row.statedFor ? <span className="block text-micro leading-snug text-caution-ink/90">Stated for {row.statedFor}; compared at that scope.</span> : null}
-              </td>
-              <td className="py-1 pr-2 text-right">
+              </Td>
+              <Td right>
                 <MetricCell metric={row.reported} />
-              </td>
-              <td className="py-1 pr-2 text-right">
+              </Td>
+              <Td right>
                 {row.sameBasis ? <MetricCell metric={row.calculated} /> : <span className="text-ink-5">none on this basis</span>}
-              </td>
-              <td className="py-1 pr-2 text-right font-mono text-ink">{row.sameBasis ? formatVariance(row) : "—"}</td>
-              <td className="py-1 text-caption leading-snug">
+              </Td>
+              <Td figure>{row.sameBasis ? formatVariance(row) : "—"}</Td>
+              <Td className="text-caption leading-snug">
                 {row.comparable ? (
                   <span className="text-ok">● Same basis</span>
                 ) : (
@@ -185,11 +183,11 @@ export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
                     Note: {caveat}
                   </span>
                 ))}
-              </td>
-            </tr>
+              </Td>
+            </Row>
           ))}
         </tbody>
-      </table>
+      </Table>
       <p className="mt-1 text-micro text-ink-5">
         Source of reported figures: {rows[0].document ?? "not stated"}. A reported figure is compared only with the calculated figure that counts the same things. Reported
         figures are shown as published and never replace calculated ones.
@@ -212,65 +210,63 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
 
       <div className="grid gap-3 xl:grid-cols-2">
         <div>
-          <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">Accounting chain</h3>
-          <table className="w-full border-collapse text-xs">
+          <SubHead>Accounting chain</SubHead>
+          <Table>
             <tbody>
               {losses.chain.map((metric) => (
-                <tr key={metric.label} className="border-b border-line/60">
-                  <td className="py-1 pr-2 text-ink-2">
+                <Row key={metric.label}>
+                  <Td>
                     {metric.label}
                     {metric.note ? <span className="block text-micro leading-snug text-ink-5">{metric.note}</span> : null}
-                  </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono tabular-nums text-ink">{formatMetric(metric)}</td>
-                  <td className="py-1 pr-1 text-right">
+                  </Td>
+                  <Td figure>{formatMetric(metric)}</Td>
+                  <Td right>
                     <OriginTag origin={metric.origin} />
-                  </td>
-                  <td className="whitespace-nowrap py-1 text-right">
+                  </Td>
+                  <Td right>
                     <StatusBadge status={metric.status} />
-                  </td>
-                </tr>
+                  </Td>
+                </Row>
               ))}
             </tbody>
-          </table>
-          <h3 className="mb-1 mt-3 flex items-center gap-2 text-caption uppercase tracking-wide text-ink-4">
+          </Table>
+          <SubHead className="mt-3 flex items-center gap-2">
             Measured cross-checks <StatusBadge status={losses.crossChecks.status} />
-          </h3>
-          <table className="w-full border-collapse text-xs">
+          </SubHead>
+          <Table>
             <tbody>
               {losses.crossChecks.metrics.map((metric) => (
-                <tr key={metric.label} className="border-b border-line/60">
-                  <td className="py-1 pr-2 text-ink-2">{metric.label}</td>
-                  <td className="py-1 text-right">
+                <Row key={metric.label}>
+                  <Td>{metric.label}</Td>
+                  <Td right>
                     <MetricCell metric={metric} />
-                  </td>
-                </tr>
+                  </Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           {losses.crossChecks.note ? <p className="mt-1 text-caption leading-snug text-ink-4">{losses.crossChecks.note}</p> : null}
-          <h3 className="mb-1 mt-3 text-caption uppercase tracking-wide text-ink-4">Recorded consumption, by how it was measured</h3>
-          <table className="w-full border-collapse text-xs" data-table="recorded-by-source">
-            <thead>
-              <tr className="border-b border-line text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Source</th>
-                <th className="py-1 pr-2 text-right font-normal">Connections covered</th>
-                <th className="py-1 text-right font-normal">Energy recorded</th>
-              </tr>
-            </thead>
+          <SubHead className="mt-3">Recorded consumption, by how it was measured</SubHead>
+          <Table name="recorded-by-source">
+            <HeadRow>
+                <Th>Source</Th>
+                <Th right>Connections covered</Th>
+                <Th right>Energy recorded</Th>
+            </HeadRow>
             <tbody>
               {losses.crossChecks.sources.map((source) => (
-                <tr key={source.key} className="border-b border-line/60" data-source={source.key}>
-                  <td className="py-1 pr-2 text-ink-2">{source.label}</td>
-                  <td className="py-1 pr-2 text-right font-mono tabular-nums text-ink">
+                <Row key={source.key} id={source.key}>
+                  <Td>{source.label}</Td>
+                  <Td figure>
                     {formatNumber(source.connections)} <span className="text-ink-5">of {formatNumber(losses.crossChecks.coverage.servicePoints)}</span>
-                  </td>
-                  <td className="py-1 text-right">
+                  </Td>
+                  <Td right>
                     <MetricCell metric={source.energy} />
-                  </td>
-                </tr>
+                  </Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           <p className="mt-1 text-caption leading-snug text-ink-4">
             Each figure is for the connections its source covers, and neither is the consumption of the whole scope. {losses.crossChecks.registerRule}
           </p>
@@ -283,17 +279,17 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
               ))}
             </ul>
           ) : null}
-          <h3 className="mb-1 mt-3 text-caption uppercase tracking-wide text-ink-4">Purchased, not consumed</h3>
-          <table className="w-full border-collapse text-xs" data-table="energy-purchased">
+          <SubHead className="mt-3">Purchased, not consumed</SubHead>
+          <Table name="energy-purchased">
             <tbody>
-              <tr className="border-b border-line/60">
-                <td className="py-1 pr-2 text-ink-2">{losses.crossChecks.energyPurchased.label}</td>
-                <td className="py-1 text-right">
+              <Row>
+                <Td>{losses.crossChecks.energyPurchased.label}</Td>
+                <Td right>
                   <MetricCell metric={losses.crossChecks.energyPurchased} />
-                </td>
-              </tr>
+                </Td>
+              </Row>
             </tbody>
-          </table>
+          </Table>
           {losses.crossChecks.energyPurchased.note ? (
             <p className="mt-1 text-caption leading-snug text-ink-4">{losses.crossChecks.energyPurchased.note}</p>
           ) : null}
@@ -310,56 +306,52 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
               <span className="border border-line-strong px-1.5 py-px text-micro uppercase tracking-wide text-ink-3">Cash basis</span>
             </MetricTile>
           </div>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">How billed</th>
-                <th className="py-1 pr-2 text-right font-normal">Charges</th>
-                <th className="py-1 pr-2 text-right font-normal">Energy</th>
-                <th className="py-1 text-right font-normal">Amount</th>
-              </tr>
-            </thead>
+          <Table>
+            <HeadRow>
+                <Th>How billed</Th>
+                <Th right>Charges</Th>
+                <Th right>Energy</Th>
+                <Th right>Amount</Th>
+            </HeadRow>
             <tbody>
               {losses.billingByBasis.map((row) => (
-                <tr key={row.basis} className="border-b border-line/60">
-                  <td className="py-1 pr-2 text-ink-2">
+                <Row key={row.basis}>
+                  <Td>
                     {row.label} {row.basis === "estimated" ? <OriginTag origin="estimated" /> : null}
-                  </td>
-                  <td className="py-1 pr-2 text-right font-mono tabular-nums">{formatNumber(row.records)}</td>
-                  <td className="py-1 pr-2 text-right font-mono tabular-nums">{row.energyKwh === null ? "—" : `${formatNumber(row.energyKwh)} kWh`}</td>
-                  <td className="py-1 text-right font-mono tabular-nums">{formatMoney(row.amount, losses.revenueBilled.currency)}</td>
-                </tr>
+                  </Td>
+                  <Td figure>{formatNumber(row.records)}</Td>
+                  <Td figure>{row.energyKwh === null ? "—" : `${formatNumber(row.energyKwh)} kWh`}</Td>
+                  <Td figure>{formatMoney(row.amount, losses.revenueBilled.currency)}</Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           <p className="text-micro text-ink-5">
             {losses.accounts.billed} of {losses.accounts.inScope ?? "an unknown number of"} accounts were charged in the period.
           </p>
           {losses.byCustomerClass.length > 0 ? (
-            <table className="w-full border-collapse text-xs" data-table="customer-class">
-              <thead>
-                <tr className="border-b border-line text-left text-micro uppercase tracking-wide text-ink-5">
-                  <th className="py-1 pr-2 font-normal">Customer class</th>
-                  <th className="py-1 pr-2 text-right font-normal">Accounts</th>
-                  <th className="py-1 pr-2 text-right font-normal">Billed</th>
-                  <th className="py-1 pr-2 text-right font-normal">Collected</th>
-                  <th className="py-1 text-right font-normal">Collection eff.</th>
-                </tr>
-              </thead>
+            <Table name="customer-class">
+              <HeadRow>
+                  <Th>Customer class</Th>
+                  <Th right>Accounts</Th>
+                  <Th right>Billed</Th>
+                  <Th right>Collected</Th>
+                  <Th right>Collection eff.</Th>
+              </HeadRow>
               <tbody>
                 {losses.byCustomerClass.map((row) => (
-                  <tr key={row.category} className="border-b border-line/60">
-                    <td className="py-1 pr-2 text-ink-2">{row.label}</td>
-                    <td className="py-1 pr-2 text-right font-mono">{formatNumber(row.accounts)}</td>
-                    <td className="py-1 pr-2 text-right font-mono">{formatMoney(row.revenueBilled, losses.revenueBilled.currency)}</td>
-                    <td className="py-1 pr-2 text-right font-mono">{formatMoney(row.revenueCollected, losses.revenueBilled.currency)}</td>
-                    <td className="py-1 text-right">
+                  <Row key={row.category}>
+                    <Td>{row.label}</Td>
+                    <Td figure>{formatNumber(row.accounts)}</Td>
+                    <Td figure>{formatMoney(row.revenueBilled, losses.revenueBilled.currency)}</Td>
+                    <Td figure>{formatMoney(row.revenueCollected, losses.revenueBilled.currency)}</Td>
+                    <Td right>
                       <MetricCell metric={row.collection} />
-                    </td>
-                  </tr>
+                    </Td>
+                  </Row>
                 ))}
               </tbody>
-            </table>
+            </Table>
           ) : null}
         </div>
       </div>
@@ -551,37 +543,35 @@ export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliabili
 
       <div className="grid gap-3 xl:grid-cols-2">
         <div>
-          <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">Attribution of interruptions</h3>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Attributed to</th>
-                <th className="py-1 pr-2 text-right font-normal">SAIDI</th>
-                <th className="py-1 pr-2 text-right font-normal">SAIFI</th>
-                <th className="w-2/5 py-1 font-normal">Share of customer-hours</th>
-              </tr>
-            </thead>
+          <SubHead>Attribution of interruptions</SubHead>
+          <Table>
+            <HeadRow>
+                <Th>Attributed to</Th>
+                <Th right>SAIDI</Th>
+                <Th right>SAIFI</Th>
+                <Th className="w-2/5">Share of customer-hours</Th>
+            </HeadRow>
             <tbody>
               {reliability.attribution.map((row) => (
-                <tr key={row.key} className="border-b border-line/60 align-top">
-                  <td className="py-1 pr-2 text-ink-2">
+                <Row key={row.key}>
+                  <Td>
                     {row.label}
                     <span className="block text-micro leading-snug text-ink-5">{row.description}</span>
-                  </td>
-                  <td className="py-1 pr-2 text-right font-mono tabular-nums">{row.saidiHours === null ? "—" : `${formatNumber(row.saidiHours, 1)} h`}</td>
-                  <td className="py-1 pr-2 text-right font-mono tabular-nums">{row.saifi === null ? "—" : formatNumber(row.saifi, 2)}</td>
-                  <td className="py-1">
+                  </Td>
+                  <Td figure>{row.saidiHours === null ? "—" : `${formatNumber(row.saidiHours, 1)} h`}</Td>
+                  <Td figure>{row.saifi === null ? "—" : formatNumber(row.saifi, 2)}</Td>
+                  <Td>
                     <div className="flex items-center gap-2">
                       <div className="h-2 flex-1 bg-line">
                         <div className="h-full rounded-r-[2px]" style={{ width: `${(row.share ?? 0) * 100}%`, background: SERIES.technical }} />
                       </div>
                       <span className="w-12 text-right font-mono tabular-nums text-ink-3">{formatPercent(row.share)}</span>
                     </div>
-                  </td>
-                </tr>
+                  </Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           <p className="mt-1 text-caption leading-snug text-ink-4">
             The classes sum to the totals above. Nothing is apportioned.
             {reliability.unattributable > 0 ? ` ${reliability.unattributable} exposure(s) recorded above this scope are not in any figure here.` : ""}
@@ -634,29 +624,27 @@ export function PowerTransformersPanel({ transformers }: { transformers: PowerTr
   if (transformers.length === 0) return null;
   return (
     <Panel title={`Power transformers (${transformers.length})`} aside="Loading from the substation's telemetry, against rating">
-      <table className="w-full border-collapse text-xs" data-table="power-transformers">
-        <thead>
-          <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-            <th className="py-1 pr-2 font-normal">Transformer</th>
-            <th className="py-1 pr-2 text-right font-normal">Rating</th>
-            <th className="py-1 pr-2 font-normal">Carries</th>
-            <th className="py-1 pr-2 text-right font-normal">Peak loading</th>
-            <th className="py-1 pr-2 text-right font-normal">Hours over rating</th>
-            <th className="py-1 text-right font-normal">Loading at the as-of time</th>
-          </tr>
-        </thead>
+      <Table name="power-transformers">
+        <HeadRow>
+            <Th>Transformer</Th>
+            <Th right>Rating</Th>
+            <Th>Carries</Th>
+            <Th right>Peak loading</Th>
+            <Th right>Hours over rating</Th>
+            <Th right>Loading at the as-of time</Th>
+        </HeadRow>
         <tbody>
           {transformers.map((pt) => (
-            <tr key={pt.id} className="border-b border-line/60 align-top" data-power-transformer={pt.id}>
-              <td className="py-1 pr-2 text-ink-2">
+            <Row key={pt.id} id={pt.id}>
+              <Td>
                 {pt.name}
                 <span className="ml-1.5 text-micro text-ink-5">
                   {pt.id}
                   {pt.busSection ? ` · bus section ${pt.busSection}` : ""}
                 </span>
-              </td>
-              <td className="whitespace-nowrap py-1 pr-2 text-right font-mono tabular-nums text-ink-2">{formatNumber(pt.ratedKva / 1000, 1)} MVA</td>
-              <td className="py-1 pr-2">
+              </Td>
+              <Td figure>{formatNumber(pt.ratedKva / 1000, 1)} MVA</Td>
+              <Td>
                 {pt.feeders.length === 0 ? (
                   <span className="text-ink-5">no feeder recorded</span>
                 ) : (
@@ -669,16 +657,16 @@ export function PowerTransformersPanel({ transformers }: { transformers: PowerTr
                     </span>
                   ))
                 )}
-              </td>
-              <td className="py-1 pr-2 text-right">{pt.loading ? <MetricCell metric={pt.loading.peak} /> : <span className="text-ink-5">no telemetry</span>}</td>
-              <td className="whitespace-nowrap py-1 pr-2 text-right font-mono tabular-nums text-ink">
+              </Td>
+              <Td right>{pt.loading ? <MetricCell metric={pt.loading.peak} /> : <span className="text-ink-5">no telemetry</span>}</Td>
+              <Td figure>
                 {pt.loading === null || pt.loading.hoursOverRating === null ? "—" : `${pt.loading.hoursOverRating} of ${pt.loading.hoursObserved ?? "—"}`}
-              </td>
-              <td className="py-1 text-right">{pt.loading ? <MetricCell metric={pt.loading.asOf} /> : <span className="text-ink-5">—</span>}</td>
-            </tr>
+              </Td>
+              <Td right>{pt.loading ? <MetricCell metric={pt.loading.asOf} /> : <span className="text-ink-5">—</span>}</Td>
+            </Row>
           ))}
         </tbody>
-      </table>
+      </Table>
       <p className="text-micro leading-snug text-ink-5">
         Peak is the highest of the hourly readings in the period; a higher loading between readings would not be seen. A transformer is loaded by the feeders on its own bus
         section only.
@@ -714,35 +702,33 @@ export function ChildrenTable({ table, showAll = true, allHref }: { table: Child
       aside={table.coverage === "complete" ? "Registry: complete list" : <span className="text-caution">Registry: {table.coverage.replace("_", " ")} — this is not the full list</span>}
     >
       <div className="max-h-[32rem] overflow-auto">
-        <table className="w-full border-collapse text-xs">
-          <thead className="sticky top-0 bg-panel">
-            <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-              <th className="py-1 pr-3 font-normal">Name</th>
+        <Table>
+          <HeadRow sticky>
+              <Th>Name</Th>
               {table.columns.map((column) => (
-                <th key={column.key} className="py-1 pl-3 text-right font-normal">
+                <Th key={column.key} right className="pl-3">
                   {column.label}
-                </th>
+                </Th>
               ))}
-            </tr>
-          </thead>
+          </HeadRow>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id} className="border-b border-line/60 hover:bg-line/30">
-                <td className="py-1 pr-3">
+              <Row key={row.id} id={row.id} hover>
+                <Td>
                   <Link href={levelHref(row.kind, row.id)} className="text-link hover:text-link-hover hover:underline">
                     {row.name}
                   </Link>
                   <span className="ml-2 text-micro text-ink-5">{[row.name === row.id ? "" : row.id, ...row.facts].filter(Boolean).join(" · ")}</span>
-                </td>
+                </Td>
                 {table.columns.map((column) => (
-                  <td key={column.key} className="py-1 pl-3 text-right">
+                  <Td key={column.key} right className="pl-3">
                     <MetricCell metric={row.cells[column.key]} mark={markFor(row.cells[column.key]?.note)} />
-                  </td>
+                  </Td>
                 ))}
-              </tr>
+              </Row>
             ))}
           </tbody>
-        </table>
+        </Table>
       </div>
       {rows.length < table.rows.length ? (
         <p className="text-xs text-ink-3">

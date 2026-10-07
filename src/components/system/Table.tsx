@@ -15,8 +15,8 @@ export function PageHead({ eyebrow, title, children }: { eyebrow: string; title:
 }
 
 /** The heading of a block inside a panel. */
-export function SubHead({ children }: { children: ReactNode }) {
-  return <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">{children}</h3>;
+export function SubHead({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <h3 className={`mb-1 text-caption uppercase tracking-wide text-ink-4 ${className}`}>{children}</h3>;
 }
 
 /** Fine print under a table or a chart. */
@@ -32,9 +32,10 @@ export function Table({ children, name }: { children: ReactNode; name?: string }
   );
 }
 
-export function HeadRow({ children }: { children: ReactNode }) {
+/** The heading row. `sticky` keeps it in view while a long table scrolls inside its panel. */
+export function HeadRow({ children, sticky = false }: { children: ReactNode; sticky?: boolean }) {
   return (
-    <thead>
+    <thead className={sticky ? "sticky top-0 bg-panel" : undefined}>
       <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">{children}</tr>
     </thead>
   );
@@ -44,9 +45,10 @@ export function Th({ children, right = false, className = "" }: { children?: Rea
   return <th className={`py-1 pr-2 font-normal ${right ? "text-right" : ""} ${className}`}>{children}</th>;
 }
 
-export function Row({ children, id }: { children: ReactNode; id?: string }) {
+/** A row. `hover` marks the row under the pointer, for a long list of links. */
+export function Row({ children, id, hover = false }: { children: ReactNode; id?: string; hover?: boolean }) {
   return (
-    <tr className="border-b border-line/60 align-top" data-row={id}>
+    <tr className={`border-b border-line/60 align-top ${hover ? "hover:bg-line/30" : ""}`} data-row={id}>
       {children}
     </tr>
   );

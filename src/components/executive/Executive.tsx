@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { AttentionSubject, ExecutiveView, WhereToLookView } from "@/services/executive/views";
 import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/system/Metric";
 import { AlarmsPanel, LossesPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
+import { HeadRow, Row, Table, Td, Th } from "@/components/system/Table";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatSigned, levelHref } from "@/components/system/format";
 
 function Subject({ entry }: { entry: AttentionSubject }) {
@@ -168,73 +169,69 @@ export function Executive({ view }: { view: ExecutiveView }) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Service-band compliance by feeder" aside="Hours of supply per day against the NERC band minimum">
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Feeder</th>
-                <th className="py-1 pr-2 font-normal">Band</th>
-                <th className="py-1 pr-2 text-right font-normal">Average</th>
-                <th className="py-1 pr-2 text-right font-normal">Days below minimum</th>
-                <th className="py-1 font-normal">On average</th>
-              </tr>
-            </thead>
+          <Table name="band-compliance">
+            <HeadRow>
+                <Th>Feeder</Th>
+                <Th>Band</Th>
+                <Th right>Average</Th>
+                <Th right>Days below minimum</Th>
+                <Th>On average</Th>
+            </HeadRow>
             <tbody>
               {view.bandCompliance.map((row) => (
-                <tr key={row.feederId} className="border-b border-line/60">
-                  <td className="py-1 pr-2">
+                <Row key={row.feederId} id={row.feederId}>
+                  <Td>
                     <Link href={levelHref("feeder", row.feederId)} className="text-link hover:underline">
                       {row.feederName}
                     </Link>
-                  </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-ink-2">{row.band ? `${row.band} (min ${row.minimumHours} h)` : "not recorded"}</td>
-                  <td className="py-1 pr-2 text-right">
+                  </Td>
+                  <Td className="whitespace-nowrap">{row.band ? `${row.band} (min ${row.minimumHours} h)` : "not recorded"}</Td>
+                  <Td right>
                     <MetricCell metric={row.averageHours} />
-                  </td>
-                  <td className="py-1 pr-2 text-right font-mono text-ink">
+                  </Td>
+                  <Td figure>
                     {row.daysFailed === null ? "—" : `${row.daysFailed} of ${row.daysObserved}`}
-                  </td>
-                  <td className="whitespace-nowrap py-1 text-ink-2">{row.compliantOnAverage === null ? "—" : row.compliantOnAverage ? "● Meets minimum" : "▼ Below minimum"}</td>
-                </tr>
+                  </Td>
+                  <Td className="whitespace-nowrap">{row.compliantOnAverage === null ? "—" : row.compliantOnAverage ? "● Meets minimum" : "▼ Below minimum"}</Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           <p className="text-micro leading-snug text-ink-5">
             A feeder can meet its minimum on average and still fail on individual days. The day-by-day test is a GridIntel reference calculation, not a regulatory determination.
           </p>
         </Panel>
 
         <Panel title="Transformer peak loading" aside="Highest observed in the period, against rating">
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-micro uppercase tracking-wide text-ink-5">
-                <th className="py-1 pr-2 font-normal">Transformer</th>
-                <th className="py-1 pr-2 text-right font-normal">Rating</th>
-                <th className="py-1 pr-2 text-right font-normal">Peak</th>
-                <th className="py-1 pr-2 text-right font-normal">Hours over rating</th>
-                <th className="py-1 font-normal">State</th>
-              </tr>
-            </thead>
+          <Table name="transformer-loading">
+            <HeadRow>
+                <Th>Transformer</Th>
+                <Th right>Rating</Th>
+                <Th right>Peak</Th>
+                <Th right>Hours over rating</Th>
+                <Th>State</Th>
+            </HeadRow>
             <tbody>
               {view.transformerLoading.map((row) => (
-                <tr key={row.transformerId} className="border-b border-line/60">
-                  <td className="py-1 pr-2">
+                <Row key={row.transformerId} id={row.transformerId}>
+                  <Td>
                     <Link href={levelHref("distribution_transformer", row.transformerId)} className="text-link hover:underline">
                       {row.transformerName}
                     </Link>
                     <span className="ml-1.5 text-micro text-ink-5">{row.feederName}</span>
-                  </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono text-ink-2">{row.ratedKva === null ? "—" : `${formatNumber(row.ratedKva)} kVA`}</td>
-                  <td className="py-1 pr-2 text-right">
+                  </Td>
+                  <Td figure>{row.ratedKva === null ? "—" : `${formatNumber(row.ratedKva)} kVA`}</Td>
+                  <Td right>
                     <MetricCell metric={row.peak} />
-                  </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right font-mono text-ink">
+                  </Td>
+                  <Td figure>
                     {row.hoursOverRating === null ? "—" : `${row.hoursOverRating} of ${row.hoursObserved ?? "—"}`}
-                  </td>
-                  <td className="whitespace-nowrap py-1 text-ink-2">{row.overloaded === null ? "—" : row.overloaded ? "▲ Over rating" : "Within rating"}</td>
-                </tr>
+                  </Td>
+                  <Td className="whitespace-nowrap">{row.overloaded === null ? "—" : row.overloaded ? "▲ Over rating" : "Within rating"}</Td>
+                </Row>
               ))}
             </tbody>
-          </table>
+          </Table>
           <p className="text-micro leading-snug text-ink-5">Peak is the highest of the hourly readings; a higher loading between readings would not be seen.</p>
         </Panel>
       </div>

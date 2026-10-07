@@ -284,8 +284,8 @@ test("an alarm that is standing, one with no time, and a monitor that went quiet
 test("a substation shows each power transformer with what it carries and how heavily it was loaded", async ({ page }) => {
   await page.goto(`${OPERATIONS}/substations/SS-HIL`);
   const table = page.locator('[data-table="power-transformers"]');
-  const t1 = table.locator('[data-power-transformer="PT-HIL-1"]');
-  const t2 = table.locator('[data-power-transformer="PT-HIL-2"]');
+  const t1 = table.locator('[data-row="PT-HIL-1"]');
+  const t2 = table.locator('[data-row="PT-HIL-2"]');
   await expect(t1).toContainText("Hillcrest T1");
   await expect(t1).toContainText("bus section A");
   await expect(t1).toContainText("5.0 MVA");
@@ -296,7 +296,7 @@ test("a substation shows each power transformer with what it carries and how hea
   await expect(t2.getByRole("link", { name: "Farm Road 11 kV feeder" })).toBeVisible();
   await expect(t2).toContainText("24.8%");
   await page.goto(`${OPERATIONS}/substations/SS-RIV`);
-  await expect(table.locator('[data-power-transformer="PT-RIV-1"]')).toContainText("72.2%");
+  await expect(table.locator('[data-row="PT-RIV-1"]')).toContainText("72.2%");
   // A feeder's screen has no such table.
   await page.goto(`${OPERATIONS}/feeders/FD-GOV`);
   await expect(table).toHaveCount(0);
@@ -376,9 +376,9 @@ test("a level shows energy purchased apart from recorded consumption, which it s
   await expect(page.getByRole("row", { name: /^Recorded consumption/ })).toContainText("insufficient data");
   // The two measured sources are shown apart, each with the connections it covers; neither is called the total.
   const sources = page.locator('[data-table="recorded-by-source"]');
-  await expect(sources.locator('[data-source="intervals"]')).toContainText("5 of 2,141");
-  await expect(sources.locator('[data-source="register"]')).toContainText("265 of 2,141");
-  await expect(sources.locator('[data-source="register"]')).toContainText("kWh");
+  await expect(sources.locator('[data-row="intervals"]')).toContainText("5 of 2,141");
+  await expect(sources.locator('[data-row="register"]')).toContainText("265 of 2,141");
+  await expect(sources.locator('[data-row="register"]')).toContainText("kWh");
   await expect(page.getByText("It is taken as read and never pro-rated to the period.")).toBeVisible();
   // Each ground for leaving an advance out has its own line and count.
   await expect(page.locator("[data-register-exclusions]")).toContainText("65 register advance(s) not counted: a reading was estimated, not read from the meter.");
