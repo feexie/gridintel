@@ -75,7 +75,7 @@ describe("executive read model", () => {
   });
 
   it("cuts the money ranking to the top three in the read model, and says how many feeders there are", async () => {
-    assert.deepEqual(view.whereToLook.money.map((entry) => [entry.rank, entry.subject.id]), [[1, "FD-MKT"], [2, "FD-GOV"], [3, "FD-OLD"]]);
+    assert.deepEqual(view.whereToLook.money.map((entry) => [entry.rank, entry.subject.id]), [[1, "FD-GOV"], [2, "FD-MKT"], [3, "FD-OLD"]]);
     assert.equal(view.whereToLook.moneyTotal, 4);
     assert.equal(view.whereToLook.moneyLimit, 3);
     assert.equal(view.whereToLook.complete, false);
@@ -83,7 +83,7 @@ describe("executive read model", () => {
     assert.deepEqual(view.whereToLook.other.map((entry) => [entry.rank, entry.subject.id]), [[5, "DT-OLD-14"]]);
 
     const all = await executiveView(cached, "all");
-    assert.deepEqual(all.whereToLook.money.map((entry) => entry.subject.id), ["FD-MKT", "FD-GOV", "FD-OLD", "FD-FRM"]);
+    assert.deepEqual(all.whereToLook.money.map((entry) => entry.subject.id), ["FD-GOV", "FD-MKT", "FD-OLD", "FD-FRM"]);
     assert.equal(all.whereToLook.complete, true);
     assert.equal(all.whereToLook.moneyTotal, 4);
     assert.deepEqual(all.whereToLook.other, view.whereToLook.other);
@@ -100,25 +100,27 @@ describe("executive read model", () => {
 
   it("ranks every feeder by revenue not realised, each once, with every rule it triggered", () => {
     assert.deepEqual(everything.map((entry) => [entry.rank, entry.group, entry.subject.kind, entry.subject.id]), [
-      [1, "money", "feeder", "FD-MKT"],
-      [2, "money", "feeder", "FD-GOV"],
+      [1, "money", "feeder", "FD-GOV"],
+      [2, "money", "feeder", "FD-MKT"],
       [3, "money", "feeder", "FD-OLD"],
       [4, "money", "feeder", "FD-FRM"],
       [5, "other", "distribution_transformer", "DT-OLD-14"],
     ]);
-    const [market, government, oldTown, farm, transformer] = everything;
-    const money = [market, government, oldTown, farm].map((entry) => entry.money?.value as number);
+    const [government, market, oldTown, farm, transformer] = everything;
+    const money = [government, market, oldTown, farm].map((entry) => entry.money?.value as number);
     assert.deepEqual(money, [...money].sort((a, b) => b - a));
     // The report books each feeder's 33 kV line faults as upstream. Where a feeder had one, what that rule changes is a finding.
     const RULE = "Feeder whose reported SAIDI is on an attribution rule that changes the figure";
-    assert.deepEqual(market.findings.map((finding) => finding.rule), [
+    // Ranked first on money alone: its gap is collection lost to government accounts, which no ratio rule picks out.
+    // Its report states the same rule, but no interruption began on its 33 kV line, so there is no finding.
+    assert.deepEqual(government.findings.map((finding) => finding.rule), [
       "Feeder with the largest revenue not realised",
       "Feeder below its service-band minimum on at least one day",
-      RULE,
     ]);
-    // Ranked second on money alone: its gap is collection lost to government accounts, which no ratio rule picks out.
-    // Its report states the same rule, but no interruption began on its 33 kV line, so there is no finding.
-    assert.deepEqual(government.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day"]);
+    // The first two are close: under 0.1% of either apart. Bills that follow the reading round, not the calendar
+    // month, bill more energy on Market Road, which narrows its commercial gap and puts it second.
+    assert.ok(Math.abs(money[0] - money[1]) / money[0] < 0.001);
+    assert.deepEqual(market.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day", RULE]);
     assert.deepEqual(oldTown.findings.map((finding) => finding.rule), ["Feeder below its service-band minimum on at least one day", RULE]);
     // The worst ratios are on the smallest feeder, which is why ratios do not set the order.
     // Its 33 kV line faults are the utility's own, so it also has the highest network SAIDI.

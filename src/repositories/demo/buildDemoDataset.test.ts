@@ -470,11 +470,62 @@ describe("demo dataset: what each kind of customer meter reports (ADR 0009)", ()
     for (const [meterId, readings] of readingsOf) {
       assert.equal(readings.length, 2, meterId);
       const [opening, closing] = readings;
-      assert.equal(opening.observedAt, DEMO_PERIOD.start);
-      assert.equal(closing.observedAt, "2026-09-30T23:00:00+01:00");
       assert.equal(opening.quality, "measured");
       assert.ok((closing.value as number) >= (opening.value as number), meterId);
     }
+  });
+
+  it("spreads each reading round over several days per route, in working hours, a reading cycle apart", () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const end = Date.parse(DEMO_PERIOD.end);
+    const routeOf = new Map(metered.map((c) => [c.meterId as string, c.supplyKey]));
+    const closingDays = new Map<string, Set<string>>();
+    const cycles = new Map<string, Set<number>>();
+    for (const [meterId, [opening, closing]] of readingsOf) {
+      // A reader works from 08:00 to 16:00, West Africa Time, and every round ends on 30 September.
+      for (const point of [opening, closing]) {
+        const hour = Number(point.observedAt.slice(11, 13));
+        assert.ok(hour >= 8 && hour <= 16 && point.observedAt.endsWith(":00:00+01:00"), `${meterId} ${point.observedAt}`);
+      }
+      assert.ok(Date.parse(closing.observedAt) < end && Date.parse(closing.observedAt) >= end - 4 * DAY, meterId);
+      const route = routeOf.get(meterId) as string;
+      closingDays.set(route, (closingDays.get(route) ?? new Set()).add(closing.observedAt.slice(0, 10)));
+      cycles.set(route, (cycles.get(route) ?? new Set()).add((Date.parse(closing.observedAt) - Date.parse(opening.observedAt)) / DAY));
+    }
+    // The same meter is read at the same place in the round each month: 30 days apart. Old Town's largest
+    // route began its August round a day late, so its readings are 29 days apart.
+    for (const [route, days] of cycles) assert.deepEqual([...days], [route === "OLD6" ? 29 : 30], route);
+    // Three long routes take four days and begin on 27 September; every other takes two or three, from 28 or 29 September.
+    const long = [...closingDays].filter(([, days]) => days.has("2026-09-27")).map(([route]) => route).sort();
+    assert.deepEqual(long, ["FRM4", "FRM7", "OLD6"]);
+    for (const [route, days] of closingDays) {
+      // A route with more meters than days is read on more than one day.
+      const meters = [...readingsOf.keys()].filter((meterId) => routeOf.get(meterId) === route).length;
+      if (meters >= 10) assert.ok(days.size >= 2, `${route} was read on ${days.size} day(s)`);
+      assert.ok(days.size <= (long.includes(route) ? 4 : 3), route);
+    }
+  });
+
+  it("puts a few readings outside the 3-day reading window, on both grounds", () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const [start, end] = [Date.parse(DEMO_PERIOD.start), Date.parse(DEMO_PERIOD.end)];
+    const routeOf = new Map(metered.map((c) => [c.meterId as string, c.supplyKey]));
+    const outside = { opening: new Map<string, number>(), closingOnly: new Map<string, number>() };
+    for (const [meterId, [opening, closing]] of readingsOf) {
+      const route = routeOf.get(meterId) as string;
+      const openingOut = Math.abs(Date.parse(opening.observedAt) - start) > 3 * DAY;
+      const closingOut = Math.abs(Date.parse(closing.observedAt) - end) > 3 * DAY;
+      if (openingOut) outside.opening.set(route, (outside.opening.get(route) ?? 0) + 1);
+      else if (closingOut) outside.closingOnly.set(route, (outside.closingOnly.get(route) ?? 0) + 1);
+    }
+    // Farm Road's two long rural routes: the first day was read on 28 August and 27 September, both outside.
+    assert.deepEqual([...outside.opening.keys()].sort(), ["FRM4", "FRM7"]);
+    // Old Town's largest route: its first day was read on 29 August (inside) and 27 September (outside).
+    assert.deepEqual([...outside.closingOnly.keys()], ["OLD6"]);
+    const count = (map: Map<string, number>) => [...map.values()].reduce((total, n) => total + n, 0);
+    assert.deepEqual([count(outside.opening), count(outside.closingOnly)], [8, 16]);
+    // A few, not many: under 2% of the meters read by hand.
+    assert.ok((count(outside.opening) + count(outside.closingOnly)) / readingsOf.size < 0.02);
   });
 
   it("estimates some register readings where the round missed the meter, and says how", () => {
@@ -495,7 +546,7 @@ describe("demo dataset: what each kind of customer meter reports (ADR 0009)", ()
       assert.ok(bill, c.customerId);
       const advance = (readings[1].value as number) - (readings[0].value as number);
       assert.ok(Math.abs((bill.energyKwh as number) - advance) < 1e-6, c.customerId);
-      // The bill covers the time between the two readings, which stops short of the month's end.
+      // The bill covers the time between the two readings: a reading cycle, which is not the calendar month.
       assert.deepEqual(bill.consumptionPeriod, { start: readings[0].observedAt, end: readings[1].observedAt });
       const wasEstimated = readings[1].quality === "estimated";
       assert.equal(bill.basis, wasEstimated ? "estimated" : "meter_reading", c.customerId);

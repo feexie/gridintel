@@ -4,7 +4,7 @@ import type { DataQuality, TelemetryPoint } from "@/domain";
 import { buildTopologyIndex } from "../topology/registry.ts";
 import { computeEnergyAccount } from "./account.ts";
 import { sumMeterEnergy } from "./intervals.ts";
-import { registerAdvance, registerConsumption, registerReadingSpan } from "./register.ts";
+import { registerAdvance, registerAdvanceAround, registerConsumption, registerReadingSpan } from "./register.ts";
 import { CONTEXT, PERIOD, PROVENANCE, buildIntervals, buildRegistry, meter } from "../__fixtures__/network.ts";
 
 const METER = meter("M-SP1", { role: "service_point", servicePointId: "SP-1" }, { meterType: "conventional" });
@@ -273,5 +273,53 @@ describe("a meter that is not read on intervals", () => {
       computedAt: CONTEXT.computedAt,
     });
     assert.deepEqual(account.consumptionCoverage, { servicePoints: 4, byIntervals: 4, intervalsIncomplete: 0, byRegister: 0, registerExcluded: 0, notRead: 0, unmetered: 0, registerExclusions: {} });
+  });
+});
+
+describe("the register advance a period's bill rests on", () => {
+  const MONTH = { start: "2026-09-01T00:00:00+01:00", end: "2026-10-01T00:00:00+01:00" };
+  const around = (readings: TelemetryPoint[]) => registerAdvanceAround(METER, readings, MONTH);
+
+  it("is between the reading nearest the period's start and the reading nearest its end, however far they are", () => {
+    // A round read this meter four days before each end of the month: outside any reading window, and still the bill's two readings.
+    const result = around([reading("2026-08-28T10:00:00+01:00", 1000), reading("2026-09-27T10:00:00+01:00", 1180)]);
+    assert.equal(result.status, "ok");
+    assert.equal(result.advanceKwh, 180);
+    assert.deepEqual(result.opening, { at: "2026-08-28T10:00:00+01:00", kwh: 1000 });
+    assert.deepEqual(result.closing, { at: "2026-09-27T10:00:00+01:00", kwh: 1180 });
+    assert.equal(result.quality, "measured");
+    // The same two readings do not count toward the month's recorded consumption: that is a separate question.
+    assert.equal(registerConsumption(METER, [reading("2026-08-28T10:00:00+01:00", 1000), reading("2026-09-27T10:00:00+01:00", 1180)], MONTH, 3).counted, false);
+  });
+
+  it("picks the round nearest each end when earlier and later rounds are held too", () => {
+    const result = around([
+      reading("2026-07-30T10:00:00+01:00", 800),
+      reading("2026-08-30T10:00:00+01:00", 1000),
+      reading("2026-09-29T10:00:00+01:00", 1200),
+      reading("2026-10-30T10:00:00+01:00", 1400),
+    ]);
+    assert.deepEqual([result.opening?.kwh, result.closing?.kwh, result.advanceKwh, result.readings], [1000, 1200, 200, 4]);
+  });
+
+  it("is an estimate when either reading is one", () => {
+    assert.equal(around([reading("2026-08-30T10:00:00+01:00", 1000), reading("2026-09-29T10:00:00+01:00", 1200, "estimated")]).quality, "estimated");
+  });
+
+  it("gives no advance from one reading, from none, or from a register that went backwards", () => {
+    const one = around([reading("2026-09-29T10:00:00+01:00", 1200)]);
+    assert.deepEqual([one.status, one.advanceKwh, one.readings], ["insufficient_data", null, 1]);
+    assert.deepEqual(one.missingInputs, ["two register readings of meter M-SP1 around the period"]);
+    assert.deepEqual([around([]).status, around([]).readings], ["insufficient_data", 0]);
+    const backwards = around([reading("2026-08-30T10:00:00+01:00", 1000), reading("2026-09-29T10:00:00+01:00", 20)]);
+    assert.equal(backwards.status, "not_computable");
+    assert.equal(backwards.warnings[0].code, "REGISTER_WENT_BACKWARDS");
+    assert.equal(registerAdvanceAround(METER, [reading("2026-08-30T10:00:00+01:00", 1)], { start: MONTH.end, end: MONTH.start }).warnings[0].code, "INVALID_PERIOD");
+  });
+
+  it("ignores other meters and other metrics", () => {
+    const other: TelemetryPoint = { ...reading("2026-09-30T10:00:00+01:00", 9999), metric: "energy_export_register_kwh" };
+    const result = around([reading("2026-08-30T10:00:00+01:00", 10), reading("2026-09-29T10:00:00+01:00", 12), reading("2026-09-30T12:00:00+01:00", 700, "measured", "M-SP2"), other]);
+    assert.equal(result.advanceKwh, 2);
   });
 });

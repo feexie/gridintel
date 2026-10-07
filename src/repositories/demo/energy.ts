@@ -32,9 +32,11 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
      boundary meters         hourly interval energy
      AMI customer meters     hourly interval energy
      postpaid, not AMI       two readings of the meter's register: one
-                             at the start of the month, one at the
-                             month-end reading round. Some rounds miss
-                             a meter, and that reading is estimated
+                             from August's reading round, one from
+                             September's. A round takes several days
+                             per route (see READING ROUTES below). Some
+                             rounds miss a meter, and that reading is
+                             estimated
      prepaid, not AMI        nothing from the meter. The vends in the
                              billing records are all the utility has
      unmetered               nothing
@@ -45,14 +47,81 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
    meters, and are never written out as observations.
 ========================================================== */
 
-/** What the month-end reading round found at one postpaid meter that is not an AMI meter. */
+/** What the reading round found at one postpaid meter that is not an AMI meter. */
 export interface RegisterRead {
   /** The register's advance between the two readings, kWh; an estimate when the meter was not read. */
   advanceKwh: number;
   /** True when the round did not reach the meter and the billing system estimated the reading. */
   estimated: boolean;
-  /** [opening reading, closing reading): the consumption the advance covers. */
+  /** [opening reading, closing reading): the consumption the advance covers. It is not the calendar month. */
   period: Period;
+}
+
+/* ==========================================================
+   READING ROUTES
+
+   A meter reader walks one transformer's meters as a route, between
+   08:00 and 16:00, and a route takes several days. Every route's
+   September round ends on 30 September, in time for the billing run
+   that night:
+
+     most routes          2 or 3 days: 28, 29 and 30 September
+     three long routes    4 days: 27 to 30 September
+
+   The same meter is read at the same place in the round each month,
+   so its opening reading is from 30 days earlier, in August's round.
+   A bill therefore covers 30 days that begin and end a day or more
+   before the calendar month does.
+
+   The energy methodology counts a register advance toward September's
+   recorded consumption only when both readings are within 3 days of
+   the month's ends (ADR 0010): from 29 August, and from 28 September.
+   The first day of a long route falls outside that:
+
+     DT-FRM-4, DT-FRM-7   long rural routes on Farm Road. First day:
+                          read 28 August and 27 September. The
+                          opening reading is outside the window, and
+                          so is the closing one.
+     DT-OLD-6             the largest route on Old Town. Its August
+                          round began a day late, so its first day
+                          was read 29 August (inside) and 27
+                          September: only the closing reading is
+                          outside.
+
+   So a few advances are excluded on each ground, and the reason
+   shows on screen. Everything read on 28, 29 or 30 September counts.
+
+   AUGUST. The model has hourly consumption for September only. What
+   a meter registered on the last days of August is taken to be what
+   it registered on the same weekday four weeks later (31 August was
+   a Monday, as 28 September is). That is an assumption of the model;
+   no August consumption is written out as an observation.
+========================================================== */
+
+interface ReadingRoute {
+  /** Day of September, from 0, on which the route's round begins. It ends on 30 September. */
+  firstDay: number;
+  days: number;
+  /** How many days later than 30 days before the August round reached the same meter. */
+  augustShiftDays: number;
+}
+
+const LAST_READING_DAY = DEMO_DAYS - 1;
+const LONG_ROUTES: Readonly<Record<string, ReadingRoute>> = {
+  FRM4: { firstDay: LAST_READING_DAY - 3, days: 4, augustShiftDays: 0 },
+  FRM7: { firstDay: LAST_READING_DAY - 3, days: 4, augustShiftDays: 0 },
+  OLD6: { firstDay: LAST_READING_DAY - 3, days: 4, augustShiftDays: 1 },
+};
+const READING_CYCLE_DAYS = 30;
+/** August hours stand on the same weekday four weeks later. */
+const MIRROR_HOURS = 28 * 24;
+
+/** The reading route of a transformer's meters, by supply key. */
+function readingRoute(supplyKey: string): ReadingRoute {
+  const long = LONG_ROUTES[supplyKey];
+  if (long !== undefined) return long;
+  const days = 2 + Math.floor(seeded(`route:${supplyKey}`)() * 2);
+  return { firstDay: LAST_READING_DAY - (days - 1), days, augustShiftDays: 0 };
 }
 
 export interface EnergyModel {
@@ -71,11 +140,6 @@ export interface EnergyModel {
 }
 
 const HOUR_STARTS: readonly IsoTimestamp[] = Array.from({ length: DEMO_HOURS }, (_, h) => wat(hourStart(h)));
-/**
- * The month-end reading round reaches a meter at 23:00 on 30 September, half an hour before
- * the billing run. A register reading covers what was used up to that moment and no later.
- */
-export const READING_ROUND_HOUR = DEMO_HOURS - 1;
 const WEEKDAY: readonly number[] = Array.from({ length: DEMO_DAYS }, (_, day) => weekday(day));
 
 function zeros(): Float64Array {
@@ -149,35 +213,38 @@ export function buildEnergyModel(): EnergyModel {
   };
 
   /**
-   * The two readings of a postpaid meter's register that the month-end round brackets the
-   * month with. The register counts from an arbitrary earlier reading. Where the round did
-   * not reach the meter, the billing system estimates the closing reading instead.
+   * The two readings of a postpaid meter's register: August's round and September's, each
+   * taken when the reader reached the meter on its route. The register counts from an
+   * arbitrary earlier reading. Where September's round did not reach the meter, the billing
+   * system estimates the closing reading instead, dated when the meter was due to be read.
    */
-  const pushRegisterReads = (customerId: string, meterId: string, hourlyKwh: ArrayLike<number>, missedShare: number) => {
+  const pushRegisterReads = (customerId: string, meterId: string, supplyKey: string, hourlyKwh: ArrayLike<number>, missedShare: number) => {
     const random = seeded(`register:${customerId}`);
     const opening = round(400 + random() * 18_000, 1);
     const missed = random() < missedShare;
     const error = 0.75 + random() * 0.5;
+    // Where on the route the meter is: which day of the round, and at what hour of the working day.
+    const route = readingRoute(supplyKey);
+    const closingHour = (route.firstDay + Math.floor(random() * route.days)) * 24 + 8 + Math.floor(random() * 9);
+    const openingHour = closingHour - (READING_CYCLE_DAYS - route.augustShiftDays) * 24;
     let registered = 0;
-    for (let h = 0; h < READING_ROUND_HOUR; h++) registered += hourlyKwh[h];
+    for (let h = openingHour; h < closingHour; h++) registered += hourlyKwh[h < 0 ? h + MIRROR_HOURS : h];
     const advanceKwh = round(registered * (missed ? error : 1), 1);
     const source = { kind: "meter" as const, id: meterId };
+    const openingAt = wat(hourStart(openingHour));
+    const closingAt = wat(hourStart(closingHour));
     telemetry.push(
-      { source, metric: "energy_import_register_kwh", observedAt: HOUR_STARTS[0], value: opening, quality: "measured", provenance: readingRound },
+      { source, metric: "energy_import_register_kwh", observedAt: openingAt, value: opening, quality: "measured", provenance: readingRound },
       {
         source,
         metric: "energy_import_register_kwh",
-        observedAt: HOUR_STARTS[READING_ROUND_HOUR],
+        observedAt: closingAt,
         value: round(opening + advanceKwh, 1),
         quality: missed ? "estimated" : "measured",
         provenance: missed ? estimatedReading : readingRound,
       },
     );
-    registerReads.set(customerId, {
-      advanceKwh,
-      estimated: missed,
-      period: { start: HOUR_STARTS[0], end: HOUR_STARTS[READING_ROUND_HOUR] },
-    });
+    registerReads.set(customerId, { advanceKwh, estimated: missed, period: { start: openingAt, end: closingAt } });
   };
 
   /* ---- Connections -------------------------------------------------- */
@@ -231,7 +298,7 @@ export function buildEnergyModel(): EnergyModel {
     recordedKwh.set(connection.customerId, monthTotal(recorded));
     if (connection.metering === "postpaid" && !connection.disconnected) {
       const missedShare = feederById.get(connection.feederId)?.estimatedReadShare ?? 0;
-      pushRegisterReads(connection.customerId, connection.meterId, recorded, missedShare);
+      pushRegisterReads(connection.customerId, connection.meterId, connection.supplyKey, recorded, missedShare);
     }
   }
 

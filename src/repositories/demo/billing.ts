@@ -15,8 +15,9 @@ import { BILLING_SOURCE, demoProvenance } from "./sources.ts";
    - postpaid with an AMI meter: one bill at the month-end billing
      run, for the energy the meter recorded;
    - postpaid with any other meter: one bill at the same run, for
-     the advance of the meter's register between the two readings
-     that bracket the month. Where the reading round missed the
+     the advance of the meter's register between August's reading
+     and September's: a reading cycle, which begins and ends a day
+     or more before the month does. Where the reading round missed the
      meter, the bill is raised on an estimated reading and says so;
    - unmetered: one estimated bill at the month-end run, for a fixed
      monthly energy that does not depend on what was used.

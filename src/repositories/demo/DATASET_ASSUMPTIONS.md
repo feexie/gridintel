@@ -209,7 +209,7 @@ The six hand-designed transformers, unchanged by the widening:
   | Meter | Meters | What the dataset holds | Meter type |
   | --- | --- | --- | --- |
   | AMI | 288 | Hourly interval energy | `smart` |
-  | Postpaid, not AMI | 1,447 | Two readings of the register: at 00:00 on 1 September and at 23:00 on 30 September | `conventional` |
+  | Postpaid, not AMI | 1,447 | Two readings of the register: one from August's reading round, one from September's | `conventional` |
   | Prepaid, not AMI | 2,518 | Nothing from the meter. Its vends are in the billing records | `conventional` |
   | Unmetered | none | Nothing | none |
 
@@ -219,25 +219,45 @@ The six hand-designed transformers, unchanged by the widening:
     Town and on Farm Road, plus all 30 connections of DT-MKT-3. They are
     hourly, to match the boundary meters.
   - **Register readings** are held for the 1,425 postpaid meters that are
-    not AMI and whose account is active. The reading round reaches a meter
-    at 23:00 on 30 September, half an hour before the billing run, so a
-    reading covers what was used up to 23:00 and the bill raised on it
-    covers 1 September 00:00 to 30 September 23:00, not the whole month.
-    Reading every meter at the same instant, and at the first instant of the
-    month, is a simplification: a real round takes days.
+    not AMI and whose account is active.
+  - **The reading round takes days.** A reader walks one transformer's
+    meters as a route, between 08:00 and 16:00. Every route's September
+    round ends on 30 September, in time for the billing run that night. Most
+    routes take two or three days (28 to 30 September); three long routes
+    take four (27 to 30 September). Which day and hour a meter is read is
+    fixed by its place on the route, so it is read at the same place in
+    August's round, 30 days earlier. A bill therefore covers 30 days that
+    begin and end up to four days before the calendar month does.
+  - **August is not modelled.** The model has hourly consumption for
+    September only. What a meter registered on the last days of August is
+    taken to be what it registered on the same weekday four weeks later.
+    This is an assumption of the model, used only to size the advance; no
+    August consumption is written out as an observation.
   - **A register advance counts toward recorded consumption** when both
-    readings are within 3 days of the period's ends (ADR 0010). Every
-    synthetic reading is, so 1,287 advances count, as their own measured
-    source beside the 287 complete AMI meters. Because no synthetic reading
-    is outside the window, that exclusion is exercised by unit tests only.
+    readings are within 3 days of the period's ends (ADR 0010): from
+    29 August, and from 28 September. 1,267 advances count, as their own
+    measured source beside the 287 complete AMI meters. The first day of
+    each long route falls outside the window, on purpose, so that the
+    exclusion and its reason show on screen:
+
+    | Route | First day read | Outside the window | Meters |
+    | --- | --- | --- | --- |
+    | DT-FRM-4, DT-FRM-7 (long rural routes, Farm Road) | 28 August and 27 September | The opening reading, and the closing one | 8 |
+    | DT-OLD-6 (Old Town's largest route; its August round began a day late, so its cycle is 29 days) | 29 August and 27 September | The closing reading only | 16 |
+
+    Where both readings are outside, the screen gives the first reason: no
+    reading within 3 days of the start of the period.
   - **Some readings are estimated.** The round misses 5% of meters on Market
     Road and Government Avenue, 20% on Old Town and 25% on Farm Road: 138
     in all. The billing system then estimates the closing reading, between
-    75% and 125% of what the meter actually registered. The reading is held
-    with quality `estimated` and the bill raised on it has basis
-    `estimated`, each saying why. An advance resting on an estimated reading
-    is not counted toward recorded consumption: these 138 are the "register
-    advance not counted" connections on the screens.
+    75% and 125% of what the meter actually registered, and dates it when
+    the meter was due to be read. The reading is held with quality
+    `estimated` and the bill raised on it has basis `estimated`, each saying
+    why. An advance resting on an estimated reading is not counted toward
+    recorded consumption. Four of the 138 are also on the first day of a
+    long route and are counted once, under the window. So the "register
+    advance not counted" connections on the screens are 158: 134 estimated,
+    8 with no opening reading in the window and 16 with no closing one.
   - **Prepaid meters that are not AMI are not read.** What the model knows
     they registered is used to size their vends and is never written out.
     Energy vended is shown as "energy purchased" and is never added to
@@ -293,8 +313,8 @@ exact here; a real study would not.
 - Postpaid with an AMI meter, government accounts included: one bill at a
   month-end run (30 September, 23:30) for what the meter recorded.
 - Postpaid with any other meter: one bill at the same run for the advance of
-  the register between its two readings, or for an estimate of it where the
-  meter was not read. Such a bill is an estimated bill and counts toward the
+  the register between its two readings (a 30-day reading cycle, not the
+  calendar month), or for an estimate of it where the meter was not read. Such a bill is an estimated bill and counts toward the
   estimated share of energy billed.
 - Unmetered: one estimated bill at the same run for a fixed energy,
   residential / commercial: 220 / 600 kWh on Market Road, 90 / 250 on Old

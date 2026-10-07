@@ -69,8 +69,8 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   // The cut-off: the top three, with the rest one click away.
   await expect(money).toHaveCount(3);
   await expect(list).toContainText("Top 3 of 4 feeders, ranked by estimated revenue not realised.");
-  await expect(money.nth(0)).toHaveAttribute("data-subject", "FD-MKT");
-  await expect(money.nth(1)).toHaveAttribute("data-subject", "FD-GOV");
+  await expect(money.nth(0)).toHaveAttribute("data-subject", "FD-GOV");
+  await expect(money.nth(1)).toHaveAttribute("data-subject", "FD-MKT");
   await expect(money.nth(2)).toHaveAttribute("data-subject", "FD-OLD");
   await expect(money.nth(0)).toContainText("revenue not realised, monthly estimate");
   await expect(money.nth(0)).toContainText("Largest revenue not realised among feeders");
@@ -90,7 +90,7 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   await expect(money.nth(3)).toContainText("+56.7 h");
   await expect(money.nth(3)).toContainText("SAIDI under the reference rule");
   // Government Avenue's report states the same rule, and it moved nothing there: no finding.
-  await expect(money.nth(1)).not.toContainText("sub-transmission lines");
+  await expect(money.nth(0)).not.toContainText("sub-transmission lines");
 
   // No transformer competes in the money ranking, and no subject is listed twice.
   await expect(list.locator('[data-group="money"] [data-subject^="DT-"]')).toHaveCount(0);
@@ -101,8 +101,8 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   await expect(list).toContainText("Only feeders are ranked by money, because a transformer's commercial gap is already part of its feeder's total");
   await expect(list).toContainText("No weighting, no AI.");
 
-  await money.nth(0).getByRole("link", { name: "Market Road 11 kV feeder" }).click();
-  await expect(page).toHaveURL(/\/operations\/feeders\/FD-MKT$/);
+  await money.nth(0).getByRole("link", { name: "Government Avenue 11 kV feeder" }).click();
+  await expect(page).toHaveURL(/\/operations\/feeders\/FD-GOV$/);
 });
 
 test("reported figures are compared at the scope they are stated for, and say so", async ({ page }) => {

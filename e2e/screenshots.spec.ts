@@ -24,6 +24,7 @@ const SHOTS: [string, string][] = [
   ["service-point-prepaid", `${OPERATIONS}/service-points/SP-OLD2-004`],
   ["service-point-register-reading", `${OPERATIONS}/service-points/SP-OLD2-001`],
   ["service-point-estimated-reading", `${OPERATIONS}/service-points/SP-OLD2-005`],
+  ["service-point-reading-outside-window", `${OPERATIONS}/service-points/SP-OLD6-022`],
   ["service-point-ami", `${OPERATIONS}/service-points/SP-MKT2-005`],
 ];
 

@@ -342,6 +342,23 @@ test("a postpaid meter read by hand shows one register reading, and says when it
   await expect(page.getByRole("row", { name: /Estimated bills \(meter not read\)/ })).toBeVisible();
 });
 
+test("a reading taken outside the reading window is shown with its date, and its advance is not counted", async ({ page }) => {
+  // The first day of Old Town's longest route: read on 29 August and on 27 September, which is too early to close September.
+  await page.goto(`${OPERATIONS}/service-points/SP-OLD6-022`);
+  await expect(tile(page, "Energy recorded")).toContainText("Measured");
+  await expect(tile(page, "Energy recorded")).toContainText("It covers the time between the two readings, which is not the calendar month.");
+  await expect(page.locator("[data-register-readings]")).toContainText("29 Aug 2026");
+  await expect(page.locator("[data-register-readings]")).toContainText("27 Sep 2026");
+  await expect(page.locator('[data-register-counts="no"]')).toContainText("Not counted toward recorded consumption at the levels above: no reading within 3 days of the end of the period.");
+
+  // A long rural route on Farm Road: the reading that opens the month was taken on 28 August.
+  await page.goto(`${OPERATIONS}/service-points/SP-FRM4-013`);
+  await expect(page.locator("[data-register-readings]")).toContainText("28 Aug 2026");
+  await expect(page.locator('[data-register-counts="no"]')).toContainText("no reading within 3 days of the start of the period.");
+  await page.goto(`${OPERATIONS}/feeders/FD-FRM`);
+  await expect(page.locator("[data-register-exclusions]")).toContainText("8 register advance(s) not counted: no reading within 3 days of the start of the period.");
+});
+
 test("an AMI meter shows the sum of its intervals", async ({ page }) => {
   await page.goto(`${OPERATIONS}/service-points/SP-MKT2-005`);
   await expect(page.getByText("AMI meter M-MKT2-005")).toBeVisible();
@@ -355,15 +372,17 @@ test("a level shows energy purchased apart from recorded consumption, which it s
   await expect(purchased).toContainText("Energy purchased (prepaid vends)");
   await expect(purchased).toContainText("kWh");
   await expect(page.getByText("Purchased, not consumed")).toBeVisible();
-  await expect(page.getByText("279 with a register advance that counts; 67 with a register advance that does not count; 588 with a meter that is not read")).toBeVisible();
+  await expect(page.getByText("265 with a register advance that counts; 81 with a register advance that does not count; 588 with a meter that is not read")).toBeVisible();
   await expect(page.getByRole("row", { name: /^Recorded consumption/ })).toContainText("insufficient data");
   // The two measured sources are shown apart, each with the connections it covers; neither is called the total.
   const sources = page.locator('[data-table="recorded-by-source"]');
   await expect(sources.locator('[data-source="intervals"]')).toContainText("5 of 2,141");
-  await expect(sources.locator('[data-source="register"]')).toContainText("279 of 2,141");
+  await expect(sources.locator('[data-source="register"]')).toContainText("265 of 2,141");
   await expect(sources.locator('[data-source="register"]')).toContainText("kWh");
   await expect(page.getByText("It is taken as read and never pro-rated to the period.")).toBeVisible();
-  await expect(page.locator("[data-register-exclusions]")).toContainText("67 register advance(s) not counted: a reading was estimated, not read from the meter.");
+  // Each ground for leaving an advance out has its own line and count.
+  await expect(page.locator("[data-register-exclusions]")).toContainText("65 register advance(s) not counted: a reading was estimated, not read from the meter.");
+  await expect(page.locator("[data-register-exclusions]")).toContainText("16 register advance(s) not counted: no reading within 3 days of the end of the period.");
   // The accounting chain does not depend on customer meters and is unchanged in status.
   await expect(tile(page, "ATC&C")).toContainText("Estimated inputs");
 });

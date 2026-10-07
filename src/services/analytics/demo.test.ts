@@ -134,10 +134,12 @@ describe("energy account and losses", () => {
     const coverage = region.consumptionCoverage;
     assert.deepEqual(
       [coverage.byIntervals, coverage.intervalsIncomplete, coverage.byRegister, coverage.registerExcluded, coverage.notRead, coverage.unmetered],
-      [287, 1, 1287, 138, 2540, 2195],
+      [287, 1, 1267, 158, 2540, 2195],
     );
-    // The 138 are the readings the round missed: estimates are not a measured source.
-    assert.deepEqual(coverage.registerExclusions, { estimated_reading: 138 });
+    // 134 are readings the round missed: estimates are not a measured source. 24 were read, but on the first
+    // day of a long route, more than 3 days from an end of the month. Of the 138 readings the round missed,
+    // four are on those days too, and are counted once, under the window.
+    assert.deepEqual(coverage.registerExclusions, { estimated_reading: 134, opening_outside_window: 8, closing_outside_window: 16 });
     assert.equal(region.recordedBySource.intervals.status, "ok");
     assert.equal(region.recordedBySource.register.status, "ok");
     assert.equal(region.recordedConsumption.value, null);
@@ -147,8 +149,11 @@ describe("energy account and losses", () => {
       const sum = parts.reduce((total, part) => total + (part.recordedBySource[source].value as number), 0);
       assert.ok(close(region.recordedBySource[source].value, sum, 1e-6), source);
     }
-    // No reading in the synthetic data lies outside the window (both are taken within a day of the
-    // period's ends), which is why "estimated_reading" is the only reason above.
+    // The readings outside the window are on Farm Road (opening and closing) and Old Town (closing only).
+    const exclusions = async (id: string) => (await sectionLosses({ repos, scope: feeder(id), period, context })).result.account.consumptionCoverage.registerExclusions;
+    assert.deepEqual(await exclusions("FD-FRM"), { estimated_reading: 20, opening_outside_window: 8 });
+    assert.deepEqual(await exclusions("FD-OLD"), { estimated_reading: 65, closing_outside_window: 16 });
+    assert.deepEqual(await exclusions("FD-MKT"), { estimated_reading: 13 });
   });
 
   it("keeps the accounting chain whole where recorded consumption is not available, at every level", async () => {

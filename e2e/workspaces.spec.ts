@@ -55,7 +55,7 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Revenue");
   // The revenue gap, as on the Executive page: an estimate, monthly, in two parts.
   await expect(panel(page, "Revenue gap")).toContainText("It is not an amount owed by anyone");
-  await expect(tile(page, "Revenue not realised")).toContainText("₦46,557,069");
+  await expect(tile(page, "Revenue not realised")).toContainText("₦46,310,113");
   await expect(tile(page, "Collection gap")).toContainText("Cash basis");
 
   // Government (MDA) accounts are their own class and lead the list: 90 accounts, 19.8% collected, 45% of the shortfall.
@@ -71,13 +71,13 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
 
   // Commercial beside collection loss: Old Town loses to unbilled energy, Government Avenue to unpaid bills.
   const loss = page.locator('[data-table="loss-by-feeder"]');
-  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("27.8%");
+  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("27.9%");
   await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("23.1%");
-  await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("2.2%");
+  await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("2.3%");
   await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("26.9%");
-  await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("₦15,641,530");
+  await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("₦15,639,570");
   // Commercial loss is marked as derived, collection loss as calculated.
-  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("27.8%≈Deri");
+  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("27.9%≈Deri");
   await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("23.1%≈Calc");
   await expect(page.locator("[data-loss-feeder]")).toHaveCount(4);
   await expect(panel(page, /^Commercial against collection loss/)).toContainText("never set against each other");

@@ -211,3 +211,78 @@ export function registerAdvance(meter: Meter, readings: readonly TelemetryPoint[
     warnings: [],
   };
 }
+
+/**
+ * The advance a period's bill rests on: between the reading nearest the
+ * period's start and the reading nearest its end, however far from those
+ * ends they are. A reading round takes days, so the two readings rarely fall
+ * inside the period itself; this is the figure to show for one meter, with
+ * its two dates. Whether it counts toward the period's recorded consumption
+ * is a separate question, answered by `registerConsumption`.
+ *
+ * The caller chooses how far back and forward readings are fetched. Of two
+ * readings equally near an end, the one inside the period is used.
+ */
+export function registerAdvanceAround(meter: Meter, readings: readonly TelemetryPoint[], period: Period): RegisterAdvance {
+  const none = (status: CalcStatus, missingInputs: string[], warnings: Warning[], partial: Partial<RegisterAdvance> = {}): RegisterAdvance => ({
+    meterId: meter.id,
+    status,
+    advanceKwh: null,
+    opening: null,
+    closing: null,
+    readings: 0,
+    quality: null,
+    missingInputs,
+    warnings,
+    ...partial,
+  });
+
+  const bounds = periodBounds(period);
+  if (bounds === null) {
+    return none("insufficient_data", ["period"], [{ code: "INVALID_PERIOD", message: "The period is invalid, empty, or has no explicit time zone." }]);
+  }
+
+  const usable = readings
+    .filter((point) => point.source.kind === "meter" && point.source.id === meter.id && point.metric === "energy_import_register_kwh")
+    .filter((point) => point.value !== null && point.quality !== "missing")
+    .map((point) => ({ point, ms: toEpochMs(point.observedAt) }))
+    .filter((entry): entry is { point: TelemetryPoint; ms: number } => entry.ms !== null);
+
+  const inside = (ms: number) => ms >= bounds.startMs && ms <= bounds.endMs;
+  const nearest = (endMs: number) =>
+    [...usable].sort((a, b) => Math.abs(a.ms - endMs) - Math.abs(b.ms - endMs) || Number(inside(b.ms)) - Number(inside(a.ms)) || a.ms - b.ms)[0];
+  const first = nearest(bounds.startMs);
+  const last = nearest(bounds.endMs);
+  if (first === undefined || last === undefined || first === last || first.ms === last.ms) {
+    return none("insufficient_data", [`two register readings of meter ${meter.id} around the period`], [], { readings: usable.length });
+  }
+
+  const opening = { at: first.point.observedAt, kwh: first.point.value as number };
+  const closing = { at: last.point.observedAt, kwh: last.point.value as number };
+  if (closing.kwh < opening.kwh) {
+    return none(
+      "not_computable",
+      [],
+      [
+        {
+          code: "REGISTER_WENT_BACKWARDS",
+          message: `Meter ${meter.id}'s register reads lower at ${closing.at} than at ${opening.at}; the advance cannot be given.`,
+          ref: meter.id,
+        },
+      ],
+      { opening, closing, readings: usable.length },
+    );
+  }
+
+  return {
+    meterId: meter.id,
+    status: "ok",
+    advanceKwh: closing.kwh - opening.kwh,
+    opening,
+    closing,
+    readings: usable.length,
+    quality: worstQuality([first.point.quality, last.point.quality]),
+    missingInputs: [],
+    warnings: [],
+  };
+}

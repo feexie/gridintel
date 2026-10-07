@@ -111,3 +111,27 @@ disconnected accounts, for which no reading is held.
 No status changed at any scope. The cross-checks are `ok` on DT-MKT-3 (all
 AMI) and `insufficient_data` everywhere else, as before, because every other
 section has prepaid meters that are not read or connections with no meter.
+
+## Amendment (Phase 6c-3, 2026-10-07): the synthetic reading round is spread
+
+Founder's decision at the 6c-2 checkpoint: readings are taken over several
+days per route, so that a few fall outside the window and their exclusion
+shows on screen. The rule above is unchanged; only the dataset is.
+
+- Each route's round takes two to four days and ends on 30 September. The
+  same meter is read 30 days earlier in August's round (29 on one route).
+  See `DATASET_ASSUMPTIONS.md`, "The reading round takes days".
+- 24 advances are now outside the window: 8 with no opening reading in it
+  (Farm Road) and 16 with no closing one (Old Town). With the 134 estimated
+  readings that are not among them, 158 advances are not counted, and 1,267
+  are (369,681 kWh).
+- **The service-point screen shows the advance the bill rests on**, between
+  the reading nearest each end of the period, however far from that end it
+  is (`registerAdvanceAround`). Before, it took the first and last reading
+  inside the period, which a round that reads in late August would leave
+  with one reading and no advance. Whether the advance counts is still answered
+  separately, by `registerConsumption`, and shown beside it.
+- **Energy billed moved**, because a postpaid bill now covers a reading
+  cycle rather than 1 to 30 September. The accounting chain itself is
+  unchanged; its billing input is. The figures are in the Phase 6c-3
+  checkpoint in `docs/ROADMAP.md`.

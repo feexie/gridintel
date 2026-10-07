@@ -44,7 +44,7 @@ import {
   isComputed,
   metersWithRole,
   methodologyRef,
-  registerAdvance,
+  registerAdvanceAround,
   registerConsumption,
   registerReadingSpan,
   reliabilityOnBasis,
@@ -1359,7 +1359,8 @@ function recordedAt(
     };
   }
 
-  const advance = registerAdvance(meter, registerReadings, runtime.period);
+  // The advance the period's bill rests on: the readings nearest each end, which a reading round rarely puts inside the period.
+  const advance = registerAdvanceAround(meter, registerReadings, runtime.period);
   if (advance.readings === 0) {
     return {
       metric: unavailable(
@@ -1395,7 +1396,7 @@ function recordedAt(
       warnings: advance.warnings.map((warning) => warning.message),
       note: estimated
         ? "One register reading for the month, not interval data. The meter was not read this month: the closing reading is an estimate."
-        : "One register reading for the month, not interval data.",
+        : "One register reading for the month, not interval data. It covers the time between the two readings, which is not the calendar month.",
     },
     from: "register_readings",
     intervals: null,
@@ -1413,17 +1414,24 @@ function recordedAt(
 }
 
 /**
- * Register readings of the meters that are read by hand, by meter, from the reading window before the
- * period to the reading window after it. Meters that record intervals are not asked for.
+ * How far before the period the reading that opens it is looked for: a monthly reading cycle and a few
+ * days. Wider than the reading window, so that a reading too early to count is still shown, with its date.
+ */
+const REGISTER_LOOKBACK_DAYS = 35;
+
+/**
+ * Register readings of the meters that are read by hand, by meter, from the previous reading round to the
+ * reading window after the period. Meters that record intervals are not asked for.
  */
 async function registerReadingsOf(runtime: OperationsRuntime, meters: readonly Meter[]): Promise<Map<string, TelemetryPoint[]>> {
   const byHand = meters.filter((meter) => meter.meterType === "conventional");
   const byMeter = new Map<string, TelemetryPoint[]>();
   const span = registerReadingSpan(runtime.period, REGISTER_WINDOW_DAYS);
-  if (byHand.length === 0 || span === null) return byMeter;
+  const back = registerReadingSpan(runtime.period, REGISTER_LOOKBACK_DAYS);
+  if (byHand.length === 0 || span === null || back === null) return byMeter;
   const readings = await runtime.repos.observations.listTelemetry({
     sources: byHand.map((meter) => ({ kind: "meter" as const, id: meter.id })),
-    from: span.from,
+    from: back.from,
     asOf: span.to,
   });
   for (const point of readings.records) {

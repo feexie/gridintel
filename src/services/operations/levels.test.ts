@@ -290,16 +290,20 @@ describe("operations read models", () => {
       (coverage?.byIntervals ?? 0) + (coverage?.intervalsIncomplete ?? 0) + (coverage?.byRegister ?? 0) + (coverage?.registerExcluded ?? 0) + (coverage?.notRead ?? 0) + (coverage?.unmetered ?? 0),
       coverage?.servicePoints,
     );
-    assert.match(checks?.note ?? "", /Of 2141 connection\(s\): 5 with interval data for the whole period; 279 with a register advance that counts; 67 with a register advance that does not count; 588 with a meter that is not read/);
+    assert.match(checks?.note ?? "", /Of 2141 connection\(s\): 5 with interval data for the whole period; 265 with a register advance that counts; 81 with a register advance that does not count; 588 with a meter that is not read/);
     assert.match(checks?.note ?? "", /1202 with no meter/);
     // The two measured sources are shown apart, each with the connections it covers.
     assert.deepEqual(checks?.sources.map((source) => [source.key, source.connections, source.energy.status, source.energy.origin]), [
       ["intervals", 5, "ok", "measured"],
-      ["register", 279, "ok", "measured"],
+      ["register", 265, "ok", "measured"],
     ]);
-    assert.match(checks?.sources[1].energy.note ?? "", /Covers 279 of 2141 connection\(s\)\. It is not the consumption of the whole scope\./);
+    assert.match(checks?.sources[1].energy.note ?? "", /Covers 265 of 2141 connection\(s\)\. It is not the consumption of the whole scope\./);
     assert.match(checks?.registerRule ?? "", /within 3 days of the start of the period and its closing reading within 3 days of the end\. It is taken as read and never pro-rated/);
-    assert.deepEqual(checks?.registerExclusions, [{ reason: "a reading was estimated, not read from the meter", connections: 67 }]);
+    // Two grounds, each with its count: readings the round missed, and readings taken on the first day of Old Town's long route.
+    assert.deepEqual(checks?.registerExclusions, [
+      { reason: "a reading was estimated, not read from the meter", connections: 65 },
+      { reason: "no reading within 3 days of the end of the period", connections: 16 },
+    ]);
     // The chain above it is untouched by what customer meters report.
     assert.equal(feeder.losses?.status, "calculated_with_estimates");
     assert.ok(feeder.losses?.chain.every((metric) => metric.value !== null));
