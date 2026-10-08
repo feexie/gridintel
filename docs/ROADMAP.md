@@ -3,10 +3,11 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-07. Status: **Phase 6c-3 (the Founder's decisions at
-the 6c-2 checkpoint, then the Assets and Events / Alarms workspaces) is at
-its checkpoint on branch `phase-6c-3`, awaiting the Founder's review. Not
-merged to `main`. Phase 6c-2 was merged on 2026-10-05, tag `phase-6c-2`.**
+Last updated: 2026-10-08. Status: **Phase 6c-3 approved and merged to `main`
+on 2026-10-07, tag `phase-6c-3`. The Phase 6 close-out (the Founder's
+decisions at the 6c-3 checkpoint) is at its checkpoint on branch
+`phase-6-close`, awaiting the Founder's check of the Vercel preview and
+approval. Not merged to `main`.**
 
 ## Completed
 
@@ -710,12 +711,23 @@ Phase 6c-3.
 - *The repository stays public during development.* No secret is ever
   committed. Strategy notes are not kept in the repository: they are in
   `private/`, which is in `.gitignore`.
-- *Cold start.* Each new function instance on Vercel computes the screens
-  again, and a visitor sees "Preparing data" while it does (observed on the
-  live site, 2026-10-07). `/api/ready` on Vercel reports one instance's
-  state and is not a health signal for the deployment. The warm-up is not to
-  be patched; ADR 0012 proposes building every screen ahead of time
-  instead.
+- *Cold start.* Until the Phase 6 close-out, each new function instance on
+  Vercel computed the screens again, and a visitor saw "Preparing data"
+  while it did (observed on the live site, 2026-10-07). Since ADR 0012 the
+  network screens are files built with the application, and a service point
+  is rendered on its first visit; no warm-up runs on the demonstration
+  dataset. `/api/ready` on Vercel reports one instance's state and is not a
+  health signal for the deployment.
+- *Rolling back.* If a deployment to production is wrong, go back to the one
+  before it without waiting for a new build: on vercel.com open the
+  project, and on the Production Deployment tile select **Instant
+  Rollback**, choose the previous deployment, **Continue**, then **Confirm
+  Rollback**. It takes effect at once. On the Hobby plan only the
+  immediately previous production deployment can be chosen. **After a
+  rollback Vercel stops promoting new pushes to `main`**: the site stays on
+  the rolled-back deployment until **Undo Rollback** is selected on the same
+  tile and a deployment is promoted. (Steps read from Vercel's
+  documentation on 2026-10-08.)
 
 #### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; at its checkpoint 2026-10-07)
 
@@ -786,8 +798,8 @@ The SYNTHETIC DATA bar stays on every screen of any hosted version.
 **At the checkpoint.** The usual report, screenshots, timings (median of
 five), before and after for anything that moved, and the Vercel items above.
 
-**Phase 6c-3 checkpoint (2026-10-07). Awaiting the Founder's review; not
-merged to `main`.** A merge to `main` publishes to the public site.
+**Phase 6c-3 checkpoint (2026-10-07). Approved by the Founder and merged to
+`main` on 2026-10-07, tag `phase-6c-3`.**
 
 **Done, in the order of the scope.**
 
@@ -890,6 +902,115 @@ machine was also running the browser tests' second server.
 **Acceptance, as met.** `npm run verify` green: typecheck, 443 unit tests,
 lint, build and 41 browser tests. Screenshots:
 `docs/screenshots/phase6c3`.
+
+#### Phase 6 close-out (branch `phase-6-close`; at its checkpoint 2026-10-08)
+
+**The Founder's decisions at the 6c-3 checkpoint (2026-10-07), and what was
+done.**
+
+1. *An outage has a status; open means in progress* (ADR 0013, amendment).
+   `Outage.status` from the source. One synthetic outage is open at the demo
+   clock: the 11 kV fault on Farm Road from 23:20 on 30 September, ten
+   transformers, 1,015 customers, its earth-fault trip alarm standing. The
+   21 September complaint has no status and stays "Restoration not
+   recorded", as a data-quality item.
+2. *An open interruption counts in the indices, provisionally* (ADR 0013,
+   second amendment; reliability methodology 0.3.0, hours of supply 0.2.0).
+   Counted to the end of the period and marked "Provisional: includes n
+   open outage(s); duration counted to period end". Not an estimate.
+3. *ADR 0012 adopted.* On the synthetic demonstration adapter the network
+   screens are built with the application; a service point is rendered on
+   its first visit and computes only that screen; no warm-up runs. The
+   request path, with the warm-up and the preparing page, is kept for real
+   adapters and stays built and tested.
+4. *Git history is not rewritten.*
+5. *The founding directive is out of the repository*:
+   `private/FOUNDING_DIRECTIVE.md`, not committed. `CLAUDE.md`, the
+   engineering rules, the blueprint, ADR 0001 and the README point there.
+6. *A not-found page in the dashboard frame*, with the SYNTHETIC DATA bar.
+7. *DT-GOV-3 is on the Assets attention list* as loaded above rating
+   (110.6% at peak, 53 of 720 readings) with no source alarm raised. It
+   was already; a browser test now holds it.
+8. *The agreement case on a substation RTU* is deferred.
+
+**What moved.**
+
+| | 6c-3 | Close-out |
+| --- | --- | --- |
+| Farm Road SAIDI | 441.8 h | 442.5 h, provisional |
+| Farm Road network-attributable SAIDI | 57.1 h | 57.8 h |
+| Farm Road days below the Band D minimum | 9 of 30 | 10 of 30 |
+| Hillcrest network SAIDI, and its difference from the report | 22.8 h, +20.9 h | 23.1 h, +21.2 h |
+| Portfolio SAIDI | 240.9 h | 241.0 h, provisional |
+| Portfolio energy received (kWh) | 2,104,984 | 2,104,819 |
+| Portfolio ATC&C loss | 31.45% (printed 31.5%) | 31.45% (printed 31.4%) |
+| Revenue not realised (₦) | 46,310,113 | 46,304,966 |
+| Source alarms, and those standing | 31, 3 | 32, 4 |
+| Assets listed for attention | 9 of 55 | 10 of 55 (Farm Road feeder, for its standing trip alarm) |
+
+The energy figures moved because Farm Road was off for its last 40 minutes.
+The synthetic Farm Road report was raised from 0.4 h and 0.2 to 1.0 h and
+1.1, so that it still agrees with the records on its own attribution rule;
+what the rule changes is still +56.7 h.
+
+**The two builds.** `next build` reports 128 pages built ahead of time, 112
+of them data screens (103 network levels, the Operations home and eight
+workspace pages); the request build reports 25. The ordinary build takes
+about a minute on the development laptop and its app output is 185 MB.
+
+**Page timings.** Production builds, one machine, milliseconds, median of
+five. "On request" is the engine rendering from its result cache, as at
+6c-3; "built ahead" is what a visitor to the demonstration now gets. Every
+route is inside the 500 ms budget on both.
+
+| Route | 6c-3 | On request | Built ahead |
+| --- | --- | --- | --- |
+| Executive | 145 | 158 | 25 |
+| Reliability | 82 | 112 | 16 |
+| Revenue | 59 | 52 | 13 |
+| Assets (ten transformers / all 48) | 52 / 117 | 37 / 83 | 11 / 17 |
+| Events / Alarms | 58 | 33 | 14 |
+| Operations home | 12 | 20 | 12 |
+| Region | 134 | 94 | 22 |
+| Substation, Riverside / Hillcrest | 85 / 81 | 91 / 106 | 23 / 16 |
+| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 109 / 109 / 106 / 94 | 154 / 147 / 124 / 84 | 26 / 21 / 20 / 22 |
+| Transformer, Riverbank (first 40 rows / all 135) | 97 / 232 | 104 / 212 | 26 / 32 |
+| Service point, register / prepaid / AMI | 23 / 24 / 26 | 23 / 26 / 19 | 8 / 8 / 8 |
+
+**A cold start, measured locally.** On a server of the ordinary build that
+has only just started, the first answer for a feeder is the screen with its
+figures, `/api/ready` says `not_started`, and the first visit to a service
+point carries its figures with no preparing page; a browser test holds all
+three. In a fresh process that first visit costs about one second, almost
+all of it generating the synthetic dataset (0.5 to 0.9 s); the screen itself
+takes about 50 ms.
+
+**Owed after the merge, by the Founder's decision.** Cold-start timings on
+the production URL. Before the merge the Founder checks the Vercel preview
+of this branch, in a logged-in browser, for any "Preparing data" on a
+network screen. They are to be added here.
+
+**`verify`.** It now makes both builds and runs the browser tests against
+both, on one worker to keep memory down (`playwright test --workers=1`).
+On this laptop (8 GB) the whole of it in one go was stopped once for low
+memory; run step by step it passes.
+
+**Known, and not done.**
+
+- "Loading now" on Farm Road still shows the 23:00 reading, the last in the
+  dataset, twenty minutes before the feeder tripped. It is the latest
+  reading held and is labelled with the as-of time.
+- The first visit to a service point generates the whole synthetic dataset.
+  Whether that is inside 2 s on a cold Vercel instance is not known until
+  it is measured there. If it is not, the dataset generator would have to
+  build one connection without building all of them.
+- A period that has not ended (as-of before the period end) would need an
+  open interruption counted to the as-of time, not the period end. Not
+  built; the demo clock is the period end.
+
+**Acceptance, as met.** Typecheck clean; 452 unit tests; lint clean; both
+builds; 43 browser tests against both builds. Screenshots:
+`docs/screenshots/phase6close`.
 
 **The workspaces.**
 

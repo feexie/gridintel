@@ -2,8 +2,35 @@
 
 Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
-`FOUNDING_DIRECTIVE.md`.
+`private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase 6 close-out (2026-10-07).** Since 6c-3:
+>
+> - **Two ways to render, chosen by one question** (ADR 0012).
+>   `datasetIsFixed()` in the composition root: true for the synthetic
+>   demonstration adapter. Then the network screens (112 pages) are rendered
+>   when the application is built, a service point is rendered on its first
+>   visit, and no warm-up runs. For any other adapter every data screen is
+>   rendered on request from the result cache, behind the warm-up and the
+>   preparing page, as before. Every data route asks
+>   `src/app/dashboard/utility/screen.ts`; nothing else knows which path is
+>   taken.
+> - **Two builds, both tested.** `GRIDINTEL_RENDER=request` builds the
+>   request path into `.next-request` (`npm run build:request`). `verify`
+>   builds both; the browser tests run against both.
+> - **Longer lists are paths** (`…/all`), not query strings; the old
+>   addresses redirect.
+> - **An outage has a status** (`Outage.status`, from its source). Open with
+>   no restoration time is in progress; closed or unstated with none is a
+>   data-quality item (ADR 0013, amendment). `openOutagesAt` gives one row
+>   for each outage. An open interruption counts in the reliability indices
+>   to the end of the period, and the result is provisional (reliability
+>   methodology 0.3.0; ADR 0013, second amendment).
+> - **Not found.** `src/app/not-found.tsx` shows the dashboard frame with the
+>   SYNTHETIC DATA bar.
+> - **The founding directive is not in the repository.** It is in
+>   `private/`, which is not committed.
+>
 > **State at the Phase 6c-3 checkpoint (2026-10-07).** Since 6c-2:
 >
 > - **Workspaces.** `/dashboard/utility/assets` and `/events` complete the
