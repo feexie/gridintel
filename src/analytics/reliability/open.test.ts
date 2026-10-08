@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Outage } from "@/domain";
 import { PROVENANCE } from "../__fixtures__/network.ts";
-import { openExposuresAt } from "./open.ts";
+import { openExposuresAt, openOutagesAt } from "./open.ts";
 
 const AT = "2026-01-02T00:00:00Z";
 
@@ -66,6 +66,36 @@ describe("interruptions open at a time", () => {
       AT,
     );
     assert.deepEqual(result.exposures.map((exposure) => exposure.outageId), ["OUT-2"]);
+  });
+
+  it("calls an exposure with no restoration time in progress only when the source says the outage is open", () => {
+    const open = { ...outage("OUT-OPEN", [["DT-1", "2026-01-01T23:20:00Z", undefined, 30], ["DT-2", "2026-01-01T23:20:00Z", undefined, 12]]), status: "open" as const };
+    const closed = { ...outage("OUT-CLOSED", [["DT-3", "2026-01-01T09:00:00Z", undefined, 7]]), status: "closed" as const };
+    const unknown = outage("OUT-UNKNOWN", [["DT-4", "2026-01-01T09:30:00Z", undefined, 1]]);
+    // Restored in stages: the outage is still open, but the part already back is over.
+    const staged = { ...outage("OUT-STAGED", [["DT-5", "2026-01-01T20:00:00Z", "2026-01-01T21:00:00Z", 50], ["DT-6", "2026-01-01T20:00:00Z", undefined, 20]]), status: "open" as const };
+    const result = openExposuresAt([open, closed, unknown, staged], AT);
+    assert.deepEqual(result.exposures.map((exposure) => [exposure.outageId, exposure.exposureIndex, exposure.state, exposure.restoredAt]), [
+      ["OUT-STAGED", 1, "in_progress", null],
+      ["OUT-OPEN", 0, "in_progress", null],
+      ["OUT-OPEN", 1, "in_progress", null],
+      ["OUT-CLOSED", 0, "restoration_not_recorded", null],
+      ["OUT-UNKNOWN", 0, "restoration_not_recorded", null],
+    ]);
+
+    // As a list shows them: one row for each outage, with the customers of the parts still off.
+    const grouped = openOutagesAt([open, closed, unknown, staged], AT);
+    assert.deepEqual(grouped.outages.map((entry) => [entry.outageId, entry.state, entry.exposures.length, entry.customersAffected, entry.customerCountBasis]), [
+      ["OUT-STAGED", "in_progress", 1, 20, "topology_derived"],
+      ["OUT-OPEN", "in_progress", 2, 42, "topology_derived"],
+      ["OUT-CLOSED", "restoration_not_recorded", 1, 7, "topology_derived"],
+      ["OUT-UNKNOWN", "restoration_not_recorded", 1, 1, "topology_derived"],
+    ]);
+  });
+
+  it("never shows a partial sum of customers as the total", () => {
+    const open = { ...outage("OUT-OPEN", [["DT-1", "2026-01-01T23:20:00Z", undefined, 30], ["DT-2", "2026-01-01T23:20:00Z", undefined, null]]), status: "open" as const };
+    assert.equal(openOutagesAt([open], AT).outages[0].customersAffected, null);
   });
 
   it("returns nothing for an empty log", () => {

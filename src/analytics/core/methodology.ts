@@ -129,11 +129,15 @@ export interface ReliabilityParameters {
 export const RELIABILITY_REFERENCE: Methodology<ReliabilityParameters> = {
   id: "gridintel.reliability.reference",
   // 0.2.0: attribution follows the origin point where one is recorded (ADR 0006, amendment).
-  version: "0.2.0",
+  // 0.3.0: an interruption still open at the end of the period counts to the period's end, and
+  // the result is provisional (ADR 0013, second amendment).
+  version: "0.3.0",
   name: "GridIntel reference reliability indices",
   description:
     "SAIDI, SAIFI, CAIDI and ASAI from outage exposure segments. Durations are clipped " +
-    "to the reporting period. Exposures without times or customer counts are excluded. " +
+    "to the reporting period. Exposures without times or customer counts are excluded, " +
+    "except that an interruption its source says is still open counts to the end of the " +
+    "period and makes the result provisional. " +
     "An interruption is attributed by where it began: only the grid and the transmission " +
     "station are upstream; sub-transmission lines are part of the distribution network.",
   authority: "gridintel_reference",

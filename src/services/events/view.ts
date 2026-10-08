@@ -1,5 +1,5 @@
 import type { AssetRef, EntityRef, ScopeRef } from "@/domain";
-import type { OpenExposure } from "../../analytics/index.ts";
+import type { OpenOutage } from "../../analytics/index.ts";
 import type { Loaded, OperationsRuntime } from "../operations/levels.ts";
 import type { AlarmSubjectView, MetricView, SourcingView } from "../operations/views.ts";
 import type { EventsWorkspaceView, OpenInterruptionRow, PlaceRow, PlaceView } from "./views.ts";
@@ -77,26 +77,27 @@ function accountsBehind(loaded: Loaded, ref: AssetRef | null): MetricView {
   }
 }
 
-const COUNT_BASIS: Record<OpenExposure["customerCountBasis"], { origin: MetricView["origin"]; words: string }> = {
+const COUNT_BASIS: Record<OpenOutage["customerCountBasis"], { origin: MetricView["origin"]; words: string }> = {
   recorded: { origin: "measured", words: "Counted for this interruption and written in the outage record." },
-  topology_derived: { origin: "calculated", words: "Read from the network model: the accounts connected under the element that lost supply." },
+  topology_derived: { origin: "calculated", words: "Read from the network model: the accounts connected under the elements still without supply." },
   estimated: { origin: "estimated", words: "A judgement written in the outage record, with no count and no model behind it." },
+  mixed: { origin: "calculated", words: "The sum of the counts the outage record gives for the parts still off, which were not all obtained the same way." },
 };
 
-function customersMetric(exposure: OpenExposure): MetricView {
-  const basis = COUNT_BASIS[exposure.customerCountBasis];
+function customersMetric(outage: OpenOutage): MetricView {
+  const basis = COUNT_BASIS[outage.customerCountBasis];
   return {
     label: "Customers affected",
-    value: exposure.customersAffected,
+    value: outage.customersAffected,
     unit: "count",
     currency: null,
-    status: exposure.customersAffected === null ? "insufficient_data" : "ok",
+    status: outage.customersAffected === null ? "insufficient_data" : "ok",
     origin: basis.origin,
     derivation: basis.words,
     method: null,
     inputs: [],
-    estimatedInputs: exposure.customerCountBasis === "estimated" && exposure.customersAffected !== null ? [{ name: "Customers affected", share: 1 }] : [],
-    missingInputs: exposure.customersAffected === null ? ["the number of customers affected, which the outage record does not give"] : [],
+    estimatedInputs: outage.customerCountBasis === "estimated" && outage.customersAffected !== null ? [{ name: "Customers affected", share: 1 }] : [],
+    missingInputs: outage.customersAffected === null ? ["the number of customers affected, which the outage record does not give for every part"] : [],
     warnings: [],
     note: null,
   };
@@ -104,18 +105,22 @@ function customersMetric(exposure: OpenExposure): MetricView {
 
 const refIfResolved = (ref: EntityRef): AssetRef | null => ("id" in ref ? ref : null);
 
-function interruptionRow(loaded: Loaded, exposure: OpenExposure): OpenInterruptionRow {
+function interruptionRow(loaded: Loaded, outage: OpenOutage): OpenInterruptionRow {
+  // The latest restoration the record gives for the parts listed; null when any of them has none.
+  const restored = outage.exposures.map((exposure) => exposure.restoredAt);
+  const lastRestored = restored.every((time): time is string => time !== null) ? ([...restored].sort().at(-1) ?? null) : null;
   return {
-    key: `${exposure.outageId}#${exposure.exposureIndex}`,
-    outageId: exposure.outageId,
-    affected: alarmSubject(loaded, exposure.affected),
-    place: placeView(loaded, refIfResolved(exposure.affected)),
-    beganAt: alarmSubject(loaded, exposure.origin),
-    cause: CAUSE_LABEL[exposure.cause] ?? exposure.cause,
-    planned: exposure.planned,
-    interruptedAt: exposure.interruptedAt,
-    restoredAt: exposure.restoredAt,
-    customers: customersMetric(exposure),
+    outageId: outage.outageId,
+    status: outage.status,
+    beganAt: alarmSubject(loaded, outage.origin),
+    // Where it began; for an origin that is not a registry asset, where its first part is.
+    place: placeView(loaded, refIfResolved(outage.origin) ?? refIfResolved(outage.exposures[0].affected)),
+    affected: outage.exposures.map((exposure) => alarmSubject(loaded, exposure.affected)),
+    cause: CAUSE_LABEL[outage.cause] ?? outage.cause,
+    planned: outage.planned,
+    interruptedAt: outage.interruptedAt,
+    restoredAt: lastRestored,
+    customers: customersMetric(outage),
   };
 }
 
@@ -139,7 +144,7 @@ async function build(runtime: OperationsRuntime): Promise<EventsWorkspaceView> {
   const alarms = await allAlarmsBlock(runtime, loaded, portfolio);
   const open = await openInterruptions({ repos: runtime.repos, period: runtime.period, asOf: runtime.now, cache: runtime.cache });
   const records = { powerTransformers: snapshot.powerTransformers, edgeDevices: snapshot.edgeDevices };
-  const inProgress = open.result.exposures.filter((exposure) => exposure.state === "in_progress");
+  const inProgress = open.result.outages.filter((outage) => outage.state === "in_progress");
 
   const places: PlaceRow[] = [];
   const placeRow = async (kind: PlaceRow["kind"], id: string, name: string, within: string | null): Promise<PlaceRow> => {
@@ -155,11 +160,13 @@ async function build(runtime: OperationsRuntime): Promise<EventsWorkspaceView> {
       clearedAlarms: own.recorded.clearedTotal,
       conditions: own.derived.conditions.length,
       conditionsHolding: own.derived.conditions.filter((condition) => condition.activeNow === true).length,
-      interruptionsInProgress: inProgress.filter((exposure) => {
-        const ref = refIfResolved(exposure.affected);
-        const place = ref === null ? null : placeOfAsset(index, records, ref);
-        return place !== null && (kind === "substation" ? place.substationId === id : place.feederId === id);
-      }).length,
+      interruptionsInProgress: inProgress.filter((outage) =>
+        outage.exposures.some((exposure) => {
+          const ref = refIfResolved(exposure.affected);
+          const place = ref === null ? null : placeOfAsset(index, records, ref);
+          return place !== null && (kind === "substation" ? place.substationId === id : place.feederId === id);
+        }),
+      ).length,
       accounts: registryCount("Active accounts", activeAccountsUnder(loaded, scope)),
     };
   };
@@ -188,8 +195,8 @@ async function build(runtime: OperationsRuntime): Promise<EventsWorkspaceView> {
             : completeness === "partial"
               ? "The outage log is partial: an interruption not listed here may still be in progress."
               : null,
-        inProgress: inProgress.map((exposure) => interruptionRow(loaded, exposure)),
-        restorationNotRecorded: open.result.exposures.filter((exposure) => exposure.state === "restoration_not_recorded").map((exposure) => interruptionRow(loaded, exposure)),
+        inProgress: inProgress.map((outage) => interruptionRow(loaded, outage)),
+        restorationNotRecorded: open.result.outages.filter((outage) => outage.state === "restoration_not_recorded").map((outage) => interruptionRow(loaded, outage)),
         startNotRecorded: open.result.startNotRecorded,
       },
     },

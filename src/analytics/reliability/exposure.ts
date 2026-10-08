@@ -29,7 +29,33 @@ import { MS_PER_MINUTE, overlapMinutes, periodBounds, toEpochMs } from "../core/
    Without a restoration time the duration is unknown, so the
    exposure cannot be classified as sustained or momentary and is
    excluded from both SAIDI and SAIFI.
+
+   OPEN OUTAGES (methodology 0.3.0; ADR 0013, second amendment). The
+   one exception: an exposure with no restoration time whose outage
+   the source says is OPEN is an interruption still in progress, not
+   a gap in the record. It counts, with its duration taken to the end
+   of the period: the customers were without supply from when it
+   began to at least then. That is a fact, not an estimate, but it is
+   not final: the same period recalculated after the restoration is
+   recorded can only stay the same. Results that include such an
+   exposure are marked PROVISIONAL and say how many open outages they
+   include. An exposure of an open outage that began at or after the
+   end of the period belongs to a later period.
+
+   This rests on the record having been taken at or after the end of
+   the period. An outage open when the record was taken is taken to
+   have been open at the period's end.
 ========================================================== */
+
+/** The words a result carries when it includes interruptions still open at the end of the period. */
+export function provisionalNote(openOutages: number): string {
+  return `Provisional: includes ${openOutages} open outage(s); duration counted to period end.`;
+}
+
+/** How many open outages have an exposure counted in a set of classified exposures. */
+export function openOutagesCounted(exposures: readonly ClassifiedExposure[]): number {
+  return new Set(exposures.filter((exposure) => exposure.openAtPeriodEnd && exposure.dataExclusion === null).map((exposure) => exposure.outageId)).size;
+}
 
 export type ExclusionReason =
   | "INTERRUPTION_TIME_UNKNOWN"
@@ -60,8 +86,13 @@ export interface ClassifiedExposure {
   customersAffected: number | null;
   interruptedAt: IsoTimestamp | null;
   restoredAt: IsoTimestamp | null;
-  /** Full duration of the exposure, regardless of the period. */
+  /** Full duration of the exposure, regardless of the period. For an exposure still open, its duration to the end of the period. */
   durationMinutes: number | null;
+  /**
+   * True when the exposure has no restoration time and its outage is open: it is counted to the
+   * end of the period, and a result that includes it is provisional.
+   */
+  openAtPeriodEnd: boolean;
   /** The part of the exposure inside the period. */
   minutesInPeriod: number;
   durationClass: "sustained" | "momentary" | null;
@@ -124,12 +155,16 @@ export function classifyExposures(params: {
 
     outage.exposures.forEach((exposure, exposureIndex) => {
       const startMs = exposure.interruptedAt === undefined ? undefined : toEpochMs(exposure.interruptedAt);
-      const endMs = exposure.restoredAt === undefined ? undefined : toEpochMs(exposure.restoredAt);
+      // Still in progress: no restoration time, and the source says the outage is open.
+      const openAtPeriodEnd = exposure.restoredAt === undefined && outage.status === "open";
+      const endMs = openAtPeriodEnd ? bounds?.endMs : exposure.restoredAt === undefined ? undefined : toEpochMs(exposure.restoredAt);
 
       let dataExclusion: ExclusionReason | null = null;
       if (startMs === undefined) dataExclusion = "INTERRUPTION_TIME_UNKNOWN";
       else if (startMs === null || endMs === null || bounds === null) dataExclusion = "INVALID_TIMESTAMP";
       else if (endMs === undefined) dataExclusion = "RESTORATION_TIME_UNKNOWN";
+      // An open outage that began at or after the end of the period belongs to a later one.
+      else if (openAtPeriodEnd && endMs <= startMs) dataExclusion = "OUTSIDE_PERIOD";
       else if (endMs < startMs) dataExclusion = "RESTORED_BEFORE_INTERRUPTED";
       else if (exposure.customersAffected === null) dataExclusion = "CUSTOMERS_UNKNOWN";
 
@@ -181,6 +216,7 @@ export function classifyExposures(params: {
         interruptedAt: exposure.interruptedAt ?? null,
         restoredAt: exposure.restoredAt ?? null,
         durationMinutes,
+        openAtPeriodEnd,
         minutesInPeriod,
         durationClass,
         planned: outage.planned,

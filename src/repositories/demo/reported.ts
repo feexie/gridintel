@@ -77,7 +77,11 @@ const REPORTED_HEADLINES: readonly Headline[] = [
   ...headlines({ kind: "feeder", id: "FD-OLD" }, { atcc: 52.0, collection: 72.0, saidiHours: 5.0, saifi: 1.4 }, "accrual"),
   ...headlines({ kind: "substation", id: "SS-HIL" }, { atcc: 33.0, collection: 74.0, saidiHours: 1.9, saifi: 0.8 }),
   ...headlines({ kind: "feeder", id: "FD-GOV" }, { atcc: 30.0, collection: 76.0, saidiHours: 2.7, saifi: 1.0 }),
-  ...headlines({ kind: "feeder", id: "FD-FRM" }, { atcc: 61.0, collection: 55.0, saidiHours: 0.4, saifi: 0.2 }),
+  // Farm Road's report counts the fault still open at month end, to the end of the month, as the
+  // calculation beside it does: 40 minutes and one interruption for every customer on the feeder,
+  // on top of the rest of the month. Like the other feeder reports it is close to the records on
+  // its own attribution rule.
+  ...headlines({ kind: "feeder", id: "FD-FRM" }, { atcc: 61.0, collection: 55.0, saidiHours: 1.0, saifi: 1.1 }),
 ];
 
 function headlines(

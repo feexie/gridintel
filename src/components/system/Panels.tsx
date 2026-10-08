@@ -18,7 +18,7 @@ import type {
 import type { ValuationView } from "@/services/revenue/views";
 import { MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "./Metric";
 import { HeadRow, Row, SubHead, Table, Td, Th } from "./Table";
-import { formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatSigned, formatTime, levelHref } from "./format";
+import { WORKSPACE_HREF, formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatSigned, formatTime, fullListHref, levelHref } from "./format";
 
 /* Chart colours are design tokens (globals.css): categorical slots validated for the panel surface. */
 const SERIES = { technical: "var(--color-series-technical)", commercial: "var(--color-series-commercial)", collection: "var(--color-series-collection)" };
@@ -429,7 +429,7 @@ export function RevenueGapPanel({ gap, below, valuation }: { gap: RevenueGapView
               {valuation.complete
                 ? `All ${valuation.sectionsTotal} sections, largest amount first, then the residuals above them.`
                 : `The ${valuation.limit} largest of ${valuation.sectionsTotal} sections by amount, then the residuals above them. The rows shown do not add up to the commercial gap.`}{" "}
-              <Link href={valuation.complete ? "?" : "?valuation=all"} className="text-link hover:underline">
+              <Link href={valuation.complete ? WORKSPACE_HREF.revenue : fullListHref(WORKSPACE_HREF.revenue)} className="text-link hover:underline">
                 {valuation.complete ? `Show the ${valuation.limit} largest` : `Show all ${valuation.sectionsTotal}`}
               </Link>
             </p>
@@ -525,6 +525,11 @@ export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliabili
   return (
     <Panel title="Reliability and hours of supply" aside={<span>Customers served: <MetricCell metric={reliability.customersServed} /></span>}>
       {reliability.scopeNote ? <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90">{reliability.scopeNote}</p> : null}
+      {reliability.provisional ? (
+        <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90" data-provisional>
+          {reliability.provisional} The figures are calculated, not estimated; they are not final until the restoration is recorded.
+        </p>
+      ) : null}
       <div className="grid gap-2 md:grid-cols-5">
         <MetricTile metric={reliability.saidi} sourcing={reliability.sourcing} emphasis />
         <MetricTile metric={reliability.saifi} sourcing={reliability.sourcing} />

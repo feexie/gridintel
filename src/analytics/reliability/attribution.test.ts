@@ -148,7 +148,7 @@ describe("reliability attribution by origin point", () => {
 
   it("names the methodology version that carries the rule", () => {
     const result = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: [], customersServed: served(10), context: CONTEXT });
-    assert.deepEqual(result.saidi.methodology, { id: "gridintel.reliability.reference", version: "0.2.0" });
+    assert.deepEqual(result.saidi.methodology, { id: "gridintel.reliability.reference", version: "0.3.0" });
   });
 });
 
@@ -199,5 +199,46 @@ describe("hours of supply and band compliance", () => {
     assert.deepEqual(supply("A", null).missingInputs, ["customers served"]);
     assert.equal(supply("A", 0).status, "not_computable");
     assert.equal(supply("A", 10, { start: "2026-01-01T00:00:00Z", end: "2026-01-02T12:00:00Z" }).status, "not_computable");
+  });
+});
+
+describe("an interruption still open at the end of the period", () => {
+  // 10 customers, two days. A fault from 23:00 on day 2 that its source says is open: one hour inside the period.
+  const open: Outage = { ...outage("OUT-OPEN", "fault", "distribution", 10, "2026-01-02T23:00:00Z"), status: "open" };
+  const closedNoTime: Outage = { ...outage("OUT-GAP", "fault", "distribution", 10, "2026-01-02T20:00:00Z"), status: "closed" };
+  const unstated: Outage = outage("OUT-UNSTATED", "fault", "distribution", 10, "2026-01-02T20:00:00Z");
+
+  it("counts to the end of the period, and marks the result provisional without calling it an estimate", () => {
+    const result = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: [open], customersServed: served(10), context: CONTEXT });
+    assert.ok(approx(result.saidi.value as number, 60));
+    assert.equal(result.saifi.value, 1);
+    assert.equal(result.saidi.status, "ok");
+    assert.equal(result.saidi.quality, "measured");
+    assert.deepEqual(result.provisional, { openOutages: 1, note: "Provisional: includes 1 open outage(s); duration counted to period end." });
+    assert.ok(result.saidi.warnings.some((warning) => warning.code === "OPEN_OUTAGES_COUNTED"));
+    assert.equal(result.components.excludedForData, 0);
+    assert.equal(result.saidi.methodology.version, "0.3.0");
+  });
+
+  it("does not count a record with no restoration time whose outage is closed or has no status", () => {
+    const result = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: [closedNoTime, unstated], customersServed: served(10), context: CONTEXT });
+    assert.equal(result.saidi.value, 0);
+    assert.equal(result.provisional, null);
+    assert.equal(result.components.excludedForData, 2);
+  });
+
+  it("leaves an open outage that began after the period to a later period", () => {
+    const later: Outage = { ...outage("OUT-LATER", "fault", "distribution", 10, "2026-01-03T01:00:00Z"), status: "open" };
+    const result = calculateReliability({ scope: SCOPE, period: TWO_DAYS, outages: [later], customersServed: served(10), context: CONTEXT });
+    assert.equal(result.saidi.value, 0);
+    assert.equal(result.provisional, null);
+    assert.equal(result.components.outsidePeriod, 1);
+  });
+
+  it("takes the same hour out of the day's hours of supply, provisionally", () => {
+    const supply = calculateSupplyHours({ scope: SCOPE, period: TWO_DAYS, outages: [open], customersServed: served(10), band: null, context: CONTEXT });
+    assert.deepEqual(supply.days.map((day) => day.hoursOfSupply), [24, 23]);
+    assert.equal(supply.openOutages, 1);
+    assert.ok(supply.warnings.some((warning) => warning.code === "OPEN_OUTAGES_COUNTED"));
   });
 });

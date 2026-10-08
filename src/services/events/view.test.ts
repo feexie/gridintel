@@ -17,6 +17,7 @@ describe("events / alarms workspace", async () => {
     assert.deepEqual(
       view.now.alarms.map((row) => [row.alarm.code, row.alarm.severity, row.alarm.subject.label, row.place.path.map((step) => step.id).join(">"), row.alarm.acknowledgedAt !== null]),
       [
+        ["FDR-EF-TRIP", "high", "Farm Road 11 kV feeder", "SS-HIL>FD-FRM", true],
         ["DC-SUPPLY-LOW", "high", "Hillcrest 33/11 kV injection substation", "SS-HIL", false],
         ["RTU-COMMS-FAIL", "medium", "Monitor on South Gate transformer", "SS-RIV>FD-OLD", true],
         ["PT-OIL-TEMP-HIGH", "medium", "Riverside T1", "SS-RIV", true],
@@ -30,7 +31,7 @@ describe("events / alarms workspace", async () => {
 
   it("who is affected: accounts behind the asset, from the registry, never called customers without supply", () => {
     const behind = Object.fromEntries(view.now.alarms.map((row) => [row.alarm.code, row.accountsBehind]));
-    assert.deepEqual([behind["DC-SUPPLY-LOW"].value, behind["RTU-COMMS-FAIL"].value, behind["PT-OIL-TEMP-HIGH"].value], [2781, 42, 3543]);
+    assert.deepEqual([behind["FDR-EF-TRIP"].value, behind["DC-SUPPLY-LOW"].value, behind["RTU-COMMS-FAIL"].value, behind["PT-OIL-TEMP-HIGH"].value], [1015, 2781, 42, 3543]);
     for (const metric of Object.values(behind)) {
       assert.equal(metric.label, "Active accounts behind it");
       assert.match(metric.note ?? "", /Not a count of customers without supply/);
@@ -54,17 +55,27 @@ describe("events / alarms workspace", async () => {
     for (const condition of view.alarms.derived.conditions) assert.equal(alarmIds.has(condition.key), false);
   });
 
-  it("interruptions: one with no restoration time is listed apart and is not called in progress", () => {
+  it("interruptions: the outage its source calls open is in progress, as one row with the customers of its parts", () => {
     const { interruptions } = view.now;
     assert.equal(interruptions.completeness, "complete");
     assert.equal(interruptions.note, null);
-    assert.deepEqual(interruptions.inProgress, []);
     assert.deepEqual(
-      interruptions.restorationNotRecorded.map((row) => [row.outageId, row.affected.label, row.restoredAt, row.customers.value, row.customers.origin, row.place.path.map((step) => step.id).join(">")]),
-      [["OUT-2026-09-21-SP-COMPLAINT", "SP-MKT2-001", null, 1, "measured", "SS-RIV>FD-MKT"]],
+      interruptions.inProgress.map((row) => [row.outageId, row.status, row.beganAt.label, row.affected.length, row.interruptedAt, row.restoredAt, row.customers.value, row.customers.origin]),
+      [["OUT-2026-09-30-FD-FRM-FAULT", "open", "Farm Road 11 kV feeder", 10, "2026-09-30T23:20:00+01:00", null, 1015, "calculated"]],
+    );
+    assert.deepEqual(interruptions.inProgress[0].place.path.map((step) => step.id), ["SS-HIL", "FD-FRM"]);
+    // Every account on Farm Road is behind one of the ten transformers still off.
+    assert.equal(interruptions.inProgress[0].customers.value, view.places.find((place) => place.id === "FD-FRM")?.accounts.value);
+    assert.deepEqual(view.places.map((place) => [place.id, place.interruptionsInProgress]), [["SS-RIV", 0], ["FD-MKT", 0], ["FD-OLD", 0], ["SS-HIL", 1], ["FD-FRM", 1], ["FD-GOV", 0]]);
+  });
+
+  it("interruptions: a record with no restoration time and no open status is a data-quality item, not in progress", () => {
+    const { interruptions } = view.now;
+    assert.deepEqual(
+      interruptions.restorationNotRecorded.map((row) => [row.outageId, row.status, row.affected.map((subject) => subject.label).join(), row.restoredAt, row.customers.value, row.customers.origin, row.place.path.map((step) => step.id).join(">")]),
+      [["OUT-2026-09-21-SP-COMPLAINT", null, "SP-MKT2-001", null, 1, "measured", "SS-RIV>FD-MKT"]],
     );
     assert.equal(interruptions.startNotRecorded, 0);
-    for (const place of view.places) assert.equal(place.interruptionsInProgress, 0, place.id);
   });
 
   it("where: every substation and feeder, with the lengths of the lists its own screen shows", async () => {
@@ -88,8 +99,8 @@ describe("events / alarms workspace", async () => {
       ["SS-RIV", 2, 6, 2, 1],
       ["FD-MKT", 0, 1, 0, 0],
       ["FD-OLD", 1, 3, 2, 1],
-      ["SS-HIL", 1, 21, 1, 0],
-      ["FD-FRM", 0, 1, 0, 0],
+      ["SS-HIL", 2, 21, 1, 0],
+      ["FD-FRM", 1, 1, 0, 0],
       ["FD-GOV", 0, 1, 1, 0],
     ]);
   });

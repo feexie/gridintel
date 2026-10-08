@@ -6,7 +6,7 @@ import { RELIABILITY_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { worstQuality } from "../core/quality.ts";
 import { finalizeKpi, ratio } from "../core/result.ts";
 import { MS_PER_MINUTE, periodBounds } from "../core/time.ts";
-import { ATTRIBUTION_CLASSES, classifyExposures } from "./exposure.ts";
+import { ATTRIBUTION_CLASSES, classifyExposures, openOutagesCounted, provisionalNote } from "./exposure.ts";
 
 /* ==========================================================
    ANALYTICS — RELIABILITY INDICES
@@ -65,6 +65,11 @@ export interface ReliabilityComponents {
   excludedForData: number;
   /** Valid exposures that belong to other periods; not a data problem. */
   outsidePeriod: number;
+  /**
+   * Outages still open at the end of the period with an exposure in the counts, each counted to
+   * the period's end. Above zero, the indices are provisional.
+   */
+  openOutages: number;
 }
 
 /** One attribution class's contribution to SAIDI and SAIFI; the classes sum to the totals. */
@@ -80,6 +85,11 @@ export interface AttributedIndices {
 
 export interface ReliabilityResult {
   components: ReliabilityComponents;
+  /**
+   * Set when the indices include interruptions still open at the end of the period: how many
+   * outages, and the words that must be shown with the figures. Not an estimate; not final.
+   */
+  provisional: { openOutages: number; note: string } | null;
   attribution: Record<AttributionClass, AttributedIndices>;
   saidi: CalculatedKpi;
   saifi: CalculatedKpi;
@@ -124,6 +134,7 @@ export function reliabilityComponents(params: {
     momentary: emptyTotals(),
     excludedForData: 0,
     outsidePeriod: 0,
+    openOutages: openOutagesCounted(exposures),
   };
 
   for (const exposure of exposures) {
@@ -185,6 +196,9 @@ export function calculateReliability(params: {
         "time or customer count was missing or invalid.",
     });
   }
+
+  const provisional = components.openOutages > 0 ? { openOutages: components.openOutages, note: provisionalNote(components.openOutages) } : null;
+  if (provisional !== null) warnings.push({ code: "OPEN_OUTAGES_COUNTED", message: provisional.note });
 
   const counted = components.exposures.filter((e) => e.countsForSaidi || e.countsForSaifi);
   const derivedCounts = counted.filter((e) => e.customerCountBasis === "topology_derived").length;
@@ -333,6 +347,7 @@ export function calculateReliability(params: {
     const unknown = { saidi: null, saifi: null };
     return {
       components,
+      provisional,
       attribution: {
         network: { ...attributed("network"), ...unknown },
         upstream_supply: { ...attributed("upstream_supply"), ...unknown },
@@ -347,6 +362,7 @@ export function calculateReliability(params: {
   }
   return {
     components,
+    provisional,
     attribution: {
       network: attributed("network"),
       upstream_supply: attributed("upstream_supply"),

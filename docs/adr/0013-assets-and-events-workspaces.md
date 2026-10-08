@@ -1,9 +1,11 @@
 # ADR 0013: What "requires attention", "wrong now" and "affected" mean on the Assets and Events / Alarms workspaces
 
 Date: 2026-10-07
-Status: Implemented in Phase 6c-3 as engineering choices. **Three of them
-touch what a figure is said to mean; the Founder is asked to confirm them at
-the 6c-3 checkpoint** (see the end).
+Status: Accepted, with decision 7 replaced. Implemented in Phase 6c-3 as
+engineering choices; at the 6c-3 checkpoint (2026-10-07) the Founder
+confirmed decisions 1, 2 and 8 and changed decision 7. See "Amendment" at
+the end, which replaces decision 7 and the first item of "For the Founder to
+confirm".
 
 ## Context
 
@@ -82,3 +84,98 @@ a borrowed number.
 - **Decision 8**: "accounts behind it" for alarms, in place of "customers
   affected".
 - **Decisions 1 and 2**: no score, and this order.
+
+## Amendment (2026-10-07): an outage has a status, and open means in progress
+
+**Founder's decision at the 6c-3 checkpoint.** Decision 7 is replaced.
+Decisions 1, 2 and 8 are confirmed as written.
+
+Decision 7 treated every outage record with no restoration time alike, as
+"restoration not recorded". That is wrong for the normal case in a control
+room, where an interruption in progress has no restoration time because it
+has not been restored. What tells the two apart is not in the times; it is
+the status the source system gives the outage.
+
+1. **An outage carries the status its source gives it**: `Outage.status`,
+   `open` or `closed`, optional. It is never inferred from the times. A
+   source that does not state a status leaves it undefined.
+2. **In progress** at a time: the exposure began at or before it, and either
+   the record says supply came back after it, or it has no restoration time
+   and the outage is `open`.
+3. **Restoration not recorded**: no restoration time, and the outage is
+   `closed` or has no status. This is a data-quality item. It is listed
+   under its own heading, is not counted as in progress, and the screen
+   says so.
+4. **An outage restored in stages stays open** until its last part is back.
+   A part with a restoration time at or before the as-of time is over, even
+   in an open outage.
+5. **A list shows one row for each outage**, with the parts still off and
+   the sum of their customers (`openOutagesAt`). The sum is null when any
+   part gives no count, so a partial sum is never shown as the total.
+6. The status is the source's status when the record was taken. The demo
+   clock is the end of the dataset, so the two coincide. With live data, a
+   question asked "as of" an earlier time than the extraction would need
+   the status history, which is not modelled.
+
+### On the synthetic dataset
+
+One outage is open at the demo clock: the 11 kV fault on Farm Road from
+23:20 on 30 September, ten transformers, 1,015 customers, with its
+earth-fault trip alarm standing. The 21 September complaint has no status
+and stays "restoration not recorded". Portfolio energy received fell by 166
+kWh (2,104,984 to 2,104,819) and revenue not realised by ₦5,146
+(₦46,310,113 to ₦46,304,966); ATC&C is 31.45% on both, now printed as 31.4%
+where it was 31.5%.
+
+## Second amendment (2026-10-07): an open interruption counts, and the result is provisional
+
+**Founder's decision.** The first amendment left the open outage out of the
+reliability indices, because the methodology counted an exposure only when
+it had both times. That understated what happened. It is changed:
+
+1. **An interruption still open at the end of the period counts**, with its
+   duration taken to the end of the period. The customers were without
+   supply from when it began to at least then.
+2. **The result is provisional**, and says so: "Provisional: includes n open
+   outage(s); duration counted to period end." The marker is on SAIDI,
+   SAIFI, CAIDI, ASAI and hours of supply, and stays until a restoration
+   time is recorded.
+3. **It is not an estimate.** The status of the figures stays "calculated";
+   no input is estimated. Provisional means not final, not uncertain.
+4. Only an outage the source says is **open** is treated this way. A record
+   with no restoration time whose outage is closed, or has no status, is
+   still excluded for missing data.
+5. An open outage that began at or after the end of the period belongs to a
+   later period.
+6. This rests on the record having been taken at or after the end of the
+   period: an outage open when the record was taken is taken to have been
+   open at the period's end. A report for a period that has not ended would
+   need the as-of time instead; that case is not built.
+7. An open exposure is classed as sustained or momentary by its duration to
+   the period's end, like any other. One that began less than five minutes
+   before the period ended is therefore momentary for that period.
+
+**Methodology versions.** `gridintel.reliability.reference` 0.3.0 (was
+0.2.0); `gridintel.supply_hours.reference` 0.2.0 (was 0.1.0).
+
+### What moved on the synthetic dataset
+
+| Farm Road 11 kV feeder | Before | After |
+| --- | --- | --- |
+| SAIDI | 441.8 h | 442.5 h, provisional |
+| SAIFI | 79.1 | 80.1 |
+| Network-attributable SAIDI | 57.1 h | 57.8 h |
+| Hours of supply per day | 9.27 | 9.25 |
+| Days below the Band D minimum of 8 h | 9 of 30 | 10 of 30 (30 September fell below it) |
+| Exposures excluded for missing data | 10 | 0 |
+
+The difference in SAIDI is 0.67 h: 40 minutes for every one of the feeder's
+1,015 customers. Hillcrest's network SAIDI rose from 22.8 h to 23.1 h and
+the portfolio's SAIDI from 240.9 h to 241.0 h; both are provisional. No
+figure at Riverside moved.
+
+**The synthetic Farm Road report was changed with it**, from 0.4 h and 0.2
+to 1.0 h and 1.1, so that it still agrees with the records on its own
+attribution rule: the designed case there is "no difference on the report's
+own rule", and a report for the month would count the fault too. What the
+rule changes is unchanged: +56.7 h.

@@ -3,7 +3,7 @@ import type { Methodology } from "../core/methodology.ts";
 import type { CalcStatus, CalculationContext, InputValue, Warning } from "../core/result.ts";
 import { REFERENCE_DISCLAIMER, RELIABILITY_REFERENCE, methodologyRef } from "../core/methodology.ts";
 import { MS_PER_MINUTE, periodBounds } from "../core/time.ts";
-import { classifyExposures } from "./exposure.ts";
+import { classifyExposures, openOutagesCounted, provisionalNote } from "./exposure.ts";
 
 /* ==========================================================
    ANALYTICS — HOURS OF SUPPLY AND SERVICE-BAND COMPLIANCE
@@ -33,7 +33,9 @@ export interface SupplyHoursParameters {
 
 export const SUPPLY_HOURS_REFERENCE: Methodology<SupplyHoursParameters> = {
   id: "gridintel.supply_hours.reference",
-  version: "0.1.0",
+  // 0.2.0: an interruption still open at the end of the period counts to the period's end
+  // (reliability methodology 0.3.0; ADR 0013, second amendment).
+  version: "0.2.0",
   name: "GridIntel reference hours of supply",
   description:
     "Customer-weighted hours of supply per day from outage exposures, compared with the minimum hours of " +
@@ -71,6 +73,8 @@ export interface SupplyHoursResult {
   customersServed: InputValue;
   /** Exposures left out because their times or customer count are missing; supply may be overstated. */
   exposuresExcludedForData: number;
+  /** Outages still open at the end of the period that are counted to its end; above zero, the hours are provisional. */
+  openOutages: number;
   missingInputs: string[];
   warnings: Warning[];
   methodology: MethodologyRef;
@@ -112,6 +116,7 @@ export function calculateSupplyHours(params: {
     daysNonCompliant: null,
     complianceRate: null,
     exposuresExcludedForData: excluded,
+    openOutages: 0,
     missingInputs,
     warnings,
   });
@@ -128,9 +133,10 @@ export function calculateSupplyHours(params: {
   }
 
   // Classified once over the whole period to count the exposures that cannot be used at all.
-  const excluded = classifyExposures({ outages, period, methodology: RELIABILITY_REFERENCE }).filter(
-    (exposure) => exposure.dataExclusion !== null && exposure.dataExclusion !== "OUTSIDE_PERIOD",
-  ).length;
+  const classified = classifyExposures({ outages, period, methodology: RELIABILITY_REFERENCE });
+  const excluded = classified.filter((exposure) => exposure.dataExclusion !== null && exposure.dataExclusion !== "OUTSIDE_PERIOD").length;
+  const openOutages = openOutagesCounted(classified);
+  if (openOutages > 0) warnings.push({ code: "OPEN_OUTAGES_COUNTED", message: provisionalNote(openOutages) });
   if (excluded > 0) {
     warnings.push({
       code: "EXPOSURES_EXCLUDED",
@@ -172,6 +178,7 @@ export function calculateSupplyHours(params: {
     daysNonCompliant: daysCompliant === null ? null : days.length - daysCompliant,
     complianceRate: daysCompliant === null ? null : daysCompliant / days.length,
     exposuresExcludedForData: excluded,
+    openOutages,
     missingInputs: [],
     warnings,
   };

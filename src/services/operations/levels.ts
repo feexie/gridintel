@@ -572,12 +572,15 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
   const { reliability, supply } = result;
   const supplyMethod = methodView(methodologyRef(SUPPLY_HOURS_REFERENCE));
   const supplyStatus = supply.status;
+  // A result that includes an interruption still open is provisional, and every index says so.
+  const provisional = reliability.provisional?.note ?? null;
   const view: Omit<ReliabilityView, "reported" | "ruleFindings"> = {
     sourcing: sourcingView(sourcing),
-    saidi: kpiMetric("SAIDI", reliability.saidi),
-    saifi: kpiMetric("SAIFI", reliability.saifi),
-    caidi: kpiMetric("CAIDI", reliability.caidi),
-    asai: kpiMetric("ASAI", reliability.asai),
+    saidi: kpiMetric("SAIDI", reliability.saidi, { note: provisional }),
+    saifi: kpiMetric("SAIFI", reliability.saifi, { note: provisional }),
+    caidi: kpiMetric("CAIDI", reliability.caidi, { note: provisional }),
+    asai: kpiMetric("ASAI", reliability.asai, { note: provisional }),
+    provisional,
     customersServed: inputMetric("Customers served", reliability.saidi.inputs.customersServed, "count", "Active accounts connected under the scope, counted from the registry."),
     attribution: ATTRIBUTION_LABELS.map(({ key, label, description }) => {
       const part = reliability.attribution[key];
@@ -608,7 +611,7 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
         estimatedInputs: [],
         missingInputs: supply.missingInputs,
         warnings: supply.warnings.map((warning) => warning.message),
-        note: null,
+        note: supply.openOutages > 0 ? provisional : null,
       },
       band: supply.band,
       minimumHours: supply.minimumHours,

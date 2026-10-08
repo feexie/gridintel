@@ -285,6 +285,12 @@ export interface ReliabilityView {
   asai: MetricView;
   customersServed: MetricView;
   attribution: AttributionRow[];
+  /**
+   * Set when the indices include interruptions still open at the end of the period, each counted
+   * to the period's end: the words that must be shown with the figures. The figures are
+   * calculated, not estimated, and are not final until the restorations are recorded.
+   */
+  provisional: string | null;
   /** Exposures recorded above the scope or on an unresolved name: not in any index. */
   unattributable: number;
   excludedForData: number;

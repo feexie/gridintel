@@ -146,8 +146,8 @@ describe("demo dataset: structure", () => {
 
     it("raises one alarm for each unplanned interruption that protection or a monitor would see, at the times of the outage log", () => {
       const tied = dataset.alarms.filter((alarm) => byId.has(alarm.id.replace(/^ALM-/, "OUT-")));
-      // 19 losses of the rural 33 kV line, the Riverside line fault, three feeder faults and three transformer or LV faults.
-      assert.equal(tied.length, 26);
+      // 19 losses of the rural 33 kV line, the Riverside line fault, four feeder faults and three transformer or LV faults.
+      assert.equal(tied.length, 27);
       for (const alarm of tied) {
         const outage = byId.get(alarm.id.replace(/^ALM-/, "OUT-"))!;
         assert.equal(outage.planned, false, alarm.id);
@@ -209,9 +209,15 @@ describe("demo dataset: structure", () => {
       const known = new Set([...registry.substations, ...registry.powerTransformers, ...registry.feeders, ...registry.distributionTransformers, ...registry.edgeDevices].map((asset) => asset.id));
       assert.ok(dataset.alarms.every((alarm) => "id" in alarm.subject && known.has(alarm.subject.id)));
       const standing = dataset.alarms.filter((alarm) => alarm.raisedAt !== undefined && alarm.clearedAt === undefined);
-      assert.deepEqual(standing.map((alarm) => [alarm.id, alarm.acknowledgedAt !== undefined]), [["ALM-2026-09-26-PT-RIV-1-OIL", true], ["ALM-2026-09-30-ED-DT-OLD-3-COMMS", true], ["ALM-2026-09-30-SS-HIL-DC", false]]);
+      assert.deepEqual(standing.map((alarm) => [alarm.id, alarm.acknowledgedAt !== undefined]), [
+        ["ALM-2026-09-26-PT-RIV-1-OIL", true],
+        ["ALM-2026-09-30-ED-DT-OLD-3-COMMS", true],
+        // The trip of the fault still open at the demo clock.
+        ["ALM-2026-09-30-FD-FRM-FAULT", true],
+        ["ALM-2026-09-30-SS-HIL-DC", false],
+      ]);
       assert.deepEqual(dataset.alarms.filter((alarm) => alarm.raisedAt === undefined).map((alarm) => alarm.id), ["ALM-SS-RIV-DOOR"]);
-      assert.equal(dataset.alarms.length, 31);
+      assert.equal(dataset.alarms.length, 32);
     });
   });
 
@@ -346,6 +352,29 @@ describe("demo dataset: structure", () => {
     // An unmetered connection has a service point and an account, but no meter record.
     const metered = new Set(registry.meters.flatMap((m) => (m.installation.role === "service_point" ? [m.installation.servicePointId] : [])));
     assert.equal(metered.size, CONNECTIONS.filter((c) => c.meterId !== undefined).length);
+  });
+});
+
+describe("demo dataset: the status of an outage", () => {
+  it("has one outage open at the demo clock, with no restoration time and an alarm still standing", () => {
+    const open = dataset.outages.filter((outage) => outage.status === "open");
+    assert.deepEqual(open.map((outage) => outage.id), ["OUT-2026-09-30-FD-FRM-FAULT"]);
+    const [fault] = open;
+    assert.equal(fault.exposures.length, 10);
+    for (const exposure of fault.exposures) {
+      assert.equal(exposure.interruptedAt, "2026-09-30T23:20:00+01:00");
+      assert.equal(exposure.restoredAt, undefined);
+    }
+    const alarm = dataset.alarms.find((entry) => entry.id === "ALM-2026-09-30-FD-FRM-FAULT");
+    assert.deepEqual([alarm?.raisedAt, alarm?.clearedAt, alarm?.code], ["2026-09-30T23:20:00+01:00", undefined, "FDR-EF-TRIP"]);
+  });
+
+  it("gives every other designed outage the status closed, and the complaint none", () => {
+    const unstated = dataset.outages.filter((outage) => outage.status === undefined);
+    assert.deepEqual(unstated.map((outage) => outage.id), ["OUT-2026-09-21-SP-COMPLAINT"]);
+    for (const outage of dataset.outages.filter((entry) => entry.status === "closed")) {
+      assert.ok(outage.exposures.every((exposure) => exposure.restoredAt !== undefined), outage.id);
+    }
   });
 });
 

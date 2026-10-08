@@ -380,8 +380,27 @@ exact here; a real study would not.
   registry. Their outages name them in words, as unresolved references.
 - Individual events are placed in hours that load shedding never uses on the
   feeder concerned, so no supply is recorded as off twice at once.
-- One customer complaint with no restoration time, to show how an incomplete
-  record is excluded from the indices rather than guessed at.
+- **One outage is open at the demo clock** (ADR 0013, amendment): an 11 kV
+  fault on Farm Road, conductor down, from 23:20 on 30 September. All ten
+  transformers are off, nothing has been restored, and the record has no
+  restoration time and the status `open`. *Designed so "Interruptions in
+  progress" is not empty.* Every other designed outage has the status
+  `closed`.
+  - The energy model removes Farm Road's consumption for its last 40
+    minutes, so energy received, billed and unbilled moved slightly.
+  - **It counts in SAIDI, SAIFI and hours of supply, to the end of the
+    period**, and those figures are marked provisional (ADR 0013, second
+    amendment). Farm Road's SAIDI is 442.5 h with it and would be 441.8 h
+    without: 40 minutes for each of its 1,015 customers. 30 September
+    becomes the tenth day below the band minimum.
+  - **Farm Road's reported SAIDI and SAIFI were raised to 1.0 h and 1.1**
+    (from 0.4 h and 0.2), so that the report still agrees with the records
+    on its own attribution rule.
+  - Loading "now" on Farm Road is still the 23:00 reading, the last one in
+    the dataset: the feeder tripped twenty minutes later.
+- One customer complaint with no restoration time and no status, to show how
+  an incomplete record is excluded from the indices rather than guessed at.
+  It is a data-quality item, not an interruption in progress.
 - Every interruption is recorded per transformer. Its customer count is the
   number of active accounts connected under that transformer in the
   registry, held as `topology_derived`. That is the realistic case for an
@@ -403,17 +422,19 @@ exact here; a real study would not.
 ## Alarms
 
 The alarm list a utility's SCADA and monitors would hold (ADR 0011 and its
-amendment). 31 alarms, each with the source's code and the kind it maps to.
+amendment). 32 alarms, each with the source's code and the kind it maps to.
 
-- **26 follow from the outage log**, raised when supply was lost and cleared
+- **27 follow from the outage log**, raised when supply was lost and cleared
   when the last part was restored: 19 losses of the rural 33 kV line and the
-  Riverside line fault (`INCOMER-UV`), three feeder trips, three transformer
+  Riverside line fault (`INCOMER-UV`), four feeder trips, three transformer
   or low-voltage faults (`DT-LV-LOSS`). Load shedding and planned work raise
-  none.
+  none. The alarm of the Farm Road fault still open at the demo clock is
+  not cleared: it is standing, acknowledged at 23:24.
 - **Feeder trips name the protection that operated.** Overcurrent
   (`FDR-OC-TRIP`): the three-minute trip and reclose on Market Road, and the
   cable fault on Government Avenue, which locked out. Earth fault
-  (`FDR-EF-TRIP`): the conductor down on Old Town.
+  (`FDR-EF-TRIP`): the conductor down on Old Town, and the one on Farm Road
+  that is still open.
 - **Communications failures** (`RTU-COMMS-FAIL`). The front end polls every
   remote unit hourly, substation RTUs and transformer monitors alike, and
   alarms on the second missed poll.
@@ -426,7 +447,7 @@ amendment). 31 alarms, each with the source's code and the kind it maps to.
 - **No overload alarm.** The source systems have none. *Designed so the
   loading conditions on DT-GOV-3 and DT-OLD-2 are derived conditions that no
   source alarm raised.*
-- **Three alarms for the states a list must show**: one standing and
+- **Three more alarms for the states a list must show**: one standing and
   unacknowledged (Hillcrest DC supply), one standing and acknowledged
   (Riverside T1 oil temperature), one entered by hand with no raise time
   (`DOOR-OPEN`). The last has a code that is not mapped to a kind.

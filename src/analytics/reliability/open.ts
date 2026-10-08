@@ -17,18 +17,25 @@ import { toEpochMs } from "../core/time.ts";
 
    Three cases, never merged:
 
-   - IN PROGRESS: interrupted at or before the time, and the record
-     says supply was restored after it.
-   - RESTORATION NOT RECORDED: interrupted at or before the time, and
-     the record holds no restoration time. That is either an
-     interruption still in progress or a restoration nobody wrote
-     down; the record cannot say which, and neither is assumed.
+   - IN PROGRESS: interrupted at or before the time, and either the
+     record says supply was restored after it, or it holds no
+     restoration time and the source says the outage is OPEN. An
+     open outage with no restoration time is the normal case in a
+     control room: the restoration has not happened yet.
+   - RESTORATION NOT RECORDED: interrupted at or before the time,
+     no restoration time, and the source says the outage is closed
+     or does not say. A data-quality item: the outage is over, or
+     may be, and nobody wrote down when supply came back. It is not
+     counted as in progress.
    - START NOT RECORDED: the record does not say when the exposure
      began, so its state at any time cannot be told. Counted, not
      listed.
 
    An exposure restored at or before the time is over and is not
-   returned. A time that cannot be read is treated as not recorded.
+   returned, even in an open outage: an outage restored in stages
+   stays open until its last part is back. A time that cannot be
+   read is treated as not recorded. The status is the source's; it
+   is never inferred from the times (ADR 0013, amendment).
 ========================================================== */
 
 export type OpenExposureState = "in_progress" | "restoration_not_recorded";
@@ -48,7 +55,7 @@ export interface OpenExposure {
   customersAffected: number | null;
   customerCountBasis: OutageExposure["customerCountBasis"];
   interruptedAt: IsoTimestamp;
-  /** Set only when the exposure is in progress: when the record says supply came back. */
+  /** When the record says supply came back; null when it holds no restoration time. */
   restoredAt: IsoTimestamp | null;
 }
 
@@ -91,7 +98,10 @@ export function openExposuresAt(
         exposure: {
           outageId: outage.id,
           exposureIndex,
-          state: endMs === null ? "restoration_not_recorded" : "in_progress",
+          state:
+            endMs !== null || outage.status === "open"
+              ? "in_progress"
+              : "restoration_not_recorded",
           affected: exposure.affected,
           origin: outage.origin,
           originPoint: outage.originPoint ?? null,
@@ -120,4 +130,58 @@ export function openExposuresAt(
           : a.exposure.exposureIndex - b.exposure.exposureIndex),
   );
   return { exposures: found.map((entry) => entry.exposure), startNotRecorded };
+}
+
+/** The exposures of one outage that are in one state at the time: what a list shows as one interruption. */
+export interface OpenOutage {
+  outageId: string;
+  state: OpenExposureState;
+  /** The status the source gives the outage; null when it gives none. */
+  status: "open" | "closed" | null;
+  origin: EntityRef;
+  originPoint: InterruptionOrigin | null;
+  cause: InterruptionCause;
+  planned: boolean | null;
+  /** When the first of these exposures began. */
+  interruptedAt: IsoTimestamp;
+  exposures: OpenExposure[];
+  /** The sum over the exposures; null when any of them gives no count, so that a partial sum is never shown as the total. */
+  customersAffected: number | null;
+  /** How the counts were obtained; "mixed" when the exposures differ. */
+  customerCountBasis: OutageExposure["customerCountBasis"] | "mixed";
+}
+
+/**
+ * The open exposures grouped by outage and state, in the order of
+ * `openExposuresAt`. An outage restored in stages appears once, with the
+ * parts still off.
+ */
+export function openOutagesAt(outages: readonly Outage[], at: IsoTimestamp): { outages: OpenOutage[]; startNotRecorded: number } {
+  const { exposures, startNotRecorded } = openExposuresAt(outages, at);
+  const statusOf = new Map(outages.map((outage) => [outage.id, outage.status ?? null]));
+  const groups = new Map<string, OpenOutage>();
+  for (const exposure of exposures) {
+    const key = `${exposure.state}|${exposure.outageId}`;
+    const group = groups.get(key);
+    if (group === undefined) {
+      groups.set(key, {
+        outageId: exposure.outageId,
+        state: exposure.state,
+        status: statusOf.get(exposure.outageId) ?? null,
+        origin: exposure.origin,
+        originPoint: exposure.originPoint,
+        cause: exposure.cause,
+        planned: exposure.planned,
+        interruptedAt: exposure.interruptedAt,
+        exposures: [exposure],
+        customersAffected: exposure.customersAffected,
+        customerCountBasis: exposure.customerCountBasis,
+      });
+      continue;
+    }
+    group.exposures.push(exposure);
+    group.customersAffected = group.customersAffected === null || exposure.customersAffected === null ? null : group.customersAffected + exposure.customersAffected;
+    if (group.customerCountBasis !== exposure.customerCountBasis) group.customerCountBasis = "mixed";
+  }
+  return { outages: [...groups.values()], startNotRecorded };
 }

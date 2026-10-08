@@ -144,6 +144,17 @@ export interface Outage {
     declaredBy: string;
     reference?: string;
   }[];
+  /**
+   * The outage's status as its source system holds it:
+   * - open: the source says the interruption is not over. An exposure of an
+   *   open outage with no restoration time is in progress;
+   * - closed: the source says it is over. An exposure with no restoration
+   *   time is then a gap in the record, not an interruption in progress.
+   *
+   * Undefined when the source does not say. It is never inferred from the
+   * times: a missing restoration time alone does not make an outage open.
+   */
+  status?: "open" | "closed";
   /** At least one. Each restoration step is the `restoredAt` of one or more exposures. */
   exposures: OutageExposure[];
   notes?: string;

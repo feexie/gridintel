@@ -154,14 +154,14 @@ describe("operations read models", () => {
     assert.equal(saidi?.sameBasis, true);
     assert.match(saidi?.reportedBasis ?? "", /treating as upstream: the grid, transmission stations, sub-transmission lines/);
     assert.equal(saidi?.reportedBasis, saidi?.calculatedBasis);
-    assert.ok((saidi?.calculated.value as number) < 1);
+    assert.ok((saidi?.calculated.value as number) < 1.2);
     assert.ok(Math.abs(saidi?.variance as number) < 0.1);
     // The reference figure, which puts the line faults on the network, is shown and is the screen's own network SAIDI.
     const network = farm.reliability.attribution.find((row) => row.key === "network");
     const found = saidi?.ruleFinding;
     assert.ok((found?.onReferenceRule.value as number) > 50);
     assert.ok(Math.abs((found?.onReferenceRule.value as number) - (network?.saidiHours as number)) < 1e-9);
-    // The finding is the difference, with its size: 57.1 h on the reference rule less 0.4 h on the report's.
+    // The finding is the difference, with its size: 57.8 h on the reference rule less 1.0 h on the report's.
     assert.equal(found?.statement, "Rule treats sub-transmission lines as upstream");
     assert.equal(found?.figure, "SAIDI");
     assert.deepEqual(found?.statedFor, { kind: "feeder", id: "FD-FRM", name: "Farm Road 11 kV feeder" });
@@ -386,8 +386,11 @@ describe("operations read models", () => {
     const { alarms } = (await substationView(runtime, "SS-HIL")) as NetworkLevelView;
     assert.equal(alarms.recorded.clearedTotal, 21);
     assert.equal(alarms.recorded.cleared.length, 6);
-    // The alarm standing at Hillcrest has not been acknowledged.
-    assert.deepEqual(alarms.recorded.active.map((row) => [row.id, row.acknowledgedAt]), [["ALM-2026-09-30-SS-HIL-DC", null]]);
+    // Two stand at Hillcrest: the trip of the Farm Road fault still open, and the DC alarm nobody has acknowledged.
+    assert.deepEqual(alarms.recorded.active.map((row) => [row.id, row.acknowledgedAt]), [
+      ["ALM-2026-09-30-FD-FRM-FAULT", "2026-09-30T23:24:00+01:00"],
+      ["ALM-2026-09-30-SS-HIL-DC", null],
+    ]);
   });
 
   it("give a substation's power transformers with what each carries and its loading", async () => {

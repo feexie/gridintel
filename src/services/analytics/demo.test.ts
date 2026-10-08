@@ -410,7 +410,9 @@ describe("reliability", () => {
     assert.ok(close(onRule.saidi.value, reference.saidi.value, 1e-6));
     assert.equal(onRule.attribution.load_management.customerMinutes, reference.attribution.load_management.customerMinutes);
     assert.ok((reference.attribution.network.saidi as number) / 60 > 50);
-    assert.ok((onRule.attribution.network.saidi as number) / 60 < 1);
+    // What is left on the network under the report's rule: about 0.4 h, and the 40 minutes of the fault still open at month end.
+    assert.ok((onRule.attribution.network.saidi as number) / 60 < 1.2);
+    assert.equal(onRule.provisional?.openOutages, 1);
     assert.notEqual(onRule.saidi.methodology.id, reference.saidi.methodology.id);
 
     // Against the reference calculation the two are on different rules: not comparable, no variance.
@@ -419,7 +421,7 @@ describe("reliability", () => {
     assert.equal(acrossRules.variance.absolute, null);
     assert.ok(acrossRules.issues.some((issue) => issue.code === "ATTRIBUTION_RULE_MISMATCH"));
 
-    // On its own rule the report is close to the records: 0.4 h reported.
+    // On its own rule the report is close to the records: 1.0 h reported.
     const matched = compareOnBasis(reported, [onRule.saidi, reliabilityOnBasis(onRule, ["network"]).saidi]);
     assert.equal(matched.sameBasis, true);
     assert.equal(matched.comparable, true);

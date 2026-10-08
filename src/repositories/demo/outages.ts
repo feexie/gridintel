@@ -1,5 +1,5 @@
 import type { AssetRef, EntityRef, InterruptionCause, InterruptionOrigin, Outage, OutageExposure, ResponsibleParty } from "@/domain";
-import { DEMO_DAYS, HOUR_MS, at, hourStart, wat } from "./clock.ts";
+import { DEMO_DAYS, HOUR_MS, PERIOD_END_MS, at, hourStart, wat } from "./clock.ts";
 import { CONNECTIONS, FEEDERS, MV_CUSTOMER, SUBSTATIONS, TRANSFORMERS, activeAccounts, incomerOf } from "./network.ts";
 import { seeded } from "./rng.ts";
 import { OUTAGE_SOURCE, demoProvenance } from "./sources.ts";
@@ -49,6 +49,8 @@ interface EventPlan {
   responsibleParty: ResponsibleParty;
   notes: string;
   parts: Part[];
+  /** Still open at the demo clock: its parts run to the end of the dataset and have no restoration time. */
+  open?: boolean;
 }
 
 /** The supplies on a feeder: its transformers and, on Market Road, the 11 kV customer. */
@@ -277,6 +279,20 @@ function individualEvents(): EventPlan[] {
       notes: "LV conductor down on a farm track.",
       parts: block(["FRM3"], at(24, 6, 15), at(24, 9, 40)),
     },
+    {
+      // In progress at the demo clock: the control room's normal case. The feeder locked out
+      // forty minutes before midnight and nothing has been restored, so the record has no
+      // restoration time and its status is open.
+      id: "OUT-2026-09-30-FD-FRM-FAULT",
+      origin: { kind: "feeder", id: "FD-FRM" },
+      originPoint: "mv_feeder",
+      planned: false,
+      cause: "fault",
+      responsibleParty: "distribution",
+      notes: "11 kV conductor down beyond the river crossing; patrol dispatched. Not restored.",
+      parts: block(keys("FD-FRM"), at(29, 23, 20), PERIOD_END_MS),
+      open: true,
+    },
   ];
 }
 
@@ -290,8 +306,10 @@ export interface InterruptionWindow {
   planned: boolean;
   cause: InterruptionCause;
   startMs: number;
-  /** When the last part was restored. */
+  /** When the last part was restored; the end of the dataset for an interruption still open. */
   endMs: number;
+  /** Not restored at the demo clock. */
+  open: boolean;
 }
 
 /** Every interruption that was not load shedding, in the order designed. Load shedding raises no alarm: the feeder is opened on purpose. */
@@ -303,6 +321,7 @@ export const INTERRUPTION_WINDOWS: readonly InterruptionWindow[] = EVENTS.filter
   cause: event.cause,
   startMs: Math.min(...event.parts.map((part) => part.startMs)),
   endMs: Math.max(...event.parts.map((part) => part.endMs)),
+  open: event.open === true,
 }));
 
 const TRANSFORMER_ID = new Map(TRANSFORMERS.map((dt) => [dt.key, dt.id]));
@@ -366,6 +385,7 @@ export function buildDemoOutages(): Outage[] {
     planned: event.planned,
     cause: event.cause,
     responsibleParty: event.responsibleParty,
+    status: event.open ? "open" : "closed",
     exposures: event.parts.map(
       (part): OutageExposure => ({
         affected: affected(part.supplyKey),
@@ -373,7 +393,7 @@ export function buildDemoOutages(): Outage[] {
         // As an outage system with a network model holds it: the accounts connected under the transformer.
         customerCountBasis: "topology_derived",
         interruptedAt: wat(part.startMs),
-        restoredAt: wat(part.endMs),
+        ...(event.open ? {} : { restoredAt: wat(part.endMs) }),
         quality: "measured",
       }),
     ),
@@ -381,7 +401,8 @@ export function buildDemoOutages(): Outage[] {
     provenance: demoProvenance(OUTAGE_SOURCE, event.id),
   }));
 
-  // A complaint that was logged but never closed: its restoration time is not known, so it
+  // A complaint that was logged and never followed up: the log holds no restoration time and
+  // no status for it, so it is a gap in the record, not an interruption in progress, and it
   // cannot count toward any index. Nor is it known where it began, so it has no origin point.
   // It does not change the energy model.
   const complainant = CONNECTIONS.find((c) => c.supplyKey === "MKT2" && !c.disconnected) as { servicePointId: string };

@@ -132,7 +132,8 @@ export function buildDemoAlarms(): Alarm[] {
       severity: plan.severity,
       message: plan.message,
       raisedAt: wat(window.startMs),
-      clearedAt: wat(window.endMs),
+      // An interruption still open at the demo clock has an alarm still standing.
+      ...(window.open ? {} : { clearedAt: wat(window.endMs) }),
       // Acknowledged by the control room a few minutes after it was raised.
       acknowledgedAt: wat(window.startMs + 4 * MINUTE_MS),
       quality: "measured",

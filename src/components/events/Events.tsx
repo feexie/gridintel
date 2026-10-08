@@ -26,31 +26,36 @@ function Interruptions({ rows, name }: { rows: OpenInterruptionRow[]; name: stri
   return (
     <Table name={name}>
       <HeadRow>
-        <Th>Lost supply</Th>
-        <Th>Where</Th>
         <Th>Began at</Th>
+        <Th>Where</Th>
+        <Th>Still without supply</Th>
         <Th>Cause</Th>
         <Th>Interrupted</Th>
         <Th>Restored</Th>
+        <Th>Status in the source</Th>
         <Th right>Customers affected</Th>
       </HeadRow>
       <tbody>
         {rows.map((row) => (
-          <Row key={row.key} id={row.key}>
+          <Row key={row.outageId} id={row.outageId}>
             <Td>
-              <SubjectLink subject={row.affected} />
+              <SubjectLink subject={row.beganAt} />
               <span className="block font-mono text-micro text-ink-5">{row.outageId}</span>
             </Td>
             <Td>
               <Place place={row.place} />
             </Td>
-            <Td>{row.beganAt.label}</Td>
+            <Td>
+              {formatNumber(row.affected.length)} {row.affected.length === 1 ? "element" : "elements"}
+              <span className="block text-micro leading-snug text-ink-5">{row.affected.map((subject) => subject.label).join(", ")}</span>
+            </Td>
             <Td>
               {row.cause}
               {row.planned === null ? null : <span className="block text-micro text-ink-5">{row.planned ? "planned" : "unplanned"}</span>}
             </Td>
             <Td className="whitespace-nowrap">{formatTime(row.interruptedAt)}</Td>
             <Td className="whitespace-nowrap">{row.restoredAt === null ? "No restoration time recorded" : formatTime(row.restoredAt)}</Td>
+            <Td>{row.status === null ? "Not stated" : row.status === "open" ? "Open" : "Closed"}</Td>
             <Td right>
               <MetricCell metric={row.customers} />
             </Td>
@@ -189,7 +194,9 @@ export function Events({ view }: { view: EventsWorkspaceView }) {
           <h3 className="flex flex-wrap items-center gap-2 text-caption font-semibold uppercase tracking-wide text-ink-2">
             Interruptions in progress ({formatNumber(interruptions.inProgress.length)}) <OriginTag origin="measured" />
           </h3>
-          <p className="mb-1 mt-0.5 text-caption leading-snug text-ink-4">From the outage log: supply was lost before the as-of time and the record says it came back after it.</p>
+          <p className="mb-1 mt-0.5 text-caption leading-snug text-ink-4">
+            From the outage log: supply was lost before the as-of time, and the source says the outage is open or records a restoration after it.
+          </p>
           {interruptions.note ? <Note tone="caution">{interruptions.note}</Note> : null}
           {interruptions.completeness === "not_available" ? null : interruptions.inProgress.length === 0 ? (
             <p className="py-1 text-xs text-ink-4">
@@ -203,8 +210,8 @@ export function Events({ view }: { view: EventsWorkspaceView }) {
               <SubHead>Restoration not recorded ({formatNumber(interruptions.restorationNotRecorded.length)})</SubHead>
               <Interruptions rows={interruptions.restorationNotRecorded} name="restoration-not-recorded" />
               <Note tone="caution">
-                Supply was lost before the as-of time and the outage log holds no restoration time. That is either an interruption still in progress or a restoration nobody wrote down;
-                the record cannot say which, so these are not counted as in progress.
+                A data-quality item. Supply was lost before the as-of time, the outage log holds no restoration time, and the source does not say the outage is open. These are not
+                counted as in progress.
               </Note>
             </div>
           ) : null}

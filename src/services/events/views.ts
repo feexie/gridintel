@@ -35,25 +35,25 @@ export interface HoldingConditionRow {
   accountsBehind: AccountsBehind;
 }
 
-/** A group of customers the outage log says lost supply and, at the as-of time, had not got it back. */
+/** One outage in the outage log whose customers, or some of them, had not got supply back at the as-of time. */
 export interface OpenInterruptionRow {
-  /** `outage id#exposure`. */
-  key: string;
   outageId: string;
-  /** The element that lost supply. */
-  affected: AlarmSubjectView;
-  place: PlaceView;
-  /** Where the outage record says the interruption began. */
+  /** The status the source gives the outage; null when it gives none. */
+  status: "open" | "closed" | null;
+  /** Where the outage record says the interruption began, and where that is. */
   beganAt: AlarmSubjectView;
+  place: PlaceView;
+  /** The elements still without supply. */
+  affected: AlarmSubjectView[];
   cause: string;
   planned: boolean | null;
   interruptedAt: string;
-  /** When the record says supply came back; null when it holds no restoration time. */
+  /** When the record says the last part came back; null when it holds no restoration time. */
   restoredAt: string | null;
   /**
-   * Customers affected, as the outage record gives them: counted for the interruption
-   * (measured), read from the network model (calculated), or a judgement (estimated).
-   * "insufficient_data" when the record gives none.
+   * Customers of the parts still off, as the outage record gives them: counted for the
+   * interruption (measured), read from the network model (calculated), or a judgement
+   * (estimated). "insufficient_data" when the record gives no count for some part.
    */
   customers: MetricView;
 }
@@ -70,7 +70,7 @@ export interface PlaceRow {
   clearedAlarms: number;
   conditions: number;
   conditionsHolding: number;
-  /** Exposures in progress at the as-of time on this element or below it. */
+  /** Interruptions in progress at the as-of time with a part on this element or below it. */
   interruptionsInProgress: number;
   accounts: MetricView;
 }
@@ -93,9 +93,9 @@ export interface EventsWorkspaceView {
       /** How completely the source holds the outage log. Anything but "complete" must be said. */
       completeness: "complete" | "partial" | "not_available";
       note: string | null;
-      /** The record says supply was restored after the as-of time. */
+      /** The source says the outage is open, or the record says supply was restored after the as-of time. */
       inProgress: OpenInterruptionRow[];
-      /** Interrupted before the as-of time with no restoration time held: still out, or not written down. */
+      /** No restoration time, and the source says the outage is closed or does not say: a gap in the record. */
       restorationNotRecorded: OpenInterruptionRow[];
       /** Exposures whose start the source did not record. */
       startNotRecorded: number;

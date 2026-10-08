@@ -26,7 +26,7 @@ describe("assets workspace", async () => {
   });
 
   it("lists an asset for attention only for a fact that is on it, and orders the list by the stated rule", () => {
-    assert.deepEqual(view.attention.map((row) => row.id), ["DT-OLD-3", "PT-RIV-1", "DT-OLD-2", "DT-GOV-3", "DT-FRM-3", "DT-GOV-4", "DT-MKT-2", "FD-GOV", "FD-OLD"]);
+    assert.deepEqual(view.attention.map((row) => row.id), ["DT-OLD-3", "FD-FRM", "PT-RIV-1", "DT-OLD-2", "DT-GOV-3", "DT-FRM-3", "DT-GOV-4", "DT-MKT-2", "FD-GOV", "FD-OLD"]);
     for (const row of view.attention) assert.ok(row.alarms.length > 0 || row.conditions.length > 0 || (row.interruptionsBegan ?? 0) > 0, row.id);
     // Every other asset has none of the three.
     const listed = new Set(view.attention.map((row) => row.id));
@@ -78,8 +78,10 @@ describe("assets workspace", async () => {
       assert.equal(row.interruptionsBegan, origin.interruptions, origin.subject.id);
       assert.equal(row.saidiAddedHours, origin.saidiHours, origin.subject.id);
     }
-    // Load shedding opens a feeder on purpose; it is not an interruption that began at the feeder.
-    assert.equal(asset("FD-FRM").interruptionsBegan, 0);
+    // Load shedding opens a feeder on purpose; it is not an interruption that began at the feeder. The one that did
+    // is the fault still open at the demo clock, counted to the end of the period.
+    assert.equal(asset("FD-FRM").interruptionsBegan, 1);
+    assert.deepEqual(asset("FD-FRM").alarms.map((alarm) => alarm.code), ["FDR-EF-TRIP"]);
     assert.equal(view.outageLog, "complete");
   });
 

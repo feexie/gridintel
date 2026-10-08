@@ -18,9 +18,14 @@ describe("alarms and derived conditions for a scope", () => {
     const { result, sourcing } = await at({ kind: "organization", id: DEMO_ORGANIZATION_ID });
     // Recorded: records from the alarm list, each with its state at the as-of time.
     assert.equal(result.recorded.completeness, "complete");
-    assert.equal(result.recorded.alarms.length, 31);
+    assert.equal(result.recorded.alarms.length, 32);
     assert.ok(result.recorded.alarms.every((entry) => entry.alarm.provenance.sourceSystem === "synthetic-alarms"));
-    assert.deepEqual(ids(result.recorded.alarms.filter((entry) => entry.state === "active")), ["ALM-2026-09-30-SS-HIL-DC", "ALM-2026-09-30-ED-DT-OLD-3-COMMS", "ALM-2026-09-26-PT-RIV-1-OIL"]);
+    assert.deepEqual(ids(result.recorded.alarms.filter((entry) => entry.state === "active")), [
+      "ALM-2026-09-30-FD-FRM-FAULT",
+      "ALM-2026-09-30-SS-HIL-DC",
+      "ALM-2026-09-30-ED-DT-OLD-3-COMMS",
+      "ALM-2026-09-26-PT-RIV-1-OIL",
+    ]);
     assert.deepEqual(ids(result.recorded.alarms.filter((entry) => entry.state === "time_not_recorded")), ["ALM-SS-RIV-DOOR"]);
     assert.equal(result.recorded.alarms.filter((entry) => entry.state === "cleared").length, 27);
     assert.equal(result.recorded.unplaced, 0);
@@ -93,6 +98,7 @@ describe("alarms and derived conditions for a scope", () => {
       ["ALM-2026-09-06-FD-OLD-FAULT", "FDR-EF-TRIP", "earth_fault_trip"],
       ["ALM-2026-09-09-FD-MKT-TRIP", "FDR-OC-TRIP", "overcurrent_trip"],
       ["ALM-2026-09-15-FD-GOV-FAULT", "FDR-OC-TRIP", "overcurrent_trip"],
+      ["ALM-2026-09-30-FD-FRM-FAULT", "FDR-EF-TRIP", "earth_fault_trip"],
     ]);
     // An overcurrent trip has no rule beside it: GridIntel derives no condition from it, and none is implied.
     assert.ok(!Object.keys((await at({ kind: "feeder", id: "FD-GOV" })).result.recorded.agreedBy).includes("ALM-2026-09-15-FD-GOV-FAULT"));
