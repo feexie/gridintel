@@ -17,7 +17,6 @@ planning.
 | `docs/ROADMAP.md` | Phases, their status and acceptance criteria |
 | `docs/BLUEPRINT.md` | Current versus target architecture |
 | `docs/adr/` | Decision records |
-| `docs/FOUNDING_DIRECTIVE.md` | The founding product vision |
 | `src/repositories/demo/DATASET_ASSUMPTIONS.md` | Every assumption behind the synthetic dataset |
 
 ## Tech stack
@@ -53,6 +52,8 @@ to `/dashboard`.
 | ------------------- | ------------------------------------------- |
 | `npm run dev`       | Start the development server                |
 | `npm run build`     | Create a production build                   |
+| `npm run build:request` | The same build with every data screen rendered on request (ADR 0012) |
+| `npm run verify`    | Type-check, unit tests, lint, both builds, browser tests |
 | `npm run start`     | Serve the production build                  |
 | `npm run lint`      | Run ESLint, including import boundaries     |
 | `npm run typecheck` | Type-check the project with `tsc --noEmit`  |

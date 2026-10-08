@@ -12,7 +12,9 @@ re-trigger that work and crowd out the rules that actually apply daily.
 ## Decision
 
 - `docs/FOUNDING_DIRECTIVE.md` keeps the directive verbatim as the reference
-  vision. It is read on demand, not loaded each session.
+  vision. It is read on demand, not loaded each session. (Moved on
+  2026-10-07, by Founder decision, to `private/FOUNDING_DIRECTIVE.md`, which
+  is not committed: the repository is public.)
 - `docs/ENGINEERING_RULES.md` holds the standing rules and is the only
   document `CLAUDE.md` imports besides `AGENTS.md`.
 - Decision gates define what needs Founder approval: product scope or roadmap

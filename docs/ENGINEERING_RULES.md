@@ -1,8 +1,9 @@
 # GridIntel engineering rules
 
 Standing rules for every session. For strategic context (product vision,
-modules, long-term system layers) read `docs/FOUNDING_DIRECTIVE.md`; it is the
-reference vision, not a task list. Current state and plan live in
+modules, long-term system layers) read `private/FOUNDING_DIRECTIVE.md`; it is
+the reference vision, not a task list, and it is kept out of the public
+repository (`private/` is not committed). Current state and plan live in
 `docs/BLUEPRINT.md` and `docs/ROADMAP.md`. Decisions live in `docs/adr/`.
 
 ## 1. Establish the real state first
@@ -129,14 +130,17 @@ docs.
 - Work each phase or sub-phase on its own branch (`phase-6a`, `phase-6b`).
   Merge to `main` only at the checkpoint, after the Founder approves it.
 - `npm run verify` runs the five checks in order and stops at the first
-  failure: `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`
-  and the browser tests (`npm run test:e2e`).
+  failure: `npm run typecheck`, `npm test`, `npm run lint`, the build and
+  the browser tests (`npm run test:e2e`). The build is made twice (ADR
+  0012): `npm run build:request`, with every data screen rendered on
+  request, and `npm run build`, with the network screens built ahead of
+  time. The browser tests run against both.
 - Commit only after `npm run verify` passes, and commit every time it does,
   so an interruption never loses more than one step. Push the branch as you
   go.
-- The browser tests run against the build `verify` has just made. Stop any
-  server left running on the test port first, or they will test an old
-  build.
+- The browser tests run against the builds `verify` has just made. Stop any
+  server left running on the test ports (3210 to 3213) first, or they will
+  test an old build.
 - New analytics and services come with tests. Deterministic logic is tested
   with fixed inputs and fixed times.
 - Temporary analysis scripts are removed after use. Do not modify production
