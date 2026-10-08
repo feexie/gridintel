@@ -3,7 +3,7 @@ import type { AttentionSubject, ExecutiveView, WhereToLookView } from "@/service
 import { Legend, MetricCell, OriginTag, Panel, StatusBadge } from "@/components/system/Metric";
 import { AlarmsPanel, LossesPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
 import { HeadRow, Row, Table, Td, Th } from "@/components/system/Table";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMetric, formatNumber, formatSigned, levelHref } from "@/components/system/format";
+import { LEVEL_NAME, OPERATIONS_HOME, WORKSPACE_HREF, formatMetric, formatNumber, formatSigned, fullListHref, levelHref } from "@/components/system/format";
 
 function Subject({ entry }: { entry: AttentionSubject }) {
   return (
@@ -99,7 +99,7 @@ function WhereToLook({ assetRisk, look, method }: { assetRisk: AttentionSubject[
 
       {look.complete ? null : (
         <p className="text-xs">
-          <Link href="?feeders=all" className="text-link hover:underline">
+          <Link href={fullListHref(WORKSPACE_HREF.executive)} className="text-link hover:underline">
             Show all {look.moneyTotal} feeders
           </Link>
         </p>

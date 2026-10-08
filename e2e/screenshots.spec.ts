@@ -11,6 +11,7 @@ const SHOTS: [string, string][] = [
   ["revenue", "/dashboard/utility/revenue"],
   ["assets", "/dashboard/utility/assets"],
   ["events", "/dashboard/utility/events"],
+  ["not-found", "/no-such-page"],
   ["utility-hub", "/dashboard/utility"],
   ["operations", OPERATIONS],
   ["region", `${OPERATIONS}/regions/demo-region-northfield`],

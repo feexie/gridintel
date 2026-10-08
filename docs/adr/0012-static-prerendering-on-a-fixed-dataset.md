@@ -1,7 +1,10 @@
 # ADR 0012: Build every screen ahead of time when the dataset cannot change
 
 Date: 2026-10-07
-Status: **Proposed. Not implemented. The Founder decides.**
+Status: Accepted (Founder decision at the Phase 6c-3 checkpoint, 2026-10-07)
+and implemented in the Phase 6 close-out. See "As decided and built" at the
+end, which is what the code does; the sections before it are the proposal as
+it was put.
 
 ## Context
 
@@ -154,3 +157,57 @@ feature; changing what any screen shows.
 1. Adopt the proposal, or not.
 2. Service points: A or B.
 3. Accept a longer `verify` so that both paths stay tested.
+
+## As decided and built (2026-10-07)
+
+**Decided.** Adopted. Option B: the network screens are built ahead of time
+when the synthetic demonstration adapter runs; a service point is rendered
+on its first visit, computes only what that page needs, and never runs the
+warm-up or shows the preparing page. The dynamic path is kept for real
+adapters. A longer `verify` is accepted so that both paths stay tested.
+
+**Built.**
+
+- `datasetIsFixed()` in `src/composition/runtime.ts` is the one question.
+  The adapter's answer is a constant beside the adapter choice.
+  `GRIDINTEL_RENDER=request` makes it false on the demonstration adapter,
+  at build time and at run time, and nothing else reads that variable.
+- `src/app/dashboard/utility/screen.ts` holds what every data route asks:
+  `preparing()` (on a fixed dataset, false; otherwise it waits for the
+  request with `connection()` and returns whether the warm-up is running)
+  and `aheadOfTime()` (the route's `generateStaticParams` on a fixed
+  dataset, and no such function otherwise).
+- **A correction to the proposal.** It said `generateStaticParams` would
+  return an empty list when the dataset is not fixed. That does not work: a
+  route that has the function at all is rendered once and kept, and calling
+  `connection()` inside it is an error. So on a dataset that is not fixed
+  the route has no `generateStaticParams`.
+- The three longer lists and the transformer's full list are paths:
+  `/executive/all`, `/revenue/all`, `/assets/all`,
+  `/operations/transformers/<id>/all`. The old query-string addresses
+  redirect (`next.config.ts`).
+- `register()` starts no warm-up on a fixed dataset. `/api/ready` then
+  answers 200 `not_started`.
+- `next.config.ts` builds the request path into `.next-request`, so both
+  builds exist side by side. `npm run build:request` makes it;
+  `npm run verify` builds both and the browser tests run against both.
+
+**Measured, on the development laptop.**
+
+| | Ordinary build | Request build |
+| --- | --- | --- |
+| Pages built ahead of time | 128 (112 data screens, 16 others) | 25 |
+| `next build` | about 60 s | about 35 s |
+| Output of the app folder | 185 MB (the proposal estimated 60 MB) | 23 MB in all |
+| A network screen, median of five | 12 to 59 ms | 34 to 315 ms |
+| First visit to a service point on a server just started | about 1 s, then a file | preparing page, then the screen |
+
+The first visit to a service point generates the synthetic dataset and
+computes that one screen. Timings on the Vercel preview are in the
+close-out checkpoint in `docs/ROADMAP.md`.
+
+**Tests.** `readiness.spec.ts` starts a server of its own on each build:
+on request, the first answer is the preparing page and then the screen;
+built ahead, the first answer is the screen, `/api/ready` says
+`not_started`, and a service point's first visit carries its figures with
+no preparing page. `timing.spec.ts` holds the 500 ms budget on both builds.

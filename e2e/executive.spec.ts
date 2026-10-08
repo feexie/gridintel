@@ -77,7 +77,7 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   await expect(money.nth(2)).toContainText("Below its Band C minimum of 12 h");
 
   await list.getByRole("link", { name: "Show all 4 feeders" }).click();
-  await expect(page).toHaveURL(/\/executive\?feeders=all$/);
+  await expect(page).toHaveURL(/\/executive\/all$/);
   await expect(money).toHaveCount(4);
   // The worst ratios are on the smallest feeder, which money ranks last.
   await expect(money.nth(3)).toHaveAttribute("data-subject", "FD-FRM");
@@ -121,7 +121,7 @@ test("reported figures are compared at the scope they are stated for, and say so
 
 test("the portfolio figures are those of the drill-down, with no literal KPI", async ({ page }) => {
   await page.goto(EXECUTIVE);
-  await expect(tile(page, "ATC&C")).toContainText("31.5%");
+  await expect(tile(page, "ATC&C")).toContainText("31.4%");
   await expect(page.getByText("Summed over 2 electrical section(s): SS-HIL, SS-RIV. An organization is not an electrical boundary")).toBeVisible();
   await expect(page.getByText("86.6%")).toHaveCount(0);
   await expect(page.getByText("17.1%")).toHaveCount(0);

@@ -3,7 +3,7 @@ import type { AssetClassTable, AssetRowView, AssetsWorkspaceView } from "@/servi
 import { Legend, MetricCell, MetricTile, Panel } from "@/components/system/Metric";
 import { SEVERITY_STYLE } from "@/components/system/Panels";
 import { HeadRow, Note, PageHead, Row, Table, Td, Th } from "@/components/system/Table";
-import { formatNumber, levelHref } from "@/components/system/format";
+import { WORKSPACE_HREF, formatNumber, fullListHref, levelHref } from "@/components/system/format";
 
 const SOURCE_ALARM_WORDS = { agrees: "a source alarm agrees", none_raised: "no source alarm was raised", cannot_tell: "whether a source alarm was raised cannot be told" };
 
@@ -51,7 +51,7 @@ function ClassTable({ table, caveatMark }: { table: AssetClassTable; caveatMark:
       {cut ? (
         <p className="mb-1 text-caption leading-snug text-ink-3">
           {table.complete ? `All ${table.total}, highest peak loading first.` : `The ${table.limit} with the highest peak loading, of ${table.total}.`}{" "}
-          <Link href={table.complete ? "?" : "?transformers=all"} className="text-link hover:underline">
+          <Link href={table.complete ? WORKSPACE_HREF.assets : fullListHref(WORKSPACE_HREF.assets)} className="text-link hover:underline">
             {table.complete ? `Show the ${table.limit} most loaded` : `Show all ${table.total}`}
           </Link>
         </p>

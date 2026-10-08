@@ -2,16 +2,16 @@ import { notFound } from "next/navigation";
 import { NetworkLevel } from "@/components/operations/Level";
 import { PreparingData } from "@/components/system/PreparingData";
 import { buildableLevels, operations } from "@/composition/operations";
-import { aheadOfTime, preparing } from "../../../screen";
+import { aheadOfTime, preparing } from "../../../../screen";
 
 /** Built ahead of time for every distribution transformer when the dataset is fixed; none otherwise. */
 export const generateStaticParams = aheadOfTime(async () => (await buildableLevels()).transformers.map((transformerId) => ({ transformerId })));
 
-// A transformer can serve hundreds of connections; the full list is one click away, at ./all.
-export default async function TransformerPage({ params }: { params: Promise<{ transformerId: string }> }) {
+// The same screen with every connection listed. A path of its own, not a query string: a page built ahead of time cannot read one.
+export default async function TransformerAllPage({ params }: { params: Promise<{ transformerId: string }> }) {
   const { transformerId } = await params;
   if (await preparing()) return <PreparingData />;
   const view = await operations.transformer(decodeURIComponent(transformerId));
   if (view === null) notFound();
-  return <NetworkLevel view={view} showAllRows={false} />;
+  return <NetworkLevel view={view} showAllRows />;
 }

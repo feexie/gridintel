@@ -18,6 +18,17 @@ export function levelHref(kind: LevelKind, id: string): string {
 
 export const OPERATIONS_HOME = BASE;
 
+/** The address of a screen with its long list shown in full. */
+export function fullListHref(href: string): string {
+  return `${href}/all`;
+}
+
+export const WORKSPACE_HREF = {
+  executive: "/dashboard/utility/executive",
+  revenue: "/dashboard/utility/revenue",
+  assets: "/dashboard/utility/assets",
+};
+
 export const LEVEL_NAME: Record<LevelKind, string> = {
   region: "Region",
   substation: "Substation",

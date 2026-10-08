@@ -129,8 +129,8 @@ test("a report that books 33 kV line faults as upstream shows as a variance on t
   // Comparable, because both count network interruptions; different, because the report leaves the line faults out.
   await expect(row).toContainText("Same basis");
   await expect(row).toContainText("1.9 h");
-  await expect(row).toContainText("22.8 h");
-  await expect(row).toContainText("+20.9 h");
+  await expect(row).toContainText("23.1 h");
+  await expect(row).toContainText("+21.2 h");
   await expect(row).not.toContainText("Not comparable");
   await expect(page.getByText("including the lines that feed its substations")).toBeVisible();
   // The substation summary does not say how it classifies, so the row says what the variance may be.
@@ -150,28 +150,35 @@ test("a report that states its attribution rule is compared on that rule, and wh
   const row = page.getByRole("row", { name: /^SAIDI/ });
   await expect(row).toContainText("Same basis");
   await expect(row).toContainText("treating as upstream: the grid, transmission stations, sub-transmission lines");
-  // 0.4 h reported, 0.4 h calculated on the report's own rule: no difference, and never "-0.0 h".
-  await expect(row).toContainText("0.4 h");
+  // 1.0 h reported, 1.0 h calculated on the report's own rule: no difference, and never "-0.0 h".
+  await expect(row).toContainText("1.0 h");
   await expect(row.getByRole("cell").nth(3)).toHaveText("0.0 h");
   await expect(page.getByText("-0.0")).toHaveCount(0);
   await expect(row.locator("[data-on-reported-rule]")).toContainText("What the rule changes is the finding above.");
   await expect(row).not.toContainText("may reflect a difference in classification");
-  // The finding: 57.1 h on the reference rule less 0.4 h on the report's. A figure with its origin and status, not a side note.
+  // The finding: 57.8 h on the reference rule less 1.0 h on the report's. A figure with its origin and status, not a side note.
   const finding = page.locator('[data-rule-finding="FD-FRM:SAIDI"]');
   await expect(finding).toContainText("Rule treats sub-transmission lines as upstream: +56.7 h SAIDI under the reference rule");
   await expect(finding).toContainText("Calculated");
-  await expect(finding).toContainText("57.1 h");
+  await expect(finding).toContainText("57.8 h");
   await expect(page.locator('[data-rule-finding="FD-FRM:SAIFI"]')).toContainText("+16.0 SAIFI under the reference rule");
   // On its own screen the finding does not repeat the feeder's name.
   await expect(finding.getByRole("link")).toHaveCount(0);
   // The headline and the attribution table are still on the reference rule.
-  await expect(tile(page, "SAIDI")).toContainText("441.8 h");
+  await expect(tile(page, "SAIDI")).toContainText("442.5 h");
+  // The fault still open at the as-of time is counted to the end of the period, and the figures say they are provisional.
+  await expect(page.locator("[data-provisional]")).toContainText("Provisional: includes 1 open outage(s); duration counted to period end.");
+  await expect(page.locator("[data-provisional]")).toContainText("calculated, not estimated");
+  await expect(tile(page, "SAIDI")).toContainText("Provisional: includes 1 open outage(s)");
+  // A feeder with no open outage is not marked.
+  await page.goto(`${OPERATIONS}/feeders/FD-MKT`);
+  await expect(page.locator("[data-provisional]")).toHaveCount(0);
 });
 
 test("a region is accounted as the sum of its sections", async ({ page }) => {
   await page.goto(`${OPERATIONS}/regions/demo-region-northfield`);
   await expect(page.getByText("Summed over 2 electrical section(s): SS-HIL, SS-RIV.")).toBeVisible();
-  await expect(tile(page, "ATC&C")).toContainText("31.5%");
+  await expect(tile(page, "ATC&C")).toContainText("31.4%");
   // The gap below the region is by substation, and the two rows are the region's two sections.
   const gap = page.locator("section", { has: page.getByRole("heading", { name: "Revenue gap", level: 2 }) });
   await expect(gap.getByRole("link", { name: "Riverside 33/11 kV injection substation" })).toBeVisible();
@@ -393,6 +400,6 @@ test("a long list of connections shows its first rows, with the full list one cl
   await expect(table.locator("tbody tr")).toHaveCount(40);
   await expect(table).toContainText("Showing the first 40 of 135.");
   await table.getByRole("link", { name: "Show all 135" }).click();
-  await expect(page).toHaveURL(/\/transformers\/DT-OLD-2\?rows=all$/);
+  await expect(page).toHaveURL(/\/transformers\/DT-OLD-2\/all$/);
   await expect(table.locator("tbody tr")).toHaveCount(135);
 });

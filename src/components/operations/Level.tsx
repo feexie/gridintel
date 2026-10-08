@@ -3,7 +3,7 @@ import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } fr
 import { Legend, MetricTile, OriginTag, Panel } from "@/components/system/Metric";
 import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
 import { HeadRow, Row, Table, Td, Th } from "@/components/system/Table";
-import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatTime, levelHref } from "@/components/system/format";
+import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatTime, fullListHref, levelHref } from "@/components/system/format";
 
 
 function LevelHead({ header }: { header: LevelHeader }) {
@@ -72,7 +72,7 @@ export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevel
       {view.loading ? <LoadingPanel loading={view.loading} /> : null}
       {view.powerTransformers ? <PowerTransformersPanel transformers={view.powerTransformers} /> : null}
       {view.children.map((table) => (
-        <ChildrenTable key={table.title} table={table} showAll={showAllRows} allHref={`${levelHref(view.header.kind, view.header.id)}?rows=all`} />
+        <ChildrenTable key={table.title} table={table} showAll={showAllRows} allHref={fullListHref(levelHref(view.header.kind, view.header.id))} />
       ))}
       <AlarmsPanel alarms={view.alarms} />
     </div>

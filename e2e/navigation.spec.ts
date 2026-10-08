@@ -87,6 +87,11 @@ test("the site asks not to be indexed: a robots meta on every page and a robots.
     // A not-found page carries Next's own "noindex" tags as well; the first is the layout's.
     await expect(page.locator('meta[name="robots"]').first(), route).toHaveAttribute("content", "noindex, nofollow");
   }
+  // An address that leads nowhere is not indexed either, and carries the bar like every other screen.
+  await page.goto("/no-such-page");
+  await expect(page.locator("[data-not-found]")).toContainText("Page not found");
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
+  await expect(page.locator("h1")).toHaveCount(1);
   const robots = await request.get("/robots.txt");
   expect(robots.ok()).toBe(true);
   const lines = (await robots.text()).split("\n").map((line) => line.trim()).filter(Boolean);

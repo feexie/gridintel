@@ -76,6 +76,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // The same application built to render on request (npm run build:request).
+    ".next-request/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

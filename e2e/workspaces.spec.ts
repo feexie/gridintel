@@ -11,8 +11,8 @@ test("Reliability: feeders are ranked by what the network itself did, with the r
   await expect(ranking.nth(0)).toHaveAttribute("data-row", "FD-FRM");
   await expect(ranking.nth(1)).toHaveAttribute("data-row", "FD-OLD");
   await expect(ranking.nth(3)).toHaveAttribute("data-row", "FD-GOV");
-  // Farm Road: 57.1 h is the network's, 10.7 h upstream, 374.0 h load shedding, 441.8 h in all.
-  for (const figure of ["57.1 h", "10.7 h", "374.0 h", "441.8 h", "Band D · min 8 h · 9 of 30 days below"]) await expect(ranking.nth(0)).toContainText(figure);
+  // Farm Road: 57.8 h is the network's, 10.7 h upstream, 374.0 h load shedding, 442.5 h in all.
+  for (const figure of ["57.8 h", "10.7 h", "374.0 h", "442.5 h", "Band D · min 8 h · 10 of 30 days below"]) await expect(ranking.nth(0)).toContainText(figure);
   await expect(panel(page, /^Feeders, ranked/)).toContainText("do not set the rank");
   await ranking.nth(0).getByRole("link", { name: "Farm Road 11 kV feeder" }).click();
   await expect(page).toHaveURL(/\/operations\/feeders\/FD-FRM$/);
@@ -24,7 +24,7 @@ test("Reliability: why supply was interrupted, where it began, and whether it is
   const cause = page.locator('[data-table="by-cause"]');
   await expect(cause.locator('[data-row="load_shedding"]')).toContainText("225.3 h");
   await expect(cause.locator('[data-row="load_shedding"]')).toContainText("93.5%");
-  await expect(cause.locator('[data-row="fault"]')).toContainText("13.8 h");
+  await expect(cause.locator('[data-row="fault"]')).toContainText("13.9 h");
   const origin = page.locator('[data-table="by-origin-point"]');
   await expect(origin.locator('[data-row="subtransmission_line"]')).toContainText("Sub-transmission line (33 kV)");
   await expect(origin.locator('[data-row="subtransmission_line"]')).toContainText("The distribution network");
@@ -42,10 +42,10 @@ test("Reliability: why supply was interrupted, where it began, and whether it is
   await expect(ours.locator('[data-rule-finding="FD-FRM:SAIDI"]')).toContainText("Farm Road 11 kV feeder. Rule treats sub-transmission lines as upstream: +56.7 h SAIDI under the reference rule");
   await expect(ours.locator('[data-rule-finding="FD-MKT:SAIDI"]')).toContainText("+3.6 h");
   await expect(ours.getByRole("row", { name: /^SAIDI/ })).toHaveCount(6);
-  await expect(ours.getByRole("row", { name: /^SAIDI/ }).filter({ hasText: "Hillcrest" })).toContainText("+20.9 h");
+  await expect(ours.getByRole("row", { name: /^SAIDI/ }).filter({ hasText: "Hillcrest" })).toContainText("+21.2 h");
 
   // The portfolio's own indices and split, and day-by-day compliance for each feeder.
-  await expect(tile(page, "SAIDI")).toContainText("240.9 h");
+  await expect(tile(page, "SAIDI")).toContainText("241.0 h");
   await expect(page.locator("[data-band-feeder]")).toHaveCount(4);
   await expect(page.locator('[data-band-feeder="FD-MKT"]')).toContainText("23 days met the minimum, 7 did not");
 });
@@ -55,7 +55,7 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Revenue");
   // The revenue gap, as on the Executive page: an estimate, monthly, in two parts.
   await expect(panel(page, "Revenue gap")).toContainText("It is not an amount owed by anyone");
-  await expect(tile(page, "Revenue not realised")).toContainText("₦46,310,113");
+  await expect(tile(page, "Revenue not realised")).toContainText("₦46,304,966");
   await expect(tile(page, "Collection gap")).toContainText("Cash basis");
 
   // The valuation lists the ten largest transformers, says so, and has the rest one click away.
@@ -67,10 +67,10 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
   await expect(valuation).toContainText("The 10 largest of 48 sections by amount, then the residuals above them. The rows shown do not add up to the commercial gap.");
   await expect(valuation.locator('[data-row^="residual:"]')).toHaveCount(4);
   await valuation.getByRole("link", { name: "Show all 48" }).click();
-  await expect(page).toHaveURL(/\/revenue\?valuation=all$/);
+  await expect(page).toHaveURL(/\/revenue\/all$/);
   await expect(sections).toHaveCount(48);
   await expect(valuation).toContainText("All 48 sections, largest amount first");
-  await expect(tile(page, "Revenue not realised")).toContainText("₦46,310,113");
+  await expect(tile(page, "Revenue not realised")).toContainText("₦46,304,966");
   await valuation.getByRole("link", { name: "Show the 10 largest" }).click();
   await expect(sections).toHaveCount(10);
 
@@ -105,13 +105,20 @@ test("Assets: the assets with something on them, each fact in its own column, an
   await page.goto("/dashboard/utility/assets");
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Assets");
 
-  // Nine of the 55 assets are listed, in the order the rule states, and the rule is printed.
+  // Ten of the 55 assets are listed, in the order the rule states, and the rule is printed.
   const attention = page.locator('[data-table="attention"] tbody tr');
-  await expect(attention).toHaveCount(9);
+  await expect(attention).toHaveCount(10);
   await expect(attention.nth(0)).toHaveAttribute("data-row", "DT-OLD-3");
-  await expect(attention.nth(1)).toHaveAttribute("data-row", "PT-RIV-1");
-  await expect(attention.nth(2)).toHaveAttribute("data-row", "DT-OLD-2");
-  await expect(panel(page, "Assets with something on them")).toContainText("9 of 55 in-service assets");
+  // Farm Road: the trip of the fault still open at the as-of time is standing on it.
+  await expect(attention.nth(1)).toHaveAttribute("data-row", "FD-FRM");
+  await expect(attention.nth(1).locator("[data-asset-alarm]")).toContainText("FDR-EF-TRIP");
+  await expect(attention.nth(2)).toHaveAttribute("data-row", "PT-RIV-1");
+  await expect(attention.nth(3)).toHaveAttribute("data-row", "DT-OLD-2");
+  await expect(panel(page, "Assets with something on them")).toContainText("10 of 55 in-service assets");
+  // Government Avenue 3, the designed daytime overload: above rating at 53 readings, derived, and no source alarm raised.
+  const government = page.locator('[data-table="attention"] [data-row="DT-GOV-3"]');
+  for (const text of ["110.6%", "53 of 720", "Rule: Loaded above rating", "no source alarm was raised"]) await expect(government).toContainText(text);
+  await expect(government.locator("[data-asset-alarm]")).toHaveCount(0);
   await expect(panel(page, "Assets with something on them")).toContainText("It is an ordering of facts, not a score.");
 
   // South Gate: the source's alarm and GridIntel's condition are both on its monitor, in separate columns, and agree.
@@ -136,9 +143,9 @@ test("Assets: the assets with something on them, each fact in its own column, an
   await expect(transformers.locator("tbody tr").nth(0)).toHaveAttribute("data-row", "DT-OLD-2");
   await expect(transformers).toContainText("The 10 with the highest peak loading, of 48.");
   await transformers.getByRole("link", { name: "Show all 48" }).click();
-  await expect(page).toHaveURL(/\/assets\?transformers=all$/);
+  await expect(page).toHaveURL(/\/assets\/all$/);
   await expect(transformers.locator("tbody tr")).toHaveCount(48);
-  await expect(attention).toHaveCount(9);
+  await expect(attention).toHaveCount(10);
 
   // What is not held is said, not filled in.
   await expect(page.locator('[data-not-held="Maintenance records"]')).toContainText("Not available. No source supplies work orders");
@@ -154,12 +161,13 @@ test("Events / Alarms: what is wrong now in three separate lists, where, and who
   const now = panel(page, "What is wrong now");
   await expect(now).toContainText("As of 1 Oct 2026, 00:00 WAT · three separate lists, never merged");
 
-  // Source alarms standing: three, most severe first, each with where it is and the accounts behind it.
+  // Source alarms standing: four, most severe first, each with where it is and the accounts behind it.
   const alarms = now.locator('[data-table="standing-alarms"] tbody tr');
-  await expect(now.locator('[data-now="alarms"]')).toContainText("Source alarms standing (3)");
-  await expect(alarms).toHaveCount(3);
-  for (const text of ["high", "DC-SUPPLY-LOW", "Hillcrest 33/11 kV injection substation", "Not acknowledged", "2,781"]) await expect(alarms.nth(0)).toContainText(text);
-  for (const text of ["RTU-COMMS-FAIL", "Monitor on South Gate transformer", "Old Town 11 kV feeder", "a derived condition agrees (Monitor quiet)", "42"]) await expect(alarms.nth(1)).toContainText(text);
+  await expect(now.locator('[data-now="alarms"]')).toContainText("Source alarms standing (4)");
+  await expect(alarms).toHaveCount(4);
+  for (const text of ["high", "FDR-EF-TRIP", "Farm Road 11 kV feeder", "30 Sep 2026, 23:20 WAT", "1,015"]) await expect(alarms.nth(0)).toContainText(text);
+  for (const text of ["high", "DC-SUPPLY-LOW", "Hillcrest 33/11 kV injection substation", "Not acknowledged", "2,781"]) await expect(alarms.nth(1)).toContainText(text);
+  for (const text of ["RTU-COMMS-FAIL", "Monitor on South Gate transformer", "Old Town 11 kV feeder", "a derived condition agrees (Monitor quiet)", "42"]) await expect(alarms.nth(2)).toContainText(text);
   // The alarm with no raise time is not called standing.
   await expect(now.locator('[data-now="alarms"]')).toContainText("1 more alarm(s) have no raise time in the source");
 
@@ -169,13 +177,19 @@ test("Events / Alarms: what is wrong now in three separate lists, where, and who
   for (const text of ["Monitor quiet", "Monitor on South Gate transformer", "9.1 h", "Agrees: RTU-COMMS-FAIL"]) await expect(conditions.nth(0)).toContainText(text);
   await expect(now.locator('[data-now="conditions"]')).toContainText("2 more condition(s) were found in the period and do not hold at the as-of time");
 
-  // Interruptions: none in progress, and one with no restoration time kept apart from them.
-  await expect(now.locator('[data-now="interruptions"]')).toContainText("Interruptions in progress (0)");
-  await expect(now.locator('[data-now="interruptions"]')).toContainText("The outage log records no interruption in progress at the as-of time.");
-  const open = now.locator('[data-table="restoration-not-recorded"] tbody tr');
-  await expect(open).toHaveCount(1);
-  for (const text of ["SP-MKT2-001", "Market Road 11 kV feeder", "No restoration time recorded"]) await expect(open.nth(0)).toContainText(text);
-  await expect(now.locator('[data-now="restoration-not-recorded"]')).toContainText("these are not counted as in progress");
+  // Interruptions in progress: the outage its source calls open, as one row, with the customers of the parts still off.
+  await expect(now.locator('[data-now="interruptions"]')).toContainText("Interruptions in progress (1)");
+  const inProgress = now.locator('[data-table="in-progress"] tbody tr');
+  await expect(inProgress).toHaveCount(1);
+  for (const text of ["Farm Road 11 kV feeder", "OUT-2026-09-30-FD-FRM-FAULT", "10 elements", "Fault", "30 Sep 2026, 23:20 WAT", "No restoration time recorded", "Open", "1,015"]) {
+    await expect(inProgress.nth(0)).toContainText(text);
+  }
+  // A record with no restoration time and no open status is a data-quality item, kept apart and not counted.
+  const gap = now.locator('[data-table="restoration-not-recorded"] tbody tr');
+  await expect(gap).toHaveCount(1);
+  for (const text of ["SP-MKT2-001", "Market Road 11 kV feeder", "No restoration time recorded", "Not stated"]) await expect(gap.nth(0)).toContainText(text);
+  await expect(now.locator('[data-now="restoration-not-recorded"]')).toContainText("A data-quality item.");
+  await expect(now.locator('[data-now="restoration-not-recorded"]')).toContainText("These are not counted as in progress.");
   await expect(now).toContainText("It is not a count of customers without supply");
 
   // Where: both substations and their feeders.
@@ -191,6 +205,6 @@ test("Events / Alarms: what is wrong now in three separate lists, where, and who
   await expect(full.locator('[data-alarms="derived"] [data-condition]')).toHaveCount(3);
   await expect(full.locator('[data-alarms="recorded"] [data-condition]')).toHaveCount(0);
 
-  await alarms.nth(1).getByRole("link", { name: "Old Town 11 kV feeder" }).click();
+  await alarms.nth(2).getByRole("link", { name: "Old Town 11 kV feeder" }).click();
   await expect(page).toHaveURL(/\/operations\/feeders\/FD-OLD$/);
 });
