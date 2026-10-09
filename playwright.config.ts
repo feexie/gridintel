@@ -17,6 +17,8 @@ export default defineConfig({
   // Asks for every route once, so no test pays for loading a route's code.
   globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
+  // One worker on a developer's machine, to keep memory down beside two servers; the default in CI.
+  workers: process.env.CI ? undefined : 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",

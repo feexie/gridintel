@@ -3,11 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-08. Status: **Phase 6c-3 approved and merged to `main`
-on 2026-10-07, tag `phase-6c-3`. The Phase 6 close-out (the Founder's
-decisions at the 6c-3 checkpoint) is at its checkpoint on branch
-`phase-6-close`, awaiting the Founder's check of the Vercel preview and
-approval. Not merged to `main`.**
+Last updated: 2026-10-09. Status: **Phase 6 is complete.** Its close-out was
+approved by the Founder and merged to `main` on 2026-10-09, tag `phase-6`.
+The next phase has not been chosen; the Founder chooses it. Its first item
+is already decided and is listed under "Next phase" below.
 
 ## Completed
 
@@ -154,7 +153,7 @@ Recommend adding `@playwright/test` as a dev dependency, Chromium only.
 - Each sub-phase is worked on its own branch and merged to `main` after the
   Founder approves its checkpoint (see `ENGINEERING_RULES.md`).
 
-## Phase 6: Complete the core utility product
+## Phase 6: Complete the core utility product (complete; approved 2026-10-09, tag `phase-6`)
 
 Three gated sub-phases. Work stops after each for the Founder's review.
 
@@ -311,7 +310,7 @@ are recorded under Phase 6c.
   network-attributable SAIDI" moved from Old Town to Farm Road.
 - ADR 0009 (customer metering) is a proposal with four questions to answer.
 
-### Phase 6c: Workspaces (6c-1 and 6c-2 approved; 6c-3 approved to start)
+### Phase 6c: Workspaces (complete: 6c-1, 6c-2 and 6c-3 approved; close-out approved 2026-10-09)
 
 Split by the Founder into three gated parts: 6c-1, the decisions below, on
 the data and the engine; 6c-2, further decisions, the design system,
@@ -729,7 +728,7 @@ Phase 6c-3.
   tile and a deployment is promoted. (Steps read from Vercel's
   documentation on 2026-10-08.)
 
-#### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved to start 2026-10-05; branch `phase-6c-3`; at its checkpoint 2026-10-07)
+#### Phase 6c-3: Checkpoint decisions, Assets and Events / Alarms (approved and merged 2026-10-07; tag `phase-6c-3`)
 
 **Founder's answers at the 6c-2 checkpoint (2026-10-05).**
 
@@ -903,7 +902,7 @@ machine was also running the browser tests' second server.
 lint, build and 41 browser tests. Screenshots:
 `docs/screenshots/phase6c3`.
 
-#### Phase 6 close-out (branch `phase-6-close`; at its checkpoint 2026-10-08)
+#### Phase 6 close-out (approved and merged to `main` on 2026-10-09, tag `phase-6`)
 
 **The Founder's decisions at the 6c-3 checkpoint (2026-10-07), and what was
 done.**
@@ -985,15 +984,88 @@ three. In a fresh process that first visit costs about one second, almost
 all of it generating the synthetic dataset (0.5 to 0.9 s); the screen itself
 takes about 50 ms.
 
-**Owed after the merge, by the Founder's decision.** Cold-start timings on
-the production URL. Before the merge the Founder checks the Vercel preview
-of this branch, in a logged-in browser, for any "Preparing data" on a
-network screen. They are to be added here.
+**Cold start on production, measured after the merge (2026-10-09).** Plain
+requests from the development laptop in Nigeria to
+`https://gridintel-iota.vercel.app`, minutes after the deployment finished,
+so nothing had been asked for before. Seconds, whole response. The laptop's
+connection was uneven that morning: the same cached file took between 0.3 s
+and several seconds, so these are a ceiling on what the site did, not a
+measure of it.
+
+| Screen | First visit | Repeat | Served as |
+| --- | --- | --- | --- |
+| Executive (top / all feeders) | 4.5 / 3.3 | 1.9 / 17.9 | file |
+| Reliability | 2.8 | 0.7 | file |
+| Revenue | 1.2 | 0.9 | file |
+| Assets (ten / all 48) | 1.5 / 1.8 | 3.6 / 0.7 | file |
+| Events / Alarms | 2.5 | 1.2 | file |
+| Operations home | 2.9 | 1.2 | file |
+| Region | 10.3 | 1.3 | file |
+| Substation, Riverside / Hillcrest | 2.8 / 2.3 | 2.1 / 1.3 | file |
+| Feeder, Market Road / Old Town / Government Avenue / Farm Road | 3.8 / 5.4 / 1.7 / 4.0 | 3.5 / 2.2 / 3.5 / 2.1 | file |
+| Transformer, Riverbank (40 rows / all 135), Government Avenue 3 | 1.2 / 2.2 / 1.5 | 0.7 / 0.7 / 1.0 | file |
+| Service point SP-FRM3-010 (the first, on a cold instance) | 2.5 | 0.6, 0.3 | rendered on first visit, then a file |
+| Service point SP-OLD2-001 | 1.1 | 0.6, 0.6 | the same |
+| Service points SP-GOV3-004, SP-MKT2-005 | 4.6, 2.6 | 5.6, 0.6 | the same |
+
+- **No screen showed "Preparing data"**, on a first visit or a repeat: all
+  18 network screens asked for, and all four service points. `/api/ready`
+  answered `not_started` before and after.
+- **Every network screen was served as a file** (Vercel's cache header said
+  `PRERENDER` on the first request and `HIT` after). Their times are the
+  download of 0.2 to 0.9 MB of HTML over this connection, not computing.
+- **A service point's first visit is over the 2 s target.** The first, on a
+  cold instance, took 2.5 s in all, 2.5 s of it before the first byte, so it
+  is the server and not the download. Later first visits took 1.1 to 4.6 s
+  on a connection where a cached file took up to 5.6 s, so they cannot be
+  read more finely than "about one to two and a half seconds". From then on
+  a service point is a file.
+- Also checked on production: `/robots.txt` disallows everything; pages
+  carry `noindex, nofollow`; an address that leads nowhere answers 404 in
+  the dashboard frame with the SYNTHETIC DATA bar; an old `?valuation=all`
+  address redirects to `/revenue/all`.
+
+**Proposal only, not built: make a service point's first visit cheaper.**
+Locally that first visit is about 1 s, of which 0.5 to 0.9 s is generating
+the whole synthetic dataset (every connection's month of energy, bills and
+readings) and 0.05 s is the screen. A Vercel instance is slower, which is
+where the 2.5 s comes from. Three ways to bring it under 2 s, cheapest
+first:
+
+1. *Generate the energy of one supply at a time.* `buildEnergyModel` (0.4 s
+   of the 0.9 s) builds every transformer's and every meter's hourly series
+   at once. Building a transformer's connections when one of them is first
+   asked for would leave a service-point visit paying for one transformer
+   of 48. The registry, the outage log and the billing run would still be
+   built whole (about 0.2 s). It changes only the demonstration adapter; the
+   dataset it produces must be identical, which the existing dataset tests
+   would hold. This is the recommended one.
+2. *Build the dataset once at build time and ship it as a file.* The first
+   visit would read it instead of generating it. It adds a build step and a
+   large file to each function, and reading it may not be faster than
+   generating it.
+3. *Build every service point ahead of time* (ADR 0012, option A): 6,448
+   more pages and about 0.5 GB of output. No first visit is ever slow, at
+   the cost of a build several minutes longer.
+
+None of these is needed for the network screens, which is where a visitor
+arrives.
 
 **`verify`.** It now makes both builds and runs the browser tests against
-both, on one worker to keep memory down (`playwright test --workers=1`).
-On this laptop (8 GB) the whole of it in one go was stopped once for low
-memory; run step by step it passes.
+both. The browser tests use one worker on a developer's machine, to keep
+memory down, and the default number in CI (`workers` in
+`playwright.config.ts`; Founder's decision, 2026-10-09). On this laptop
+(8 GB) the whole of `verify` in one go was stopped once for low memory; run
+step by step it passes.
+
+**The Founder's decisions at the close-out checkpoint (2026-10-09).**
+
+- The synthetic Farm Road report at 1.0 h is accepted.
+- Browser tests: one worker locally, the default in CI.
+- A telemetry reading at the as-of time, with Farm Road's load at zero
+  after the trip, is the first item of the next phase.
+- A cold service point over 2 s on Vercel: propose the generator change, do
+  not build it. The proposal is above.
 
 **Known, and not done.**
 
@@ -1035,6 +1107,19 @@ builds; 43 browser tests against both builds. Screenshots:
   type and spacing, taken from what the Operations panels already do; the
   metric, table and panel components moved out of `components/operations`
   into a shared set.
+
+## Next phase (not chosen; the Founder chooses it)
+
+**Its first item, already decided (2026-10-09).** A telemetry reading at the
+as-of time. The synthetic dataset's last reading is at 23:00 on 30
+September, so "loading now" at the demo clock shows Farm Road at 25.4%,
+twenty minutes before the feeder tripped. Add readings at the demo clock,
+with Farm Road's feeder, its ten transformers and Hillcrest T2, which
+carries Farm Road alone, at zero after the trip, and report what moves.
+
+**Open for the Founder's decision.** Whether to make a service point's
+first visit cheaper, and which way (the proposal is in the Phase 6
+close-out).
 
 ## Phase 7: GIS and network intelligence
 
