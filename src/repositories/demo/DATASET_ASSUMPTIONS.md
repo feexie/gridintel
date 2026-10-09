@@ -20,6 +20,19 @@ It is identical on every build.
 - Boundary meters (substation incomers, feeder heads, transformer
   totalizers) and telemetry are hourly. Real boundary meters usually record
   every 15 or 30 minutes; hourly keeps the dataset small.
+- **One more telemetry reading is taken at the demo clock itself**, from
+  every transformer monitor and remote terminal unit, so that "loading now"
+  is a reading made now and not the 23:00 one. Each connection's demand at
+  that instant is one more draw of the rule used for every other hour (the
+  midnight shape of Thursday 1 October). A supply still off under an open
+  interruption reads zero: Farm Road's feeder, its ten transformers and
+  Hillcrest T2, which carries Farm Road alone. A zero is a measured reading,
+  not a gap. No interval energy is written at the clock, and the reading is
+  outside the month, so no peak, energy, revenue or reliability figure
+  moves. **No load-shedding block is taken to begin at the clock**, although
+  Old Town, Government Avenue and Farm Road are shed from midnight on most
+  days of the month: the dataset holds no interruption that starts at or
+  after the clock, so the other three feeders read as on.
 - **A customer meter reports only what that kind of meter can report**
   (ADR 0009; see "Customers and metering"). Consumption is still modelled
   hour by hour for every connection, to size the bills, the vends and the
@@ -396,8 +409,8 @@ exact here; a real study would not.
   - **Farm Road's reported SAIDI and SAIFI were raised to 1.0 h and 1.1**
     (from 0.4 h and 0.2), so that the report still agrees with the records
     on its own attribution rule.
-  - Loading "now" on Farm Road is still the 23:00 reading, the last one in
-    the dataset: the feeder tripped twenty minutes later.
+  - Loading "now" on Farm Road is the reading at the demo clock: zero, on
+    the feeder, on its ten transformers and on Hillcrest T2 (see "Time").
 - One customer complaint with no restoration time and no status, to show how
   an incomplete record is excluded from the indices rather than guessed at.
   It is a data-quality item, not an interruption in progress.

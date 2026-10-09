@@ -1,5 +1,5 @@
 import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Period, Provenance, TelemetryPoint } from "@/domain";
-import { DEMO_DAYS, DEMO_HOURS, PERIOD_END_MS, at, hourStart, wat, weekday } from "./clock.ts";
+import { DEMO_CLOCK, DEMO_DAYS, DEMO_HOURS, PERIOD_END_MS, at, hourStart, wat, weekday } from "./clock.ts";
 import { DAY_FACTOR, HOURLY_NOISE, SHAPE, WEEK } from "./load.ts";
 import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, MV_CUSTOMER, QUIET_MONITOR, SUBSTATIONS, SUBSTATION_LOSS, TRANSFORMERS } from "./network.ts";
 import { availability, energised } from "./outages.ts";
@@ -45,6 +45,17 @@ import { METERING_SOURCE, SCADA_SOURCE, demoProvenance } from "./sources.ts";
    registers and what a bypassed meter fails to record exist only
    inside this model. They size the bills, the vends and the boundary
    meters, and are never written out as observations.
+
+   THE READING AT THE DEMO CLOCK. Telemetry is hourly, and the demo
+   clock is the end of the month, so one more reading is taken at
+   that instant, from every transformer monitor and remote terminal
+   unit: "loading now" is then a reading made now. What each
+   connection draws at that instant follows the same rule as any
+   other hour (the midnight shape of 1 October, a Thursday). A supply
+   still off under an open interruption reads zero: Farm Road's
+   feeder, its ten transformers, and Hillcrest T2, which carries Farm
+   Road alone. No interval energy is written for it: the month's
+   energy ends at the clock.
 ========================================================== */
 
 /** What the reading round found at one postpaid meter that is not an AMI meter. */
@@ -141,6 +152,8 @@ export interface EnergyModel {
 
 const HOUR_STARTS: readonly IsoTimestamp[] = Array.from({ length: DEMO_HOURS }, (_, h) => wat(hourStart(h)));
 const WEEKDAY: readonly number[] = Array.from({ length: DEMO_DAYS }, (_, day) => weekday(day));
+/** The day of the week the demo clock falls on: the first instant of the day after the month. */
+const CLOCK_WEEKDAY = weekday(DEMO_DAYS);
 
 function zeros(): Float64Array {
   return new Float64Array(DEMO_HOURS);
@@ -263,6 +276,18 @@ export function buildEnergyModel(): EnergyModel {
     return factors;
   };
 
+  // What each supply's connections would draw at the demo clock, kW: one more draw of the same rule.
+  const clockDemand = new Map<string, number>();
+  const clockDayFactor = new Map<string, number>();
+  const dayFactorAtClock = (supplyKey: string): number => {
+    let factor = clockDayFactor.get(supplyKey);
+    if (factor === undefined) {
+      factor = DAY_FACTOR.low + seeded(`day:${supplyKey}:clock`)() * DAY_FACTOR.span;
+      clockDayFactor.set(supplyKey, factor);
+    }
+    return factor;
+  };
+
   // One AMI customer meter stopped reporting for two days: a gap, not a zero.
   const gapMeter = CONNECTIONS.find((c) => c.supplyKey === "MKT2" && c.ami)?.meterId;
   const inGap = (h: number) => h >= 13 * 24 && h < 15 * 24;
@@ -290,6 +315,9 @@ export function buildEnergyModel(): EnergyModel {
       supplyConsumed[h] += actual;
       recorded[h] = actual * connection.recordedFraction;
     }
+    // The connection's next draw, for the instant the month ends at.
+    const clockKw = connection.peakKw * shape[0] * week[CLOCK_WEEKDAY] * dayFactorAtClock(key) * (HOURLY_NOISE.low + noise() * HOURLY_NOISE.span);
+    clockDemand.set(key, (clockDemand.get(key) ?? 0) + clockKw);
     if (connection.meterId === undefined) continue;
     if (connection.ami) {
       recordedKwh.set(connection.customerId, pushHourly(connection.meterId, recorded, connection.meterId === gapMeter ? { skip: inGap } : {}));
@@ -304,6 +332,7 @@ export function buildEnergyModel(): EnergyModel {
 
   /* ---- Boundaries --------------------------------------------------- */
 
+  /** A reading at the start of hour `h`, or at the demo clock when `h` is the number of hours in the month. */
   const telemetryPoint = (
     source: TelemetryPoint["source"],
     metric: MetricKey,
@@ -312,19 +341,22 @@ export function buildEnergyModel(): EnergyModel {
     phase: TelemetryPoint["phase"],
     deviceId: string,
   ) =>
-    telemetry.push({ source, metric, observedAt: HOUR_STARTS[h], value: round(value, 2), phase, quality: "measured", deviceId, provenance: scada });
+    telemetry.push({ source, metric, observedAt: h === DEMO_HOURS ? DEMO_CLOCK : HOUR_STARTS[h], value: round(value, 2), phase, quality: "measured", deviceId, provenance: scada });
 
   for (const substation of SUBSTATIONS) {
     // One meter per incomer: each carries the feeders on the bus section its transformer feeds.
     const incomers = substation.incomers.map(() => zeros());
     // What each incomer's power transformer carries, kVA: the demand of the feeders on its section.
     const transformerKva = substation.incomers.map(() => zeros());
+    // The same at the demo clock.
+    const transformerClockKva = substation.incomers.map(() => 0);
     let substationConsumed = 0;
 
     for (const feeder of FEEDERS.filter((plan) => plan.substationId === substation.id)) {
       const incomer = incomers[feeder.incomer - 1];
       const head = zeros();
       const headDemandKva = zeros();
+      let headClockKva = 0;
       let feederConsumed = 0;
 
       for (const dt of TRANSFORMERS.filter((plan) => plan.feederId === feeder.id)) {
@@ -348,6 +380,12 @@ export function buildEnergyModel(): EnergyModel {
           telemetryPoint(source, "apparent_power_kva", h, kva, "total", `ED-${dt.id}`);
           if (on) telemetryPoint(source, "power_factor", h, dt.powerFactor, "total", `ED-${dt.id}`);
         }
+        const onAtClock = energised(dt.key, PERIOD_END_MS);
+        const clockKw = onAtClock ? (clockDemand.get(dt.key) ?? 0) / (1 - dt.lvLoss) : 0;
+        headClockKva += clockKw / dt.powerFactor;
+        telemetryPoint(source, "active_power_kw", DEMO_HOURS, clockKw, "total", `ED-${dt.id}`);
+        telemetryPoint(source, "apparent_power_kva", DEMO_HOURS, clockKw / dt.powerFactor, "total", `ED-${dt.id}`);
+        if (onAtClock) telemetryPoint(source, "power_factor", DEMO_HOURS, dt.powerFactor, "total", `ED-${dt.id}`);
       }
 
       if (feeder.id === MV_CUSTOMER.feederId) {
@@ -358,6 +396,7 @@ export function buildEnergyModel(): EnergyModel {
           head[h] += mvConsumed[h];
           if (energised(MV_CUSTOMER.key, hourStart(h))) headDemandKva[h] += mvDemand[h] / MV_CUSTOMER.powerFactor;
         }
+        if (energised(MV_CUSTOMER.key, PERIOD_END_MS)) headClockKva += (clockDemand.get(MV_CUSTOMER.key) ?? 0) / MV_CUSTOMER.powerFactor;
       }
 
       for (let h = 0; h < DEMO_HOURS; h++) head[h] /= 1 - feeder.mvLoss;
@@ -367,10 +406,12 @@ export function buildEnergyModel(): EnergyModel {
 
       const source = { kind: "feeder" as const, id: feeder.id };
       const device = `ED-${substation.id}`;
-      for (let h = 0; h < DEMO_HOURS; h++) {
-        incomer[h] += head[h];
-        const kva = headDemandKva[h] / (1 - feeder.mvLoss);
-        transformerKva[feeder.incomer - 1][h] += kva;
+      for (let h = 0; h <= DEMO_HOURS; h++) {
+        const atClock = h === DEMO_HOURS;
+        if (!atClock) incomer[h] += head[h];
+        const kva = (atClock ? headClockKva : headDemandKva[h]) / (1 - feeder.mvLoss);
+        if (atClock) transformerClockKva[feeder.incomer - 1] += kva;
+        else transformerKva[feeder.incomer - 1][h] += kva;
         const amps = kva / (Math.sqrt(3) * 11);
         telemetryPoint(source, "apparent_power_kva", h, kva, "total", device);
         telemetryPoint(source, "current_a", h, amps * 1.03, "A", device);
@@ -386,8 +427,9 @@ export function buildEnergyModel(): EnergyModel {
       received += sum(incomer);
       // The transformer's loading, read at its 11 kV side by the substation's remote terminal unit.
       const source = { kind: "power_transformer" as const, id: substation.incomers[i].powerTransformer.id };
-      for (let h = 0; h < DEMO_HOURS; h++) {
-        telemetryPoint(source, "apparent_power_kva", h, transformerKva[i][h] / (1 - SUBSTATION_LOSS), "total", `ED-${substation.id}`);
+      for (let h = 0; h <= DEMO_HOURS; h++) {
+        const kva = h === DEMO_HOURS ? transformerClockKva[i] : transformerKva[i][h];
+        telemetryPoint(source, "apparent_power_kva", h, kva / (1 - SUBSTATION_LOSS), "total", `ED-${substation.id}`);
       }
     });
     technicalLossKwh.set(`substation:${substation.id}`, received - substationConsumed);

@@ -227,7 +227,8 @@ describe("demo dataset: structure", () => {
         dataset.telemetry.find((point) => point.source.kind === kind && point.source.id === id && point.metric === "apparent_power_kva" && Date.parse(point.observedAt) === PERIOD_START_MS + h * 3_600_000)?.value as number;
       for (const pt of registry.powerTransformers) {
         const points = dataset.telemetry.filter((point) => point.source.kind === "power_transformer" && point.source.id === pt.id);
-        assert.equal(points.length, DEMO_HOURS, pt.id);
+        // One for each hour of the month, and one at the demo clock.
+        assert.equal(points.length, DEMO_HOURS + 1, pt.id);
         assert.ok(points.every((point) => point.metric === "apparent_power_kva" && point.deviceId === `ED-${pt.substationId}`), pt.id);
       }
       // At any hour a transformer carries its feeders' demand, plus the substation's own 1% loss.
@@ -236,6 +237,27 @@ describe("demo dataset: structure", () => {
         assert.ok(Math.abs(reading("power_transformer", "PT-HIL-1", h) - reading("feeder", "FD-GOV", h) / 0.99) < 0.05, `Hillcrest T1, hour ${h}`);
         assert.ok(Math.abs(reading("power_transformer", "PT-HIL-2", h) - reading("feeder", "FD-FRM", h) / 0.99) < 0.05, `Hillcrest T2, hour ${h}`);
       }
+    });
+
+    it("holds a reading at the demo clock from every monitor, at zero where the supply is still off", () => {
+      const atClock = dataset.telemetry.filter((point) => point.observedAt === DEMO_CLOCK && point.metric === "apparent_power_kva");
+      const kva = new Map(atClock.map((point) => [`${point.source.kind}:${point.source.id}`, point.value]));
+      // Every distribution transformer, feeder and power transformer reports once.
+      assert.equal(atClock.length, TRANSFORMERS.length + FEEDERS.length + registry.powerTransformers.length);
+      assert.equal(kva.size, atClock.length);
+      // Farm Road tripped at 23:20 and is not restored: its feeder, its transformers and the power transformer that carries it alone read zero.
+      const farmRoad = TRANSFORMERS.filter((dt) => dt.feederId === "FD-FRM");
+      assert.equal(farmRoad.length, 10);
+      for (const key of ["feeder:FD-FRM", "power_transformer:PT-HIL-2", ...farmRoad.map((dt) => `distribution_transformer:${dt.id}`)]) assert.equal(kva.get(key), 0, key);
+      // A zero is a reading, not a gap: it is measured, and the transformer reports no power factor with no load.
+      assert.ok(atClock.every((point) => point.quality === "measured" && point.value !== null));
+      assert.ok(!dataset.telemetry.some((point) => point.observedAt === DEMO_CLOCK && point.metric === "power_factor" && farmRoad.some((dt) => dt.id === point.source.id)));
+      // Everything else is on and carries load, and each power transformer still carries its feeders.
+      for (const [key, value] of kva) if (!key.includes("FRM") && key !== "power_transformer:PT-HIL-2") assert.ok((value as number) > 0, key);
+      assert.ok(Math.abs((kva.get("power_transformer:PT-RIV-1") as number) - ((kva.get("feeder:FD-MKT") as number) + (kva.get("feeder:FD-OLD") as number)) / 0.99) < 0.05);
+      assert.ok(Math.abs((kva.get("power_transformer:PT-HIL-1") as number) - (kva.get("feeder:FD-GOV") as number) / 0.99) < 0.05);
+      // No interval energy is written at the clock: the month's energy ends there.
+      assert.ok(!dataset.intervalEnergy.some((interval) => interval.intervalStart === DEMO_CLOCK));
     });
 
     it("loads no power transformer above its rating", () => {

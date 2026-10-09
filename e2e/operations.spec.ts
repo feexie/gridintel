@@ -93,6 +93,21 @@ test("feeder loading is that of a loaded 11 kV feeder, with no caveat", async ({
   }
 });
 
+test("loading now is the reading at the as-of time: zero on Farm Road, which tripped and is not restored", async ({ page }) => {
+  const now = "Loading at 1 Oct 2026, 00:00 WAT";
+  await page.goto(`${OPERATIONS}/feeders/FD-FRM`);
+  await expect(tile(page, now)).toContainText("0.0%");
+  await tile(page, now).locator("summary").click();
+  await expect(tile(page, now)).toContainText("apparent_power_kva (total) at 2026-10-01T00:00:00+01:00");
+  // Its ten transformers and the power transformer that carries it alone read zero too; a feeder that is on does not.
+  await page.goto(`${OPERATIONS}/transformers/DT-FRM-3`);
+  await expect(tile(page, now)).toContainText("0.0%");
+  await page.goto(`${OPERATIONS}/substations/SS-HIL`);
+  await expect(page.getByRole("row", { name: /Hillcrest T2/ })).toContainText("0.0%");
+  await page.goto(`${OPERATIONS}/feeders/FD-MKT`);
+  await expect(tile(page, now)).toContainText("27.7%");
+});
+
 test("government accounts are shown as their own customer class, with their own collection efficiency", async ({ page }) => {
   await page.goto(`${OPERATIONS}/feeders/FD-GOV`);
   const classes = page.locator('[data-table="customer-class"]');

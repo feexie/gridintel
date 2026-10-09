@@ -372,8 +372,12 @@ export function availability(supplyKey: string, h: number): number {
   return availabilityOf(supplyKey)[h];
 }
 
-/** Whether the supply was on at an instant. */
+/** The supplies still off at the demo clock: those under an interruption that is open. Its intervals end at the clock only because the dataset does. */
+const OFF_AT_CLOCK: ReadonlySet<string> = new Set(EVENTS.filter((event) => event.open).flatMap((event) => event.parts.map((part) => part.supplyKey)));
+
+/** Whether the supply was on at an instant. At the demo clock, a supply under an open interruption is still off. */
 export function energised(supplyKey: string, ms: number): boolean {
+  if (ms >= PERIOD_END_MS && OFF_AT_CLOCK.has(supplyKey)) return false;
   return !(SUPPLY_OFF.get(supplyKey) ?? []).some(([offStart, offEnd]) => ms >= offStart && ms < offEnd);
 }
 
