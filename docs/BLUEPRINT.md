@@ -4,6 +4,37 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase 7a checkpoint (2026-10-09).** Since the Phase 6
+> close-out (ADR 0014):
+>
+> - **GIS is a platform capability, not a Utility screen.** The spatial
+>   platform is `src/services/spatial`: the viewer, the model, four spatial
+>   questions and the map read model. A module joins it by registering its
+>   entities, its trace, its measures and its layers
+>   (`SpatialModule`); `src/composition/spatial.ts` holds the list. Utility
+>   is the first (`src/services/utility/spatial.ts`). No screen exists yet.
+> - **Location is a fact about any entity.** `src/domain/geo.ts`: points,
+>   lines and areas; `EntityLocation` on an open `{ kind, id }`, with how
+>   the geometry was obtained; `Area`; `Territory`. Nothing names a
+>   substation.
+> - **Spatial analytics** (`src/analytics/spatial`, `topology/trace.ts`):
+>   geometry, locations read from the registry, the network trace, and
+>   allocation to areas under `gridintel.spatial.reference`.
+> - **A viewer on every spatial call.** `ViewerContext` is an argument of
+>   every spatial service and of the map read model. A viewer sees
+>   everything (the public demonstration) or a territory, and filtering is
+>   done once, in `scopeModel`, before any service runs. Results are cached
+>   under `viewerScopeKey`. `getViewer()` in the composition root supplies
+>   the one viewer there is. **The Phase 6 read models take no viewer yet**:
+>   that is owed before login (Phase 8).
+> - **A new port**: `repos.spatial` (`listAreas`, `listTerritories`). The
+>   demonstration holds three synthetic districts and no territory.
+> - **The demonstration adapter builds what is asked for**
+>   (`src/repositories/demo/onDemand.ts`): one supply's records for a
+>   question about its connections, the whole dataset otherwise. The
+>   billing port takes an optional list of accounts.
+> - **Telemetry has a reading at the as-of time.**
+>
 > **State at the Phase 6 close-out (2026-10-07).** Since 6c-3:
 >
 > - **Two ways to render, chosen by one question** (ADR 0012).
@@ -372,6 +403,16 @@ None is hard to change; each needs a decision before mini-grid work starts.
 | Revenue gap | Unbilled energy valued at the low-voltage non-MD rate of the transformer where it occurs. | The "where it occurs" level would be the site or its distribution segment. The valuation rule itself carries over. |
 | Organization | `OrganizationKind` already includes `minigrid_operator` and `der_developer`. | Nothing. |
 | Reported figures | `ReportedKpi` with a basis; compared only on the same basis. | Fits directly: a claimed figure beside a calculated one, with the basis stated. |
+
+**The spatial layer does not add to this list (Phase 7a, ADR 0014).** A
+located entity is named by an open `{ kind, id }` and has no parent field;
+an area and a territory name no network level; the spatial services ask
+registered modules for entities, traces and figures and name no kind of
+asset themselves. A mini-grid site or a DER asset becomes visible on the
+map, searchable, traceable and totalled by area when its module registers,
+with no change to the domain's geography or to the platform. What stays
+Utility-specific is inside the Utility registration: its entity kinds, and
+a trace that walks substation, feeder and transformer.
 
 **What 6a and 6b must not do.** Add a required link from an asset to a
 substation; add a rule that energy always enters from upstream; hard-code the

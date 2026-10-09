@@ -3,10 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-09. Status: **Phase 6 is complete.** Its close-out was
-approved by the Founder and merged to `main` on 2026-10-09, tag `phase-6`.
-The next phase has not been chosen; the Founder chooses it. Its first item
-is already decided and is listed under "Next phase" below.
+Last updated: 2026-10-09. Status: **Phase 7a (GIS foundations) is complete
+and awaits the Founder's approval**, on branch `phase-7a`; nothing is
+merged. Phase 6 is complete: its close-out was approved by the Founder and
+merged to `main` on 2026-10-09, tag `phase-6`.
 
 ## Completed
 
@@ -1108,33 +1108,158 @@ builds; 43 browser tests against both builds. Screenshots:
   metric, table and panel components moved out of `components/operations`
   into a shared set.
 
-## Next phase (not chosen; the Founder chooses it)
+## Phase 7: GIS, a platform capability (7a complete, awaiting approval; branch `phase-7a`)
 
-**Its first item, already decided (2026-10-09).** A telemetry reading at the
-as-of time. The synthetic dataset's last reading is at 23:00 on 30
-September, so "loading now" at the demo clock shows Farm Road at 25.4%,
-twenty minutes before the feeder tripped. Add readings at the demo clock,
-with Farm Road's feeder, its ten transformers and Hillcrest T2, which
-carries Farm Road alone, at zero after the trip, and report what moves.
+Moved ahead of the API and database by Founder decision (ADR 0004). Chosen
+as the next phase by the Founder on 2026-10-09, with the decisions recorded
+in ADR 0014. Two gated sub-phases; work stops after each.
 
-**Open for the Founder's decision.** Whether to make a service point's
-first visit cheaper, and which way (the proposal is in the Phase 6
-close-out).
+**The Founder's decisions (2026-10-09; ADR 0014).**
 
-## Phase 7: GIS and network intelligence
+1. GIS is a platform capability serving every module (Utility now;
+   Mini-grid, DER and Planning later): the spatial view of the energy
+   system the user operates. It is not a site-prospecting tool. Every value
+   on the map comes from an existing service, with status and origin; the
+   map never computes a figure.
+2. Write once, configure per section: one shared map component in the
+   design system; each module registers only its layers and default view.
+3. Spatial domain: location for any entity (points, lines, areas), with no
+   required link to a substation.
+4. Spatial services generic over entity kinds: what is here, what is inside
+   an area, what is behind an asset, totals by area.
+5. Viewer scope from the first day: every spatial service and read model
+   takes a viewer; filtering happens in services; cache keys include the
+   viewer scope; a test proves a restricted viewer sees nothing outside its
+   territory. The only viewer for now is the public demonstration. Screens
+   for a real tenant render per request; building ahead of time stays only
+   for the public synthetic demonstration.
+6. AI-ready on the same pattern; nothing built now.
 
-Moved ahead of the API and database by Founder decision (ADR 0004).
+**Condition (ADR 0004, unchanged).** The map consumes services only, never
+the dataset directly.
 
-**Goal.** A map that is an analytical view of the network.
-**Includes.** Map read-model services, feeder topology rendering, KPI
-overlays, outage geography, map-to-drill-down linking.
-**Condition.** The map consumes services only, never the dataset directly.
-**Dependencies.** Phase 6. Coordinates and feeder routes are already in the
-Phase 5 dataset, so no re-seed is needed.
-**Risks.** Leaflet is installed; any other map dependency or tile provider is
-a decision gate (major dependency, external integration).
-**Acceptance.** An overloaded transformer can be traced on the map to its
-feeder, substation, area and affected customers.
+### Phase 7a: Foundations (complete, awaiting approval; branch `phase-7a`)
+
+| Item | Status | Commit |
+| --- | --- | --- |
+| Housekeeping: a telemetry reading at the as-of time | Done | `48827ed` |
+| Housekeeping: a service point's first visit generates one transformer's connections, not the dataset (option 1 of the Phase 6 proposal) | Done | `97fd3c8` |
+| Spatial domain: geometry, entity location with its basis, areas, territories | Done | this checkpoint |
+| Spatial analytics: geometry, locations from the registry, network trace, allocation to areas (methodology `gridintel.spatial.reference` 0.1.0) | Done | this checkpoint |
+| Areas and territories port; in-memory and demonstration adapters | Done | this checkpoint |
+| Viewer scope: `ViewerContext`, visibility by territory, viewer-keyed cache | Done | this checkpoint |
+| Spatial services: what is here, what is inside, what is behind, totals by area | Done | this checkpoint |
+| Layer registry and the map read model; Utility registered as the first module | Done | this checkpoint |
+| ADR 0014, with the basemap and boundary proposals | Done; the proposals are not decided | this checkpoint |
+
+No screen, route or component was built, and no dependency was added.
+
+**1. The as-of reading: what moved.** One reading at the demo clock (1
+October, 00:00 WAT) from every transformer monitor and remote terminal
+unit. Compared across every network screen, the five workspaces and five
+service points, field by field: **only the 55 "loading now" figures moved**
+(48 distribution transformers, 4 feeders, 3 power transformers), each from
+its 23:00 reading to its 00:00 one, with the reading it names. No peak, no
+energy, revenue or reliability figure, no alarm, condition or attention
+list moved: the reading is outside the month.
+
+| Loading now | Before (23:00 reading) | After (00:00 reading) |
+| --- | --- | --- |
+| Farm Road feeder | 25.4% | 0.0% |
+| Its ten transformers (DT-FRM-3 shown) | 29.5% | 0.0% |
+| Hillcrest T2 | 11.7% | 0.0% |
+| Hillcrest T1 | 22.8% | 17.3% |
+| Riverside T1 | 35.1% | 25.1% |
+| Market Road / Old Town / Government Avenue | 38.6% / 37.4% / 29.6% | 27.7% / 26.6% / 22.5% |
+| DT-OLD-2 / DT-GOV-3 | 53.9% / 44.5% | 40.7% / 31.3% |
+
+A zero here is a measured reading, not a gap, and its status is "ok". The
+other feeders fall because midnight load is lower than 23:00 load. An
+assumption is recorded in `DATASET_ASSUMPTIONS.md`: no load-shedding block
+is taken to begin at the clock, though three feeders are shed from midnight
+on most days, because the dataset holds no interruption that starts at or
+after the clock.
+
+**2. A service point's first visit.** The energy and billing of one supply
+(a transformer's connections, or the 11 kV customer) depend only on that
+supply, so the demonstration adapter now generates one supply when a
+question is about its connections, and the whole dataset only when a
+question needs it (`src/repositories/demo/onDemand.ts`). The billing port
+takes an optional list of accounts, and the service-point read model asks
+for its own account only.
+
+- *The dataset is identical.* The existing dataset tests pass unchanged. A
+  new test asks for every supply's records both ways and compares them
+  record for record, in order. Every screen compared above is unchanged.
+- *Measured locally*, a fresh process, first service-point view: 840 to
+  1,049 ms before, 74 to 211 ms after (five runs each). Loading the code
+  takes about 0.3 to 0.4 s on top in both.
+- *Not measured on Vercel.* The 2.5 s observed on production was a cold
+  function instance; it should fall by most of a second, but that is an
+  expectation until it is measured after a merge.
+
+**3. Spatial foundations.** What was built is listed in ADR 0014, "As built
+in Phase 7a". On the demonstration network:
+
+- *Map read model*: 2 substations, 4 feeder routes (marked schematic), 48
+  transformers; none without a location. Computed in about 90 ms.
+- *Trace of DT-OLD-2*: feeder Old Town, power transformer Riverside T1,
+  substation Riverside, district South; 135 connections and 132 active
+  accounts behind it.
+- *Trace of the Farm Road feeder* (the open fault): Hillcrest T2, Hillcrest;
+  10 transformers, 1,064 connections, **1,015 active accounts** behind it.
+- *Revenue not realised by district*: North-east ₦12,342,819 (16
+  transformers), North-west ₦20,383,902 (14), South ₦12,665,985 (18), and
+  ₦912,259 carried by no transformer; together ₦46,304,966, the Revenue
+  screen's figure.
+- *Restricted viewers*: five territories (listed assets, a named area, a
+  drawn boundary, an empty territory, a territory naming things that do not
+  exist), each asked every question of every spatial service and the map.
+  No answer holds an id or a name of anything outside the territory.
+
+**Acceptance, as met.** `npm run verify`, run step by step: typecheck
+clean; 518 unit tests; lint clean; both builds; 44 browser tests against
+both builds (one new: loading now on Farm Road).
+
+**For the Founder's decision** (ADR 0014).
+
+- The twelve choices made in building it; in particular that a line
+  crossing a territory's boundary is not visible to that viewer, which
+  areas are public, and the three synthetic districts.
+- The basemap (proposal 1; recommendation: none for 7b, as a setting of
+  the shared component).
+- Administrative boundaries (proposal 2; recommendation: geoBoundaries
+  states and LGAs, after the HDX licence is read by a person).
+
+**Known, and not done.**
+
+- The Phase 6 read models take no viewer. That is correct for the public
+  demonstration and must change before anyone logs in (Phase 8).
+- The quiet transformer monitor on DT-OLD-3 still relays hourly power
+  readings after its last check-in at 14:55, including the new one at the
+  clock. It was so before this phase; found, not changed.
+- The cold first visit to a service point has not been measured on Vercel.
+
+### Phase 7b: Shared map and Utility layers (not started; after the Founder approves 7a)
+
+- The shared map component; a Map workspace in the platform menu, not under
+  Utility only.
+- Utility layers: substations, feeder routes, transformers coloured by
+  loading; ATC&C, revenue not realised or band compliance, one at a time
+  with its legend; open outages with their downstream trace; standing
+  alarms.
+- Embedded maps where they help: the Operations levels, Events / Alarms.
+- Click any asset: its key figures with status and origin, and a link into
+  the drill-down.
+
+**Dependencies.** 7a approved. Leaflet and React Leaflet are installed and
+unused; any other map library or any tile provider is a decision gate
+(ADR 0014, proposal 1).
+**Risks.** A map is a client component: it must still carry the SYNTHETIC
+DATA bar and state a schematic route as one. Phone-sized screens.
+**Acceptance.** Trace DT-OLD-2 to its feeder, substation, area and
+customers; trace the Farm Road open fault to the 1,015 customers behind it;
+works on a phone screen; the SYNTHETIC DATA bar is on screen.
 
 ## Phase 8: API and backend boundary
 
