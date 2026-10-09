@@ -1,5 +1,6 @@
 import type {
   Alarm,
+  Area,
   BillingRecord,
   DataSource,
   DeviceHeartbeat,
@@ -8,6 +9,7 @@ import type {
   Payment,
   ReportedKpi,
   TelemetryPoint,
+  Territory,
 } from "@/domain";
 import type { Completeness, NetworkRegistrySnapshot, RegistryCoverage } from "../ports/index.ts";
 
@@ -32,6 +34,12 @@ export interface DomainDataset {
   billingRecords: readonly BillingRecord[];
   payments: readonly Payment[];
   dataSources: readonly DataSource[];
+  /**
+   * Named areas and the territories of organizations. Absent when the source holds none, which is
+   * then reported as "not available", never as an empty but complete list.
+   */
+  areas?: readonly Area[];
+  territories?: readonly Territory[];
   completeness: {
     intervalEnergy: Completeness;
     telemetry: Completeness;
@@ -40,5 +48,7 @@ export interface DomainDataset {
     alarms: Completeness;
     reportedKpis: Completeness;
     billing: Completeness;
+    areas?: Completeness;
+    territories?: Completeness;
   };
 }

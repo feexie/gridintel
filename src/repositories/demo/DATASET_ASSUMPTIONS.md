@@ -156,8 +156,23 @@ supply.
   Riverside. Generated transformers are spaced along a straight heading from
   their substation, with a small random offset. Service points are scattered
   within about 300 m of their transformer. A feeder's route is a straight
-  polyline from the substation through its transformers. A power transformer
-  has no coordinates of its own; it is in its substation.
+  polyline from the substation through its transformers, and the registry
+  marks it `schematic`: it shows what is connected, not where a line runs,
+  and a map must say so. The registry does not say how any point was
+  obtained, so points are `unspecified`. A power transformer has no
+  coordinates of its own; it is shown at its substation, marked `inherited`.
+- **Three invented districts** are laid over the network so that "what is
+  inside an area" and "totals by area" have areas to work on (`areas.ts`).
+  They are rectangles named "Demonstration district South / North-west /
+  North-east (synthetic)", of kind `other`. **They are not administrative
+  boundaries**: no state, LGA or ward of Nigeria is in the dataset. South
+  holds Riverside, all of Old Town and four Market Road transformers;
+  North-west holds Hillcrest, all of Government Avenue and two Market Road
+  transformers; North-east holds Farm Road's ten transformers and six of
+  Market Road's. Market Road's route crosses all three and Farm Road's
+  crosses one boundary, so neither feeder is in any one district. The
+  organization has no territory record: the only viewer of the
+  demonstration sees everything.
 - **Names** of places, assets and the organization are invented. No personal
   names are generated.
 

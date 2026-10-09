@@ -2,6 +2,7 @@ import type { GridIntelRepositories, RepositoryResult } from "../ports/index.ts"
 import type { DomainDataset } from "../memory/dataset.ts";
 import { createInMemoryRepositories } from "../memory/inMemoryRepositories.ts";
 import { DEMO_PARTS, demoDataset, demoDatasetIsBuilt } from "./buildDemoDataset.ts";
+import { buildDemoAreas } from "./areas.ts";
 import { buildDemoBilling } from "./billing.ts";
 import { SUPPLY_KEYS, buildDemoHeartbeats, connectionsOf } from "./energy.ts";
 import { CONNECTIONS } from "./network.ts";
@@ -18,7 +19,7 @@ import { DEMO_DATA_SOURCES } from "./sources.ts";
    whole dataset only when a question needs it:
 
      registry, outages, alarms,      built on their own; none of them
-     heartbeats, sources             needs the energy model
+     heartbeats, sources, areas      needs the energy model
      interval energy, register       of customer meters only: from
      readings, charges, payments     the supplies those belong to
      anything else (a boundary       the whole dataset
@@ -41,6 +42,8 @@ const COMPLETE = {
   alarms: "complete",
   reportedKpis: "complete",
   billing: "complete",
+  areas: "complete",
+  territories: "complete",
 } as const;
 
 const REGISTRY_COMPLETE = {
@@ -104,7 +107,7 @@ export function createDemoRepositories(): GridIntelRepositories {
   const standingRecords = (): GridIntelRepositories =>
     built() ??
     (standing ??= createInMemoryRepositories(
-      partialDataset({ outages: DEMO_PARTS.outages(), alarms: DEMO_PARTS.alarms(), heartbeats: buildDemoHeartbeats() }),
+      partialDataset({ outages: DEMO_PARTS.outages(), alarms: DEMO_PARTS.alarms(), heartbeats: buildDemoHeartbeats(), areas: buildDemoAreas(), territories: [] }),
     ));
 
   // One supply's customer records.
@@ -184,5 +187,10 @@ export function createDemoRepositories(): GridIntelRepositories {
     },
 
     sources: { listDataSources: () => standingRecords().sources.listDataSources() },
+
+    spatial: {
+      listAreas: (query) => standingRecords().spatial.listAreas(query),
+      listTerritories: (query) => standingRecords().spatial.listTerritories(query),
+    },
   };
 }

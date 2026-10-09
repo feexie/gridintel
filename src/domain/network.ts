@@ -1,6 +1,6 @@
 import type { Audit, ExternalId, IsoDate, LifecycleStatus } from "./primitives";
 import type { Provenance } from "./provenance";
-import type { Coordinates } from "./geo";
+import type { Coordinates, LocationBasis } from "./geo";
 
 /**
  * NERC Service-Based Tariff band of a feeder, set by the minimum average
@@ -68,6 +68,8 @@ export interface Substation extends Audit {
   /** ADMINISTRATIVE: the region that manages this substation. */
   adminRegionId?: string;
   location?: Coordinates;
+  /** How the location was obtained, when the source says. */
+  locationBasis?: LocationBasis;
   lifecycle: LifecycleStatus;
   commissionedAt?: IsoDate;
   provenance: Provenance;
@@ -118,6 +120,8 @@ export interface Feeder extends Audit {
   serviceBand?: ServiceBand;
   /** The line route as an ordered polyline, starting at the origin substation. */
   route?: readonly Coordinates[];
+  /** How the route was obtained, when the source says: a line drawn straight between transformers is "schematic". */
+  routeBasis?: LocationBasis;
   nominalVoltageKv: number;
   ratedCurrentA?: number;
   ratedCapacityMva?: number;
@@ -139,6 +143,8 @@ export interface DistributionTransformer extends Audit {
   secondaryVoltageKv?: number;
   phases?: 1 | 3;
   location?: Coordinates;
+  /** How the location was obtained, when the source says. */
+  locationBasis?: LocationBasis;
   lifecycle: LifecycleStatus;
   provenance: Provenance;
 }
@@ -162,6 +168,8 @@ export interface ServicePoint extends Audit {
   /** ADMINISTRATIVE: overrides the region inherited from the supply. */
   adminRegionId?: string;
   location?: Coordinates;
+  /** How the location was obtained, when the source says. */
+  locationBasis?: LocationBasis;
   lifecycle: LifecycleStatus;
   provenance: Provenance;
 }

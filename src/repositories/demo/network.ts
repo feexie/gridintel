@@ -707,6 +707,8 @@ export function buildDemoRegistry(): NetworkRegistrySnapshot {
       origin: { kind: "substation", substationId: plan.substationId, powerTransformerId: incomerOf(plan).powerTransformer.id },
       serviceBand: plan.band,
       route: [substation.location, ...TRANSFORMERS.filter((dt) => dt.feederId === plan.id).map((dt) => dt.location)],
+      // Straight lines from the substation through each transformer in turn: connection, not a surveyed route.
+      routeBasis: "schematic",
       nominalVoltageKv: 11,
       ratedCurrentA: plan.ratedCurrentA,
       ratedCapacityMva: round((Math.sqrt(3) * 11 * plan.ratedCurrentA) / 1000, 2),

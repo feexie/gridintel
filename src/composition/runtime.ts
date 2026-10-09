@@ -1,6 +1,7 @@
 import type { IsoTimestamp, Period } from "@/domain";
 import type { GridIntelRepositories } from "../repositories/ports/index.ts";
 import type { OperationsRuntime } from "../services/operations/levels.ts";
+import type { ViewerContext } from "../services/spatial/viewer.ts";
 import { createMemoryCache } from "../services/analytics/cache.ts";
 import { DEMO_CLOCK, DEMO_NOTICE, DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
 
@@ -111,6 +112,31 @@ export function getDataContext(): { notice: { label: string; summary: string } |
 }
 
 /* ==========================================================
+   THE VIEWER
+
+   Who a request is answered for. Every spatial service and map read
+   model takes the viewer and returns only what that viewer may see
+   (services/spatial/viewer.ts).
+
+   Today there is one viewer: the public demonstration, which is
+   synthetic data open to anyone and sees everything. It is the same
+   on every request, which is what allows its screens to be built
+   ahead of time (ADR 0012).
+
+   When people log in (Phase 8) this function reads the request, and
+   two things follow, by ADR 0014: a screen for a real tenant is
+   rendered on each request and is never built ahead of time or kept
+   as a file; and the organization's territory, not this constant,
+   decides what is seen.
+========================================================== */
+
+const PUBLIC_DEMO_VIEWER: ViewerContext = { viewerId: "public-demo", organizationId: null, access: { kind: "everything" } };
+
+export function getViewer(): ViewerContext {
+  return PUBLIC_DEMO_VIEWER;
+}
+
+/* ==========================================================
    RESULT CACHE AND ITS INVALIDATION RULE
 
    Results are computed once per server process and reused.
@@ -136,6 +162,13 @@ export function getDataContext(): { notice: { label: string; summary: string } |
       it advances.
    3. SCOPE OF USE. One cache per set of repositories. A second
       tenant or data source gets its own.
+   4. VIEWER. A result that depends on who is asking carries the
+      viewer's scope in its key (`viewerScopeKey`), so it is never
+      served to anyone else. The spatial services do this
+      themselves. `cachedView` below does NOT: it is for screens
+      that are the same for everyone, which today is every screen
+      of the public demonstration. A screen for a logged-in viewer
+      must not go through it.
 ========================================================== */
 
 export function invalidateResults(): void {

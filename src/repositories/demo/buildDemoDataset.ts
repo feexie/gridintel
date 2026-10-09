@@ -3,6 +3,7 @@ import type { NetworkRegistrySnapshot } from "../ports/index.ts";
 import type { DomainDataset } from "../memory/dataset.ts";
 import type { SupplyEnergy } from "./energy.ts";
 import { buildDemoAlarms } from "./alarms.ts";
+import { buildDemoAreas } from "./areas.ts";
 import { buildDemoBilling } from "./billing.ts";
 import { buildEnergyModel, buildSupplyEnergy } from "./energy.ts";
 import { buildDemoRegistry } from "./network.ts";
@@ -87,6 +88,9 @@ export function buildDemoDataset(parts: DemoParts = createDemoParts()): DomainDa
     billingRecords: billing.billingRecords,
     payments: billing.payments,
     dataSources: DEMO_DATA_SOURCES,
+    areas: buildDemoAreas(),
+    // No organization in the demonstration has a territory: its only viewer sees everything.
+    territories: [],
     completeness: {
       intervalEnergy: "complete",
       telemetry: "complete",
@@ -95,6 +99,8 @@ export function buildDemoDataset(parts: DemoParts = createDemoParts()): DomainDa
       alarms: "complete",
       reportedKpis: "complete",
       billing: "complete",
+      areas: "complete",
+      territories: "complete",
     },
   };
 }

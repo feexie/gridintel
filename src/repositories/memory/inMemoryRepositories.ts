@@ -224,5 +224,20 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
         return [...dataset.dataSources];
       },
     },
+
+    spatial: {
+      async listAreas(query) {
+        const kinds = query.kinds === undefined ? null : new Set(query.kinds);
+        const records = (dataset.areas ?? []).filter((area) => kinds === null || kinds.has(area.kind));
+        // A dataset that holds no areas says so: the list is not an empty but complete one.
+        return { records, completeness: dataset.areas === undefined ? "not_available" : (dataset.completeness.areas ?? "partial") };
+      },
+
+      async listTerritories(query) {
+        const wanted = query.organizationIds === undefined ? null : new Set(query.organizationIds);
+        const records = (dataset.territories ?? []).filter((territory) => wanted === null || wanted.has(territory.organizationId));
+        return { records, completeness: dataset.territories === undefined ? "not_available" : (dataset.completeness.territories ?? "partial") };
+      },
+    },
   };
 }
