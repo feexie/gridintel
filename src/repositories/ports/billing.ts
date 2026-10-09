@@ -12,6 +12,11 @@ import type { RepositoryResult } from "./common.ts";
 export interface BillingQuery {
   /** Charges with start ≤ billedAt < end, or payments with start ≤ receivedAt < end. */
   period: Period;
+  /**
+   * Only the records of these accounts, when given. Selecting by identity, as a meter query
+   * does; the records returned are the ones the unrestricted query would return for them.
+   */
+  customerIds?: readonly string[];
 }
 
 export interface BillingRepository {

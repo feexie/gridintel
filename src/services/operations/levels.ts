@@ -1596,9 +1596,11 @@ export async function servicePointView(runtime: OperationsRuntime, servicePointI
   }
   const recorded = recordedAt(runtime, meter, intervalRecords, registerReadings, customer?.paymentMode === "prepaid");
 
+  // Only this account's charges and payments are asked for: a service point needs no one else's.
+  const ownRecords = { period: runtime.period, customerIds: customer ? [customer.id] : [] };
   const [charges, payments] = await Promise.all([
-    runtime.repos.billing.listBillingRecords({ period: runtime.period }),
-    runtime.repos.billing.listPayments({ period: runtime.period }),
+    runtime.repos.billing.listBillingRecords(ownRecords),
+    runtime.repos.billing.listPayments(ownRecords),
   ]);
   const ownCharges = customer ? charges.records.filter((record) => record.customerId === customer.id) : [];
   const ownPayments = customer ? payments.records.filter((payment) => payment.customerId === customer.id) : [];

@@ -198,7 +198,9 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
     billing: {
       async listBillingRecords(query) {
         const { startMs, endMs } = queryBounds(query.period);
+        const wanted = query.customerIds === undefined ? null : new Set(query.customerIds);
         const records = dataset.billingRecords.filter((record) => {
+          if (wanted !== null && !wanted.has(record.customerId)) return false;
           const billedMs = epochMs(record.billedAt);
           return billedMs === null || (billedMs >= startMs && billedMs < endMs);
         });
@@ -207,7 +209,9 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
 
       async listPayments(query) {
         const { startMs, endMs } = queryBounds(query.period);
+        const wanted = query.customerIds === undefined ? null : new Set(query.customerIds);
         const records = dataset.payments.filter((payment) => {
+          if (wanted !== null && !wanted.has(payment.customerId)) return false;
           const receivedMs = epochMs(payment.receivedAt);
           return receivedMs === null || (receivedMs >= startMs && receivedMs < endMs);
         });

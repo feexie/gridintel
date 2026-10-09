@@ -49,7 +49,14 @@ function paidFraction(behaviour: PaymentBehaviour, random: () => number): number
   return 0.3 + random() * 0.5;
 }
 
-export function buildDemoBilling({ recordedKwh, registerReads }: Pick<EnergyModel, "recordedKwh" | "registerReads">): {
+/**
+ * The charges and payments of `connections`, in their order: every connection by default. An
+ * account's charges depend only on that account, so one supply's can be raised without the rest.
+ */
+export function buildDemoBilling(
+  { recordedKwh, registerReads }: Pick<EnergyModel, "recordedKwh" | "registerReads">,
+  connections: readonly ConnectionPlan[] = CONNECTIONS,
+): {
   billingRecords: BillingRecord[];
   payments: Payment[];
 } {
@@ -101,7 +108,7 @@ export function buildDemoBilling({ recordedKwh, registerReads }: Pick<EnergyMode
     }
   };
 
-  for (const connection of CONNECTIONS) {
+  for (const connection of connections) {
     if (connection.disconnected) continue;
     const feeder = feederById.get(connection.feederId) as FeederPlan;
     const random = seeded(`billing:${connection.customerId}`);

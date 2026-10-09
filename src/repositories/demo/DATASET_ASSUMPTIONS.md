@@ -13,6 +13,13 @@ quoted as a fact about any real network.
 The dataset is generated in code (`src/repositories/demo`) from a fixed seed.
 It is identical on every build.
 
+It is generated in independent parts: the registry, the outage log, the alarm
+list, and the energy and billing of each supply (a transformer's connections,
+or the 11 kV customer). A question about one connection is answered from its
+own supply, without generating the rest (`onDemand.ts`); the records are the
+same ones the whole dataset holds, and a test compares the two for every
+supply.
+
 ## Time
 
 - Period: 1–30 September 2026, in West Africa Time (UTC+1).

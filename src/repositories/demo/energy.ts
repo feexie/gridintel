@@ -1,4 +1,5 @@
-import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Period, Provenance, TelemetryPoint } from "@/domain";
+import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, MetricKey, Period, TelemetryPoint } from "@/domain";
+import type { ConnectionPlan } from "./network.ts";
 import { DEMO_CLOCK, DEMO_DAYS, DEMO_HOURS, PERIOD_END_MS, at, hourStart, wat, weekday } from "./clock.ts";
 import { DAY_FACTOR, HOURLY_NOISE, SHAPE, WEEK } from "./load.ts";
 import { BOUNDARY_METERS, CONNECTIONS, FEEDERS, MV_CUSTOMER, QUIET_MONITOR, SUBSTATIONS, SUBSTATION_LOSS, TRANSFORMERS } from "./network.ts";
@@ -165,54 +166,99 @@ function sum(values: ArrayLike<number>): number {
   return total;
 }
 
-export function buildEnergyModel(): EnergyModel {
-  const metering = demoProvenance(METERING_SOURCE);
-  const estimatedProvenance = demoProvenance(
-    METERING_SOURCE,
-    undefined,
-    "Gap filled by the meter data system from the same hours of the previous day.",
-  );
-  const scada = demoProvenance(SCADA_SOURCE);
-  const readingRound = demoProvenance(METERING_SOURCE, undefined, "Register read by a meter reader on the monthly round.");
-  const estimatedReading = demoProvenance(
-    METERING_SOURCE,
-    undefined,
-    "The meter was not read on this round. The billing system estimated the reading from the account's earlier consumption.",
-  );
+const METERING = demoProvenance(METERING_SOURCE);
+const GAP_FILLED = demoProvenance(METERING_SOURCE, undefined, "Gap filled by the meter data system from the same hours of the previous day.");
+const SCADA = demoProvenance(SCADA_SOURCE);
+const READING_ROUND = demoProvenance(METERING_SOURCE, undefined, "Register read by a meter reader on the monthly round.");
+const ESTIMATED_READING = demoProvenance(
+  METERING_SOURCE,
+  undefined,
+  "The meter was not read on this round. The billing system estimated the reading from the account's earlier consumption.",
+);
+const FEEDER_BY_ID = new Map(FEEDERS.map((feeder) => [feeder.id, feeder]));
+
+/**
+ * Hourly readings of a boundary meter or an AMI customer meter, added to `intervalEnergy`.
+ * Returns the month's total as the meter registered it, hours it failed to report included.
+ */
+function pushHourly(
+  intervalEnergy: IntervalEnergy[],
+  meterId: string,
+  kwh: ArrayLike<number>,
+  options: { estimated?: (h: number) => boolean; skip?: (h: number) => boolean } = {},
+): number {
+  let month = 0;
+  for (let h = 0; h < DEMO_HOURS; h++) {
+    const reading = round(kwh[h], 3);
+    month += reading;
+    if (options.skip?.(h)) continue;
+    const isEstimated = options.estimated?.(h) ?? false;
+    intervalEnergy.push({
+      meterId,
+      intervalStart: HOUR_STARTS[h],
+      intervalMinutes: 60,
+      importKwh: reading,
+      exportKwh: 0,
+      quality: isEstimated ? "estimated" : "measured",
+      provenance: isEstimated ? GAP_FILLED : METERING,
+    });
+  }
+  return round(month, 3);
+}
+
+/* ==========================================================
+   ONE SUPPLY AT A TIME
+
+   Everything a connection gives the dataset depends only on that
+   connection and on the supply it hangs from: its own random
+   streams, its supply's daily factors and its supply's outages. So
+   the connections of one supply (a transformer, or the 11 kV
+   customer) can be generated without any other, and the whole
+   model is the supplies in order, with the boundaries above them.
+
+   A screen about one service point asks for one supply's records.
+   The adapter then generates that supply alone (see onDemand.ts);
+   the records are the same ones the whole dataset holds.
+========================================================== */
+
+const CONNECTIONS_BY_SUPPLY: ReadonlyMap<string, readonly ConnectionPlan[]> = (() => {
+  const bySupply = new Map<string, ConnectionPlan[]>();
+  for (const connection of CONNECTIONS) {
+    const list = bySupply.get(connection.supplyKey);
+    if (list === undefined) bySupply.set(connection.supplyKey, [connection]);
+    else list.push(connection);
+  }
+  return bySupply;
+})();
+
+/** Every supply key, in the order the dataset holds their connections. */
+export const SUPPLY_KEYS: readonly string[] = [...CONNECTIONS_BY_SUPPLY.keys()];
+
+/** The connections of one supply, in the dataset's order. */
+export function connectionsOf(supplyKey: string): readonly ConnectionPlan[] {
+  return CONNECTIONS_BY_SUPPLY.get(supplyKey) ?? [];
+}
+
+/** What the connections of one supply give the dataset, and what the levels above need from them. */
+export interface SupplyEnergy {
+  /** Interval energy of the supply's AMI customer meters. */
+  intervalEnergy: IntervalEnergy[];
+  /** Register readings of the supply's postpaid meters that are read by hand. */
+  telemetry: TelemetryPoint[];
+  recordedKwh: Map<string, number>;
+  registerReads: Map<string, RegisterRead>;
+  /** What the connections consumed, and would have drawn with supply on, per hour. */
+  consumed: Float64Array;
+  demand: Float64Array;
+  /** What they would draw at the demo clock, kW. */
+  clockKw: number;
+}
+
+export function buildSupplyEnergy(supplyKey: string): SupplyEnergy {
   const intervalEnergy: IntervalEnergy[] = [];
   const telemetry: TelemetryPoint[] = [];
   const recordedKwh = new Map<string, number>();
   const registerReads = new Map<string, RegisterRead>();
-  const feederById = new Map(FEEDERS.map((feeder) => [feeder.id, feeder]));
-  const technicalLossKwh = new Map<string, number>();
-
-  /**
-   * Hourly readings of a boundary meter or an AMI customer meter. Returns the month's total as
-   * the meter registered it, hours it failed to report included.
-   */
-  const pushHourly = (
-    meterId: string,
-    kwh: ArrayLike<number>,
-    options: { estimated?: (h: number) => boolean; skip?: (h: number) => boolean } = {},
-  ): number => {
-    let month = 0;
-    for (let h = 0; h < DEMO_HOURS; h++) {
-      const reading = round(kwh[h], 3);
-      month += reading;
-      if (options.skip?.(h)) continue;
-      const isEstimated = options.estimated?.(h) ?? false;
-      intervalEnergy.push({
-        meterId,
-        intervalStart: HOUR_STARTS[h],
-        intervalMinutes: 60,
-        importKwh: reading,
-        exportKwh: 0,
-        quality: isEstimated ? "estimated" : "measured",
-        provenance: isEstimated ? estimatedProvenance : metering,
-      });
-    }
-    return round(month, 3);
-  };
 
   /** What a meter that reports nothing registered over the month: known to the model only. */
   const monthTotal = (hourlyKwh: ArrayLike<number>): number => {
@@ -247,87 +293,87 @@ export function buildEnergyModel(): EnergyModel {
     const openingAt = wat(hourStart(openingHour));
     const closingAt = wat(hourStart(closingHour));
     telemetry.push(
-      { source, metric: "energy_import_register_kwh", observedAt: openingAt, value: opening, quality: "measured", provenance: readingRound },
+      { source, metric: "energy_import_register_kwh", observedAt: openingAt, value: opening, quality: "measured", provenance: READING_ROUND },
       {
         source,
         metric: "energy_import_register_kwh",
         observedAt: closingAt,
         value: round(opening + advanceKwh, 1),
         quality: missed ? "estimated" : "measured",
-        provenance: missed ? estimatedReading : readingRound,
+        provenance: missed ? ESTIMATED_READING : READING_ROUND,
       },
     );
     registerReads.set(customerId, { advanceKwh, estimated: missed, period: { start: openingAt, end: closingAt } });
   };
 
-  /* ---- Connections -------------------------------------------------- */
-
-  // Supply key → what its connections consumed, and would have drawn with supply on, per hour.
-  const consumed = new Map<string, Float64Array>();
-  const demand = new Map<string, Float64Array>();
-  const dayFactor = new Map<string, number[]>();
-  const dayFactors = (supplyKey: string): number[] => {
-    let factors = dayFactor.get(supplyKey);
-    if (factors === undefined) {
-      const random = seeded(`day:${supplyKey}`);
-      factors = Array.from({ length: DEMO_DAYS }, () => DAY_FACTOR.low + random() * DAY_FACTOR.span);
-      dayFactor.set(supplyKey, factors);
-    }
-    return factors;
-  };
-
-  // What each supply's connections would draw at the demo clock, kW: one more draw of the same rule.
-  const clockDemand = new Map<string, number>();
-  const clockDayFactor = new Map<string, number>();
-  const dayFactorAtClock = (supplyKey: string): number => {
-    let factor = clockDayFactor.get(supplyKey);
-    if (factor === undefined) {
-      factor = DAY_FACTOR.low + seeded(`day:${supplyKey}:clock`)() * DAY_FACTOR.span;
-      clockDayFactor.set(supplyKey, factor);
-    }
-    return factor;
-  };
+  const key = supplyKey;
+  const consumed = zeros();
+  const demand = zeros();
+  const dayRandom = seeded(`day:${key}`);
+  const days = Array.from({ length: DEMO_DAYS }, () => DAY_FACTOR.low + dayRandom() * DAY_FACTOR.span);
+  // What the connections would draw at the demo clock, kW: one more draw of the same rule.
+  const dayFactorAtClock = DAY_FACTOR.low + seeded(`day:${key}:clock`)() * DAY_FACTOR.span;
+  let clockKw = 0;
 
   // One AMI customer meter stopped reporting for two days: a gap, not a zero.
-  const gapMeter = CONNECTIONS.find((c) => c.supplyKey === "MKT2" && c.ami)?.meterId;
+  const gapMeter = key === "MKT2" ? connectionsOf(key).find((c) => c.ami)?.meterId : undefined;
   const inGap = (h: number) => h >= 13 * 24 && h < 15 * 24;
 
   const recorded = zeros();
-  for (const connection of CONNECTIONS) {
-    const key = connection.supplyKey;
+  for (const connection of connectionsOf(key)) {
     const noise = seeded(`load:${connection.customerId}`);
-    const days = dayFactors(key);
     const shape = SHAPE[connection.category];
     const week = WEEK[connection.category];
-    let supplyConsumed = consumed.get(key);
-    let supplyDemand = demand.get(key);
-    if (supplyConsumed === undefined || supplyDemand === undefined) {
-      supplyConsumed = zeros();
-      supplyDemand = zeros();
-      consumed.set(key, supplyConsumed);
-      demand.set(key, supplyDemand);
-    }
     for (let h = 0; h < DEMO_HOURS; h++) {
       const day = (h / 24) | 0;
       const kw = connection.peakKw * shape[h % 24] * week[WEEKDAY[day]] * days[day] * (HOURLY_NOISE.low + noise() * HOURLY_NOISE.span);
       const actual = kw * availability(key, h);
-      supplyDemand[h] += kw;
-      supplyConsumed[h] += actual;
+      demand[h] += kw;
+      consumed[h] += actual;
       recorded[h] = actual * connection.recordedFraction;
     }
     // The connection's next draw, for the instant the month ends at.
-    const clockKw = connection.peakKw * shape[0] * week[CLOCK_WEEKDAY] * dayFactorAtClock(key) * (HOURLY_NOISE.low + noise() * HOURLY_NOISE.span);
-    clockDemand.set(key, (clockDemand.get(key) ?? 0) + clockKw);
+    clockKw += connection.peakKw * shape[0] * week[CLOCK_WEEKDAY] * dayFactorAtClock * (HOURLY_NOISE.low + noise() * HOURLY_NOISE.span);
     if (connection.meterId === undefined) continue;
     if (connection.ami) {
-      recordedKwh.set(connection.customerId, pushHourly(connection.meterId, recorded, connection.meterId === gapMeter ? { skip: inGap } : {}));
+      recordedKwh.set(connection.customerId, pushHourly(intervalEnergy, connection.meterId, recorded, connection.meterId === gapMeter ? { skip: inGap } : {}));
       continue;
     }
     recordedKwh.set(connection.customerId, monthTotal(recorded));
     if (connection.metering === "postpaid" && !connection.disconnected) {
-      const missedShare = feederById.get(connection.feederId)?.estimatedReadShare ?? 0;
+      const missedShare = FEEDER_BY_ID.get(connection.feederId)?.estimatedReadShare ?? 0;
       pushRegisterReads(connection.customerId, connection.meterId, connection.supplyKey, recorded, missedShare);
     }
+  }
+
+  return { intervalEnergy, telemetry, recordedKwh, registerReads, consumed, demand, clockKw };
+}
+
+/**
+ * The whole model: every supply in order, then the boundary meters and the telemetry above
+ * them. `supply` gives one supply's part; a caller that already holds some passes them in.
+ */
+export function buildEnergyModel(supply: (supplyKey: string) => SupplyEnergy = buildSupplyEnergy): EnergyModel {
+  const intervalEnergy: IntervalEnergy[] = [];
+  const telemetry: TelemetryPoint[] = [];
+  const recordedKwh = new Map<string, number>();
+  const registerReads = new Map<string, RegisterRead>();
+  const technicalLossKwh = new Map<string, number>();
+  const scada = SCADA;
+
+  // Supply key → what its connections consumed, and would have drawn with supply on, per hour.
+  const consumed = new Map<string, Float64Array>();
+  const demand = new Map<string, Float64Array>();
+  const clockDemand = new Map<string, number>();
+  for (const key of SUPPLY_KEYS) {
+    const part = supply(key);
+    for (const record of part.intervalEnergy) intervalEnergy.push(record);
+    for (const point of part.telemetry) telemetry.push(point);
+    for (const [customerId, kwh] of part.recordedKwh) recordedKwh.set(customerId, kwh);
+    for (const [customerId, read] of part.registerReads) registerReads.set(customerId, read);
+    consumed.set(key, part.consumed);
+    demand.set(key, part.demand);
+    clockDemand.set(key, part.clockKw);
   }
 
   /* ---- Boundaries --------------------------------------------------- */
@@ -365,7 +411,7 @@ export function buildEnergyModel(): EnergyModel {
         const totalizer = dtConsumed.map((kwh) => kwh / (1 - dt.lvLoss));
         // One transformer's totalizer lost four readings, which the meter data system estimated.
         const estimated = dt.key === "OLD3" ? (h: number) => h >= 9 * 24 + 17 && h < 9 * 24 + 21 : undefined;
-        pushHourly(BOUNDARY_METERS.totalizer(dt.id), totalizer, { estimated });
+        pushHourly(intervalEnergy, BOUNDARY_METERS.totalizer(dt.id), totalizer, { estimated });
         technicalLossKwh.set(`distribution_transformer:${dt.id}`, sum(totalizer) - sum(dtConsumed));
         feederConsumed += sum(dtConsumed);
 
@@ -400,7 +446,7 @@ export function buildEnergyModel(): EnergyModel {
       }
 
       for (let h = 0; h < DEMO_HOURS; h++) head[h] /= 1 - feeder.mvLoss;
-      pushHourly(BOUNDARY_METERS.feederHead(feeder.id), head);
+      pushHourly(intervalEnergy, BOUNDARY_METERS.feederHead(feeder.id), head);
       technicalLossKwh.set(`feeder:${feeder.id}`, sum(head) - feederConsumed);
       substationConsumed += feederConsumed;
 
@@ -423,7 +469,7 @@ export function buildEnergyModel(): EnergyModel {
     let received = 0;
     incomers.forEach((incomer, i) => {
       for (let h = 0; h < DEMO_HOURS; h++) incomer[h] /= 1 - SUBSTATION_LOSS;
-      pushHourly(BOUNDARY_METERS.incomer(substation, i + 1), incomer);
+      pushHourly(intervalEnergy, BOUNDARY_METERS.incomer(substation, i + 1), incomer);
       received += sum(incomer);
       // The transformer's loading, read at its 11 kV side by the substation's remote terminal unit.
       const source = { kind: "power_transformer" as const, id: substation.incomers[i].powerTransformer.id };
@@ -435,11 +481,12 @@ export function buildEnergyModel(): EnergyModel {
     technicalLossKwh.set(`substation:${substation.id}`, received - substationConsumed);
   }
 
-  return { intervalEnergy, telemetry, heartbeats: buildHeartbeats(scada), recordedKwh, registerReads, technicalLossKwh };
+  return { intervalEnergy, telemetry, heartbeats: buildDemoHeartbeats(), recordedKwh, registerReads, technicalLossKwh };
 }
 
 /** Hourly check-ins over the last day. One transformer monitor went quiet nine hours before the demo clock. */
-function buildHeartbeats(provenance: Provenance): DeviceHeartbeat[] {
+export function buildDemoHeartbeats(): DeviceHeartbeat[] {
+  const provenance = SCADA;
   const heartbeats: DeviceHeartbeat[] = [];
   const devices = [...SUBSTATIONS.map((plan) => `ED-${plan.id}`), ...TRANSFORMERS.map((dt) => `ED-${dt.id}`)];
   const signal = seeded("heartbeats");
