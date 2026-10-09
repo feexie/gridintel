@@ -1,4 +1,4 @@
-import type { Area, AreaGeometry, Geometry, LocatedRef } from "@/domain";
+import type { Area, AreaGeometry, AreaKind, EntityLocation, Geometry, LocatedRef } from "@/domain";
 import type { Completeness } from "../../repositories/ports/index.ts";
 import type { Sourcing } from "../analytics/sourcing.ts";
 import type { SpatialEntity, SpatialModule, SpatialRegistry, SpatialRuntime } from "./module.ts";
@@ -35,6 +35,18 @@ import { isLimited, viewerScopeKey } from "./viewer.ts";
    public geography and every viewer sees them. Any other area, such
    as another organization's service territory, is seen only by a
    viewer whose territory names it.
+
+   The model holds the areas there are few of. LGAs and wards run to
+   hundreds and thousands, so they are read only when a question
+   names one (`findArea`) or asks for the level (`areasOfKind`).
+
+   SYNTHETIC AND REAL ARE NEVER RELATED (Founder decision, ADR
+   0014). An entity whose location comes from a synthetic source is
+   not said to be inside an area that comes from a real one: it is
+   not listed there, not totalled there, and not held by a territory
+   stated as that area. A synthetic network drawn near Yola is not
+   in Yola North. The same holds the other way round: a real entity
+   is not put in a synthetic district. `relates` is the one test.
 ========================================================== */
 
 export interface ModuleModel {
@@ -50,6 +62,43 @@ export interface SpatialModel {
   areas: readonly Area[];
   areaCompleteness: Completeness;
   areaSourcing: Sourcing;
+  /** The ids of the sources whose records are synthetic. */
+  syntheticSources: ReadonlySet<string>;
+}
+
+/** The kinds of area the model always holds; the rest are read when asked for. */
+const MODEL_AREA_KINDS: readonly AreaKind[] = ["country", "state", "service_territory", "other"];
+const DETAIL_AREA_KINDS: readonly AreaKind[] = ["lga", "ward"];
+
+/**
+ * Whether an entity at `location` may be said to be inside `area`: only when both come from
+ * synthetic sources or both from real ones. Never a synthetic entity inside a real area, nor a
+ * real entity inside a synthetic one.
+ */
+export function relates(model: { syntheticSources: ReadonlySet<string> }, area: Area, location: EntityLocation): boolean {
+  return model.syntheticSources.has(location.provenance.sourceSystem) === model.syntheticSources.has(area.provenance.sourceSystem);
+}
+
+/** The areas of the levels the model does not hold: LGAs and wards. Read once while the records do not change. */
+function detailAreas(runtime: SpatialRuntime): Promise<{ records: Area[]; completeness: Completeness }> {
+  return (runtime.cache ?? NO_CACHE).get(`spatial-detail-areas|${runtime.now}`, () => runtime.repos.spatial.listAreas({ kinds: DETAIL_AREA_KINDS }));
+}
+
+/**
+ * An area by id, among those this viewer may see: the model's own, then the LGAs and wards,
+ * which are public geography. undefined for one that does not exist or is not the viewer's to see.
+ */
+export async function findArea(runtime: SpatialRuntime, scoped: { areas: readonly Area[] }, areaId: string): Promise<Area | undefined> {
+  return scoped.areas.find((candidate) => candidate.id === areaId) ?? (await detailAreas(runtime)).records.find((candidate) => candidate.id === areaId);
+}
+
+/** Every area of one kind that this viewer may see, with how complete the list is. */
+export async function areasOfKind(runtime: SpatialRuntime, scoped: ScopedModel, kind: AreaKind): Promise<{ records: Area[]; completeness: Completeness }> {
+  if (DETAIL_AREA_KINDS.includes(kind)) {
+    const detail = await detailAreas(runtime);
+    return { records: detail.records.filter((area) => area.kind === kind), completeness: detail.completeness };
+  }
+  return { records: scoped.areas.filter((area) => area.kind === kind), completeness: scoped.areaCompleteness };
 }
 
 export function loadSpatialModel(runtime: SpatialRuntime, registry: SpatialRegistry): Promise<SpatialModel> {
@@ -62,13 +111,15 @@ export function loadSpatialModel(runtime: SpatialRuntime, registry: SpatialRegis
       modules.push({ module: spatialModule, ...held });
       for (const entity of held.entities) byKey.set(entityKey(entity.ref), { module: spatialModule, entity });
     }
-    const areas = await runtime.repos.spatial.listAreas({});
+    const areas = await runtime.repos.spatial.listAreas({ kinds: MODEL_AREA_KINDS });
+    const sources = await runtime.repos.sources.listDataSources();
     return {
       modules,
       byKey,
       areas: areas.records,
       areaCompleteness: areas.completeness,
       areaSourcing: await new SourceTrail().add(areas.records).resolve(runtime.repos.sources),
+      syntheticSources: new Set(sources.filter((source) => source.kind === "synthetic").map((source) => source.id)),
     };
   });
 }
@@ -84,6 +135,7 @@ export interface ScopedModel {
   areas: readonly Area[];
   areaCompleteness: Completeness;
   areaSourcing: Sourcing;
+  syntheticSources: ReadonlySet<string>;
 }
 
 const PUBLIC_AREA_KINDS = new Set(["country", "state", "lga", "ward"]);
@@ -93,9 +145,11 @@ async function visibleKeys(runtime: SpatialRuntime, model: SpatialModel, viewer:
   const areas = new Set<string>(model.areas.filter((area) => PUBLIC_AREA_KINDS.has(area.kind)).map((area) => area.id));
   if (viewer.access.kind !== "territory") return { entities, areas };
 
-  const holdWithin = (geometry: AreaGeometry) => {
+  // `area` is given when the outline is a named area's: a synthetic entity is not held by a real area.
+  const holdWithin = (geometry: AreaGeometry, area?: Area) => {
     for (const [key, { entity }] of model.byKey) {
-      if (entity.location !== null && geometryWithinArea(entity.location.geometry, geometry)) entities.add(key);
+      if (entity.location === null || (area !== undefined && !relates(model, area, entity.location))) continue;
+      if (geometryWithinArea(entity.location.geometry, geometry)) entities.add(key);
     }
   };
   const everything = () => true;
@@ -103,11 +157,11 @@ async function visibleKeys(runtime: SpatialRuntime, model: SpatialModel, viewer:
     switch (part.kind) {
       case "areas":
         for (const areaId of part.areaIds) {
-          const area = model.areas.find((candidate) => candidate.id === areaId);
+          const area = await findArea(runtime, model, areaId);
           // An area the source does not hold gives nothing: a territory is never widened by a name.
           if (area === undefined) continue;
           areas.add(area.id);
-          holdWithin(area.geometry);
+          holdWithin(area.geometry, area);
         }
         break;
       case "boundary":
@@ -147,6 +201,7 @@ export async function scopeModel(runtime: SpatialRuntime, registry: SpatialRegis
       areas: model.areas.filter((area) => visible.areas.has(area.id)),
       areaCompleteness: model.areaCompleteness,
       areaSourcing: model.areaSourcing,
+      syntheticSources: model.syntheticSources,
     };
   });
 }

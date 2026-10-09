@@ -6,12 +6,12 @@ import type { MetricView } from "../operations/views.ts";
 import type { ScopedModel } from "./model.ts";
 import type { SpatialEntity, SpatialModule, SpatialRegistry, SpatialRuntime } from "./module.ts";
 import type { ViewerContext } from "./viewer.ts";
-import type { AreaTotalsView, BehindView, CoverageView, EntityGroupView, EntityView, HereView, InsideView } from "./views.ts";
+import type { AreaOutlinesView, AreaTotalsView, BehindView, CoverageView, EntityGroupView, EntityView, HereView, IncidentView, IncidentsView, InsideView } from "./views.ts";
 import { SPATIAL_REFERENCE, allocateToAreas, distanceToGeometryMetres, geometryTouchesArea, geometryWithinArea, methodologyRef, pointInArea } from "../../analytics/index.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { SourceTrail } from "../analytics/sourcing.ts";
 import { methodView, sourcingView } from "../operations/metric.ts";
-import { areaView, entityView, scopeModel } from "./model.ts";
+import { areaView, areasOfKind, entityView, findArea, relates, scopeModel } from "./model.ts";
 import { entityKey } from "./module.ts";
 import { viewerScopeKey } from "./viewer.ts";
 
@@ -124,16 +124,27 @@ export function whatIsHere(context: SpatialContext, query: { point: Coordinates;
 
 /* ---------------- What is inside an area ---------------- */
 
+const WITHHELD_FROM_REAL_AREA =
+  "The entities held are synthetic demonstration data and this is a real area, so none is listed as inside it. A synthetic network is not in any real place.";
+const WITHHELD_FROM_SYNTHETIC_AREA = "This is a synthetic area, drawn for the demonstration, so no entity from real data is listed as inside it.";
+
 /** null when the area is not one the viewer may see, which is also the answer for an area that does not exist. */
 export function whatIsInside(context: SpatialContext, areaId: string, options: { kinds?: readonly string[]; list?: readonly string[] } = {}): Promise<InsideView | null> {
   const asked = `${options.kinds === undefined ? "*" : [...options.kinds].sort().join(",")}|${[...(options.list ?? [])].sort().join(",")}`;
   return cached(context, `inside|${areaId}|${asked}`, async (scoped) => {
-    const area = scoped.areas.find((candidate) => candidate.id === areaId);
+    const area = await findArea(context.runtime, scoped, areaId);
     if (area === undefined) return null;
     const inside: { module: SpatialModule; entity: SpatialEntity }[] = [];
     const crossing: EntityView[] = [];
+    let withheld = false;
     for (const held of located(scoped, options.kinds)) {
-      const geometry = (held.entity.location as NonNullable<SpatialEntity["location"]>).geometry;
+      const location = held.entity.location as NonNullable<SpatialEntity["location"]>;
+      // A synthetic entity is not listed as inside a real area, wherever its coordinates fall.
+      if (!relates(scoped, area, location)) {
+        withheld = true;
+        continue;
+      }
+      const geometry = location.geometry;
       if (geometryWithinArea(geometry, area.geometry)) inside.push(held);
       else if (geometryTouchesArea(geometry, area.geometry)) crossing.push(entityView(held.module, held.entity));
     }
@@ -141,6 +152,7 @@ export function whatIsInside(context: SpatialContext, areaId: string, options: {
       area: areaView(area),
       inside: groups(inside, options.list),
       crossing,
+      withheld: !withheld ? null : scoped.syntheticSources.has(area.provenance.sourceSystem) ? WITHHELD_FROM_SYNTHETIC_AREA : WITHHELD_FROM_REAL_AREA,
       coverage: coverageOf(scoped),
       method: methodView(methodologyRef(SPATIAL_REFERENCE)),
       scopeLimited: scoped.limited,
@@ -160,14 +172,15 @@ export function whatIsBehind(context: SpatialContext, ref: LocatedRef, options: 
     if (trace === null) return null;
     // The module names what is connected; only what this viewer sees of it goes any further.
     const seen = (refs: readonly LocatedRef[]) => refs.flatMap((other) => scoped.byKey.get(entityKey(other)) ?? []);
-    const geometry = subject.entity.location?.geometry;
+    const location = subject.entity.location;
     return {
       subject: entityView(subject.module, subject.entity),
       upstream: seen(trace.upstream).map((held) => entityView(held.module, held.entity)),
       downstream: groups(seen(trace.downstream), options.list),
       downstreamKnown: trace.downstreamKnown,
       facts: trace.facts,
-      areas: geometry === undefined ? [] : scoped.areas.filter((area) => geometryWithinArea(geometry, area.geometry)).map(areaView),
+      // The areas the subject is in; a synthetic subject is in no real area.
+      areas: location === null ? [] : scoped.areas.filter((area) => relates(scoped, area, location) && geometryWithinArea(location.geometry, area.geometry)).map(areaView),
       scopeLimited: scoped.limited,
       sourcing: sourcingView(await sourcingOf(context, [scoped.modules.find((held) => held.module.id === subject.module.id)?.sourcing ?? scoped.areaSourcing])),
     };
@@ -185,7 +198,10 @@ export function totalsByArea(context: SpatialContext, measureId: string, options
     const entities = (scoped.modules.find((held) => held.module.id === spatialModule.id)?.entities ?? []).filter((entity) => entity.ref.kind === measure.entityKind);
     const kindLabel = entities[0]?.kindLabel ?? measure.entityKind.replaceAll("_", " ");
     const { result, sourcing } = await measure.contributions(context.runtime, entities);
-    const areas = scoped.areas.filter((area) => options.areaKind === undefined || area.kind === options.areaKind);
+    const candidates = options.areaKind === undefined ? scoped.areas : (await areasOfKind(context.runtime, scoped, options.areaKind)).records;
+    // A synthetic figure is never totalled by a real area, nor a real figure by a synthetic one.
+    const areas = candidates.filter((area) => scoped.syntheticSources.has(area.provenance.sourceSystem) === sourcing.synthetic);
+    const notTotalled = candidates.length - areas.length;
     // The figure for the whole is everyone's, so a viewer limited to a territory is never given it or what is left of it.
     const whole = scoped.limited || measure.whole === undefined ? undefined : await measure.whole.value(context.runtime);
     const allocation = allocateToAreas({
@@ -242,9 +258,84 @@ export function totalsByArea(context: SpatialContext, measureId: string, options
       remainderNote: whole === undefined ? null : (measure.whole?.remainderNote ?? null),
       definition: measure.definition,
       areaCoverage: scoped.areaCompleteness,
+      areasNotTotalled:
+        notTotalled === 0
+          ? null
+          : sourcing.synthetic
+            ? `${notTotalled} real area(s) are not totalled: the figures are synthetic demonstration data, and a synthetic figure is never totalled by a real area.`
+            : `${notTotalled} synthetic area(s) are not totalled: a real figure is never totalled by a synthetic area.`,
       method,
       scopeLimited: scoped.limited,
       sourcing: sourcingView(await sourcingOf(context, [sourcing, scoped.areaSourcing])),
     };
+  });
+}
+
+/* ---------------- Area outlines ---------------- */
+
+/**
+ * The outlines of every area of one kind the viewer may see, for drawing as orientation, with
+ * the credit their licence requires and what must be said about them. Outlines only: no entity
+ * and no figure is related to them here.
+ */
+export function areaOutlines(context: SpatialContext, kind: AreaKind): Promise<AreaOutlinesView> {
+  return cached(context, `outlines|${kind}`, async (scoped) => {
+    const { records, completeness } = await areasOfKind(context.runtime, scoped, kind);
+    const sourcing = await new SourceTrail().add(records).resolve(context.runtime.repos.sources);
+    // The parent's name, where the parent is an area this viewer sees.
+    const names = new Map(scoped.areas.map((area) => [area.id, area.name]));
+    const ring = (points: readonly { latitude: number; longitude: number }[]) => points.map((point) => [point.latitude, point.longitude]);
+    return {
+      kind,
+      areas: records.map((area) => ({
+        id: area.id,
+        name: area.name,
+        parent: area.parentAreaId === undefined ? null : { id: area.parentAreaId, name: names.get(area.parentAreaId) ?? null, basis: area.parentBasis ?? "recorded" },
+        polygons: area.geometry.polygons.map((polygon) => [ring(polygon.outer), ...(polygon.holes ?? []).map(ring)]),
+      })),
+      credits: [...new Set(sourcing.sources.flatMap((source) => source.attribution ?? []))],
+      notes: [
+        ...new Set(
+          sourcing.sources.flatMap((source) => source.notice ?? (source.kind === "synthetic" ? ["Synthetic areas, drawn for the demonstration. They are no administrative boundary."] : [])),
+        ),
+      ],
+      coverage: completeness,
+      scopeLimited: scoped.limited,
+      sourcing: sourcingView(sourcing),
+    };
+  });
+}
+
+/* ---------------- What is in progress ---------------- */
+
+/**
+ * What every module holds as in progress now (an open interruption), each with what is behind
+ * the entity it began at. An incident that began at an entity the viewer cannot see is not
+ * given at all: its existence would say something about a place that is not the viewer's.
+ */
+export function incidentsNow(context: SpatialContext): Promise<IncidentsView> {
+  return cached(context, "incidents", async (scoped) => {
+    const incidents: IncidentView[] = [];
+    const used: Sourcing[] = [];
+    let coverage: CoverageView = "complete";
+    for (const held of scoped.modules) {
+      if (held.module.incidents === undefined) continue;
+      const { result, sourcing } = await held.module.incidents(context.runtime);
+      if (RANK[result.completeness] > RANK[coverage]) coverage = result.completeness;
+      for (const incident of result.incidents) {
+        if (scoped.limited && (incident.origin === null || !scoped.sees(incident.origin))) continue;
+        used.push(sourcing);
+        incidents.push({
+          id: incident.id,
+          module: held.module.id,
+          title: incident.title,
+          since: incident.since,
+          beganAt: incident.beganAt,
+          facts: incident.facts,
+          behind: incident.origin === null ? null : await whatIsBehind(context, incident.origin),
+        });
+      }
+    }
+    return { incidents, coverage, scopeLimited: scoped.limited, sourcing: sourcingView(await sourcingOf(context, used)) };
   });
 }

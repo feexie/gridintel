@@ -95,6 +95,11 @@ export interface InsideView extends SpatialResultBase {
   inside: EntityGroupView[];
   /** Lines and areas that are partly inside and partly outside: in neither, and listed so. */
   crossing: EntityView[];
+  /**
+   * Set when entities were left out because they come from synthetic data and the area is a real
+   * one: the words that must be shown. Such entities are never listed as inside a real area.
+   */
+  withheld: string | null;
   coverage: CoverageView;
   method: MethodView;
 }
@@ -113,6 +118,27 @@ export interface BehindView extends SpatialResultBase {
   facts: MetricView[];
   /** The areas the subject is in. */
   areas: AreaView[];
+}
+
+/* ---------------- Incidents ---------------- */
+
+/** Something in progress, with what is behind the place it began. */
+export interface IncidentView {
+  id: string;
+  module: string;
+  title: string;
+  since: string;
+  beganAt: string;
+  /** The module's own figures for it, e.g. the customers its record says are affected. */
+  facts: MetricView[];
+  /** What is behind the entity it began at; null when it did not begin at an entity that is held. */
+  behind: BehindView | null;
+}
+
+export interface IncidentsView extends SpatialResultBase {
+  incidents: IncidentView[];
+  /** How completely the modules hold what is in progress. Anything but "complete" must be said: none listed is then not "none". */
+  coverage: CoverageView;
 }
 
 /* ---------------- Totals by area ---------------- */
@@ -141,7 +167,35 @@ export interface AreaTotalsView extends SpatialResultBase {
   /** What the figure is and is not; must be shown with it. */
   definition: string;
   areaCoverage: CoverageView;
+  /**
+   * Set when areas were left out because the figures are synthetic and those areas are real: the
+   * words that must be shown. A synthetic figure is never totalled by a real area.
+   */
+  areasNotTotalled: string | null;
   method: MethodView;
+}
+
+/* ---------------- Area outlines ---------------- */
+
+/**
+ * The outlines of every area of one kind, for drawing as orientation. Compact on purpose: a
+ * level can hold hundreds of areas. Each ring is a list of [latitude, longitude] pairs, the
+ * outline of a polygon first and its holes after it.
+ */
+export interface AreaOutlinesView extends SpatialResultBase {
+  kind: string;
+  areas: {
+    id: string;
+    name: string;
+    /** The area this one is part of, and whether the source names it or it was worked out. */
+    parent: { id: string; name: string | null; basis: "recorded" | "derived" } | null;
+    polygons: number[][][][];
+  }[];
+  /** The credit each source's licence requires wherever the outlines are shown. */
+  credits: string[];
+  /** What the outlines are and are not, e.g. "not survey-grade"; must be shown with them. */
+  notes: string[];
+  coverage: CoverageView;
 }
 
 /* ---------------- Layers and the map ---------------- */
@@ -161,7 +215,7 @@ export interface LayerSummaryView {
   module: string;
   title: string;
   description: string;
-  shape: "point" | "line" | "area";
+  shape: "point" | "line" | "area" | "mixed";
   /** Layers with the same group colour the same things: one of them is shown at a time. */
   exclusiveGroup: string | null;
   legend: LegendEntryView[];
@@ -174,10 +228,44 @@ export interface FeatureView {
   metric: MetricView | null;
   /** The legend class the feature is in; null on a layer with no figure. */
   classKey: string | null;
+  /** The entity's key figures, for when it is selected. Without their inputs: the drill-down holds the full trail. */
+  details: MetricView[];
+  /** Where the entity sits, for when it is selected: what supplies it, the areas it is in, and what is behind it. null on a layer that gives no key figures. */
+  trace: FeatureTraceView | null;
+}
+
+/** A selected entity's place in the network: `whatIsBehind`, without the lists it would take a screen to show. */
+export interface FeatureTraceView {
+  /** What supplies it, nearest first. */
+  upstream: { kind: string; id: string; name: string; kindLabel: string }[];
+  /** What it supplies, by kind, as counts. */
+  downstream: { kind: string; kindLabel: string; count: number }[];
+  downstreamKnown: boolean;
+  areas: { id: string; name: string }[];
+  facts: MetricView[];
+}
+
+/** An area drawn by an area layer, with the total it is coloured by where the layer has one. */
+export interface AreaFeatureView {
+  area: AreaView;
+  metric: MetricView | null;
+  classKey: string | null;
+  /** How many entities' figures are in the total; null on a layer with no figure. */
+  entities: number | null;
 }
 
 export interface MapLayerView extends LayerSummaryView {
   features: FeatureView[];
+  /** The areas of an area layer whose outlines come with the map. */
+  areaFeatures: AreaFeatureView[];
+  /** Set for an area layer whose outlines are fetched when it is switched on: the kind of area to fetch. */
+  outlinesOnRequest: string | null;
+  /** For an area layer with a total: what belongs to no area, each a figure of its own. */
+  unallocated: MetricView[];
+  /** The credit a licence requires wherever this layer is shown. */
+  credits: string[];
+  /** What must be said on the map while this layer is shown, e.g. that routes are schematic. */
+  notes: string[];
   /** Entities of this layer that cannot be drawn because they have no location. Never dropped silently. */
   notLocated: EntityView[];
   coverage: CoverageView;

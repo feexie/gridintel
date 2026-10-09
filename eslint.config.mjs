@@ -37,6 +37,11 @@ const importBoundaries = [
     reaching("analytics|data|types|services|composition|components|app|context|constants|lib",
       "The demo adapter may import only the domain, the ports and the in-memory adapter."),
   ]),
+  boundary(["src/repositories/geoboundaries/**"], [
+    OUTSIDE_DOMAIN,
+    reaching("memory|demo|analytics|data|types|services|composition|components|app|context|constants|lib",
+      "The geoBoundaries adapter may import only the domain and the ports."),
+  ]),
   boundary(["src/composition/**"], [
     OUTSIDE_DOMAIN,
     reaching("data|types|components|app|context", "The composition root wires repositories and services only."),

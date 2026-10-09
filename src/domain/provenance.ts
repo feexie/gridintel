@@ -35,6 +35,20 @@ export interface DataSource {
   kind: DataSourceKind;
   organizationId?: string;
   description?: string;
+  /**
+   * For data obtained from a publisher under a licence: the licence, the
+   * credit the licence requires wherever the data is shown, where the data
+   * was taken from, and which release and date of it. Absent for an
+   * organization's own systems.
+   */
+  licence?: string;
+  attribution?: string;
+  url?: string;
+  release?: string;
+  /** The date the publisher's data represents or was retrieved, as the source states it. */
+  dated?: string;
+  /** What must be said wherever the data is shown, e.g. that boundaries are not survey-grade. */
+  notice?: string;
 }
 
 /**

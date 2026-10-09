@@ -12,7 +12,7 @@ import * as mapServices from "./map.ts";
 import * as queryServices from "./queries.ts";
 import { createSpatialRegistry } from "./module.ts";
 import { mapView } from "./map.ts";
-import { MAX_SEARCH_METRES, totalsByArea, whatIsBehind, whatIsHere, whatIsInside } from "./queries.ts";
+import { MAX_SEARCH_METRES, areaOutlines, incidentsNow, totalsByArea, whatIsBehind, whatIsHere, whatIsInside } from "./queries.ts";
 import { isLimited, viewerScopeKey } from "./viewer.ts";
 
 /* ==========================================================
@@ -43,7 +43,7 @@ const FIGURE_LAYER: LayerDefinition = {
   title: "Test figure",
   description: "",
   shape: "point",
-  entityKind: "distribution_transformer",
+  entityKinds: ["distribution_transformer"],
   legend: [{ key: "any", label: "Any", tone: "neutral" }],
   onByDefault: false,
   async figures(_runtime, entities) {
@@ -113,6 +113,10 @@ async function askEverything(viewer: ViewerContext): Promise<Record<string, unkn
     whatIsInside: inside,
     whatIsBehind: behind,
     totalsByArea: [await totalsByArea(context, "utility.revenue_not_realised"), await totalsByArea(context, "utility.revenue_not_realised", { areaKind: "other" })],
+    areaOutlines: [await areaOutlines(context, "other"), await areaOutlines(context, "state"), await areaOutlines(context, "lga")],
+    incidentsNow: await incidentsNow(context),
+    // A map focused on each asset: what supplies it and what it supplies.
+    focusedMaps: await Promise.all(assets.map((entity) => mapView(context, { layers: ALL_LAYERS, focus: { kind: entity.kind, id: entity.id } }))),
   };
 }
 
@@ -125,7 +129,7 @@ function mentions(answer: unknown): { tokens: Set<string>; text: string } {
 describe("every spatial service is covered by the leak test", () => {
   it("asks every function the spatial services export", () => {
     const exported = [...Object.entries(queryServices), ...Object.entries(mapServices)].filter(([, value]) => typeof value === "function").map(([name]) => name).sort();
-    assert.deepEqual(exported, ["mapView", "totalsByArea", "whatIsBehind", "whatIsHere", "whatIsInside"]);
+    assert.deepEqual(exported, ["areaOutlines", "incidentsNow", "mapView", "totalsByArea", "whatIsBehind", "whatIsHere", "whatIsInside"]);
   });
 
   it("is not vacuous: the public viewer's answers do mention every asset", async () => {
@@ -163,7 +167,8 @@ for (const { name, viewer, visible, visibleAreas } of CASES) {
       const map = await mapView(context, { layers: ALL_LAYERS });
       assert.equal(map.scopeLimited, true);
       const drawn = new Set(map.layers.flatMap((layer) => layer.features.map((feature) => key(feature.entity.kind, feature.entity.id))));
-      const expected = inside.filter((entity) => ["substation", "feeder", "distribution_transformer"].includes(entity.kind)).map((entity) => key(entity.kind, entity.id));
+      // Every layer is asked for, the service points among them; power transformers are no layer.
+      const expected = inside.filter((entity) => entity.kind !== "power_transformer").map((entity) => key(entity.kind, entity.id));
       assert.deepEqual([...drawn].sort(), expected.sort());
       const here = await whatIsHere(context, { point: { latitude: 9.26, longitude: 12.47 }, withinMetres: MAX_SEARCH_METRES });
       assert.equal(here.scopeLimited, true);

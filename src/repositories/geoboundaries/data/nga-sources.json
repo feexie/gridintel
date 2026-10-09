@@ -1,0 +1,44 @@
+[
+  {
+    "kind": "state",
+    "source": {
+      "publisher": "geoBoundaries (gbOpen)",
+      "citation": "Runfola et al. 2020, geoBoundaries: A global database of political administrative boundaries. PLoS ONE 15(4): e0231866",
+      "boundarySource": "GRID3",
+      "licence": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "release": "9469f09",
+      "yearRepresented": "2022",
+      "sourceDataUpdated": "2023-02-26",
+      "geoBoundariesBuilt": "2023-12-12",
+      "retrieved": "2026-10-09",
+      "geometry": "The published simplified geometry, coordinates rounded to 5 decimal places.",
+      "level": "ADM1",
+      "boundaryId": "NGA-ADM1-27671186",
+      "url": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/NGA/ADM1/geoBoundaries-NGA-ADM1_simplified.geojson",
+      "sha256": "edd28050c7f1ae40471424605f74e4d2df83502e4f301089761ae18f8ae2fbbf",
+      "units": 37
+    }
+  },
+  {
+    "kind": "lga",
+    "source": {
+      "publisher": "geoBoundaries (gbOpen)",
+      "citation": "Runfola et al. 2020, geoBoundaries: A global database of political administrative boundaries. PLoS ONE 15(4): e0231866",
+      "boundarySource": "GRID3",
+      "licence": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "release": "9469f09",
+      "yearRepresented": "2022",
+      "sourceDataUpdated": "2023-02-26",
+      "geoBoundariesBuilt": "2023-12-12",
+      "retrieved": "2026-10-09",
+      "geometry": "The published simplified geometry, coordinates rounded to 5 decimal places.",
+      "level": "ADM2",
+      "boundaryId": "NGA-ADM2-59680162",
+      "url": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/NGA/ADM2/geoBoundaries-NGA-ADM2_simplified.geojson",
+      "sha256": "daac9ba2c98f0d8984085c8a5b3a5301fca362f3ca37e6ac7dfcc7633719fc1d",
+      "units": 774,
+      "parentLink": "derived",
+      "parentMethod": "The state that holds most of the LGA's area, judged on a grid of points inside the LGA. geoBoundaries' LGA file names no state."
+    }
+  }
+]

@@ -20,7 +20,7 @@ const registry = createSpatialRegistry([UTILITY_SPATIAL_MODULE]);
 const context: SpatialContext = { runtime, registry, viewer: PUBLIC };
 
 describe("layer registry", () => {
-  const layer = (id: string, extra: Partial<LayerDefinition> = {}): LayerDefinition => ({ id, title: id, description: "", shape: "point", entityKind: "site", legend: [], onByDefault: true, ...extra });
+  const layer = (id: string, extra: Partial<LayerDefinition> = {}): LayerDefinition => ({ id, title: id, description: "", shape: "point", entityKinds: ["site"], legend: [], onByDefault: true, ...extra });
   const module_ = (id: string, layers: LayerDefinition[]): SpatialModule => ({
     id,
     title: id,
@@ -48,15 +48,17 @@ describe("layer registry", () => {
   });
 });
 
+const NETWORK = { layers: ["utility.substations", "utility.feeders", "utility.transformers"] };
+
 describe("the map read model, on the demonstration network", () => {
   it("draws the utility network from the registry: two substations, four feeder routes, 48 transformers", async () => {
-    const map = await mapView(context);
+    const map = await mapView(context, NETWORK);
     assert.deepEqual(map.layers.map((layer) => [layer.id, layer.features.length, layer.notLocated.length]), [
       ["utility.substations", 2, 0],
       ["utility.feeders", 4, 0],
       ["utility.transformers", 48, 0],
     ]);
-    assert.deepEqual(map.modules.map((spatialModule) => [spatialModule.id, spatialModule.layers.length]), [["utility", 3]]);
+    assert.deepEqual(map.modules.map((spatialModule) => [spatialModule.id, spatialModule.layers.length]), [["utility", 11]]);
     assert.equal(map.scopeLimited, false);
     assert.equal(map.asOf, DEMO_CLOCK);
     // The box holds every transformer: the feeders run out from the two substations.
@@ -65,7 +67,7 @@ describe("the map read model, on the demonstration network", () => {
   });
 
   it("marks the data synthetic, and says a feeder route is schematic, not surveyed", async () => {
-    const map = await mapView(context);
+    const map = await mapView(context, NETWORK);
     assert.equal(map.sourcing.synthetic, true);
     assert.ok(map.layers.every((layer) => layer.sourcing.synthetic));
     const feeders = map.layers.find((layer) => layer.id === "utility.feeders");
@@ -73,7 +75,10 @@ describe("the map read model, on the demonstration network", () => {
     const marketRoad = feeders?.features.find((feature) => feature.entity.id === "FD-MKT")?.entity;
     // From the substation through each of its twelve transformers.
     assert.equal(marketRoad?.geometry?.type === "line" && marketRoad.geometry.path.length, 13);
-    // A layer that only draws the network carries no figure, so the map has none to show or invent.
+    // The words that must be on the map while routes are drawn travel with the layer.
+    assert.match(feeders?.notes[0] ?? "", /^Schematic: straight lines/);
+    assert.deepEqual(map.layers.filter((layer) => layer.id !== "utility.feeders").flatMap((layer) => layer.notes), []);
+    // A layer that only draws the network colours by no figure, so the map has none to show or invent as a class.
     assert.ok(map.layers.every((layer) => layer.legend.length === 0 && layer.features.every((feature) => feature.metric === null && feature.classKey === null)));
   });
 
@@ -92,7 +97,7 @@ describe("a layer coloured by a figure, and layers shown one at a time", () => {
     title: id,
     description: "",
     shape: "point",
-    entityKind: "substation",
+    entityKinds: ["substation"],
     exclusiveGroup: "substation-theme",
     legend: [
       { key: "high", label: "High", tone: "alert" },
@@ -115,12 +120,13 @@ describe("a layer coloured by a figure, and layers shown one at a time", () => {
     assert.deepEqual(features.map((feature) => [feature.entity.id, feature.metric?.value ?? null, feature.classKey]), [["SS-RIV", 1, "high"], ["SS-HIL", null, null]]);
     assert.deepEqual(asked, [["SS-RIV", "SS-HIL"]]);
     assert.equal(map.layers[0].exclusiveGroup, "substation-theme");
-    // Not on by default: the plain network is what the map opens with.
-    assert.deepEqual((await mapView(themedContext)).layers.map((layer) => layer.id), ["utility.substations", "utility.feeders", "utility.transformers"]);
+    // Not on by default: it is not among the layers the map opens with.
+    assert.ok(!(await mapView(themedContext)).layers.some((layer) => layer.id.startsWith("utility.theme_")));
   });
 
-  it("refuses two layers of one group at once", () => {
-    assert.throws(() => mapView(themedContext, { layers: ["utility.theme_a", "utility.theme_b"] }), /one at a time/);
+  it("gives every layer of a group when asked, each naming the group, so that the map can show one at a time", async () => {
+    const map = await mapView(themedContext, { layers: ["utility.theme_a", "utility.theme_b"] });
+    assert.deepEqual(map.layers.map((layer) => [layer.id, layer.exclusiveGroup]), [["utility.theme_a", "substation-theme"], ["utility.theme_b", "substation-theme"]]);
   });
 });
 

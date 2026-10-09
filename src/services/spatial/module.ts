@@ -1,4 +1,4 @@
-import type { EntityLocation, LocatedRef } from "@/domain";
+import type { AreaKind, EntityLocation, LocatedRef } from "@/domain";
 import type { Completeness } from "../../repositories/ports/index.ts";
 import type { AreaContribution } from "../../analytics/index.ts";
 import type { Sourced, Sourcing } from "../analytics/sourcing.ts";
@@ -86,18 +86,43 @@ export interface LayerFigure {
   classKey: string;
 }
 
+/** What an area layer draws: the areas of one kind, and optionally a registered measure totalled by them. */
+export interface AreaLayer {
+  kind: AreaKind;
+  /**
+   * A registered measure to total by these areas and colour them by. The legend class is
+   * decided by `classify`, from the totals of all the areas together.
+   */
+  measureId?: string;
+  classify?(values: readonly (number | null)[]): (string | null)[];
+  /**
+   * "inline": the outlines come with the map. "on_request": there are too many, or they are
+   * not always wanted, so the map fetches them when the layer is switched on.
+   */
+  delivery: "inline" | "on_request";
+}
+
 export interface LayerDefinition {
   id: string;
   title: string;
   description: string;
-  shape: "point" | "line" | "area";
-  /** The kind of entity the layer draws. */
-  entityKind: string;
-  /** Layers that colour the same entities by different figures share a group; one is shown at a time. */
+  shape: "point" | "line" | "area" | "mixed";
+  /** The kinds of entity the layer draws. Empty for an area layer. */
+  entityKinds: readonly string[];
+  /** Set for a layer that draws areas instead of entities. */
+  areas?: AreaLayer;
+  /** Layers that colour the same entities by different figures share a group; the map shows one of them at a time. */
   exclusiveGroup?: string;
   /** Empty for a layer that draws entities without a figure. */
   legend: LegendEntryView[];
   onByDefault: boolean;
+  /** True for an overlay that marks only the entities it has a figure for (an open outage, a standing alarm). */
+  onlyWithFigure?: boolean;
+  /**
+   * The key figures of each entity, keyed "<kind>:<id>", shown when the entity is selected.
+   * Each is the MetricView of the service that owns it.
+   */
+  details?(runtime: SpatialRuntime, entities: readonly SpatialEntity[]): Promise<Sourced<Map<string, MetricView[]>>>;
   /**
    * The figure each entity is coloured by, keyed "<kind>:<id>", from the service that owns it.
    * The class is decided here, in the service layer, never by what draws the map. Absent for a
@@ -106,10 +131,27 @@ export interface LayerDefinition {
   figures?(runtime: SpatialRuntime, entities: readonly SpatialEntity[]): Promise<Sourced<Map<string, LayerFigure>>>;
 }
 
+/** Something in progress that a module holds, which the map can show with what is behind it: an open interruption. */
+export interface ModuleIncident {
+  id: string;
+  /** What it is, in words, e.g. "Fault". */
+  title: string;
+  /** When it began. */
+  since: string;
+  /** Where the module's record says it began, in words. */
+  beganAt: string;
+  /** The entity it began at; null when that is not an entity the module holds. */
+  origin: LocatedRef | null;
+  /** What the module's own records say about it, each with its origin, e.g. customers affected. */
+  facts: MetricView[];
+}
+
 export interface SpatialModule {
   /** e.g. "utility". Layer and measure ids begin with it. */
   id: string;
   title: string;
+  /** What is in progress now. Absent for a module that holds nothing of the kind. */
+  incidents?(runtime: SpatialRuntime): Promise<Sourced<{ incidents: ModuleIncident[]; completeness: Completeness }>>;
   entities(runtime: SpatialRuntime): Promise<ModuleEntities>;
   /** null when the entity is not one of this module's. `sees` says which entities the viewer may see. */
   trace(runtime: SpatialRuntime, ref: LocatedRef, sees: (ref: LocatedRef) => boolean): Promise<ModuleTrace | null>;
@@ -143,7 +185,8 @@ export function createSpatialRegistry(modules: readonly SpatialModule[]): Spatia
       if (layers.has(layer.id)) throw new Error(`Layer "${layer.id}" is registered twice.`);
       const keys = new Set(layer.legend.map((entry) => entry.key));
       if (keys.size !== layer.legend.length) throw new Error(`Layer "${layer.id}" has a legend key twice.`);
-      if (layer.figures !== undefined && layer.legend.length === 0) throw new Error(`Layer "${layer.id}" colours by a figure and has no legend.`);
+      if ((layer.figures !== undefined || layer.areas?.measureId !== undefined) && layer.legend.length === 0) throw new Error(`Layer "${layer.id}" colours by a figure and has no legend.`);
+      if (layer.areas === undefined && layer.entityKinds.length === 0) throw new Error(`Layer "${layer.id}" draws neither entities nor areas.`);
       layers.set(layer.id, { module: spatialModule, layer });
     }
     for (const measure of spatialModule.measures) {

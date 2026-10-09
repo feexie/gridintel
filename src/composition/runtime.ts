@@ -4,6 +4,7 @@ import type { OperationsRuntime } from "../services/operations/levels.ts";
 import type { ViewerContext } from "../services/spatial/viewer.ts";
 import { createMemoryCache } from "../services/analytics/cache.ts";
 import { DEMO_CLOCK, DEMO_NOTICE, DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
+import { withGeoBoundaries } from "../repositories/geoboundaries/index.ts";
 
 /* ==========================================================
    COMPOSITION ROOT
@@ -77,8 +78,13 @@ export function datasetIsFixed(): boolean {
   return ADAPTER_DATASET_IS_FIXED && process.env.GRIDINTEL_RENDER !== "request";
 }
 
+/**
+ * The synthetic demonstration adapter, with Nigeria's states and LGAs from geoBoundaries added
+ * to its areas. The boundaries are real reference geography and the network is synthetic; the
+ * spatial services never relate the two (ADR 0014).
+ */
 export function getRepositories(): GridIntelRepositories {
-  state.repositories ??= createDemoRepositories();
+  state.repositories ??= withGeoBoundaries(createDemoRepositories());
   return state.repositories;
 }
 

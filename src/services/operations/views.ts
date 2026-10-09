@@ -69,7 +69,8 @@ export interface MetricView {
 
 export interface SourcingView {
   synthetic: boolean;
-  sources: { id: string; name: string; kind: string }[];
+  /** `licence` and `attribution` are set for data obtained from a publisher; the attribution must be shown wherever the data is. */
+  sources: { id: string; name: string; kind: string; licence?: string; attribution?: string; dated?: string }[];
 }
 
 export type LevelKind = "region" | "substation" | "feeder" | "distribution_transformer" | "service_point";

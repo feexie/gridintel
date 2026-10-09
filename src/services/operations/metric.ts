@@ -68,7 +68,14 @@ export function inputView(name: string, input: InputValue): InputView {
 export function sourcingView(sourcing: Sourcing): SourcingView {
   return {
     synthetic: sourcing.synthetic,
-    sources: sourcing.sources.map((source) => ({ id: source.id, name: source.name, kind: source.kind })),
+    sources: sourcing.sources.map((source) => ({
+      id: source.id,
+      name: source.name,
+      kind: source.kind,
+      ...(source.licence === undefined ? {} : { licence: source.licence }),
+      ...(source.attribution === undefined ? {} : { attribution: source.attribution }),
+      ...(source.dated === undefined ? {} : { dated: source.dated }),
+    })),
   };
 }
 

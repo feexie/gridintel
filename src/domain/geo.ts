@@ -107,6 +107,11 @@ export interface Area {
   code?: string;
   /** The area this one is part of, e.g. an LGA's state. */
   parentAreaId?: string;
+  /**
+   * How the parent is known: "recorded" when the source names it; "derived"
+   * when it was worked out, e.g. from the geometry, because the source does not.
+   */
+  parentBasis?: "recorded" | "derived";
   geometry: AreaGeometry;
   provenance: Provenance;
 }
