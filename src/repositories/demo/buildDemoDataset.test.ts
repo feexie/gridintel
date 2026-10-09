@@ -242,8 +242,9 @@ describe("demo dataset: structure", () => {
     it("holds a reading at the demo clock from every monitor, at zero where the supply is still off", () => {
       const atClock = dataset.telemetry.filter((point) => point.observedAt === DEMO_CLOCK && point.metric === "apparent_power_kva");
       const kva = new Map(atClock.map((point) => [`${point.source.kind}:${point.source.id}`, point.value]));
-      // Every distribution transformer, feeder and power transformer reports once.
-      assert.equal(atClock.length, TRANSFORMERS.length + FEEDERS.length + registry.powerTransformers.length);
+      // Every distribution transformer, feeder and power transformer reports once, except the transformer whose monitor has gone quiet.
+      assert.equal(atClock.length, TRANSFORMERS.length - 1 + FEEDERS.length + registry.powerTransformers.length);
+      assert.equal(kva.has("distribution_transformer:DT-OLD-3"), false);
       assert.equal(kva.size, atClock.length);
       // Farm Road tripped at 23:20 and is not restored: its feeder, its transformers and the power transformer that carries it alone read zero.
       const farmRoad = TRANSFORMERS.filter((dt) => dt.feederId === "FD-FRM");
@@ -258,6 +259,21 @@ describe("demo dataset: structure", () => {
       assert.ok(Math.abs((kva.get("power_transformer:PT-HIL-1") as number) - (kva.get("feeder:FD-GOV") as number) / 0.99) < 0.05);
       // No interval energy is written at the clock: the month's energy ends there.
       assert.ok(!dataset.intervalEnergy.some((interval) => interval.intervalStart === DEMO_CLOCK));
+    });
+
+    it("holds no reading relayed by the quiet monitor after its last check-in: a gap, not a value", () => {
+      const relayed = dataset.telemetry.filter((point) => point.deviceId === "ED-DT-OLD-3");
+      const lastCheckIn = Math.max(...dataset.heartbeats.filter((beat) => beat.device.id === "ED-DT-OLD-3").map((beat) => Date.parse(beat.receivedAt)));
+      assert.equal(new Date(lastCheckIn).toISOString(), "2026-09-30T13:55:00.000Z");
+      assert.ok(relayed.length > 0 && relayed.every((point) => Date.parse(point.observedAt) <= lastCheckIn));
+      // Its last reading is the 14:00 one; nine hourly readings and the one at the clock are absent, not zero and not null.
+      assert.equal(Math.max(...relayed.map((point) => Date.parse(point.observedAt))), PERIOD_START_MS + (29 * 24 + 14) * 3_600_000);
+      assert.equal(relayed.filter((point) => point.metric === "apparent_power_kva").length, DEMO_HOURS - 9);
+      // Every other monitor relays every hour and at the clock, and the transformer's own totalizer meter, which is not read through the monitor, is complete.
+      assert.equal(dataset.telemetry.filter((point) => point.deviceId === "ED-DT-OLD-2" && point.metric === "apparent_power_kva").length, DEMO_HOURS + 1);
+      assert.equal(COUNT.get(BOUNDARY_METERS.totalizer("DT-OLD-3")), DEMO_HOURS);
+      // The feeder is read at the substation, so its readings still include this transformer's load.
+      assert.equal(dataset.telemetry.filter((point) => point.source.kind === "feeder" && point.source.id === "FD-OLD" && point.metric === "apparent_power_kva").length, DEMO_HOURS + 1);
     });
 
     it("loads no power transformer above its rating", () => {

@@ -40,6 +40,14 @@ supply.
   Old Town, Government Avenue and Farm Road are shed from midnight on most
   days of the month: the dataset holds no interruption that starts at or
   after the clock, so the other three feeders read as on.
+- **A monitor that has stopped checking in relays no readings.** The
+  transformer monitor on South Gate (DT-OLD-3) last checked in at 14:55 on
+  30 September. Its last reading is the 14:00 one; the nine hourly readings
+  after it and the one at the demo clock are absent from the dataset: a gap,
+  not a zero and not a null. So "loading now" on DT-OLD-3 is "insufficient
+  data", and its peak rests on 711 readings, not 720. The transformer's
+  totalizer meter is a meter of its own and is complete, and the feeder is
+  read at the substation, so no energy or feeder figure is affected.
 - **A customer meter reports only what that kind of meter can report**
   (ADR 0009; see "Customers and metering"). Consumption is still modelled
   hour by hour for every connection, to size the bills, the vends and the

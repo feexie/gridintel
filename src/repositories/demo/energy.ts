@@ -153,6 +153,8 @@ export interface EnergyModel {
 
 const HOUR_STARTS: readonly IsoTimestamp[] = Array.from({ length: DEMO_HOURS }, (_, h) => wat(hourStart(h)));
 const WEEKDAY: readonly number[] = Array.from({ length: DEMO_DAYS }, (_, day) => weekday(day));
+/** The last check-in of the one monitor that goes quiet; nothing it would have relayed after this is held. */
+const QUIET_FROM_MS = at(QUIET_MONITOR.lastCheckIn.day, QUIET_MONITOR.lastCheckIn.hour, QUIET_MONITOR.lastCheckIn.minute);
 /** The day of the week the demo clock falls on: the first instant of the day after the month. */
 const CLOCK_WEEKDAY = weekday(DEMO_DAYS);
 
@@ -386,8 +388,11 @@ export function buildEnergyModel(supply: (supplyKey: string) => SupplyEnergy = b
     value: number,
     phase: TelemetryPoint["phase"],
     deviceId: string,
-  ) =>
+  ) => {
+    // A monitor that has stopped checking in relays nothing: its readings from then on are a gap, not a value.
+    if (deviceId === QUIET_MONITOR.deviceId && (h === DEMO_HOURS ? PERIOD_END_MS : hourStart(h)) > QUIET_FROM_MS) return;
     telemetry.push({ source, metric, observedAt: h === DEMO_HOURS ? DEMO_CLOCK : HOUR_STARTS[h], value: round(value, 2), phase, quality: "measured", deviceId, provenance: scada });
+  };
 
   for (const substation of SUBSTATIONS) {
     // One meter per incomer: each carries the feeders on the bus section its transformer feeds.
