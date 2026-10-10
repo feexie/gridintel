@@ -24,6 +24,8 @@ test("the menu lists the Utility Intelligence workspaces that exist, and no plac
   const links = await menu.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
   expect(links).toEqual([
     "/dashboard",
+    // The map belongs to the platform, not to one module.
+    "/dashboard/map",
     "/dashboard/utility/executive",
     OPERATIONS,
     "/dashboard/utility/reliability",

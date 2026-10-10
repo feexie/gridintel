@@ -27,7 +27,11 @@ export const UTILITY_WORKSPACES: NavigationItem[] = [
 export const navigationGroups: NavigationGroup[] = [
   {
     label: "Platform",
-    items: [{ label: "Overview", href: "/dashboard", exact: true }],
+    items: [
+      { label: "Overview", href: "/dashboard", exact: true },
+      // The map belongs to the platform: it shows the layers of every module that has registered any.
+      { label: "Map", href: "/dashboard/map", description: "Where is the network, what is wrong on it now, and where are the losses?" },
+    ],
   },
   {
     label: "Utility Intelligence",

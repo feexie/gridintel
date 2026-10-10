@@ -195,3 +195,172 @@ dd,
     @apply font-sans;
   }
 }
+/* ==========================================================
+   THE MAP (components/system/map)
+
+   Leaflet draws shapes as SVG and writes its own colours on them
+   as attributes. These rules replace those with the design tokens,
+   so a mark on the map means what the same colour means in a table.
+   A class is never told by colour alone: its size differs too, and
+   the legend says both in words.
+========================================================== */
+
+.leaflet-container.gi-map {
+  background: var(--color-panel);
+  font-family: inherit;
+}
+.gi-map .leaflet-control-zoom a,
+.gi-map .leaflet-control-scale-line {
+  background: var(--color-app);
+  color: var(--color-ink-3);
+  border-color: var(--color-line-strong);
+  text-shadow: none;
+}
+
+/* The network itself */
+.gi-map path.gi-line {
+  stroke: var(--color-ink-4);
+  stroke-width: 2;
+  stroke-opacity: 1;
+  fill: none;
+}
+/* A schematic route is dashed: it shows connection, not where a line runs. */
+.gi-map path.gi-schematic {
+  stroke-dasharray: 7 5;
+}
+.gi-map path.gi-point {
+  stroke: var(--color-app);
+  stroke-width: 1.5;
+  stroke-opacity: 1;
+  fill: var(--color-ink-3);
+  fill-opacity: 1;
+}
+.gi-map path.gi-kind-substation {
+  fill: var(--color-ink);
+  stroke: var(--color-link);
+  stroke-width: 3;
+}
+.gi-map path.gi-kind-service_point {
+  fill: var(--color-ink-5);
+  stroke-width: 0.5;
+}
+
+/* Legend classes */
+.gi-map path.gi-tone-alert,
+.gi-swatch-alert {
+  fill: var(--color-alert-line);
+  background: var(--color-alert-line);
+}
+.gi-map path.gi-tone-watch,
+.gi-swatch-watch {
+  fill: var(--color-caution-line);
+  background: var(--color-caution-line);
+}
+.gi-map path.gi-tone-good,
+.gi-swatch-good {
+  fill: var(--color-ok-line);
+  background: var(--color-ok-line);
+}
+.gi-map path.gi-tone-neutral,
+.gi-swatch-neutral {
+  fill: var(--color-link);
+  background: var(--color-link);
+}
+.gi-map path.gi-point.gi-tone-no_data {
+  fill: var(--color-well);
+  stroke: var(--color-ink-4);
+}
+.gi-swatch-no_data {
+  background: var(--color-well);
+  border: 1.5px solid var(--color-ink-4);
+}
+
+/* Overlays: a ring round an asset, or a second line along a route */
+.gi-map path.gi-mark {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-opacity: 1;
+}
+.gi-map path.gi-mark.gi-tone-alert {
+  stroke: var(--color-alert-line);
+}
+.gi-map path.gi-mark.gi-tone-watch {
+  stroke: var(--color-caution-line);
+  stroke-dasharray: 3 3;
+}
+
+/* Areas */
+.gi-map path.gi-area {
+  stroke: var(--color-ink-4);
+  stroke-width: 1;
+  stroke-opacity: 1;
+  fill-opacity: 0.22;
+}
+.gi-map path.gi-outline {
+  fill: var(--color-ink);
+  fill-opacity: 0;
+  stroke: var(--color-line-bold);
+  stroke-width: 1.5;
+  stroke-opacity: 1;
+}
+.gi-map path.gi-outline-lga {
+  stroke: var(--color-line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+/* What is selected, and what is behind what is being looked at */
+.gi-map path.gi-highlighted {
+  stroke: var(--color-caution);
+  stroke-width: 3;
+}
+.gi-map path.gi-selected {
+  stroke: var(--color-ink);
+  stroke-width: 4;
+}
+
+.gi-map .gi-tip,
+.gi-map .gi-label {
+  background: var(--color-app);
+  color: var(--color-ink-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  box-shadow: none;
+  font-size: var(--text-micro);
+  padding: 1px 4px;
+}
+.gi-map .gi-label {
+  color: var(--color-caution-ink);
+  background: color-mix(in oklab, var(--color-app) 70%, transparent);
+  border-color: transparent;
+  font-size: var(--text-nano);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 3px;
+}
+.gi-map .gi-tip::before,
+.gi-map .gi-label::before {
+  display: none;
+}
+
+.gi-swatch {
+  display: inline-block;
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 9999px;
+}
+.gi-swatch-alert {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.gi-swatch-no_data {
+  width: 0.55rem;
+  height: 0.55rem;
+}
+.gi-swatch-area {
+  border-radius: 0;
+  width: 0.9rem;
+  height: 0.7rem;
+  opacity: 0.6;
+}

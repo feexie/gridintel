@@ -46,6 +46,12 @@ import { viewerScopeKey } from "./viewer.ts";
 
    A map can be given a FOCUS: one entity. It then holds that entity,
    what supplies it and what it supplies, and nothing else.
+
+   A map can be asked for WITHOUT FIGURES: where things are and how
+   they are connected, and no figure of any service. A figure for a
+   feeder or a substation needs every record under it; a screen
+   about one connection must not pay for that to draw where the
+   connection is.
 ========================================================== */
 
 const SCHEMATIC_NOTE = "Schematic: straight lines between the points a route connects. They show what is connected, not where the line runs.";
@@ -118,8 +124,11 @@ async function areaLayer(context: SpatialContext, scoped: ScopedModel, layer: La
  * The map for one viewer. `layers` are layer ids; the layers each module marks as on by default
  * when none are given. An unknown id is a caller's error. With a `focus`, only the focus, what
  * supplies it and what it supplies are drawn; a focus the viewer cannot see gives an empty map.
+ * With `figures: false` no layer's figures or key figures are asked for: an overlay, which marks
+ * only what it has a figure for, is then empty, and each entity still says where it sits.
  */
-export function mapView(context: SpatialContext, options: { layers?: readonly string[]; focus?: LocatedRef } = {}): Promise<MapView> {
+export function mapView(context: SpatialContext, options: { layers?: readonly string[]; focus?: LocatedRef; figures?: boolean } = {}): Promise<MapView> {
+  const withFigures = options.figures !== false;
   const { runtime, registry, viewer } = context;
   const wanted = options.layers ?? registry.modules.flatMap((spatialModule) => spatialModule.layers.filter((layer) => layer.onByDefault).map((layer) => layer.id));
   const chosen = [...new Set(wanted)].map((id) => {
@@ -129,7 +138,7 @@ export function mapView(context: SpatialContext, options: { layers?: readonly st
   });
 
   const focus = options.focus === undefined ? "*" : entityKey(options.focus);
-  const key = `spatial:map|${chosen.map(({ layer }) => layer.id).join(",")}|${focus}|${viewerScopeKey(viewer)}|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
+  const key = `spatial:map|${chosen.map(({ layer }) => layer.id).join(",")}|${focus}|${withFigures ? "figures" : "places"}|${viewerScopeKey(viewer)}|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
   return (runtime.cache ?? NO_CACHE).get(key, async () => {
     const scoped = await scopeModel(runtime, registry, viewer);
     const within = options.focus === undefined ? null : ((await focusKeys(context, scoped, options.focus)) ?? new Set<string>());
@@ -154,10 +163,10 @@ export function mapView(context: SpatialContext, options: { layers?: readonly st
       const located = entities.filter((entity) => entity.location !== null);
       if (held !== undefined) trail.addSourcing(held.sourcing);
       // The module is given only the entities this viewer sees, so it can return a figure for no other.
-      const figures = layer.figures === undefined ? null : await layer.figures(runtime, located);
+      const figures = layer.figures === undefined || !withFigures ? null : await layer.figures(runtime, located);
       if (figures !== null) trail.addSourcing(figures.sourcing);
       const drawn = layer.onlyWithFigure ? located.filter((entity) => figures?.result.has(entityKey(entity.ref))) : located;
-      const details = layer.details === undefined ? null : await layer.details(runtime, drawn);
+      const details = layer.details === undefined || !withFigures ? null : await layer.details(runtime, drawn);
       if (details !== null) trail.addSourcing(details.sourcing);
       const sourcing = await trail.resolve(runtime.repos.sources);
       used.push(sourcing);
@@ -170,7 +179,7 @@ export function mapView(context: SpatialContext, options: { layers?: readonly st
           classKey: figure?.classKey ?? null,
           details: (details?.result.get(entityKey(entity.ref)) ?? []).map(slim),
           // A layer that gives key figures also says where each entity sits, through the same question anyone can ask.
-          trace: details === null ? null : await traceOf(context, entity),
+          trace: layer.details === undefined ? null : await traceOf(context, entity),
         });
       }
       layers.push({

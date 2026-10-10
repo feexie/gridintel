@@ -11,6 +11,7 @@ export const REQUEST_ENV = { ...process.env, GRIDINTEL_RENDER: "request" };
 export const OPERATIONS = "/dashboard/utility/operations";
 
 export const ROUTES = [
+  "/dashboard/map",
   "/dashboard/utility/executive",
   "/dashboard/utility/reliability",
   "/dashboard/utility/revenue",

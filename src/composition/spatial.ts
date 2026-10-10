@@ -43,10 +43,11 @@ export const spatial = {
    * it and what it supplies. A transformer or a service point is drawn with its service points.
    */
   embedded: (focus?: { kind: string; id: string }) =>
-    mapView(context(), {
-      layers: focus?.kind === "distribution_transformer" || focus?.kind === "service_point" ? [...EMBEDDED_LAYERS, "utility.service_points"] : EMBEDDED_LAYERS,
-      focus,
-    }),
+    focus?.kind === "service_point"
+      ? // One connection: where it is and what supplies it, and no figure. A figure for its feeder or
+        // substation needs every record under them, and this screen is computed from one transformer's.
+        mapView(context(), { layers: ["utility.substations", "utility.feeders", "utility.transformers", "utility.service_points"], focus, figures: false })
+      : mapView(context(), { layers: focus?.kind === "distribution_transformer" ? [...EMBEDDED_LAYERS, "utility.service_points"] : EMBEDDED_LAYERS, focus }),
   incidents: () => incidentsNow(context()),
   here: (point: { latitude: number; longitude: number }, withinMetres: number, kinds?: readonly string[]) => whatIsHere(context(), { point, withinMetres, kinds }),
   inside: (areaId: string, list?: readonly string[]) => whatIsInside(context(), areaId, { list }),

@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { ServicePoint } from "@/components/operations/Level";
 import { PreparingData } from "@/components/system/PreparingData";
+import { EmbeddedMap } from "@/components/system/map/EmbeddedMap";
 import { operations } from "@/composition/operations";
+import { spatial } from "@/composition/spatial";
 import { aheadOfTime, preparing } from "../../../screen";
 
 /* There are thousands of service points, so none is built ahead of time. On a fixed dataset
@@ -15,5 +17,6 @@ export default async function ServicePointPage({ params }: { params: Promise<{ s
   if (await preparing()) return <PreparingData />;
   const view = await operations.servicePoint(decodeURIComponent(servicePointId));
   if (view === null) notFound();
-  return <ServicePoint view={view} />;
+  const id = decodeURIComponent(servicePointId);
+  return <ServicePoint view={view} map={<EmbeddedMap view={await spatial.embedded({ kind: "service_point", id })} select={`service_point:${id}`} />} />;
 }

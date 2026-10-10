@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { EventsWorkspaceView, OpenInterruptionRow, PlaceView } from "@/services/events/views";
 import { Legend, MetricCell, OriginTag, Panel } from "@/components/system/Metric";
 import { AlarmsPanel, SEVERITY_STYLE, SubjectLink } from "@/components/system/Panels";
@@ -66,7 +67,8 @@ function Interruptions({ rows, name }: { rows: OpenInterruptionRow[]; name: stri
   );
 }
 
-export function Events({ view }: { view: EventsWorkspaceView }) {
+/** `map` is the shared map with what is wrong now marked on it; the page supplies it. */
+export function Events({ view, map }: { view: EventsWorkspaceView; map?: ReactNode }) {
   const { now } = view;
   const { interruptions } = now;
   return (
@@ -77,6 +79,8 @@ export function Events({ view }: { view: EventsWorkspaceView }) {
         </PageHead>
         <Legend />
       </div>
+
+      {map}
 
       <Panel title="What is wrong now" aside={`As of ${formatTime(view.asOf)} · three separate lists, never merged`}>
         <div data-now="alarms">

@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { NetworkLevel } from "@/components/operations/Level";
 import { PreparingData } from "@/components/system/PreparingData";
+import { EmbeddedMap } from "@/components/system/map/EmbeddedMap";
 import { buildableLevels, operations } from "@/composition/operations";
+import { spatial } from "@/composition/spatial";
 import { aheadOfTime, preparing } from "../../../screen";
 
 /** Built ahead of time for every distribution transformer when the dataset is fixed; none otherwise. */
@@ -13,5 +15,6 @@ export default async function TransformerPage({ params }: { params: Promise<{ tr
   if (await preparing()) return <PreparingData />;
   const view = await operations.transformer(decodeURIComponent(transformerId));
   if (view === null) notFound();
-  return <NetworkLevel view={view} showAllRows={false} />;
+  const id = decodeURIComponent(transformerId);
+  return <NetworkLevel view={view} showAllRows={false} map={<EmbeddedMap view={await spatial.embedded({ kind: "distribution_transformer", id })} select={`distribution_transformer:${id}`} />} />;
 }

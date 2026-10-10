@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
 import { Legend, MetricTile, OriginTag, Panel } from "@/components/system/Metric";
 import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
@@ -56,10 +57,12 @@ function LevelHead({ header }: { header: LevelHeader }) {
   );
 }
 
-export function NetworkLevel({ view, showAllRows = false }: { view: NetworkLevelView; showAllRows?: boolean }) {
+/** `map` is the shared map, focused on this level; the page supplies it. */
+export function NetworkLevel({ view, showAllRows = false, map }: { view: NetworkLevelView; showAllRows?: boolean; map?: ReactNode }) {
   return (
     <div className="space-y-4">
       <LevelHead header={view.header} />
+      {map}
       {view.losses ? (
         <LossesPanel losses={view.losses} />
       ) : (
@@ -98,10 +101,11 @@ export function Overview({ view }: { view: OverviewView }) {
   );
 }
 
-export function ServicePoint({ view }: { view: ServicePointView }) {
+export function ServicePoint({ view, map }: { view: ServicePointView; map?: ReactNode }) {
   return (
     <div className="space-y-4">
       <LevelHead header={view.header} />
+      {map}
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Connection">
           <dl className="grid grid-cols-[10rem_1fr] gap-y-1 text-xs">

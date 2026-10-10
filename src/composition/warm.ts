@@ -5,6 +5,7 @@ import { executive } from "./executive.ts";
 import { operations } from "./operations.ts";
 import { reliability } from "./reliability.ts";
 import { revenue } from "./revenue.ts";
+import { spatial } from "./spatial.ts";
 
 /* ==========================================================
    COMPOSITION — WARM-UP
@@ -55,6 +56,10 @@ export async function warmResults(): Promise<void> {
       () => revenue.view(),
       () => assets.view(),
       () => events.view(),
+      // The map draws on the blocks above. Warmed for the viewer of the moment only: a result for
+      // one viewer is never served to another, so a second viewer's first map is computed on request.
+      () => spatial.workspace(),
+      () => spatial.embedded(),
     ];
     for (const step of steps) {
       await yieldToRequests();
