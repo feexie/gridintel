@@ -3,10 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-10. Status: **Phase 7b (the shared map and the
-Utility layers) is complete and awaits the Founder's approval**, on branch
-`phase-7b`; it is not merged. Phase 7a was approved and merged to `main` on
-2026-10-09, tag `phase-7a`. Phase 6 is complete, tag `phase-6`.
+Last updated: 2026-10-10. Status: **Phase 7 is complete.** Phase 7b was
+approved by the Founder and merged to `main` on 2026-10-10, tag `phase-7b`;
+Phase 7a on 2026-10-09, tag `phase-7a`. The next phase has not been chosen;
+the Founder chooses it.
 
 ## Completed
 
@@ -1108,7 +1108,7 @@ builds; 43 browser tests against both builds. Screenshots:
   metric, table and panel components moved out of `components/operations`
   into a shared set.
 
-## Phase 7: GIS, a platform capability (7a approved; 7b complete, awaiting approval)
+## Phase 7: GIS, a platform capability (complete; approved 2026-10-10, tags `phase-7a` and `phase-7b`)
 
 Moved ahead of the API and database by Founder decision (ADR 0004). Chosen
 as the next phase by the Founder on 2026-10-09, with the decisions recorded
@@ -1240,7 +1240,7 @@ both builds (one new: loading now on Farm Road).
   clock. It was so before this phase; found, not changed.
 - The cold first visit to a service point has not been measured on Vercel.
 
-### Phase 7b: Shared map and Utility layers (complete, awaiting approval; branch `phase-7b`)
+### Phase 7b: Shared map and Utility layers (approved and merged 2026-10-10; tag `phase-7b`)
 
 **The Founder's decisions at the 7a checkpoint (2026-10-09).** 7a approved,
 merged to `main` and tagged `phase-7a`. The twelve choices of ADR 0014
@@ -1383,6 +1383,52 @@ map builds no more than its own transformer.
 - LGA names are not printed on the map; they show on hover.
 - The cold first visit to a service point has still not been measured on
   Vercel production: it needs a merge to `main`.
+
+**The Founder's decisions at the 7b checkpoint (2026-10-10).** Phase 7b
+accepted and the engineer's choices confirmed. `/dashboard/intelligence/gis`
+redirects to `/dashboard/map` (done before the merge, `9431cf6`; 55 browser
+tests). Phase 7 is complete.
+
+**A service point's first visit on production, measured after the merge
+(2026-10-10).** Plain requests from the development laptop in Nigeria to
+`https://gridintel-iota.vercel.app`, minutes after the deployment of
+`9431cf6` finished. Eleven service points, none asked for before. On this
+connection a small file already held at the edge took 0.4 to 1.1 s, about
+0.3 to 0.8 s of it setting up the connection, so the figures are a ceiling
+on what the server did.
+
+| | First visit, whole response | Of which before the first byte, after the connection was set up | Repeat |
+| --- | --- | --- | --- |
+| The very first, on an instance that had just started (SP-FRM3-010) | 3.2 s | not separated | 0.8 s, 0.5 s |
+| Four more, unseparated (SP-OLD2-001, SP-GOV3-004, SP-MKT2-005, the 11 kV customer) | 1.5, 2.4, 1.8, 1.0 s | not separated | 0.4 to 0.7 s |
+| Six more, with the connection time taken out | 1.2, 1.6, 1.5, 1.4, 2.5, 2.6 s | 0.8, 1.3, 1.0, 0.7, 0.9, 1.2 s | 0.9 to 1.3 s |
+
+- **No screen showed "Preparing data"**, and `/api/ready` answered
+  `not_started` before and after.
+- **Once an instance is running, the server answers a first visit in about
+  0.7 to 1.3 s**, and the whole response arrives in 1.0 to 2.6 s on this
+  connection. Before the change of Phase 7a the comparable first visits
+  were 1.1 to 4.6 s (Phase 6 close-out), on the same uneven connection, so
+  the two sets cannot be compared more finely than "somewhat faster, and
+  mostly inside 2 s".
+- **The very first request to an instance that has just started is still
+  over the 2 s target: 3.2 s, against 2.5 s before.** One sample each, so
+  the difference between them means nothing; what it shows is that this
+  one request is not cured by generating less of the dataset. Its cost is
+  the function starting and loading the application, which the generator
+  change does not touch. It is paid once per instance, by whoever arrives
+  first, on a service-point screen only: every network screen and the map
+  are files.
+- Also on production: the Map page (620 KB) arrived in 1.8 s first and
+  0.7 s on repeat; the state outlines (360 KB) in 1.4 s and the LGA
+  outlines (1.65 MB before compression) in 2.2 s; the old GIS address
+  answers with a redirect to the map.
+
+**Open for the Founder, not built.** If the first request to a cold
+instance must also be inside 2 s, the remaining ways are those of ADR 0012:
+build the 6,448 service-point screens ahead of time (about 0.5 GB, a build
+several minutes longer), or keep an instance warm, which is a paid Vercel
+feature.
 
 ## Phase 8: API and backend boundary
 
