@@ -28,8 +28,25 @@ planning.
   layers
 - Tests on Node's built-in test runner
 
+- Leaflet / React Leaflet for the map, with no basemap
+
 Installed for planned work but not yet used: TanStack Query and Table,
-Zustand, Zod, React Hook Form, Recharts, Leaflet / React Leaflet and date-fns.
+Zustand, Zod, React Hook Form, Recharts and date-fns.
+
+## Data credits
+
+Boundaries: geoBoundaries (CC BY 4.0), Runfola et al. 2020.
+
+The administrative boundaries of Nigeria's states and local government areas
+are from [geoBoundaries](https://www.geoboundaries.org) (gbOpen, release
+`9469f09`, source GRID3), under the Creative Commons Attribution 4.0
+International licence. They are simplified outlines for orientation and are
+not survey-grade. Files, hashes and how they were built: ADR 0014 and
+`scripts/build-boundaries.mjs`. Citation: Runfola, D. et al. (2020)
+geoBoundaries: A global database of political administrative boundaries.
+PLoS ONE 15(4): e0231866.
+
+Everything else the application shows is synthetic demonstration data.
 
 ## Requirements
 
@@ -93,6 +110,7 @@ Adapters (src/repositories/memory, demo)
 | Route | Status |
 | --- | --- |
 | `/dashboard` | Platform overview |
+| `/dashboard/map` | Map: the network on a plain ground, transformers coloured by loading, ATC&C, revenue not realised or band compliance, interruptions in progress with what is behind them, standing alarms, totals by synthetic district, and state and LGA boundaries for orientation. The same map is inside the Operations levels and Events / Alarms |
 | `/dashboard/utility` | Utility Intelligence suite hub |
 | `/dashboard/utility/operations` | Operations Center: drill from region to substation, feeder, transformer and service point. ATC&C decomposition, reliability with attribution, service-band compliance and peak loading, each with status, origin, source and method |
 | `/dashboard/utility/executive` | Executive: a ranked "where to look first" list, ATC&C with its technical / commercial / collection split, reliability with attribution, service-band compliance per feeder, transformer peak loading, and reported figures against calculated ones on the same basis |

@@ -4,6 +4,30 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase 7b checkpoint (2026-10-09).** Since 7a (ADR 0014,
+> "As decided and built in Phase 7b"):
+>
+> - **One shared map component** (`src/components/system/map`): Leaflet,
+>   no basemap, drawn in the browser only. `NetworkMap` shows whatever
+>   layers the map read model holds; `MapCanvas` draws; colours come from
+>   the design tokens through classes in `globals.css`. The Map workspace
+>   (`/dashboard/map`, in the Platform menu) and the maps inside the
+>   Operations levels and Events / Alarms are the same component.
+> - **Layers are registrations.** `src/services/utility/spatial.ts` registers
+>   the network, four transformer themes, two overlays and totals by
+>   district, each figure taken from the read-model block the drill-down
+>   shows. `src/services/minigrid/spatial.ts` registers one layer and no
+>   data. `src/services/spatial/reference.ts` registers states and LGAs.
+> - **A second adapter, of real data**: `src/repositories/geoboundaries`,
+>   Nigeria's states and LGAs from geoBoundaries, composed over the
+>   demonstration adapter in the composition root (`withGeoBoundaries`).
+>   The application now holds real and synthetic records side by side, and
+>   the spatial services never relate one to the other (`relates`).
+> - **A data source can carry a licence** and the credit and notice it
+>   requires (`DataSource`), which reach a screen in its sourcing.
+> - **A second route handler**: `/api/areas/[kind]`, built with the
+>   application, serves state and LGA outlines to the map on request.
+>
 > **State at the Phase 7a checkpoint (2026-10-09).** Since the Phase 6
 > close-out (ADR 0014):
 >

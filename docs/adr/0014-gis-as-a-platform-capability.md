@@ -1,11 +1,12 @@
 # ADR 0014: GIS is a platform capability, with a viewer scope from the first day
 
 Date: 2026-10-09
-Status: Decisions 1 to 6 accepted (Founder decisions, 2026-10-09) and built
-as foundations in Phase 7a. "Choices made in building it" are the
-engineer's and are for the Founder to confirm. The two proposals at the end
-(basemap, administrative boundaries) are **not decided**: nothing in them
-has been downloaded, installed or committed.
+Status: Accepted. Decisions 1 to 6 are the Founder's (2026-10-09) and were
+built as foundations in Phase 7a. The twelve "choices made in building it"
+were confirmed by the Founder at the 7a checkpoint (2026-10-09), and both
+proposals were decided the same day: no basemap, and boundaries from
+geoBoundaries. See "As decided and built in Phase 7b" at the end, which is
+what the code does; the proposals before it are kept as they were put.
 
 ## Context
 
@@ -193,7 +194,7 @@ needs: a module's AI tools will wrap these calls one to one, pass the same
 `ViewerContext`, and cite the result they were given. No spatial service
 reads a request, a session or a component.
 
-## Proposal 1 (not decided): the basemap
+## Proposal 1 (decided 2026-10-09: no basemap): the basemap
 
 The map can be drawn with no basemap at all: the network on a plain ground,
 with a scale. A basemap adds streets and place names, and it is an external
@@ -235,7 +236,7 @@ tenant is in sight.**
   commitment is D (free at this volume, works with the Leaflet already
   installed) or B.
 
-## Proposal 2 (not decided): Nigeria's administrative boundaries
+## Proposal 2 (decided 2026-10-09: geoBoundaries): Nigeria's administrative boundaries
 
 Wanted for two things: territories stated as states or LGAs, and totals by
 area ("revenue not realised by LGA"). Sizes below were read from response
@@ -288,3 +289,101 @@ Three things to weigh:
 3. Boundaries: geoBoundaries now, after the HDX licence is read, or not
    until a real tenant; and whether real boundaries go under the synthetic
    demonstration.
+
+## As decided and built in Phase 7b (2026-10-09)
+
+**The twelve choices: confirmed**, with two put on record.
+
+- *The territory rule is strict.* A line that crosses a viewer's territory
+  boundary is not visible to that viewer. Operator territories are normally
+  asset-based (what the organization operates); areas are for viewing and
+  for totals.
+- *No basemap.* It is a setting of the shared map component and is off for
+  the synthetic demonstration, because a synthetic network over real streets
+  could be mistaken for real assets. To be revisited when real customer data
+  arrives. The map says "No basemap" on itself, and a browser test checks
+  that the page fetches nothing from any other host.
+
+**Administrative boundaries: geoBoundaries gbOpen, Nigeria, ADM1 and ADM2.**
+The Founder confirmed the licence, the source and the release as read from
+the geoBoundaries API.
+
+| | ADM1: states | ADM2: local government areas |
+| --- | --- | --- |
+| Boundary id | NGA-ADM1-27671186 | NGA-ADM2-59680162 |
+| Licence | Creative Commons Attribution 4.0 International (CC BY 4.0) | the same |
+| Source, as geoBoundaries states it | GRID3 | GRID3 |
+| Units | 37 (36 states and the Federal Capital Territory) | 774 |
+| Represents / source updated / built by geoBoundaries | 2022 / 26 February 2023 / 12 December 2023 | the same |
+| Release | `9469f09` | `9469f09` |
+| Retrieved | 2026-10-09 | 2026-10-09 |
+| File | `https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/NGA/ADM1/geoBoundaries-NGA-ADM1_simplified.geojson` | `https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/NGA/ADM2/geoBoundaries-NGA-ADM2_simplified.geojson` |
+| SHA-256 of that file | `edd28050c7f1ae40471424605f74e4d2df83502e4f301089761ae18f8ae2fbbf` | `daac9ba2c98f0d8984085c8a5b3a5301fca362f3ca37e6ac7dfcc7633719fc1d` |
+| Size as published | 827,817 bytes | 3,717,494 bytes |
+| Size kept in the repository | 359,978 bytes | 1,624,599 bytes |
+
+- **Option B**: the published simplified geometry with coordinates rounded
+  to 5 decimal places (about one metre), keeping each area's id, name and,
+  for a state, ISO code. `scripts/build-boundaries.mjs` builds the kept
+  files from the originals and refuses a file whose SHA-256 is not the one
+  above. The originals are not in the repository. The kept files are in
+  `src/repositories/geoboundaries/data`, with a third small file that holds
+  only what each is and where it came from.
+- **Provenance.** Each area's provenance names its source, the source's own
+  record id, the release and the day retrieved. Each of the two sources
+  (`DataSource`, kind `gis`) carries the licence, the credit, the URL, the
+  release, the dates, the original file's SHA-256 and the words that must be
+  shown with it. `DataSource` gained optional `licence`, `attribution`,
+  `url`, `release`, `dated` and `notice` for this; they reach a screen in
+  its sourcing.
+- **An LGA's state is derived.** The published LGA file names no state. The
+  build script gives each LGA the state that holds most of its area, judged
+  on a grid of points inside the LGA, and the link is marked derived
+  (`Area.parentBasis`). The result matches the official number of LGAs in
+  all 36 states and the FCT; the least clear LGA has 99.1% of its area in
+  its state. A first attempt by outline vertices put LGAs on a state border
+  in the wrong state in six states and was dropped.
+- **Credit and label.** "Boundaries: geoBoundaries (CC BY 4.0), Runfola et
+  al. 2020" is on every map that shows them, drawn inside the map frame, and
+  in the README. On screen they are "Administrative boundaries from
+  geoBoundaries, not survey-grade".
+- **Loading.** States are fetched with the map; LGAs only when their layer
+  is switched on (`/api/areas/state`, `/api/areas/lga`, built with the
+  application: about 124 KB and 547 KB compressed).
+
+**Synthetic and real are never related** (both rules approved by the
+Founder; enforced in the services, with tests).
+
+- No synthetic figure is totalled by a non-synthetic area. Totals by area
+  use only areas whose source is synthetic when the figures are, and say
+  how many real areas were left out.
+- No synthetic entity is listed as inside a real area, named as being in
+  one, or held by a territory stated as one. Asking what is inside Yola
+  North answers with nothing listed and the reason.
+- *An engineer's addition, for the Founder to confirm:* the rule is applied
+  both ways. A real entity is not put in a synthetic district either. The
+  one test is `relates` in `src/services/spatial/model.ts`.
+- The three synthetic districts stay, and are the only areas the
+  demonstration totals by. States and LGAs are an orientation layer.
+
+**What Phase 7b added to the platform.**
+
+- *Layers carry more.* A layer may draw several kinds of entity, mark only
+  what it has a figure for (an overlay), give each entity's key figures and
+  place in the network for when it is selected, or draw areas: a measure
+  totalled by them, or outlines fetched on request. What must be said on a
+  map (a credit, "schematic", "not survey-grade") travels with the layer.
+- *A map can be focused* on one entity: it then holds that entity, what
+  supplies it and what it supplies.
+- *Incidents.* A module may say what is in progress now; the platform adds
+  what is behind where each began (`incidentsNow`).
+- *Three modules are registered*: Utility; Mini-grid, with one layer and no
+  data, its entity list "not available"; and reference geography.
+- *Legend classes are decided in the service layer*, stated in words in the
+  legend, and never shown by colour alone: a class differs in size too.
+  "Above rating" is the loading methodology's own threshold. The bands for
+  ATC&C (25% and 50%) and band compliance (1 and 5 days), and the thirds for
+  revenue not realised, only sort a figure for colouring; they are display
+  bands, not findings, and are the engineer's choice.
+- *Band compliance on a transformer is its feeder's figure*, labelled as
+  the feeder's: a service band is a feeder's.

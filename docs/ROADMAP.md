@@ -3,10 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-09. Status: **Phase 7a (GIS foundations) is complete
-and awaits the Founder's approval**, on branch `phase-7a`; nothing is
-merged. Phase 6 is complete: its close-out was approved by the Founder and
-merged to `main` on 2026-10-09, tag `phase-6`.
+Last updated: 2026-10-10. Status: **Phase 7b (the shared map and the
+Utility layers) is complete and awaits the Founder's approval**, on branch
+`phase-7b`; it is not merged. Phase 7a was approved and merged to `main` on
+2026-10-09, tag `phase-7a`. Phase 6 is complete, tag `phase-6`.
 
 ## Completed
 
@@ -1108,7 +1108,7 @@ builds; 43 browser tests against both builds. Screenshots:
   metric, table and panel components moved out of `components/operations`
   into a shared set.
 
-## Phase 7: GIS, a platform capability (7a complete, awaiting approval; branch `phase-7a`)
+## Phase 7: GIS, a platform capability (7a approved; 7b complete, awaiting approval)
 
 Moved ahead of the API and database by Founder decision (ADR 0004). Chosen
 as the next phase by the Founder on 2026-10-09, with the decisions recorded
@@ -1138,7 +1138,7 @@ in ADR 0014. Two gated sub-phases; work stops after each.
 **Condition (ADR 0004, unchanged).** The map consumes services only, never
 the dataset directly.
 
-### Phase 7a: Foundations (complete, awaiting approval; branch `phase-7a`)
+### Phase 7a: Foundations (approved and merged 2026-10-09; tag `phase-7a`)
 
 | Item | Status | Commit |
 | --- | --- | --- |
@@ -1240,26 +1240,148 @@ both builds (one new: loading now on Farm Road).
   clock. It was so before this phase; found, not changed.
 - The cold first visit to a service point has not been measured on Vercel.
 
-### Phase 7b: Shared map and Utility layers (not started; after the Founder approves 7a)
+### Phase 7b: Shared map and Utility layers (complete, awaiting approval; branch `phase-7b`)
 
-- The shared map component; a Map workspace in the platform menu, not under
-  Utility only.
-- Utility layers: substations, feeder routes, transformers coloured by
-  loading; ATC&C, revenue not realised or band compliance, one at a time
-  with its legend; open outages with their downstream trace; standing
-  alarms.
-- Embedded maps where they help: the Operations levels, Events / Alarms.
-- Click any asset: its key figures with status and origin, and a link into
-  the drill-down.
+**The Founder's decisions at the 7a checkpoint (2026-10-09).** 7a approved,
+merged to `main` and tagged `phase-7a`. The twelve choices of ADR 0014
+confirmed, with the territory rule strict and operator territories normally
+asset-based. No basemap: a setting of the shared component, off for the
+synthetic demonstration. Boundaries from geoBoundaries gbOpen (states and
+LGAs, option B), as an orientation layer only; the three synthetic
+districts stay the only areas the demonstration totals by; no synthetic
+figure is totalled by a real area and no synthetic entity is listed inside
+one. All recorded in ADR 0014, "As decided and built in Phase 7b".
 
-**Dependencies.** 7a approved. Leaflet and React Leaflet are installed and
-unused; any other map library or any tile provider is a decision gate
-(ADR 0014, proposal 1).
-**Risks.** A map is a client component: it must still carry the SYNTHETIC
-DATA bar and state a schematic route as one. Phone-sized screens.
-**Acceptance.** Trace DT-OLD-2 to its feeder, substation, area and
-customers; trace the Farm Road open fault to the 1,015 customers behind it;
-works on a phone screen; the SYNTHETIC DATA bar is on screen.
+| Item, in the order set | Status | Commit |
+| --- | --- | --- |
+| 1. Housekeeping: the quiet monitor on DT-OLD-3 relays no readings after its last check-in | Done | `e7f237d` |
+| 2. Boundaries: geoBoundaries states and LGAs, with provenance, build script and the two rules | Done | `73dbe2a` |
+| 4. Layers, from existing services | Done | `73dbe2a` |
+| 3. Shared map component (Leaflet, no basemap); Map workspace in the Platform menu | Done | this checkpoint |
+| 5. Embedded maps on the Operations levels and Events / Alarms | Done | this checkpoint |
+| 6. Click any asset: key figures with status and origin, link into the drill-down | Done | this checkpoint |
+| 7. An empty place for mini-grid sites in the layer list | Done | `73dbe2a` |
+
+No dependency was added: Leaflet and React Leaflet were already installed.
+
+**1. The quiet monitor: what moved.** The monitor on South Gate (DT-OLD-3)
+last checked in at 14:55 on 30 September. Its nine hourly readings after
+that and the one at the demo clock are no longer in the dataset: a gap, not
+a zero. Compared across every screen, field by field, only DT-OLD-3 moved:
+
+| DT-OLD-3 | Before | After |
+| --- | --- | --- |
+| Loading now | 21.5% | Insufficient data: no recent reading |
+| Peak loading | 78.1%, highest of 720 readings | 78.1%, highest of 711 readings |
+
+Its totalizer meter is a meter of its own and is complete, and the feeder
+is read at the substation, so no energy, feeder, revenue, reliability or
+alarm figure moved. The "monitor quiet" condition and the source's
+communications alarm now agree with the data as well as with each other.
+
+**2. Boundaries.** As in ADR 0014: 37 states and 774 LGAs, 360 KB and
+1.6 MB in the repository (828 KB and 3.7 MB as published), each file's URL,
+SHA-256, licence, release and dates recorded in the ADR, in the file and on
+its data source. Each LGA's state is derived from the geometry and marked
+as derived; the counts per state match the official ones for all 37. The
+application now holds real records beside synthetic ones, and the spatial
+services never relate the two.
+
+**3 to 7. The map.**
+
+- *One component* (`src/components/system/map`), used by the Map workspace
+  and inside five other kinds of screen. It draws on a plain ground and
+  fetches nothing from any other host (a browser test checks).
+- *Layers.* Substations, feeder routes (dashed, each carrying the word
+  "schematic" on the map), and transformers coloured by peak loading,
+  ATC&C, revenue not realised or band compliance, one at a time, with a
+  legend in words. Interruptions in progress and standing source alarms as
+  rings round the assets they concern. The three synthetic districts with
+  revenue not realised, and what belongs to no district in rows of its own.
+  States and LGAs for orientation: states with the map, LGAs when switched
+  on. Mini-grid sites: a place in the list, disabled, saying no source is
+  connected.
+- *Selecting an asset*, by clicking it or from a list, shows where it sits
+  (what supplies it, its district, what it supplies), its key figures each
+  with status, origin and method, and a link into the drill-down, which
+  holds each figure's full trail.
+- *What is in progress* is listed beside the map with what is behind it;
+  ticking it marks those assets.
+- *Embedded.* A substation, feeder or transformer screen shows itself with
+  what supplies it and what it supplies; a transformer with its service
+  points; a region and Events / Alarms the whole network. A service point
+  shows where it is and what supplies it, **without figures**: a figure for
+  its feeder would need every record under the feeder, and that screen is
+  computed from one transformer's records.
+
+**On the demonstration.**
+
+- DT-OLD-2: Old Town feeder, Riverside T1, Riverside substation;
+  Demonstration district South; 135 connections, 132 active accounts; peak
+  loading 121.2%.
+- The Farm Road fault: 10 transformers ringed as without supply; the outage
+  record's 1,015 customers affected, and the registry's 1,015 active
+  accounts behind the feeder, as two figures with two origins.
+- Loading: 2 transformers above rating, 13 at 80 to 100%, 33 below. ATC&C:
+  24 over 50%, 12 between, 12 below 25%.
+- Revenue not realised: North-east ₦12,342,819, North-west ₦20,383,902,
+  South ₦12,665,985, carried by no transformer ₦912,259; the 37 real states
+  are named as not totalled.
+
+**Sizes.** The Map page is about 620 KB of HTML before compression, of the
+same order as a feeder screen. The map read model for the workspace takes
+about 3 s to compute cold (it draws on every transformer's blocks) and is
+built with the application on the demonstration.
+
+**Acceptance, as met.** Each has a browser test.
+
+| Criterion | Met |
+| --- | --- |
+| Trace DT-OLD-2 to its feeder, substation, district and customers | Yes |
+| Trace the Farm Road open fault to the 1,015 accounts behind it | Yes |
+| Works on a phone screen | Yes: 390 px wide, nothing wider than the screen, every action available from a list |
+| SYNTHETIC DATA bar visible | Yes, on the map and on every screen with a map in it |
+| Schematic label visible on feeder routes | Yes: on each route, and in words under the map |
+| Boundary credit visible | Yes: inside the map frame whenever boundaries are drawn, and in the README |
+
+`npm run verify`: typecheck clean; 551 unit tests; lint clean; both
+builds; 54 browser tests against both builds. Screenshots at desktop and
+phone width: `docs/screenshots/phase7b`.
+
+**Found and fixed on the way.** The first embedded map on a service-point
+screen asked for its feeder's and substation's figures, which generates the
+whole synthetic dataset and undid the on-demand work of 7a (the first visit
+went back above 4 s; the existing readiness test caught it). A map can now
+be asked for without figures, and a unit test holds that a service point's
+map builds no more than its own transformer.
+
+**Choices made, for the Founder to confirm.**
+
+- *The synthetic-and-real rule is applied both ways*: a real entity is not
+  put in a synthetic district either.
+- *Legend bands.* ATC&C at 25% and 50%; band compliance at 1 and 5 days;
+  revenue not realised in thirds by rank. They sort a figure for colouring
+  and are not findings. "Above rating" is the loading methodology's own.
+- *Band compliance on a transformer is its feeder's figure*, labelled so.
+- *An alarm on a monitor or a power transformer is ringed on the asset it
+  is drawn with* (the transformer; the substation), and says so in words.
+- *Selecting an asset shows figures without their inputs*; the drill-down
+  one click away holds the readings and the full trail.
+- *The old placeholder at `/dashboard/intelligence/gis`* is left as it was:
+  reachable by address, not in the menu.
+
+**Known, and not done.**
+
+- The Phase 6 read models still take no viewer (owed before login,
+  Phase 8). The map's own read models all do.
+- A click on a ring selects the asset beneath it, not the alarm or the
+  interruption; those are read in the panel beside the map.
+- The map has no search by place and no measuring tool.
+- Keyboard users select from the list; the shapes on the map are not
+  focusable.
+- LGA names are not printed on the map; they show on hover.
+- The cold first visit to a service point has still not been measured on
+  Vercel production: it needs a merge to `main`.
 
 ## Phase 8: API and backend boundary
 
