@@ -41,7 +41,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "gis",
     title: "GIS Intelligence",
     image: "/images/platform/gis.jpg",
-    href: "/dashboard/intelligence/gis",
+    href: "/dashboard/map",
     description:
       "Spatial intelligence, digital network mapping, geospatial visualization, routing, and asset location services.",
   },

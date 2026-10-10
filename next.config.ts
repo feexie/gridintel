@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
       fullList("/dashboard/utility/revenue", "valuation"),
       fullList("/dashboard/utility/assets", "transformers"),
       fullList("/dashboard/utility/operations/transformers/:transformerId", "rows"),
+      // GIS used to have a placeholder under "Intelligence". It is the Map workspace of the platform now.
+      { source: "/dashboard/intelligence/gis", destination: "/dashboard/map", permanent: false },
     ];
   },
 };

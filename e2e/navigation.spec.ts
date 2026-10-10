@@ -11,7 +11,6 @@ const PLACEHOLDERS = [
   "/dashboard/settings",
   "/dashboard/intelligence/ai",
   "/dashboard/intelligence/analytics",
-  "/dashboard/intelligence/gis",
   "/dashboard/utility/ai",
 ];
 
@@ -57,6 +56,13 @@ test("the menu marks the workspace the reader is in, at any depth", async ({ pag
   // The overview is not marked on the pages below it.
   await page.goto("/dashboard");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Overview"]);
+});
+
+test("the old GIS placeholder leads to the Map workspace", async ({ page }) => {
+  await page.goto("/dashboard/intelligence/gis");
+  await expect(page).toHaveURL(/\/dashboard\/map$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Map");
+  await expect(page.getByText("Coming Soon")).toHaveCount(0);
 });
 
 test("every page has exactly one h1", async ({ page }) => {

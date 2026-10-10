@@ -1367,8 +1367,9 @@ map builds no more than its own transformer.
   is drawn with* (the transformer; the substation), and says so in words.
 - *Selecting an asset shows figures without their inputs*; the drill-down
   one click away holds the readings and the full trail.
-- *The old placeholder at `/dashboard/intelligence/gis`* is left as it was:
-  reachable by address, not in the menu.
+- *The old placeholder at `/dashboard/intelligence/gis`* was left as it was
+  at the checkpoint. By the Founder's decision at approval it now redirects
+  to `/dashboard/map`, and the placeholder page is removed.
 
 **Known, and not done.**
 
