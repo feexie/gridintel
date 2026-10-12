@@ -135,8 +135,9 @@ export function MinigridPortfolio({ view }: { view: MinigridPortfolioView }) {
         ))}
       </div>
       <Note>
-        A reported figure is set only beside the calculation on its own basis, and agrees when it is within {formatPercent(view.agreementTolerance, 0)} of its own value. Each mark beside
-        a figure is its status; the letters after it are its origin. A site&apos;s own screen holds every figure&apos;s source and method.
+        {/* One string: text that follows an expression and runs over a line break loses its leading space. */}
+        {`A reported figure is set only beside the calculation on its own basis, and agrees when it is within ${formatPercent(view.agreementTolerance, 0)} of its own value. `}
+        Each mark beside a figure is its status; the letters after it are its origin. A site&apos;s own screen holds every figure&apos;s source and method.
       </Note>
 
       {view.byClass.length > 0 ? (

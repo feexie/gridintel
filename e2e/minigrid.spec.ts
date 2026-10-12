@@ -60,6 +60,7 @@ test("the four sites are side by side on the same figures, each with its status 
   await expect(card(page, "MG-GRN").locator('[data-figure="Fuel per kWh"]')).toContainText("no generator");
   await expect(card(page, "MG-GRN").locator('[data-figure="PV curtailed"]').locator('[aria-label="Estimated inputs"]')).toBeVisible();
   await expect(card(page, "MG-TAM").locator("[data-report-standing]")).toHaveText("7 agree · 0 differ · 1 not comparable");
+  await expect(page.getByText("agrees when it is within 1% of its own value. Each mark beside a figure is its status")).toBeVisible();
 
   // Collection by class over every site: only postpaid accounts owe.
   const classes = page.locator('[data-table="class-portfolio"]');
