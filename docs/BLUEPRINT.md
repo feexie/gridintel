@@ -4,6 +4,30 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase 10a checkpoint (2026-10-12).** Since 7b (ADR 0015,
+> ADR 0016, which is proposed):
+>
+> - **A second module, with no screens yet: Mini-grid.** A site
+>   (`src/domain/site.ts`) hangs from no substation. Its energy account
+>   starts from its own generation (`src/analytics/site`, methodology
+>   `gridintel.site.reference`), not from a boundary meter.
+> - **Every site figure is a `CalculatedKpi`** for the scope
+>   `{ kind: "site" }`, built from quantities that name what is missing
+>   when they have no value (`site/quantity.ts`).
+> - **A new port**: `repos.sites` (`SiteRepository`), the site register.
+>   A source with no sites answers "not available".
+> - **Two sets of repositories.** The mini-grid operator's records are
+>   served through the same ports by a set of their own, with their own
+>   result cache (`getMinigridRepositories`, `getMinigridRuntime`). The
+>   utility's read models never see them. The list of data sources is the
+>   platform's and holds both.
+> - **Services**: `src/services/minigrid/performance.ts` (one site, and
+>   every site); `src/composition/minigrid.ts` binds them.
+> - **The Mini-grid spatial module is created with where its sites come
+>   from** (`minigridSpatialModule`); created with nothing, it is the
+>   module with no source connected. `mapView` takes a `frame`: the layers
+>   that set the opening view.
+>
 > **State at the Phase 7b checkpoint (2026-10-09).** Since 7a (ADR 0014,
 > "As decided and built in Phase 7b"):
 >
@@ -427,6 +451,30 @@ None is hard to change; each needs a decision before mini-grid work starts.
 | Revenue gap | Unbilled energy valued at the low-voltage non-MD rate of the transformer where it occurs. | The "where it occurs" level would be the site or its distribution segment. The valuation rule itself carries over. |
 | Organization | `OrganizationKind` already includes `minigrid_operator` and `der_developer`. | Nothing. |
 | Reported figures | `ReportedKpi` with a basis; compared only on the same basis. | Fits directly: a claimed figure beside a calculated one, with the basis stated. |
+
+**What Phase 10a did to this list (ADR 0016).** Utility was not changed in
+behaviour: the mini-grid module was added beside it.
+
+| Where | Now |
+| --- | --- |
+| `ScopeRef`, topology index | **Removed.** `site` is a scope kind. A site has its own index (`analytics/site/registry.ts`); the network topology index says a site is not its to resolve. |
+| `MeterInstallation` roles | **Removed.** `generation`, `storage` and `site_output`. |
+| Energy account | **Routed around.** The network account is unchanged and refuses a site scope by name. A site has its own balance, with generation as the input. Embedded generation inside a network section is still not adjusted for. |
+| `sectionsForScope` (the cut) | **Routed around.** A site is not a section of a network and never enters the cut. |
+| Reliability, hours of supply | **Removed for sites.** Customer-weighted availability and hours of supply per day from the site's interruption record. Hours per tier are not calculated. |
+| `Feeder.serviceBand` | **Does not apply.** A site has no band and no band compliance. |
+| `KpiKey` | **Removed.** Generation, renewable fraction, specific yield, performance ratio, storage, generator, availability, connections and energy sold per connection. |
+| `MetricKey` (telemetry) | **Removed.** State of charge, in-plane irradiance, the curtailment estimate, generator hour and fuel registers. Inverter and generator state are not modelled. |
+| Billing | **Fits as it was.** Tier and productive use were added to the account. Connection fees and subsidy receipts are still not modelled. |
+| Revenue gap | **Not built for sites.** It needs a technical-loss figure to split a site's distribution loss, and the dataset holds none. |
+| Organization | Unchanged. The operator is an organization of kind `minigrid_operator`. |
+| Reported figures | **Fits as it was**, with three more basis dimensions (`shareOf`, `connections`, `energySold`). |
+
+**Still DisCo-only, and known.** Outages, alarms, and billing or reported
+figures asked for without a filter are selected by period alone, with no
+organization. That is why the operator's records are a separate set of
+repositories; scoping those queries belongs with Phase 8. `LevelKind`, the
+drill-down and the six workspaces are Utility's and name network levels.
 
 **The spatial layer does not add to this list (Phase 7a, ADR 0014).** A
 located entity is named by an open `{ kind, id }` and has no parent field;

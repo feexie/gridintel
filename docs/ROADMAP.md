@@ -3,10 +3,11 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-10. Status: **Phase 7 is complete.** Phase 7b was
-approved by the Founder and merged to `main` on 2026-10-10, tag `phase-7b`;
-Phase 7a on 2026-10-09, tag `phase-7a`. The next phase has not been chosen;
-the Founder chooses it.
+Last updated: 2026-10-12. Status: **Phase 10a is at its checkpoint, awaiting
+the Founder's realism review; nothing of it is merged.** Phase 7 is
+complete (tags `phase-7a`, `phase-7b`). By the Founder's decision of
+2026-10-10, Phase 10 (Mini-grid Intelligence) comes next, ahead of Phase 8
+(ADR 0015). Phases 8 and 9 follow in their order.
 
 ## Completed
 
@@ -1424,11 +1425,11 @@ on what the server did.
   outlines (1.65 MB before compression) in 2.2 s; the old GIS address
   answers with a redirect to the map.
 
-**Open for the Founder, not built.** If the first request to a cold
-instance must also be inside 2 s, the remaining ways are those of ADR 0012:
-build the 6,448 service-point screens ahead of time (about 0.5 GB, a build
-several minutes longer), or keep an instance warm, which is a paid Vercel
-feature.
+**The Founder's decision (2026-10-10).** The 3.2 s first request to a
+service point on a cold instance is accepted. Nothing is to be built for
+it. The ways that remain, should it ever matter, are those of ADR 0012:
+build the 6,448 service-point screens ahead of time, or keep an instance
+warm, which is a paid Vercel feature.
 
 ## Phase 8: API and backend boundary
 
@@ -1450,14 +1451,145 @@ for interval and telemetry data, topology history, stale-data policy.
 **Acceptance.** The app runs unchanged on the database adapter; parity tests
 between memory and database adapters pass.
 
-## Phase 10: Mini-grid and DER intelligence
+## Phase 10: Mini-grid Intelligence (in progress; moved ahead of Phase 8, ADR 0015)
 
-**Goal.** Extend the domain and analytics to sites, PV, BESS, inverters and
-generators.
-**Dependencies.** Phase 9. Touches the energy-accounting boundary rules
-(decision gate: data-integrity semantics).
-**Acceptance.** Site performance and availability calculated on synthetic
-site data without double counting against network energy accounts.
+**Purpose (Founder, 2026-10-10).** Operating intelligence for mini-grid
+operators and for the people who fund and report on them: how each site
+performs technically and commercially, and whether reported figures match
+the records. Not site prospecting.
+
+Two gated parts. DER intelligence (fleets, aggregation, dispatch) is not in
+this phase.
+
+### Phase 10a: Domain, analytics and dataset (at its checkpoint; branch `phase-10a`)
+
+| Item | Status |
+| --- | --- |
+| 1. Domain: a site under no substation; PV, battery, generator, inverter; site meter roles; generation as the energy-account input; tiers and productive use (ADR 0016) | Done |
+| 1. The DisCo-only assumptions of BLUEPRINT section 13 removed or routed around, Utility unchanged | Done; see the blueprint |
+| 2. Analytics: energy balance, availability, PV performance, storage, generator, renewable fraction, losses, revenue and collection, energy sold per connection (`gridintel.site.reference` 0.1.0) | Done, tested |
+| 3. Synthetic dataset: four invented sites, every assumption in `DATASET_ASSUMPTIONS.md` | Done; awaiting realism review |
+| 4. A synthetic monthly site report, compared only like for like | Done |
+| 5. The module registered with the spatial platform: sites fill the mini-grid layer | Done |
+| ADR 0015 (order) and ADR 0016 (domain; proposed, with eight points to confirm) | Done |
+
+No screen, route or component was built, and no dependency was added.
+
+**What was built.**
+
+- *Domain.* `src/domain/site.ts`; `site` as a scope kind; a service point
+  supplied by a site; the meter roles `generation`, `storage` and
+  `site_output`; telemetry for state of charge, in-plane irradiance, the
+  curtailment estimate and a generator's hour and fuel registers;
+  `tariffTier` and `productiveUse` on an account; site KPI keys and units;
+  three more basis dimensions for reported figures.
+- *Analytics* (`src/analytics/site`). Every figure is a `CalculatedKpi`
+  for the site scope, with its inputs, status, origin and method. A figure
+  that cannot be given names the meter, reading or record it lacks.
+- *Port and adapters.* `SiteRepository` (the site register). The mini-grid
+  operator's records are a second set of repositories with its own result
+  cache (`getMinigridRepositories`), never read by the utility's screens.
+- *Service.* `sitePerformance` and `sitePortfolio`
+  (`src/services/minigrid`), each with sourcing, and each reported claim
+  beside the calculation on its basis.
+- *Map.* The Mini-grid module registers its sites and one layer with five
+  key figures per site and its active connections. It is on the Map workspace's layer list, off when
+  the map opens; the opening view is unchanged.
+
+**The four sites: design** (all assumptions; tariffs are not current rates).
+
+| | Tamarind Cross | Dry River | Palm Landing | Granite Hill |
+| --- | --- | --- | --- | --- |
+| Designed to show | Well-run solar-hybrid | Generator dependence | Poor collection | Low demand |
+| Zone (illustrative) | Sudan savanna, NW | Guinea savanna, middle belt | Rainforest, south | Sudan savanna, NE |
+| PV | 100 kWp | 45 kWp | 80 kWp | 60 kWp |
+| Battery | 240 kWh / 80 kW | 90 kWh / 40 kW | 200 kWh / 60 kW | 150 kWh / 40 kW |
+| Generator | 50 kVA | 60 kVA | 40 kVA | none |
+| Connections, active / on register | 465 / 465 | 300 / 300 | 393 / 417 | 130 / 130 |
+| Tier 1 / 2 / 3 / 4 (productive) / public | 330 / 60 / 55 / 14 / 6 | 230 / 30 / 28 / 9 / 3 | 324 / 40 / 40 / 8 / 5 | 110 / 8 / 9 / 1 / 2 |
+| Productive-use share of energy sold | 29.3% | 40.2% | 22.4% | 10.7% |
+| Assumed tariff, NGN/kWh (tier 4 / others / tier 3) | 230 / 260 / 280 | 260 / 290 / 310 | 240 / 270 / 290 | 230 / 260 / 280 |
+
+**Calculated for September 2026.** "est." marks a figure calculated with an
+estimated input.
+
+| | Tamarind Cross | Dry River | Palm Landing | Granite Hill |
+| --- | --- | --- | --- | --- |
+| Energy generated (kWh) | 11,866 | 8,932 | 9,371 | 1,917 |
+| PV / generator (kWh) | 11,422 / 444 | 4,429 / 4,503 | 5,982 / 3,389 | 1,917 / 0 |
+| Renewable fraction | 96.3% | 49.6% | 63.8% | 100% |
+| Curtailment (kWh, est.) | 545 | 46 | 1 | 5,039 |
+| In-plane irradiation (kWh/m²) | 151.5 | 130.8 | 97.1 | 146.7 |
+| Specific yield (kWh/kWp) | 114.2 | 98.4 | 74.8 | 31.9 |
+| Performance ratio / before curtailment (est.) | 75.4% / 79.0% | 75.2% / 76.0% | 77.0% / 77.0% | 21.8% / 79.0% |
+| Battery equivalent full cycles | 16.9 | 18.1 | 8.9 | 4.8 |
+| Round-trip efficiency (est.) | 90.2% | 90.1% | 89.7% | 90.7% |
+| Storage loss (kWh, est.) | 439 | 177 | 197 | 79 |
+| State of charge, lowest / mean | 15% / 52% | 20% / 39% | 15% / 26% | 44% / 93% |
+| Generator running hours | 37 | 315 | 307 | no generator |
+| Fuel used (litres) / per kWh | 225 / 0.51 | 2,290 / 0.51 | 1,599 / 0.47 | no generator |
+| Energy sent out (kWh) | 11,245 | 8,547 | 9,028 | 1,599 |
+| Station use (kWh, residual) | 216 | 214 | 216 | 180 |
+| Energy delivered (kWh) | 10,460 | insufficient data | 7,764 | 1,519 |
+| Distribution loss, of sent out | 7.0% | insufficient data | 14.0% | 5.0% |
+| Site loss, of generated | 11.9% | insufficient data | 17.2% | 20.7% |
+| Availability | 99.69% | 95.83% | 98.75% | 99.72% |
+| Hours of supply per day | 23.92 | 23.00 | 23.70 | 23.93 |
+| Interruptions | 2 | 7 | 2 | 1 |
+| Hours lost per connection, by cause | planned 2.0, fault 0.26 | fault 30 | weather 6, planned 3 | fault 2 |
+| Energy sold (kWh) | 10,450 | 7,757 | 7,764 | 1,507 |
+| Energy sold per connection (kWh) | 22.5 | 25.9 | 19.8 | 11.6 |
+| Revenue billed (NGN) | 2,672,889 | 2,186,916 | 2,078,859 | 392,505 |
+| Revenue collected (NGN) | 2,563,682 | 2,126,019 | 1,271,476 | 365,328 |
+| Collection efficiency (cash) | 95.9% | 97.2% | 61.2% | 93.1% |
+| Revenue per connection (NGN) | 5,748 | 7,290 | 5,290 | 3,019 |
+
+Dry River's three "insufficient data" figures are designed: six of its 300
+customer meters reported nothing for four days, and a gap is not a zero.
+
+**The site report against the calculation.**
+
+| Site | Agrees (within 0.5%) | Variance, calculated less reported | Not comparable |
+| --- | --- | --- | --- |
+| Tamarind Cross | Energy generated, renewable fraction, uptime, energy sold, connections, revenue collected, generator hours | none | Collection efficiency: 99% stated on an accrual basis; the calculation is on cash (95.9%) |
+| Dry River | Energy generated, energy sold, connections, revenue collected, collection efficiency | Renewable fraction 68% reported, 49.6% calculated: −18.4 points. Uptime without planned interruptions 99.5% against 95.83%: −3.67 points. Generator hours 190 against 315: +125 | none |
+| Palm Landing | Energy generated, renewable fraction, uptime, energy sold, generator hours; connections 417 on its stated basis (all accounts) | Collection efficiency 82% against 61.2%: −20.8 points. Revenue collected NGN 1,650,000 against 1,271,476: −378,524 | none |
+| Granite Hill | Energy generated, renewable fraction, energy sold, connections, revenue collected, collection efficiency | none | Uptime: 99.9% with no statement of which interruptions it counts |
+
+Each variance is designed, to show what a funder's check finds: a site
+that reports itself greener and more reliable than its meters and its
+interruption log show, and one that reports money it did not receive.
+The two "not comparable" cases show the two reasons a claim cannot be
+checked: a different basis, and none stated.
+
+**Acceptance, as met.** Site performance and availability are calculated
+on synthetic site data, and a site's meters never enter a network energy
+account. The Utility module's 551 unit tests pass, with one line of one
+test changed (a type narrowing). `npm run verify`: see the checkpoint
+report for the counts.
+
+**For the Founder's decision.** The eight points of ADR 0016, first among
+them that curtailment is kept beside the energy chain and not subtracted
+from metered generation, which departs from the wording of the brief.
+
+**Known, and not done.**
+
+- No view model and no screen. `src/composition/minigrid.ts` binds the two
+  services for 10b.
+- The mini-grid services take no viewer, like the Phase 6 read models;
+  owed before login.
+- No fuel cost, operating cost or site economics: the dataset holds no
+  cost records.
+- Two generators run near their minimum load all month, so both burn
+  about 0.5 litres per kWh. That follows from the dispatch rule, and is
+  for the realism review.
+- Collection at the three prepaid sites is below 100% only because of
+  their few postpaid public institutions.
+
+### Phase 10b: Screens (not started; after the Founder approves 10a)
+
+A Mini-grid workspace (portfolio and site level), sites on the shared map,
+the reported-against-calculated comparison, embedded site maps.
 
 ## Phase 11: AI / MCP intelligence
 
