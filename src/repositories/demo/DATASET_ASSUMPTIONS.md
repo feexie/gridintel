@@ -558,3 +558,154 @@ demonstration, not a claim about how utilities report.
 Overload alarms, maintenance records, DER, embedded generation, reactive power flows,
 voltage, tariff classes within a band, arrears, customer movement between
 service points and topology changes.
+
+# Synthetic mini-grid sites: assumptions
+
+**These four sites are invented.** No site, operator, developer, capacity,
+tariff, customer or payment below is real, and the site names are made up.
+Each site is placed at a point in a climatic zone of Nigeria, not at a real
+community, and its location record says so. The sites are never said to be
+inside a real state or LGA (ADR 0014). Every record names a source of kind
+`synthetic`.
+
+They are the records of one invented operator, "Demonstration Mini-grid
+Operator (synthetic)", and are held apart from the utility's above (ADR
+0016). Generated in `src/repositories/demo/minigrid` from the same seed and
+for the same month and clock.
+
+Every number here is an assumption made so that the analytics have
+something plausible to work on. None is a measurement or a benchmark.
+
+## The four sites, and what each is designed to show
+
+| | Tamarind Cross (MG-TAM) | Dry River (MG-DRY) | Palm Landing (MG-PLM) | Granite Hill (MG-GRN) |
+| --- | --- | --- | --- | --- |
+| Designed to show | A well-run solar-hybrid | Heavy dependence on its generator | Poor collection | Low demand |
+| Climatic zone (illustrative) | Sudan savanna, north-west | Guinea savanna, middle belt | Rainforest, south | Sudan savanna, north-east |
+| PV array | 100 kWp | 45 kWp | 80 kWp | 60 kWp |
+| Battery, nameplate | 240 kWh, 80 kW | 90 kWh, 40 kW | 200 kWh, 60 kW | 150 kWh, 40 kW |
+| What the battery holds today, of nameplate | 95% | 70% (aged) | 90% | 98% |
+| Lowest state of charge allowed | 15% | 20% | 15% | 15% |
+| Diesel generator | 50 kVA / 40 kW, backup | 60 kVA / 48 kW, every evening and backup | 40 kVA / 32 kW, backup | none |
+| Mean daily in-plane irradiation, September | 5.6 kWh/m² | 4.7 kWh/m² | 3.7 kWh/m² | 5.3 kWh/m² |
+| A day's irradiation, of that mean | 72–112% | 60–120% | 50–130% | 75–112% |
+| PV output before curtailment, of rated power × irradiation | 79% | 76% | 77% | 79% |
+| Loss between powerhouse and customer meters | 7% | 10% | 14% | 5% |
+| Powerhouse's own draw | 0.3 kW | 0.3 kW | 0.3 kW | 0.25 kW |
+| Connections on the register | 465 | 300 | 417 (24 disconnected) | 130 |
+| How accounts pay | Prepaid | Prepaid | Postpaid (sold on credit) | Prepaid |
+| Commissioned | 2023 | 2019 | 2021 | 2024 |
+
+The irradiation figures are round assumptions that fall from north to
+south, as the rainy season makes them. They are not taken from any dataset.
+
+## Connections, tiers and tariffs
+
+The operator sells on five tiers. **The tariffs are assumptions, not
+current or published rates**, and are flat per kWh.
+
+| Tier | Mean demand per connection per day (TAM / DRY / PLM / GRN) | Connections (TAM / DRY / PLM / GRN) | Productive use |
+| --- | --- | --- | --- |
+| Tier 1 (basic household) | 0.28 / 0.30 / 0.30 / 0.22 kWh | 330 / 230 / 324 / 110 | no |
+| Tier 2 (household) | 0.9 / 1.0 / 0.9 / 0.7 kWh | 60 / 30 / 40 / 8 | no |
+| Tier 3 (commercial) | 1.6 / 2.0 / 1.5 / 1.2 kWh | 55 / 28 / 40 / 9 | no |
+| Tier 4 (productive use: mills, workshops, cold rooms) | 9 / 12 / 8 / 6 kWh | 14 / 9 / 8 / 1 | yes |
+| Public institution (clinic, school) | 3 / 3 / 3 / 2.5 kWh | 6 / 3 / 5 / 2 | no |
+
+| Assumed tariff, NGN per kWh | Tiers 1, 2, public | Tier 3 | Tier 4 |
+| --- | --- | --- | --- |
+| Tamarind Cross, Granite Hill | 260 | 280 | 230 |
+| Dry River | 290 | 310 | 260 |
+| Palm Landing | 270 | 290 | 240 |
+
+- A connection's demand is its tier's mean, times a factor of its own
+  (0.55 to 1.45), the day of the week, and a daily variation of ±20%.
+- It is spread over the day by a load shape: the network dataset's
+  residential and commercial shapes, a working-day shape for productive
+  use, and a daytime shape with a night-time base for public institutions.
+- Every connection has a smart meter that reports once a day. Palm
+  Landing's 24 disconnected accounts are all Tier 1; their meters report a
+  real zero.
+- Every account records its tier and whether it is productive use.
+
+## The month, hour by hour
+
+Each hour, in this order: PV serves the load; surplus charges the battery;
+what the battery cannot take is curtailed. A shortfall is met from the
+battery. When the battery cannot meet it the generator runs, at no less
+than 30% of its rating, and what it makes beyond the shortfall charges the
+battery. With no generator able to run, the controller disconnects the
+site for the hour.
+
+- Battery: 95% efficient each way; starts the month half full.
+- Dry River's generator also runs every evening from 18:00 to 23:00.
+- Fuel: 0.08 litres an hour per kW of rating while running, plus 0.24
+  litres per kWh. A generator held at its minimum load therefore burns
+  about half a litre per kWh.
+- The hour and fuel registers are read daily at midnight. Their opening
+  values (4,120 hours, 38,250 litres) are invented.
+- Irradiance and the curtailment estimate are hourly means; state of
+  charge is read on the hour. **The curtailment series is marked
+  estimated**: a controller's estimate, not a measurement.
+- State of charge is of what the battery holds today. The analytics know
+  only the nameplate, so Dry River's storage loss is overstated a little.
+  That is the reason the figure is marked estimated.
+- **Interruptions are whole hours.** A connection uses nothing in an hour
+  its site is disconnected.
+
+## Interruptions
+
+| Site | Designed | From the dispatch |
+| --- | --- | --- |
+| Tamarind Cross | Planned inverter service, 2 h; a fault on one branch, 1 h, 120 connections | none |
+| Dry River | Powerhouse fault, 3 h; **generator out of service on 18 and 19 September** | 6 night-time disconnections while the generator was out, recorded as faults |
+| Palm Landing | Storm damage, 6 h; planned line work, 3 h | none |
+| Granite Hill | Inverter trip, 2 h | none |
+
+A disconnection for low battery with a working generator on site would be
+recorded as load shedding. None occurs this month.
+
+## Charges and payments
+
+- **Prepaid:** two to four vends a month for a household, four to six for
+  a commercial account, six to ten for productive use. An account buys 94
+  to 106% of what its meter recorded. Every vend is paid as it is raised,
+  so a prepaid account's collection is 100% by construction.
+- **Postpaid:** one bill at 23:30 on 30 September for what the meter
+  recorded. Public institutions are postpaid at every site and pay late:
+  a third in full, a third nothing, the rest 30 to 80%.
+- **Palm Landing sells on credit to every account**: 46% pay in full, 24%
+  nothing, the rest 30 to 80%.
+- Payments are sized against this month's bill, which stands in for the
+  settlement of earlier bills the dataset does not hold.
+- Disconnected accounts are not charged.
+
+## The gap at Dry River
+
+Six Dry River customer meters report nothing from 13 to 16 September. It
+is a gap, not a zero: energy delivered, distribution loss and consumption
+per connection are unavailable for the site, and the screen must say so.
+Their accounts are prepaid and buy as usual.
+
+## The monthly site report
+
+One synthetic report per site, of the kind an operator sends its funders.
+**Its figures were written, not calculated.** Each states its basis and is
+compared only with the calculation on that basis.
+
+| Site | What its report does |
+| --- | --- |
+| Tamarind Cross | Agrees with its records. Its collection efficiency (99%) is stated on an accrual basis, so it is not comparable with the calculated cash figure. |
+| Dry River | Overstates its renewable fraction (68%) and its uptime without planned interruptions (99.5%); understates generator running hours (190). |
+| Palm Landing | Overstates collection (82%) and revenue collected (NGN 1.65 M). Counts all 417 accounts as connections, and says so. |
+| Granite Hill | Agrees with its records. Its uptime (99.9%) does not say which interruptions it counts, so it is not comparable. |
+
+The variances are designed findings. Do not retune a figure to remove one.
+
+## Not modelled for the sites
+
+Locations of individual connections, alarms, device check-ins, voltage and
+power quality, a technical-loss study, connection fees, subsidies and
+grants, fuel cost, operating cost, battery degradation over time, more than
+one array, battery or generator per site, interconnection with a
+distribution network, and any month but September 2026.
