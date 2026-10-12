@@ -3,8 +3,9 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-12. Status: **Phase 10a is at its checkpoint, awaiting
-the Founder's realism review; nothing of it is merged.** Phase 7 is
+Last updated: 2026-10-12. Status: **Phase 10a: the Founder's realism review
+is done and its three changes are built; the moved figures await the
+Founder's review before 10b. Nothing of it is merged.** Phase 7 is
 complete (tags `phase-7a`, `phase-7b`). By the Founder's decision of
 2026-10-10, Phase 10 (Mini-grid Intelligence) comes next, ahead of Phase 8
 (ADR 0015). Phases 8 and 9 follow in their order.
@@ -1471,7 +1472,8 @@ this phase.
 | 3. Synthetic dataset: four invented sites, every assumption in `DATASET_ASSUMPTIONS.md` | Done; awaiting realism review |
 | 4. A synthetic monthly site report, compared only like for like | Done |
 | 5. The module registered with the spatial platform: sites fill the mini-grid layer | Done |
-| ADR 0015 (order) and ADR 0016 (domain; proposed, with eight points to confirm) | Done |
+| ADR 0015 (order) and ADR 0016 (domain; accepted 2026-10-12) | Done |
+| The realism review's three changes (below) | Done; the moved figures await review |
 
 No screen, route or component was built, and no dependency was added.
 
@@ -1504,7 +1506,7 @@ No screen, route or component was built, and no dependency was added.
 | Zone (illustrative) | Sudan savanna, NW | Guinea savanna, middle belt | Rainforest, south | Sudan savanna, NE |
 | PV | 100 kWp | 45 kWp | 80 kWp | 60 kWp |
 | Battery | 240 kWh / 80 kW | 90 kWh / 40 kW | 200 kWh / 60 kW | 150 kWh / 40 kW |
-| Generator | 50 kVA | 60 kVA | 40 kVA | none |
+| Generator | 50 kVA, cycle charging | 60 kVA, load following | 40 kVA, cycle charging | none |
 | Connections, active / on register | 465 / 465 | 300 / 300 | 393 / 417 | 130 / 130 |
 | Tier 1 / 2 / 3 / 4 (productive) / public | 330 / 60 / 55 / 14 / 6 | 230 / 30 / 28 / 9 / 3 | 324 / 40 / 40 / 8 / 5 | 110 / 8 / 9 / 1 / 2 |
 | Productive-use share of energy sold | 29.3% | 40.2% | 22.4% | 10.7% |
@@ -1515,34 +1517,35 @@ estimated input.
 
 | | Tamarind Cross | Dry River | Palm Landing | Granite Hill |
 | --- | --- | --- | --- | --- |
-| Energy generated (kWh) | 11,866 | 8,932 | 9,371 | 1,917 |
-| PV / generator (kWh) | 11,422 / 444 | 4,429 / 4,503 | 5,982 / 3,389 | 1,917 / 0 |
-| Renewable fraction | 96.3% | 49.6% | 63.8% | 100% |
-| Curtailment (kWh, est.) | 545 | 46 | 1 | 5,039 |
+| Energy generated (kWh) | 11,904 | 8,932 | 9,546 | 1,917 |
+| PV / generator (kWh) | 11,274 / 630 | 4,429 / 4,503 | 5,946 / 3,600 | 1,917 / 0 |
+| Renewable fraction | 94.7% | 49.6% | 62.3% | 100% |
+| Curtailment (kWh, est.) | 694 | 46 | 37 | 5,039 |
 | In-plane irradiation (kWh/m²) | 151.5 | 130.8 | 97.1 | 146.7 |
-| Specific yield (kWh/kWp) | 114.2 | 98.4 | 74.8 | 31.9 |
-| Performance ratio / before curtailment (est.) | 75.4% / 79.0% | 75.2% / 76.0% | 77.0% / 77.0% | 21.8% / 79.0% |
-| Battery equivalent full cycles | 16.9 | 18.1 | 8.9 | 4.8 |
-| Round-trip efficiency (est.) | 90.2% | 90.1% | 89.7% | 90.7% |
-| Storage loss (kWh, est.) | 439 | 177 | 197 | 79 |
-| State of charge, lowest / mean | 15% / 52% | 20% / 39% | 15% / 26% | 44% / 93% |
-| Generator running hours | 37 | 315 | 307 | no generator |
-| Fuel used (litres) / per kWh | 225 / 0.51 | 2,290 / 0.51 | 1,599 / 0.47 | no generator |
+| Specific yield (kWh/kWp) | 112.7 | 98.4 | 74.3 | 31.9 |
+| Performance ratio / before curtailment (est.) | 74.4% / 79.0% | 75.2% / 76.0% | 76.5% / 77.0% | 21.8% / 79.0% |
+| Battery equivalent full cycles | 17.4 | 18.1 | 15.6 | 4.8 |
+| Round-trip efficiency (est.) | 90.2% | 90.1% | 89.9% | 90.7% |
+| Storage loss (kWh, est.) | 450 | 177 | 347 | 79 |
+| State of charge, lowest / mean | 16% / 58% | 20% / 39% | 15% / 38% | 44% / 93% |
+| Generator running hours | 21 | 315 | 150 | no generator |
+| Fuel used (litres) / per kWh | 189 / 0.30 | 1,898 / 0.42 | 1,080 / 0.30 | no generator |
 | Energy sent out (kWh) | 11,245 | 8,547 | 9,028 | 1,599 |
 | Station use (kWh, residual) | 216 | 214 | 216 | 180 |
 | Energy delivered (kWh) | 10,460 | insufficient data | 7,764 | 1,519 |
 | Distribution loss, of sent out | 7.0% | insufficient data | 14.0% | 5.0% |
-| Site loss, of generated | 11.9% | insufficient data | 17.2% | 20.7% |
+| Site loss, of generated | 12.1% | insufficient data | 18.7% | 20.7% |
 | Availability | 99.69% | 95.83% | 98.75% | 99.72% |
 | Hours of supply per day | 23.92 | 23.00 | 23.70 | 23.93 |
 | Interruptions | 2 | 7 | 2 | 1 |
 | Hours lost per connection, by cause | planned 2.0, fault 0.26 | fault 30 | weather 6, planned 3 | fault 2 |
-| Energy sold (kWh) | 10,450 | 7,757 | 7,764 | 1,507 |
-| Energy sold per connection (kWh) | 22.5 | 25.9 | 19.8 | 11.6 |
-| Revenue billed (NGN) | 2,672,889 | 2,186,916 | 2,078,859 | 392,505 |
-| Revenue collected (NGN) | 2,563,682 | 2,126,019 | 1,271,476 | 365,328 |
-| Collection efficiency (cash) | 95.9% | 97.2% | 61.2% | 93.1% |
-| Revenue per connection (NGN) | 5,748 | 7,290 | 5,290 | 3,019 |
+| Energy sold (kWh) | 10,450 | 7,757 | 7,758 | 1,507 |
+| Energy sold per connection (kWh) | 22.5 | 25.9 | 19.7 | 11.6 |
+| Revenue billed (NGN) | 2,672,889 | 2,186,916 | 2,076,678 | 392,505 |
+| Revenue collected (NGN) | 2,563,682 | 2,126,019 | 1,624,223 | 365,328 |
+| Collection efficiency (cash) | 95.9% | 97.2% | 78.2% | 93.1% |
+| Collection: households / shops / productive use / public | 100 / 100 / 100 / 19.7% | 100 / 100 / 100 / 17.8% | 100 / 100 / 3.9 / 57.7% | 100 / 100 / 100 / 16.7% |
+| Revenue per connection (NGN) | 5,748 | 7,290 | 5,284 | 3,019 |
 
 Dry River's three "insufficient data" figures are designed: six of its 300
 customer meters reported nothing for four days, and a gap is not a zero.
@@ -1553,7 +1556,7 @@ customer meters reported nothing for four days, and a gap is not a zero.
 | --- | --- | --- | --- |
 | Tamarind Cross | Energy generated, renewable fraction, uptime, energy sold, connections, revenue collected, generator hours | none | Collection efficiency: 99% stated on an accrual basis; the calculation is on cash (95.9%) |
 | Dry River | Energy generated, energy sold, connections, revenue collected, collection efficiency | Renewable fraction 68% reported, 49.6% calculated: −18.4 points. Uptime without planned interruptions 99.5% against 95.83%: −3.67 points. Generator hours 190 against 315: +125 | none |
-| Palm Landing | Energy generated, renewable fraction, uptime, energy sold, generator hours; connections 417 on its stated basis (all accounts) | Collection efficiency 82% against 61.2%: −20.8 points. Revenue collected NGN 1,650,000 against 1,271,476: −378,524 | none |
+| Palm Landing | Energy generated, renewable fraction, uptime, energy sold, generator hours; connections 417 on its stated basis (all accounts) | Collection efficiency 95% against 78.2%: −16.8 points. Revenue collected NGN 1,975,000 against 1,624,223: −350,777 | none |
 | Granite Hill | Energy generated, renewable fraction, energy sold, connections, revenue collected, collection efficiency | none | Uptime: 99.9% with no statement of which interruptions it counts |
 
 Each variance is designed, to show what a funder's check finds: a site
@@ -1568,9 +1571,60 @@ account. The Utility module's 551 unit tests pass, with one line of one
 test changed (a type narrowing). `npm run verify`: see the checkpoint
 report for the counts.
 
-**For the Founder's decision.** The eight points of ADR 0016, first among
-them that curtailment is kept beside the energy chain and not subtracted
-from metered generation, which departs from the wording of the brief.
+**The Founder's realism review (2026-10-12).** ADR 0016 accepted:
+curtailment as built, and the other seven points. Three changes to the
+dataset, built on the same branch; the tables above are after them.
+
+1. *Cycle charging at Tamarind Cross and Palm Landing; load following kept
+   at Dry River as a designed finding.* The fuel curve was also made less
+   steep (0.06 litres an hour per kW of rating plus 0.22 per kWh, from
+   0.08 and 0.24), so that a well-loaded set burns about 0.30 litres per
+   kWh. That moved Dry River's fuel too, though its dispatch is unchanged.
+2. *Palm Landing's poor collection comes from 13 postpaid accounts*, its
+   8 productive-use accounts on credit and 5 public institutions. Its
+   households and shops are prepaid, as everywhere. Collection is given by
+   customer class.
+3. *Palm Landing's battery* now holds 75% of nameplate (it held 90%) and
+   is charged by the generator only to 35%, so that its low state of
+   charge stays a designed sign of an ageing, undersized battery.
+
+| What moved | Tamarind Cross | Dry River | Palm Landing |
+| --- | --- | --- | --- |
+| Fuel per kWh (litres) | 0.51 → 0.30 | 0.51 → 0.42 | 0.47 → 0.30 |
+| Fuel used (litres) | 225 → 189 | 2,290 → 1,898 | 1,599 → 1,080 |
+| Generator running hours | 37 → 21 | 315 (unchanged) | 307 → 150 |
+| Generator energy (kWh) | 444 → 630 | 4,503 (unchanged) | 3,389 → 3,600 |
+| Renewable fraction | 96.3% → 94.7% | 49.6% (unchanged) | 63.8% → 62.3% |
+| Curtailment (kWh, est.) | 545 → 694 | unchanged | 1 → 37 |
+| Performance ratio | 75.4% → 74.4% | unchanged | 77.0% → 76.5% |
+| Battery equivalent full cycles | 16.9 → 17.4 | unchanged | 8.9 → 15.6 |
+| Mean state of charge | 52% → 58% | unchanged | 26% → 38% |
+| Site loss, of generated | 11.9% → 12.1% | unchanged | 17.2% → 18.7% |
+| Revenue billed (NGN) | unchanged | unchanged | 2,078,859 → 2,076,678 |
+| Revenue collected (NGN) | unchanged | unchanged | 1,271,476 → 1,624,223 |
+| Collection efficiency | unchanged | unchanged | 61.2% → 78.2% |
+
+Granite Hill has no generator and no account on credit beyond its two
+public institutions: nothing of it moved. Availability moved at no site.
+
+Palm Landing's collection by class, before and after: households 67.9% →
+100%; shops 53.0% → 100%; productive use 55.3% → 3.9%; public
+institutions 57.7% (unchanged). The synthetic reports of Tamarind Cross and
+Palm Landing were rewritten to agree with the new records where they are
+meant to agree, and Palm Landing's designed overstatement was moved with
+them: 95% collection reported against 78.2%.
+
+**For the Founder's review.**
+
+- Palm Landing now collects 78.2%, not 61%. With 13 credit accounts
+  holding 26% of its billing, 61% is out of reach unless they are a larger
+  part of the site. It is still the lowest of the four, and all of its
+  NGN 452,455 shortfall is owed by those 13 accounts.
+- Its mean state of charge rose from 26% to 38%. Cycle charging lifts it
+  whatever the setpoint; 38% with a 15% floor is still low.
+- Tamarind Cross's renewable fraction fell by 1.6 points, which is what
+  cycle charging costs: a generator that charges the battery displaces
+  some of the next day's sun.
 
 **Known, and not done.**
 
@@ -1580,11 +1634,8 @@ from metered generation, which departs from the wording of the brief.
   owed before login.
 - No fuel cost, operating cost or site economics: the dataset holds no
   cost records.
-- Two generators run near their minimum load all month, so both burn
-  about 0.5 litres per kWh. That follows from the dispatch rule, and is
-  for the realism review.
-- Collection at the three prepaid sites is below 100% only because of
-  their few postpaid public institutions.
+- Collection at every site is below 100% only because of its postpaid
+  accounts, by design.
 
 ### Phase 10b: Screens (not started; after the Founder approves 10a)
 

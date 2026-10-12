@@ -1,10 +1,10 @@
 # ADR 0016: Mini-grid sites: outside the substation tree, accounted from their own generation
 
 Date: 2026-10-10
-Status: Proposed. Built for the Phase 10a checkpoint. It changes
-data-integrity semantics, which is the Founder's to decide: the points
-under "For the Founder to confirm" are open until then, and one of them
-departs from the wording of the brief.
+Status: Accepted. The Founder accepted it at the Phase 10a realism review
+(2026-10-12): curtailment as built, and the other seven points under "For
+the Founder to confirm", with three changes to the synthetic dataset. See
+"As accepted" at the end.
 
 ## Context
 
@@ -154,3 +154,25 @@ revenue gap. A site does not go through them.
 8. **Sites are on the Map workspace's layer list now**, off when the map
    opens. The layer is the platform's own and needed no screen work; the
    Mini-grid workspace and embedded site maps are 10b.
+
+## As accepted (Founder, 2026-10-12)
+
+**Curtailment as built is accepted.** Metered PV is already net of
+curtailment, so it is shown beside PV generation as an estimate and is not
+subtracted from energy generated. Points 2 to 8 are confirmed.
+
+Three changes followed, all to the synthetic dataset and none to the
+domain or the methodology. They are recorded in `DATASET_ASSUMPTIONS.md`.
+
+1. **Generator dispatch.** Cycle charging at Tamarind Cross and Palm
+   Landing: the generator runs at 75% of its rating and charges the
+   battery. Load following at low output is kept at Dry River as a
+   designed finding. Specific fuel consumption shows the contrast: 0.30
+   litres per kWh against 0.42.
+2. **Palm Landing's poor collection comes from postpaid accounts only**:
+   its productive-use accounts on credit and its public institutions. No
+   household or shop is postpaid at any site. The site commercial result
+   gained collection by customer class (`byClass`), which says how many
+   accounts of each class are prepaid and postpaid.
+3. **Palm Landing's low state of charge is kept as a designed sign** of an
+   ageing, undersized battery.
