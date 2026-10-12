@@ -3,13 +3,11 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-12. Status: **Phase 10a is accepted** (the Founder,
-2026-10-12; merged to `main`, tag `phase-10a`). **Phase 10b, the screens, is at
-its checkpoint on branch `phase-10b`, awaiting the Founder's review; it is
-not merged.** Phase 7 is
-complete (tags `phase-7a`, `phase-7b`). By the Founder's decision of
-2026-10-10, Phase 10 (Mini-grid Intelligence) comes next, ahead of Phase 8
-(ADR 0015). Phases 8 and 9 follow in their order.
+Last updated: 2026-10-12. Status: **Phase 10 (Mini-grid Intelligence) is
+complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
+`phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
+decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
+`phase-7b`). **No phase is in progress: the Founder chooses the next one.**
 
 ## Completed
 
@@ -1453,7 +1451,7 @@ for interval and telemetry data, topology history, stale-data policy.
 **Acceptance.** The app runs unchanged on the database adapter; parity tests
 between memory and database adapters pass.
 
-## Phase 10: Mini-grid Intelligence (in progress; moved ahead of Phase 8, ADR 0015)
+## Phase 10: Mini-grid Intelligence (complete; approved 2026-10-12, tags `phase-10a` and `phase-10b`; taken ahead of Phase 8, ADR 0015)
 
 **Purpose (Founder, 2026-10-10).** Operating intelligence for mini-grid
 operators and for the people who fund and report on them: how each site
@@ -1669,7 +1667,13 @@ more than three times as much.
 - Collection at every site is below 100% only because of its postpaid
   accounts, by design.
 
-### Phase 10b: Screens (at its checkpoint; branch `phase-10b`)
+### Phase 10b: Screens (accepted and merged 2026-10-12; tag `phase-10b`)
+
+**Accepted by the Founder (2026-10-12)** after review on a local server:
+the portfolio shows all four findings clearly. The choices listed below
+stand as built. One correction came with the acceptance: the sentence
+under the site cards read "within 1%of its own value"; the space is now
+written into the sentence and a browser test holds it.
 
 **The Founder's scope (2026-10-12).** A Mini-grid workspace in the menu,
 with a portfolio view and a site view; the sites layer on the shared map
@@ -1700,8 +1704,7 @@ No dependency was added.
   the least); PV held back (at least half of what was available
   curtailed); the site that left the most uncollected, with the classes
   that owe it; and the class that paid the smallest share across the
-  portfolio. The thresholds are the engineer's, for the Founder to
-  confirm.
+  portfolio. The thresholds are the engineer's, accepted with the phase.
 - *Three additions to the analytics*, so that no component calculates:
   the share of available PV that was curtailed, state of charge day by
   day, and class totals added across sites (the rate taken of the sums).
@@ -1728,7 +1731,7 @@ each line). The portfolio opens on "What stands out":
 Palm Landing's report is also listed as differing (collection 97% against
 88.3%, revenue collected ₦2,015,000 against ₦1,833,537), as designed.
 
-**Choices made, for the Founder to confirm.**
+**Choices made** (put to the Founder at the checkpoint; accepted as built).
 
 - *The menu item is "Sites"*, under a "Mini-grid Intelligence" heading.
 - *The unpaid-money finding names both of Palm Landing's credit classes.*

@@ -4,7 +4,8 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
-> **State at the Phase 10b checkpoint (2026-10-12).** Since 10a:
+> **State at the end of Phase 10 (2026-10-12; 10b accepted and merged).**
+> Since 10a:
 >
 > - **The Mini-grid workspace.** `/dashboard/minigrid` (the portfolio)
 >   and `/dashboard/minigrid/sites/[siteId]`. Read models in
