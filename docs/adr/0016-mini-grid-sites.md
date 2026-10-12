@@ -167,10 +167,13 @@ domain or the methodology. They are recorded in `DATASET_ASSUMPTIONS.md`.
 1. **Generator dispatch.** Cycle charging at Tamarind Cross and Palm
    Landing: the generator runs at 75% of its rating and charges the
    battery. Load following at low output is kept at Dry River as a
-   designed finding. Specific fuel consumption shows the contrast: 0.30
-   litres per kWh against 0.42.
-2. **Palm Landing's poor collection comes from postpaid accounts only**:
-   its productive-use accounts on credit and its public institutions. No
+   designed finding. Specific fuel consumption shows the contrast: 0.35
+   litres per kWh against 0.51, on one generic fuel curve that is not
+   fitted to either.
+2. **Palm Landing's uncollected revenue is owed by postpaid accounts
+   only**: its productive-use accounts on credit, which pay 60 to 70%,
+   and its public institutions, which pay 15 to 25% as at every site.
+   Collection lands where those shares put it. No
    household or shop is postpaid at any site. The site commercial result
    gained collection by customer class (`byClass`), which says how many
    accounts of each class are prepaid and postpaid.
