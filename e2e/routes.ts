@@ -32,4 +32,7 @@ export const ROUTES = [
   `${OPERATIONS}/service-points/SP-OLD2-001`,
   `${OPERATIONS}/service-points/SP-OLD2-004`,
   `${OPERATIONS}/service-points/SP-MKT2-005`,
+  // The Mini-grid workspace and one site.
+  "/dashboard/minigrid",
+  "/dashboard/minigrid/sites/MG-DRY",
 ];

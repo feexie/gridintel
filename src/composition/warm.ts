@@ -2,6 +2,7 @@ import { getRepositories, getClock, getReadiness, setReadiness } from "./runtime
 import { assets } from "./assets.ts";
 import { events } from "./events.ts";
 import { executive } from "./executive.ts";
+import { minigrid } from "./minigrid.ts";
 import { operations } from "./operations.ts";
 import { reliability } from "./reliability.ts";
 import { revenue } from "./revenue.ts";
@@ -60,6 +61,9 @@ export async function warmResults(): Promise<void> {
       // one viewer is never served to another, so a second viewer's first map is computed on request.
       () => spatial.workspace(),
       () => spatial.embedded(),
+      // The Mini-grid workspace: every site is computed for the portfolio, so the site screens are warm too.
+      () => minigrid.portfolioView(),
+      () => spatial.sites(),
     ];
     for (const step of steps) {
       await yieldToRequests();

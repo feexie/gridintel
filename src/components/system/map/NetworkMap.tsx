@@ -61,7 +61,7 @@ function Selected({ features, layers }: { features: { layer: MapLayerView; featu
       <p className="text-sm font-semibold text-ink">{entity.name}</p>
       {href ? (
         <Link href={href} className="text-caption text-link hover:text-link-hover hover:underline">
-          Open in Operations: every figure with its full source and method ▸
+          {entity.kind === "minigrid_site" ? "Open the site" : "Open in Operations"}: every figure with its full source and method ▸
         </Link>
       ) : null}
       {entity.basis === "schematic" ? <p className="mt-1 text-caption text-caution-ink/90">Its route is schematic: straight lines between transformers, not where the line runs.</p> : null}

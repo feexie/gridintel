@@ -80,6 +80,18 @@ export function formatMetric(metric: MetricView): string {
       return formatNumber(metric.value, 1);
     case "count":
       return formatNumber(metric.value);
+    case "kWh_per_kWp":
+      return `${formatNumber(metric.value, 1)} kWh/kWp`;
+    case "kWh_per_m2":
+      return `${formatNumber(metric.value, 1)} kWh/m²`;
+    case "kWh_per_connection":
+      return `${formatNumber(metric.value, 1)} kWh`;
+    case "litres":
+      return `${formatNumber(metric.value)} L`;
+    case "litres_per_kWh":
+      return `${formatNumber(metric.value, 2)} L/kWh`;
+    case "cycles":
+      return formatNumber(metric.value, 1);
   }
 }
 

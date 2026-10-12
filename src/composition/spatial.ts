@@ -51,6 +51,12 @@ export const spatial = {
         // substation needs every record under them, and this screen is computed from one transformer's.
         mapView(context(), { layers: ["utility.substations", "utility.feeders", "utility.transformers", "utility.service_points"], focus, figures: false })
       : mapView(context(), { layers: focus?.kind === "distribution_transformer" ? [...EMBEDDED_LAYERS, "utility.service_points"] : EMBEDDED_LAYERS, focus }),
+  /**
+   * The map for a mini-grid site's screen: every site, with the state outlines for orientation.
+   * A site hangs from nothing, so a map of it alone would be one mark on an empty ground; among
+   * the other sites and the states it says where it is. The screen selects its own site.
+   */
+  sites: () => mapView(context(), { layers: ["minigrid.sites", "reference.states"] }),
   incidents: () => incidentsNow(context()),
   here: (point: { latitude: number; longitude: number }, withinMetres: number, kinds?: readonly string[]) => whatIsHere(context(), { point, withinMetres, kinds }),
   inside: (areaId: string, list?: readonly string[]) => whatIsInside(context(), areaId, { list }),

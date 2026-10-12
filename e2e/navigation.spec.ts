@@ -5,7 +5,6 @@ import { OPERATIONS, ROUTES } from "./routes";
 
 const PLACEHOLDERS = [
   "/dashboard/der",
-  "/dashboard/minigrid",
   "/dashboard/planning",
   "/dashboard/reports",
   "/dashboard/settings",
@@ -31,7 +30,10 @@ test("the menu lists the Utility Intelligence workspaces that exist, and no plac
     "/dashboard/utility/revenue",
     "/dashboard/utility/assets",
     "/dashboard/utility/events",
+    // The Mini-grid workspace is a module of its own, beside Utility.
+    "/dashboard/minigrid",
   ]);
+  await expect(menu.getByRole("region", { name: "Mini-grid Intelligence" }).getByRole("link")).toHaveText(["Sites"]);
   for (const href of links) {
     await page.goto(href);
     await expect(page.getByText("Coming Soon"), href).toHaveCount(0);
@@ -53,6 +55,9 @@ test("the menu marks the workspace the reader is in, at any depth", async ({ pag
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Revenue"]);
   await page.goto("/dashboard/utility/events");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Events / Alarms"]);
+  // A site's screen is inside the Mini-grid workspace.
+  await page.goto("/dashboard/minigrid/sites/MG-PLM");
+  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Sites"]);
   // The overview is not marked on the pages below it.
   await page.goto("/dashboard");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Overview"]);
@@ -76,7 +81,7 @@ test("every page has exactly one h1", async ({ page }) => {
 
 test("the reporting period and the SYNTHETIC DATA label are in one bar, once, on every dashboard page", async ({ page }) => {
   // "/" is where a visitor lands; it leads to the overview, which carries the bar like every other screen.
-  for (const route of ["/", "/dashboard", "/dashboard/utility", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/utility/reliability", "/dashboard/utility/revenue", "/dashboard/utility/assets", "/dashboard/utility/events", "/dashboard/reports"]) {
+  for (const route of ["/", "/dashboard", "/dashboard/utility", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/utility/reliability", "/dashboard/utility/revenue", "/dashboard/utility/assets", "/dashboard/utility/events", "/dashboard/minigrid", "/dashboard/minigrid/sites/MG-GRN", "/dashboard/reports"]) {
     await page.goto(route);
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar, route).toHaveCount(1);

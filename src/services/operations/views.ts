@@ -28,7 +28,13 @@ export type MetricUnit =
   | "hours"
   | "hours_per_day"
   | "interruptions_per_customer"
-  | "count";
+  | "count"
+  | "kWh_per_kWp"
+  | "kWh_per_m2"
+  | "kWh_per_connection"
+  | "litres"
+  | "litres_per_kWh"
+  | "cycles";
 
 export interface InputView {
   name: string;

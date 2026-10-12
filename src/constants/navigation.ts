@@ -37,4 +37,8 @@ export const navigationGroups: NavigationGroup[] = [
     label: "Utility Intelligence",
     items: UTILITY_WORKSPACES,
   },
+  {
+    label: "Mini-grid Intelligence",
+    items: [{ label: "Sites", href: "/dashboard/minigrid", description: "Which sites are underperforming and why, and do their reports match the records?" }],
+  },
 ];

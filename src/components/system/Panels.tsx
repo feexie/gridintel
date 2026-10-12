@@ -78,7 +78,7 @@ export function DecompositionBar({ losses }: { losses: LossesView }) {
 
 function formatVariance(row: ReportedComparisonView): string {
   if (row.variance === null) return "—";
-  const unit = row.varianceUnit === "percentage_points" ? " pp" : row.varianceUnit === "hours" ? " h" : "";
+  const unit = row.varianceUnit === "percentage_points" ? " pp" : row.varianceUnit === "hours" ? " h" : row.varianceUnit === "kWh" ? " kWh" : "";
   const text = formatNumber(row.variance, 1);
   return `${row.variance > 0 && /[1-9]/.test(text) ? "+" : ""}${text}${unit}`;
 }

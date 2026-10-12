@@ -1,7 +1,8 @@
 import { test } from "@playwright/test";
 
 /* Not a test: captures screenshots for checkpoint reports.
-   Run with: SCREENSHOTS=docs/screenshots/<phase> npx playwright test screenshots */
+   Run with: SCREENSHOTS=docs/screenshots/<phase> npx playwright test screenshots
+   One module's screens only: add -g <part of their names>, e.g. -g minigrid */
 
 const target = process.env.SCREENSHOTS;
 const OPERATIONS = "/dashboard/utility/operations";
@@ -30,10 +31,15 @@ const SHOTS: [string, string][] = [
   ["service-point-estimated-reading", `${OPERATIONS}/service-points/SP-OLD2-005`],
   ["service-point-reading-outside-window", `${OPERATIONS}/service-points/SP-OLD6-022`],
   ["service-point-ami", `${OPERATIONS}/service-points/SP-MKT2-005`],
+  ["minigrid-portfolio", "/dashboard/minigrid"],
+  ["minigrid-site-dry-river", "/dashboard/minigrid/sites/MG-DRY"],
+  ["minigrid-site-granite-hill", "/dashboard/minigrid/sites/MG-GRN"],
+  ["minigrid-site-palm-landing", "/dashboard/minigrid/sites/MG-PLM"],
+  ["minigrid-site-tamarind-cross", "/dashboard/minigrid/sites/MG-TAM"],
 ];
 
 /** Screens also captured at the width of a phone. */
-const PHONE = ["map", "feeder-farm-road", "events"];
+const PHONE = ["map", "feeder-farm-road", "events", "minigrid-portfolio", "minigrid-site-dry-river", "minigrid-site-granite-hill", "minigrid-site-palm-landing", "minigrid-site-tamarind-cross"];
 
 test.describe("screenshots", () => {
   test.skip(!target, "set SCREENSHOTS to a folder to capture");
@@ -57,7 +63,7 @@ test.describe("screenshots", () => {
       await page.goto(route);
       await page.waitForTimeout(1500);
       const height = await page.evaluate(() => (document.querySelector("main")?.scrollHeight ?? 800) + 320);
-      await page.setViewportSize({ width: 390, height: Math.min(Math.max(height, 844), 9000) });
+      await page.setViewportSize({ width: 390, height: Math.min(Math.max(height, 844), 16000) });
       await page.waitForTimeout(800);
       await page.screenshot({ path: `${target}/${name}-phone.png` });
     });
