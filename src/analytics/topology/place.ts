@@ -46,19 +46,23 @@ export function placeOfAsset(index: TopologyIndex, records: PlacedRecords, asset
       const meter = index.registry.meters.find((candidate) => candidate.id === asset.id);
       if (meter === undefined) return null;
       const at = meter.installation;
-      const on: AssetRef =
+      const on: AssetRef | null =
         at.role === "service_point"
           ? { kind: "service_point", id: at.servicePointId }
           : at.role === "feeder_head"
             ? { kind: "feeder", id: at.feederId }
             : at.role === "dt_totalizer"
               ? { kind: "distribution_transformer", id: at.transformerId }
-              : { kind: "substation", id: at.substationId };
-      return placeOfAsset(index, records, on);
+              : at.role === "substation_incomer" || at.role === "grid_interface"
+                ? { kind: "substation", id: at.substationId }
+                : null;
+      // A site's meter is in no network scope.
+      return on === null ? null : placeOfAsset(index, records, on);
     }
     case "service_point": {
       const point = index.servicePointById.get(asset.id);
       if (point === undefined) return null;
+      if (point.supply.kind === "site") return null;
       if (point.supply.kind === "feeder") feederId = point.supply.feederId;
       else transformerId = point.supply.transformerId;
       regionId = adminRegionOfServicePoint(index, point);
@@ -82,6 +86,10 @@ export function placeOfAsset(index: TopologyIndex, records: PlacedRecords, asset
       if (!index.substationById.has(asset.id)) return null;
       substationId = asset.id;
       break;
+    case "site":
+    case "generation_asset":
+      // A site and its assets are under no substation, feeder or region of a network.
+      return null;
   }
 
   if (transformerId !== null) feederId = index.transformerById.get(transformerId)?.feederId ?? null;
@@ -104,5 +112,7 @@ export function placeInScope(place: AssetPlace, scope: ScopeRef): boolean {
       return place.feederId === scope.id;
     case "distribution_transformer":
       return place.transformerId === scope.id;
+    case "site":
+      return false;
   }
 }

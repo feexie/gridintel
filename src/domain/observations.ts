@@ -54,7 +54,25 @@ export type MetricKey =
   | "frequency_hz"
   | "temperature_c"
   | "energy_import_register_kwh"
-  | "energy_export_register_kwh";
+  | "energy_export_register_kwh"
+  /** A battery's state of charge as its management system reports it, 0 to 100. */
+  | "state_of_charge_pct"
+  /**
+   * Solar irradiance in the plane of the array, in W/m². A reading is the
+   * mean over the recording interval that ends at `observedAt`, as a
+   * monitoring system records it.
+   */
+  | "irradiance_poa_w_m2"
+  /**
+   * PV power that was available and not taken, in kW, as the mean over the
+   * recording interval that ends at `observedAt`. It cannot be metered: it
+   * is an estimate by the site's controller, and its quality says so.
+   */
+  | "curtailed_power_kw"
+  /** A generator's cumulative running hours, from its hour meter. */
+  | "run_hours_register_h"
+  /** Cumulative fuel used by a generator, in litres. */
+  | "fuel_used_register_l";
 
 /** An instantaneous reading, or a register reading, at one moment. */
 export interface TelemetryPoint {

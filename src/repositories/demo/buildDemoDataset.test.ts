@@ -360,7 +360,7 @@ describe("demo dataset: structure", () => {
     assert.ok(registry.distributionTransformers.every((t) => feeders.has(t.feederId)));
     assert.ok(
       registry.servicePoints.every((sp) =>
-        sp.supply.kind === "feeder" ? feeders.has(sp.supply.feederId) : transformers.has(sp.supply.transformerId),
+        sp.supply.kind === "feeder" ? feeders.has(sp.supply.feederId) : sp.supply.kind === "distribution_transformer" && transformers.has(sp.supply.transformerId),
       ),
     );
     assert.ok(registry.customers.every((c) => c.servicePointId !== undefined && points.has(c.servicePointId)));

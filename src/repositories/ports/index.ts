@@ -12,6 +12,7 @@ import type { EventRepository } from "./events.ts";
 import type { ObservationRepository } from "./observations.ts";
 import type { RegistryRepository } from "./registry.ts";
 import type { ReportedKpiRepository } from "./reporting.ts";
+import type { SiteRepository } from "./sites.ts";
 import type { SourceRepository } from "./sources.ts";
 import type { SpatialRepository } from "./spatial.ts";
 
@@ -23,6 +24,7 @@ export type * from "./reporting.ts";
 export type * from "./billing.ts";
 export type * from "./sources.ts";
 export type * from "./spatial.ts";
+export type * from "./sites.ts";
 
 export interface GridIntelRepositories {
   registry: RegistryRepository;
@@ -32,4 +34,6 @@ export interface GridIntelRepositories {
   billing: BillingRepository;
   sources: SourceRepository;
   spatial: SpatialRepository;
+  /** Mini-grid sites. A source that holds none answers "not available". */
+  sites: SiteRepository;
 }

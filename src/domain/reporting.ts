@@ -52,7 +52,40 @@ export type KpiKey =
   | "transformer_loading"
   | "installed_capacity"
   | "available_capacity"
-  | "load_allocation";
+  | "load_allocation"
+  /* Site (mini-grid) figures. Energy figures are for a period. */
+  | "energy_generated"
+  | "pv_generation"
+  | "generator_generation"
+  | "pv_curtailment"
+  | "storage_charge"
+  | "storage_discharge"
+  | "storage_net_intake"
+  | "stored_energy_change"
+  | "storage_loss"
+  | "storage_round_trip_efficiency"
+  | "storage_cycles"
+  | "state_of_charge"
+  | "energy_sent_out"
+  | "station_use"
+  | "energy_delivered"
+  | "distribution_loss"
+  | "site_loss"
+  | "renewable_fraction"
+  | "generator_share"
+  | "generator_runtime"
+  | "fuel_used"
+  | "specific_fuel_consumption"
+  | "irradiation"
+  | "specific_yield"
+  | "performance_ratio"
+  | "hours_of_supply"
+  | "interruption_count"
+  | "connection_count"
+  | "energy_sold_per_connection"
+  | "consumption_per_connection"
+  | "revenue_per_connection"
+  | "productive_use_share";
 
 /** "percent" is 0–100 as published; "fraction" is 0–1. */
 export type KpiUnit =
@@ -68,7 +101,14 @@ export type KpiUnit =
   | "minutes"
   | "interruptions_per_customer"
   | "count"
-  | "currency";
+  | "currency"
+  | "hours_per_day"
+  | "kWh_per_kWp"
+  | "kWh_per_m2"
+  | "kWh_per_connection"
+  | "litres"
+  | "litres_per_kWh"
+  | "cycles";
 
 /**
  * What a figure includes: the definitions that change its value without
@@ -99,7 +139,30 @@ export interface KpiBasis {
    */
   collection?: "cash" | "accrual";
   /** Loss figures: what energy the loss is a fraction of. */
-  lossBasis?: "energy_input_net_of_transfers_out" | "energy_input_gross";
+  lossBasis?:
+    | "energy_input_net_of_transfers_out"
+    | "energy_input_gross"
+    /** A site's loss as a fraction of the energy it sent out to its distribution network. */
+    | "energy_sent_out"
+    /** A site's loss as a fraction of the energy it generated. */
+    | "energy_generated";
+  /**
+   * Site figures that are a share of the site's energy (renewable fraction,
+   * generator share): what energy the share is of.
+   */
+  shareOf?: "energy_generated" | "energy_sent_out";
+  /**
+   * Site figures per connection, and connection counts: which connections
+   * are counted. "active" is accounts with status active; "all" includes
+   * disconnected and closed accounts still on the register.
+   */
+  connections?: "active" | "all";
+  /**
+   * Site figures of energy sold: "billed" is the energy of the charges
+   * raised in the period (for a prepaid account, energy purchased);
+   * "metered" is consumption recorded by customer meters in the period.
+   */
+  energySold?: "billed" | "metered";
 }
 
 /**

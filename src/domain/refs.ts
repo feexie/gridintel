@@ -14,7 +14,11 @@ export type AssetKind =
   | "distribution_transformer"
   | "service_point"
   | "meter"
-  | "edge_device";
+  | "edge_device"
+  /** A mini-grid site (site.ts). */
+  | "site"
+  /** A PV array, battery, generator or inverter of a site (site.ts). */
+  | "generation_asset";
 
 export interface AssetRef {
   kind: AssetKind;
@@ -24,7 +28,7 @@ export interface AssetRef {
 /**
  * Kinds of record that figures can be reported or aggregated for.
  * "organization" and "region" are administrative scopes; the rest are
- * electrical scopes. The two are never interchangeable: a region is
+ * electrical scopes: three levels of a distribution network, and a site. The two are never interchangeable: a region is
  * not an electrical boundary.
  */
 export type ScopeKind =
@@ -32,7 +36,13 @@ export type ScopeKind =
   | "region"
   | "substation"
   | "feeder"
-  | "distribution_transformer";
+  | "distribution_transformer"
+  /**
+   * A mini-grid site: an electrical scope of its own, under no substation.
+   * Its energy is accounted from its own generation (the site energy
+   * balance), never as a section of a distribution network.
+   */
+  | "site";
 
 export interface ScopeRef {
   kind: ScopeKind;

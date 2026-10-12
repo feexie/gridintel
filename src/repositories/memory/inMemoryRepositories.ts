@@ -1,5 +1,5 @@
 import type { DeviceHeartbeat, IntervalEnergy, IsoTimestamp, Outage, OutageExposure, Period, TelemetryPoint } from "@/domain";
-import type { GridIntelRepositories } from "../ports/index.ts";
+import type { Completeness, GridIntelRepositories, SiteRegistryCoverage, SiteRegistrySnapshot } from "../ports/index.ts";
 import type { DomainDataset } from "./dataset.ts";
 
 /* ==========================================================
@@ -62,6 +62,18 @@ function exposureOverlaps(exposure: OutageExposure, startMs: number, endMs: numb
 function outageSelected(outage: Outage, startMs: number, endMs: number): boolean {
   return outage.exposures.some((exposure) => exposureOverlaps(exposure, startMs, endMs) !== false);
 }
+
+const NO_SITES: SiteRegistrySnapshot = { organizations: [], sites: [], generationAssets: [], servicePoints: [], meters: [], customers: [] };
+const siteCoverage = (completeness: Completeness): SiteRegistryCoverage => ({
+  organizations: completeness,
+  sites: completeness,
+  generationAssets: completeness,
+  servicePoints: completeness,
+  meters: completeness,
+  customers: completeness,
+});
+const SITES_NOT_AVAILABLE = siteCoverage("not_available");
+const SITES_PARTIAL = siteCoverage("partial");
 
 export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRepositories {
   // Built on first use: interval records by meter, each list in dataset order.
@@ -222,6 +234,15 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
     sources: {
       async listDataSources() {
         return [...dataset.dataSources];
+      },
+    },
+
+    sites: {
+      async getSnapshot(query) {
+        queryInstant("asOf", query.asOf);
+        // A dataset that holds no sites says so: the empty lists are not empty but complete ones.
+        if (dataset.sites === undefined) return { snapshot: NO_SITES, topologyBasis: "current_only", coverage: SITES_NOT_AVAILABLE };
+        return { snapshot: dataset.sites, topologyBasis: "current_only", coverage: dataset.siteCoverage ?? SITES_PARTIAL };
       },
     },
 

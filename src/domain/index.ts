@@ -11,6 +11,7 @@ export type * from "./provenance";
 export type * from "./geo";
 export type * from "./organization";
 export type * from "./network";
+export type * from "./site";
 export type * from "./metering";
 export type * from "./observations";
 export type * from "./events";

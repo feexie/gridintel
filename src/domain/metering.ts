@@ -23,9 +23,13 @@ import type { Provenance } from "./provenance";
    Otherwise the boundary reading is used as-is. The purpose of this
    rule is to prevent double counting.
 
-   Phase 2 has no DER, BESS or mini-grid records and no meter role
-   for them, so every such flow is, by definition, inside the
-   boundary readings.
+   That rule is about generation and storage EMBEDDED in a
+   distribution network. A mini-grid SITE is a different case (ADR
+   0015): it has no upstream boundary, and its energy account starts
+   from its own generation. Its meters have roles of their own
+   ("generation", "storage", "site_output"), they belong to the site
+   and to no network section, and they are never added to a network
+   section's account, so nothing is counted twice.
 
    Direction convention: for a boundary meter, "import" is energy
    flowing downstream (into the section) and "export" is reverse
@@ -44,7 +48,24 @@ export type MeterInstallation =
   /** An incoming supply into a substation. */
   | { role: "substation_incomer"; substationId: string; supplyFeederId?: string }
   /** The point where energy enters the organization's network from another operator. */
-  | { role: "grid_interface"; substationId: string; feederId?: string };
+  | { role: "grid_interface"; substationId: string; feederId?: string }
+  /**
+   * The output of a generating asset of a site (a PV array, a generator).
+   * Import is energy the asset delivers to the site; export is energy it
+   * draws, e.g. an inverter's standby consumption at night.
+   */
+  | { role: "generation"; siteId: string; assetId: string }
+  /**
+   * The terminals of a storage asset of a site. Import is energy into
+   * storage (charging); export is energy out of it (discharging).
+   */
+  | { role: "storage"; siteId: string; assetId: string }
+  /**
+   * Where a site's generation and storage hand over to its distribution
+   * network: the energy sent out to customers. Import is energy flowing out
+   * to the network; export is reverse flow.
+   */
+  | { role: "site_output"; siteId: string };
 
 export interface Meter extends Audit {
   id: string;
@@ -98,6 +119,18 @@ export interface Customer extends Audit {
    * taken to mean non-MD.
    */
   demandClass?: "md" | "non_md";
+  /**
+   * The tariff tier or service level the account is on, as the operator
+   * names it, e.g. "Tier 2". Operators that sell by tier define their own;
+   * no meaning is read into the name. Absent when the source records none.
+   */
+  tariffTier?: string;
+  /**
+   * Whether the connection powers an income-earning activity (a mill, a
+   * workshop, cold storage): productive use of energy. Absent when the
+   * source does not record it; absent is unknown, never "no".
+   */
+  productiveUse?: boolean;
   accountStatus: "active" | "disconnected" | "closed";
   provenance: Provenance;
 }

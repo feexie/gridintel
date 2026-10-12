@@ -79,7 +79,10 @@ function position(index: TopologyIndex, asset: AssetRef): Position | null | "uns
       const parent =
         sp.supply.kind === "feeder"
           ? feederPosition(index, sp.supply.feederId)
-          : transformerPosition(index, sp.supply.transformerId);
+          : sp.supply.kind === "distribution_transformer"
+            ? transformerPosition(index, sp.supply.transformerId)
+            : // A connection of a site is under no feeder and no transformer.
+              null;
       return { ...(parent ?? { regionId: null }), servicePointId: asset.id, regionId: adminRegionOfServicePoint(index, sp) };
     }
     default:
@@ -107,6 +110,9 @@ function relation(index: TopologyIndex, scope: ScopeRef, affected: AssetRef, at:
     }
     case "substation":
       return at.substationId === scope.id ? "inside" : "outside";
+    case "site":
+      // A network asset is never inside a site; a site's interruptions are its own (analytics/site).
+      return "outside";
     case "region":
       return at.regionId === scope.id ? "inside" : "outside";
     case "organization": {

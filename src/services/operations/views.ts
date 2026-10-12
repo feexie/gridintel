@@ -376,7 +376,7 @@ export interface AlarmSubjectView {
   /** The asset's name, or the name as the source wrote it when it is not matched to the registry. */
   label: string;
   /** The kind of registry record the subject is; null when it is not matched to the registry. */
-  assetKind: "substation" | "power_transformer" | "feeder" | "distribution_transformer" | "service_point" | "meter" | "edge_device" | null;
+  assetKind: "substation" | "power_transformer" | "feeder" | "distribution_transformer" | "service_point" | "meter" | "edge_device" | "site" | "generation_asset" | null;
   /** "Substation", "Power transformer", "Monitor on …". */
   kindLabel: string;
   /** The drill-down level to open; null when the subject is not in the registry. */

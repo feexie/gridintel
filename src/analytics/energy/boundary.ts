@@ -136,6 +136,13 @@ export function sectionBoundary(index: TopologyIndex, scope: ScopeRef): Accounti
       );
       break;
     }
+    case "site":
+      return unsupported(
+        scope,
+        "UNSUPPORTED_SCOPE",
+        "A site is not a section of a distribution network: energy does not enter it through a boundary meter. " +
+          "It is accounted by the site energy balance, from its own generation.",
+      );
     case "region":
     case "organization":
       return unsupported(

@@ -122,7 +122,18 @@ export function basisDimensions(metric: KpiKey): BasisDimension[] {
     case "technical_loss":
     case "commercial_loss":
     case "billing_efficiency":
+    case "distribution_loss":
+    case "site_loss":
       return ["lossBasis"];
+    case "renewable_fraction":
+    case "generator_share":
+      return ["shareOf"];
+    case "connection_count":
+      return ["connections"];
+    case "energy_sold_per_connection":
+      return ["energySold", "connections"];
+    case "hours_of_supply":
+      return RELIABILITY_BASIS;
     default:
       return [];
   }
@@ -134,6 +145,9 @@ const DIMENSION_NAME: Record<BasisDimension, string> = {
   upstreamOrigins: "which origin points are treated as upstream",
   collection: "the collection basis (cash or accrual)",
   lossBasis: "what energy the loss is a fraction of",
+  shareOf: "what energy the share is of",
+  connections: "which connections are counted",
+  energySold: "whether energy sold is energy billed or energy metered",
 };
 
 function basisValue(value: KpiBasis[BasisDimension]): string | null {

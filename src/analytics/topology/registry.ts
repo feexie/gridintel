@@ -62,6 +62,11 @@ function installedOn(installation: MeterInstallation): string {
     case "substation_incomer":
     case "grid_interface":
       return installation.substationId;
+    case "generation":
+    case "storage":
+      return installation.assetId;
+    case "site_output":
+      return installation.siteId;
   }
 }
 
@@ -165,6 +170,8 @@ function feederRegion(index: TopologyIndex, feeder: Feeder): string | null {
  */
 export function adminRegionOfServicePoint(index: TopologyIndex, sp: ServicePoint): string | null {
   if (sp.adminRegionId) return sp.adminRegionId;
+  // A site's connection is under no network; its site is resolved by the site index.
+  if (sp.supply.kind === "site") return null;
   if (sp.supply.kind === "feeder") {
     const feeder = index.feederById.get(sp.supply.feederId);
     return feeder ? feederRegion(index, feeder) : null;
@@ -198,6 +205,9 @@ function scopeExists(index: TopologyIndex, scope: ScopeRef): boolean {
       return index.feederById.has(scope.id);
     case "distribution_transformer":
       return index.transformerById.has(scope.id);
+    case "site":
+      // Sites are not in the network registry; see analytics/site.
+      return false;
   }
 }
 
@@ -236,6 +246,9 @@ export function servicePointsUnder(
       points = feedersOfSubstation(index, scope.id).flatMap(
         (feeder) => servicePointsUnder(index, { kind: "feeder", id: feeder.id }).value ?? [],
       );
+      break;
+    case "site":
+      points = [];
       break;
     case "region":
       points = index.registry.servicePoints.filter(

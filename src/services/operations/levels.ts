@@ -769,6 +769,10 @@ function subjectWords(loaded: Loaded, subject: AssetRef): Omit<AlarmSubjectView,
     }
     case "meter":
       return { id, label: id, kindLabel: "Meter", link: null };
+    case "site":
+      return { id, label: id, kindLabel: "Mini-grid site", link: null };
+    case "generation_asset":
+      return { id, label: id, kindLabel: "Generation asset", link: null };
   }
 }
 
@@ -999,7 +1003,7 @@ function crumbsFor(loaded: Loaded, kind: Crumb["kind"], id: string): Crumb[] {
   if (kind === "service_point") {
     const sp = index.servicePointById.get(id);
     if (sp?.supply.kind === "feeder") feederId = sp.supply.feederId;
-    else if (sp) transformerId = sp.supply.transformerId;
+    else if (sp?.supply.kind === "distribution_transformer") transformerId = sp.supply.transformerId;
   }
   if (kind === "distribution_transformer") transformerId = id;
   if (transformerId) feederId = index.transformerById.get(transformerId)?.feederId;

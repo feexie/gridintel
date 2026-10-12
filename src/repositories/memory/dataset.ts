@@ -11,7 +11,7 @@ import type {
   TelemetryPoint,
   Territory,
 } from "@/domain";
-import type { Completeness, NetworkRegistrySnapshot, RegistryCoverage } from "../ports/index.ts";
+import type { Completeness, NetworkRegistrySnapshot, RegistryCoverage, SiteRegistryCoverage, SiteRegistrySnapshot } from "../ports/index.ts";
 
 /* ==========================================================
    IN-MEMORY DATASET
@@ -40,6 +40,9 @@ export interface DomainDataset {
    */
   areas?: readonly Area[];
   territories?: readonly Territory[];
+  /** Mini-grid sites, their assets, meters, connections and accounts. Absent when the source holds no sites: "not available". */
+  sites?: SiteRegistrySnapshot;
+  siteCoverage?: SiteRegistryCoverage;
   completeness: {
     intervalEnergy: Completeness;
     telemetry: Completeness;

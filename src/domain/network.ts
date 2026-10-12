@@ -153,7 +153,9 @@ export interface DistributionTransformer extends Audit {
 export type ServicePointSupply =
   | { kind: "distribution_transformer"; transformerId: string }
   /** Supplied directly from a feeder, e.g. an MV customer. */
-  | { kind: "feeder"; feederId: string };
+  | { kind: "feeder"; feederId: string }
+  /** Supplied by a site's own distribution network (site.ts). No transformer or feeder is implied. */
+  | { kind: "site"; siteId: string };
 
 /**
  * The electrical connection point where a customer is supplied. It is

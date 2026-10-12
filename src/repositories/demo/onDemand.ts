@@ -188,6 +188,9 @@ export function createDemoRepositories(): GridIntelRepositories {
 
     sources: { listDataSources: () => standingRecords().sources.listDataSources() },
 
+    // The demonstration utility holds no mini-grid sites; those are another organization's records.
+    sites: { getSnapshot: (query) => standingRecords().sites.getSnapshot(query) },
+
     spatial: {
       listAreas: (query) => standingRecords().spatial.listAreas(query),
       listTerritories: (query) => standingRecords().spatial.listTerritories(query),
