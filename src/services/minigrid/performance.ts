@@ -1,4 +1,4 @@
-import type { AssetRef, GenerationAsset, IsoTimestamp, MinigridSite, Period } from "@/domain";
+import type { AssetRef, GenerationAsset, IsoTimestamp, MinigridSite, Organization, Outage, Period } from "@/domain";
 import type { GridIntelRepositories, SiteRegistryCoverage, SiteRegistrySnapshot, SiteRepository } from "../../repositories/ports/index.ts";
 import type { CalculationContext, KpiComparison, SiteIndex, SitePerformance } from "../../analytics/index.ts";
 import type { ServiceCache } from "../analytics/cache.ts";
@@ -40,6 +40,10 @@ export interface SiteReport {
   site: MinigridSite;
   /** The site's in-service generation and storage assets. */
   assets: GenerationAsset[];
+  /** The organization that operates the site; null when the register does not hold it. */
+  operator: Organization | null;
+  /** The interruptions recorded for the site in the period, as its source holds them. */
+  interruptions: Outage[];
   performance: SitePerformance;
   /** Each figure a report states for the site and period, beside the calculation on its basis. */
   comparisons: KpiComparison[];
@@ -91,7 +95,8 @@ async function compute(params: SiteParams): Promise<Sourced<SiteReport> | null> 
   trail.add(billing.records).add(payments.records);
 
   // The operator's currency. With none recorded no record matches it, so revenue is unavailable rather than assumed.
-  const currency = snapshot.organizations.find((organization) => organization.id === site.operatorOrganizationId)?.currency ?? "unknown";
+  const operator = snapshot.organizations.find((organization) => organization.id === site.operatorOrganizationId) ?? null;
+  const currency = operator?.currency ?? "unknown";
   const performance = computeSitePerformance({
     index,
     siteId,
@@ -117,7 +122,7 @@ async function compute(params: SiteParams): Promise<Sourced<SiteReport> | null> 
     return sameMetric.length === 0 ? [] : [compareOnBasis(kpi, sameMetric)];
   });
 
-  return { result: { site, assets, performance, comparisons }, sourcing: await trail.resolve(repos.sources) };
+  return { result: { site, assets, operator, interruptions: own, performance, comparisons }, sourcing: await trail.resolve(repos.sources) };
 }
 
 /** One site's performance for the period; null when the site is not in the registry. */

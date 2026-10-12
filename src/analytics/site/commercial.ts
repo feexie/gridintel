@@ -70,6 +70,28 @@ export interface ClassTotals {
   collectionEfficiency: number | null;
 }
 
+/**
+ * The class totals of several sites added together, class by class: Σ billed and Σ collected,
+ * with the rate taken of the sums. Percentages are never averaged. For sites in one currency.
+ */
+export function combineClassTotals(lists: readonly (readonly ClassTotals[])[]): ClassTotals[] {
+  const classes = new Map<string, ClassTotals>();
+  for (const one of lists.flat()) {
+    let total = classes.get(one.customerClass);
+    if (total === undefined) classes.set(one.customerClass, (total = { customerClass: one.customerClass, accounts: 0, prepaidAccounts: 0, postpaidAccounts: 0, revenueBilled: 0, revenueCollected: 0, notCollected: 0, collectionEfficiency: null }));
+    total.accounts += one.accounts;
+    total.prepaidAccounts += one.prepaidAccounts;
+    total.postpaidAccounts += one.postpaidAccounts;
+    total.revenueBilled += one.revenueBilled;
+    total.revenueCollected += one.revenueCollected;
+  }
+  for (const total of classes.values()) {
+    total.notCollected = total.revenueBilled - total.revenueCollected;
+    total.collectionEfficiency = total.revenueBilled === 0 ? null : total.revenueCollected / total.revenueBilled;
+  }
+  return [...classes.values()].sort((a, b) => (a.customerClass < b.customerClass ? -1 : a.customerClass > b.customerClass ? 1 : 0));
+}
+
 export interface SiteCommercial {
   currency: string;
   connections: CalculatedKpi;

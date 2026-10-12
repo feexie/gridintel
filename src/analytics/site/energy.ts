@@ -4,7 +4,7 @@ import type { CalculatedKpi, Warning } from "../core/result.ts";
 import type { Quantity, SiteKpiContext } from "./quantity.ts";
 import type { SiteIndex } from "./registry.ts";
 import { SITE_REFERENCE, methodologyRef } from "../core/methodology.ts";
-import { periodBounds } from "../core/time.ts";
+import { periodBounds, toEpochMs } from "../core/time.ts";
 import { integrateMeans, intervalsByMeter, knownQuantity, kpiQuantity, meteredEnergy, missingQuantity, over, readingAt, readingsIn, registerAdvanceOver, siteKpi } from "./quantity.ts";
 import { siteAssets, siteMeters, siteScope, siteServicePoints } from "./registry.ts";
 
@@ -87,6 +87,8 @@ export interface PvPerformance {
   specificYield: CalculatedKpi;
   performanceRatio: CalculatedKpi;
   performanceRatioBeforeCurtailment: CalculatedKpi;
+  /** Of the PV energy that was available (generated plus the curtailment estimate), the share that was curtailed. */
+  curtailedShare: CalculatedKpi;
 }
 
 export interface StoragePerformance {
@@ -100,6 +102,17 @@ export interface StoragePerformance {
   stateOfChargeMin: CalculatedKpi;
   stateOfChargeMean: CalculatedKpi;
   stateOfChargeAtEnd: CalculatedKpi;
+  /** The first battery's state of charge day by day, each day counted from the start of the period. */
+  stateOfChargeByDay: DailyStateOfCharge[];
+}
+
+/** One day's state-of-charge readings, in percent. A day with no usable reading has nulls, never zeros. */
+export interface DailyStateOfCharge {
+  dayStart: string;
+  readings: number;
+  lowest: number | null;
+  mean: number | null;
+  highest: number | null;
 }
 
 export interface GeneratorPerformance {
@@ -120,6 +133,27 @@ export interface SiteTechnical {
 }
 
 const SHARE_OF_GENERATED = { shareOf: "energy_generated" } as const;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Readings grouped into days of 24 hours from the start of the period; a reading on a day boundary belongs to the day it starts. */
+function dailyStateOfCharge(readings: readonly TelemetryPoint[], period: Period): DailyStateOfCharge[] {
+  const bounds = periodBounds(period);
+  if (bounds === null) return [];
+  const days: number[][] = Array.from({ length: Math.ceil((bounds.endMs - bounds.startMs) / DAY_MS) }, () => []);
+  for (const reading of readings) {
+    const ms = toEpochMs(reading.observedAt);
+    if (ms === null || ms >= bounds.endMs) continue;
+    days[Math.floor((ms - bounds.startMs) / DAY_MS)]?.push(reading.value as number);
+  }
+  return days.map((values, day) => ({
+    dayStart: new Date(bounds.startMs + day * DAY_MS).toISOString(),
+    readings: values.length,
+    lowest: values.length === 0 ? null : Math.min(...values),
+    mean: values.length === 0 ? null : values.reduce((total, value) => total + value, 0) / values.length,
+    highest: values.length === 0 ? null : Math.max(...values),
+  }));
+}
 
 export function computeSiteTechnical(params: {
   index: SiteIndex;
@@ -261,7 +295,11 @@ export function computeSiteTechnical(params: {
       (v) => over(v("pvGeneration") + v("curtailment"), (v("ratedPower") * v("irradiation")) / referenceKwM2),
       { undefinedBecause: "No irradiation was recorded in the period, so the ratio is undefined." },
     );
-    pvPerformance = { capacityKwp, irradiation, specificYield, performanceRatio, performanceRatioBeforeCurtailment };
+    const curtailed = kpiQuantity(curtailment);
+    const curtailedShare = kpi("pv_curtailment", "fraction", { curtailment: curtailed, pvGeneration: pv }, (v) => over(v("curtailment"), v("curtailment") + v("pvGeneration")), {
+      undefinedBecause: "No PV energy was available in the period.",
+    });
+    pvPerformance = { capacityKwp, irradiation, specificYield, performanceRatio, performanceRatioBeforeCurtailment, curtailedShare };
   }
 
   /* ---- Storage performance ---- */
@@ -321,6 +359,7 @@ export function computeSiteTechnical(params: {
       stateOfChargeMin: kpi("state_of_charge", "percent", { lowestReading: series("min") }, (v) => v("lowestReading")),
       stateOfChargeMean: kpi("state_of_charge", "percent", { meanOfReadings: series("mean") }, (v) => v("meanOfReadings")),
       stateOfChargeAtEnd: kpi("state_of_charge", "percent", { readingAtEnd: socAtEnd }, (v) => v("readingAtEnd")),
+      stateOfChargeByDay: dailyStateOfCharge(readingsIn(telemetry, assetRef(batteries[0].id), "state_of_charge_pct", period), period),
     };
   }
 

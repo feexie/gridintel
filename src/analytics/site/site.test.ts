@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { BillingRecord, Customer, GenerationAsset, IntervalEnergy, Meter, MinigridSite, Outage, Payment, Period, Provenance, ServicePoint, TelemetryPoint } from "@/domain";
 import type { SiteRegistry } from "./registry.ts";
 import { computeSiteAvailability } from "./availability.ts";
-import { computeSiteCommercial } from "./commercial.ts";
+import { combineClassTotals, computeSiteCommercial } from "./commercial.ts";
 import { computeSiteTechnical } from "./energy.ts";
 import { comparableSiteKpis, computeSitePerformance } from "./performance.ts";
 import { knownQuantity, missingQuantity } from "./quantity.ts";
@@ -206,6 +206,9 @@ describe("PV performance", () => {
     const { pv } = technical();
     close(pv?.performanceRatioBeforeCurtailment.value ?? null, 64 / 60);
     assert.equal(pv?.performanceRatioBeforeCurtailment.status, "calculated_with_estimates");
+    // 4 kWh curtailed of the 64 that were available.
+    close(pv?.curtailedShare.value ?? null, 4 / 64);
+    assert.equal(pv?.curtailedShare.status, "calculated_with_estimates");
   });
 
   it("has no performance ratio when an irradiance reading is missing; nothing is interpolated", () => {
@@ -235,6 +238,8 @@ describe("storage", () => {
     close(storage.equivalentFullCycles.value, 16 / 40);
     assert.deepEqual([storage.stateOfChargeMin.value, storage.stateOfChargeAtEnd.value], [50, 55]);
     close(storage.stateOfChargeMean.value, 65);
+    // One day: the readings at 00:00 and 12:00. The reading at the end of the period belongs to the next day.
+    assert.deepEqual(storage.stateOfChargeByDay, [{ dayStart: "2026-01-01T00:00:00.000Z", readings: 2, lowest: 50, mean: 70, highest: 90 }]);
   });
 
   it("has no storage loss without a state-of-charge reading at each end, while the metered flows stand", () => {
@@ -413,6 +418,9 @@ describe("site revenue and collection", () => {
       { customerClass: "productive_use", accounts: 1, prepaidAccounts: 0, postpaidAccounts: 1, revenueBilled: 6000, revenueCollected: 1500, notCollected: 4500, collectionEfficiency: 0.25 },
       { customerClass: "residential", accounts: 1, prepaidAccounts: 1, postpaidAccounts: 0, revenueBilled: 2000, revenueCollected: 2000, notCollected: 0, collectionEfficiency: 1 },
     ]);
+    // Across sites the classes are added and the rate is of the sums, never an average of rates.
+    const two = combineClassTotals([classed.byClass, [{ customerClass: "productive_use", accounts: 2, prepaidAccounts: 2, postpaidAccounts: 0, revenueBilled: 2000, revenueCollected: 2000, notCollected: 0, collectionEfficiency: 1 }]]);
+    assert.deepEqual(two[0], { customerClass: "productive_use", accounts: 3, prepaidAccounts: 2, postpaidAccounts: 1, revenueBilled: 8000, revenueCollected: 3500, notCollected: 4500, collectionEfficiency: 3500 / 8000 });
     // A class that was billed nothing has no rate, not a rate of zero.
     assert.equal(commercial({ charges: [], payments: [] }).byClass[0].collectionEfficiency, null);
   });
