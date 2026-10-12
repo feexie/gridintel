@@ -66,7 +66,8 @@ const GENERATOR_MINIMUM_LOAD = 0.3;
 /** The output a cycle-charging generator is run at, as a share of its rating. */
 const CYCLE_CHARGING_LOAD = 0.75;
 /** Fuel: litres an hour for each kW of rating while running, plus litres for each kWh produced. */
-const FUEL = { perRatedKwHour: 0.06, perKwh: 0.22 };
+// A generic diesel fuel curve. It is an assumption of its own and is not fitted to any site's result.
+const FUEL = { perRatedKwHour: 0.08, perKwh: 0.24 };
 const EVENING_HOURS = [18, 19, 20, 21, 22];
 const INITIAL_SOC = 0.5;
 /** Register readings before the month began; invented starting points. */

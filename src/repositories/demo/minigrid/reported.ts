@@ -69,10 +69,10 @@ function claims(figures: {
 }
 
 const REPORTS: Record<string, Claim[]> = {
-  "MG-TAM": claims({ generatedKwh: 11900, renewablePercent: 95, uptimePercent: 99.7, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 10450, connections: 465, connectionsBasis: "active", collectedNgn: 2563700, collectionPercent: 99, collectionBasis: "accrual", generatorHours: 21 }),
-  "MG-DRY": claims({ generatedKwh: 8930, renewablePercent: 68, uptimePercent: 99.5, uptimeBasis: UNPLANNED_ONLY, soldKwh: 7760, connections: 300, connectionsBasis: "active", collectedNgn: 2126000, collectionPercent: 97, collectionBasis: "cash", generatorHours: 190 }),
-  "MG-PLM": claims({ generatedKwh: 9550, renewablePercent: 62, uptimePercent: 98.8, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 7760, connections: 417, connectionsBasis: "all", collectedNgn: 1975000, collectionPercent: 95, collectionBasis: "cash", generatorHours: 150 }),
-  "MG-GRN": claims({ generatedKwh: 1920, renewablePercent: 100, uptimePercent: 99.9, uptimeBasis: null, soldKwh: 1510, connections: 130, connectionsBasis: "active", collectedNgn: 365300, collectionPercent: 93, collectionBasis: "cash" }),
+  "MG-TAM": claims({ generatedKwh: 11900, renewablePercent: 95, uptimePercent: 99.7, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 10450, connections: 465, connectionsBasis: "active", collectedNgn: 2566200, collectionPercent: 99, collectionBasis: "accrual", generatorHours: 21 }),
+  "MG-DRY": claims({ generatedKwh: 8930, renewablePercent: 68, uptimePercent: 99.5, uptimeBasis: UNPLANNED_ONLY, soldKwh: 7760, connections: 300, connectionsBasis: "active", collectedNgn: 2128500, collectionPercent: 97, collectionBasis: "cash", generatorHours: 190 }),
+  "MG-PLM": claims({ generatedKwh: 9550, renewablePercent: 62, uptimePercent: 98.8, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 7760, connections: 417, connectionsBasis: "all", collectedNgn: 2015000, collectionPercent: 97, collectionBasis: "cash", generatorHours: 150 }),
+  "MG-GRN": claims({ generatedKwh: 1920, renewablePercent: 100, uptimePercent: 99.9, uptimeBasis: null, soldKwh: 1510, connections: 130, connectionsBasis: "active", collectedNgn: 366700, collectionPercent: 93, collectionBasis: "cash" }),
 };
 
 export function buildSiteReportedKpis(): ReportedKpi[] {

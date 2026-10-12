@@ -31,6 +31,13 @@ import { MINIGRID_CURRENCY, SITE_BILLING_SOURCE } from "./design.ts";
 ========================================================== */
 
 const BILLING_RUN_MS = at(29, 23, 30);
+
+/**
+ * The share of its bill a postpaid account pays in the month, set deliberately by who the account
+ * is: a public institution pays little, at every site; a mill or workshop sold to on credit pays
+ * most of it. Each account's share is drawn within its range.
+ */
+const PAID_SHARE = { publicInstitution: { low: 0.15, high: 0.25 }, productiveUseOnCredit: { low: 0.6, high: 0.7 } };
 const ESTIMATE_METHOD = "Billed on an estimate: the meter did not report on every day of the month.";
 
 function money(ngn: number): Money {
@@ -40,7 +47,6 @@ function money(ngn: number): Money {
 export function buildSiteBilling(month: SiteMonth): { billingRecords: BillingRecord[]; payments: Payment[] } {
   const billingRecords: BillingRecord[] = [];
   const payments: Payment[] = [];
-  const { site } = month;
   for (const connection of month.connections) {
     if (!connection.active) continue;
     const random = seeded(`minigrid:billing:${connection.customerId}`);
@@ -79,9 +85,8 @@ export function buildSiteBilling(month: SiteMonth): { billingRecords: BillingRec
       tariffCode: group.tier,
       provenance: demoProvenance(SITE_BILLING_SOURCE, id, recorded === undefined ? ESTIMATE_METHOD : undefined),
     });
-    const behaviour = site.postpaid;
-    const draw = random();
-    const fraction = draw < behaviour.full ? 1 : draw < behaviour.full + behaviour.none ? 0 : 0.3 + random() * 0.5;
+    const range = group.category === "public" ? PAID_SHARE.publicInstitution : PAID_SHARE.productiveUseOnCredit;
+    const fraction = range.low + random() * (range.high - range.low);
     if (fraction > 0) {
       const paymentId = `PAY-${connection.customerId}-2026-09`;
       payments.push({

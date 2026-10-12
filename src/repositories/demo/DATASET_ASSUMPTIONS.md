@@ -638,9 +638,11 @@ site runs it (below). With no generator able to run, the controller
 disconnects the site for the hour.
 
 - Battery: 95% efficient each way; starts the month half full.
-- Fuel: 0.06 litres an hour per kW of rating while running, plus 0.22
-  litres per kWh. That is 0.28 litres per kWh at full output, 0.30 at
-  three quarters and 0.42 at 30%.
+- **Fuel: a generic diesel fuel curve**, 0.08 litres an hour per kW of
+  rating while running, plus 0.24 litres per kWh. That is 0.32 litres per
+  kWh at full output, 0.35 at three quarters and 0.51 at 30%. It is an
+  assumption of its own and is not fitted to any site's result: what a
+  site burns per kWh follows from how its generator is run.
 
 ### How each generator is run (Founder's decision, 2026-10-12)
 
@@ -648,7 +650,7 @@ disconnects the site for the hour.
   starts when the battery cannot carry the load. It runs at 75% of its
   rating, and what the load does not take charges the battery. It stops
   when the battery reaches its setpoint or PV carries the load. So it
-  runs few hours, well loaded, at about 0.30 litres per kWh.
+  runs few hours, well loaded, at 0.35 litres per kWh.
 - The setpoint is 45% of what the battery holds at Tamarind Cross, so
   that the battery has room for the next day's sun. A higher one fills
   the battery before dawn and curtails PV.
@@ -657,8 +659,8 @@ disconnects the site for the hour.
   70%), so it cannot carry the night. The generator runs every evening
   from 18:00 to 23:00 and whenever the battery gives out, and makes only
   what the load takes. Night load is about 15 kW on a 48 kW set, so it is
-  held at its 30% minimum for most of 315 hours: 0.42 litres per kWh
-  against 0.30 at the other two sites, with the risk of wet stacking that
+  held at its 30% minimum for most of 315 hours: 0.51 litres per kWh
+  against 0.35 at the other two sites, with the risk of wet stacking that
   long running at low load brings. The dataset holds no record of engine
   condition; the fuel figure is what shows it.
 
@@ -703,16 +705,19 @@ recorded as load shedding. None occurs this month.
   decision, 2026-10-12). A prepaid account pays as it buys and cannot fall
   into arrears, so poor collection is never theirs.
 - **Postpaid:** one bill at 23:30 on 30 September for what the meter
-  recorded. Public institutions (a clinic, a school, a local-government
-  office) are postpaid at every site and pay late: a third in full, a
-  third nothing, the rest 30 to 80%.
-- **Palm Landing's poor collection comes from 13 accounts on credit**:
-  its 8 productive-use accounts (mills and workshops) and its 5 public
-  institutions. Of these, 15% pay in full, half pay nothing, and the rest
-  30 to 80%. The mills paid 3.9% of what they were billed and the public
-  institutions 57.7%; with so few accounts the split between the two is
-  the draw of the seed, not a design. The site collects 78.2% overall.
-  Its 364 households and 40 shops are prepaid and paid in full.
+  recorded. What a postpaid account pays in the month is set deliberately
+  by who it is (Founder's decision, 2026-10-12), each account's share
+  drawn within its range:
+  - **a public institution** (a clinic, a school, a local-government
+    office) **pays 15 to 25% of its bill**, at every site;
+  - **a mill or workshop sold to on credit pays 60 to 70%.** Only Palm
+    Landing sells to them on credit.
+- **Palm Landing has 13 accounts on credit**: 8 productive-use accounts
+  and 5 public institutions. Its 364 households and 40 shops are prepaid.
+  Its collection is whatever those shares give: 88.3% overall. No figure
+  was aimed at. Of the NGN 243,141 not collected, the mills and workshops
+  owe 147,140 (they paid 64.7%) and the public institutions 96,001 (they
+  paid 20.8%, the lowest rate).
 - Payments are sized against this month's bill, which stands in for the
   settlement of earlier bills the dataset does not hold.
 - Disconnected accounts are not charged.
@@ -734,7 +739,7 @@ compared only with the calculation on that basis.
 | --- | --- |
 | Tamarind Cross | Agrees with its records. Its collection efficiency (99%) is stated on an accrual basis, so it is not comparable with the calculated cash figure. |
 | Dry River | Overstates its renewable fraction (68%) and its uptime without planned interruptions (99.5%); understates generator running hours (190). |
-| Palm Landing | Overstates collection (95%) and revenue collected (NGN 1.975 M): it reports what it billed its credit accounts nearly as if it had been paid. Counts all 417 accounts as connections, and says so. |
+| Palm Landing | Overstates collection (97%) and revenue collected (NGN 2.015 M): it reports what it billed its credit accounts nearly as if it had been paid. Counts all 417 accounts as connections, and says so. |
 | Granite Hill | Agrees with its records. Its uptime (99.9%) does not say which interruptions it counts, so it is not comparable. |
 
 The variances are designed findings. Do not retune a figure to remove one.

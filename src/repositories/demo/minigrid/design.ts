@@ -103,8 +103,6 @@ export interface SiteDesign {
   /** The powerhouse's own draw, kW. */
   stationKw: number;
   groups: readonly ConnectionGroup[];
-  /** How accounts sold to on credit (postpaid) pay: the shares that pay in full and not at all; the rest pay part. */
-  postpaid: { full: number; none: number };
   interruptions: readonly DesignedInterruption[];
   /** Customer meters that reported nothing on some days: a gap, not a zero. */
   meterGaps?: { meters: number; fromDay: number; days: number };
@@ -150,7 +148,6 @@ export const SITES: readonly SiteDesign[] = [
     distributionLoss: 0.07,
     stationKw: 0.3,
     groups: groups({ t1: [330, 0.28], t2: [60, 0.9], t3: [55, 1.6], t4: [14, 9], pub: [6, 3] }, 260),
-    postpaid: { full: 0.34, none: 0.33 },
     interruptions: [
       { day: 9, hour: 10, hours: 2, cause: "planned_maintenance", planned: true, note: "Planned inverter service." },
       { day: 21, hour: 19, hours: 1, cause: "fault", planned: false, customers: 120, note: "Fault on one low-voltage branch." },
@@ -175,7 +172,6 @@ export const SITES: readonly SiteDesign[] = [
     distributionLoss: 0.1,
     stationKw: 0.3,
     groups: groups({ t1: [230, 0.3], t2: [30, 1.0], t3: [28, 2.0], t4: [9, 12], pub: [3, 3] }, 290),
-    postpaid: { full: 0.34, none: 0.33 },
     interruptions: [{ day: 5, hour: 14, hours: 3, cause: "fault", planned: false, note: "Fault at the powerhouse busbar." }],
     meterGaps: { meters: 6, fromDay: 12, days: 4 },
   },
@@ -198,10 +194,9 @@ export const SITES: readonly SiteDesign[] = [
     pvSystemEfficiency: 0.77,
     distributionLoss: 0.14,
     stationKw: 0.3,
-    // Palm Landing sells to its mills and workshops on credit, as well as to its public institutions,
-    // and little of it is paid. Its households and shops buy prepaid like everyone else's.
+    // Palm Landing sells to its mills and workshops on credit, as well as to its public institutions.
+    // Its households and shops buy prepaid like everyone else's.
     groups: groups({ t1: [324, 0.3], t2: [40, 0.9], t3: [40, 1.5], t4: [8, 8], pub: [5, 3] }, 270, { productiveUseOnCredit: true, disconnected: 24 }),
-    postpaid: { full: 0.15, none: 0.5 },
     interruptions: [
       { day: 12, hour: 16, hours: 6, cause: "weather", planned: false, note: "Storm damage to the distribution network." },
       { day: 24, hour: 9, hours: 3, cause: "planned_maintenance", planned: true, note: "Planned line work." },
@@ -226,7 +221,6 @@ export const SITES: readonly SiteDesign[] = [
     distributionLoss: 0.05,
     stationKw: 0.25,
     groups: groups({ t1: [110, 0.22], t2: [8, 0.7], t3: [9, 1.2], t4: [1, 6], pub: [2, 2.5] }, 260),
-    postpaid: { full: 0.34, none: 0.33 },
     interruptions: [{ day: 15, hour: 8, hours: 2, cause: "fault", planned: false, note: "Inverter trip." }],
   },
 ];
