@@ -85,7 +85,15 @@ export interface SiteDesign {
   batteryHealth: number;
   /** Lowest state of charge the controller allows, as a share of what the battery can hold. */
   minimumSoc: number;
-  generator: { kva: number; kw: number; policy: "backup" | "evening_and_backup"; outOfService?: { fromDay: number; toDay: number } } | null;
+  /**
+   * How the generator is dispatched:
+   * - cycle_charging: it starts when the battery cannot carry the load, runs at about three
+   *   quarters of its rating, charges the battery with what the load does not take, and stops
+   *   when the battery reaches `chargeTo` (a share of what it can hold) or PV carries the load;
+   * - load_following: it runs every evening and whenever the battery cannot carry the load, and
+   *   makes only what the load takes, held at its minimum output when the load is below that.
+   */
+  generator: { kva: number; kw: number; policy: "cycle_charging" | "load_following"; chargeTo?: number; outOfService?: { fromDay: number; toDay: number } } | null;
   /** Mean daily in-plane irradiation for the month, kWh/m², and how far a day may fall below or rise above it. */
   irradiation: { meanDaily: number; low: number; high: number };
   /** PV output as a share of rated power × irradiation, before any curtailment. */
@@ -95,7 +103,7 @@ export interface SiteDesign {
   /** The powerhouse's own draw, kW. */
   stationKw: number;
   groups: readonly ConnectionGroup[];
-  /** How postpaid accounts pay: the shares that pay in full and not at all; the rest pay part. */
+  /** How accounts sold to on credit (postpaid) pay: the shares that pay in full and not at all; the rest pay part. */
   postpaid: { full: number; none: number };
   interruptions: readonly DesignedInterruption[];
   /** Customer meters that reported nothing on some days: a gap, not a zero. */
@@ -108,13 +116,16 @@ const TIER_3 = "Tier 3 (commercial)";
 const TIER_4 = "Tier 4 (productive use)";
 const PUBLIC = "Public institution";
 
-function groups(counts: { t1: [number, number]; t2: [number, number]; t3: [number, number]; t4: [number, number]; pub: [number, number] }, tariff: number, mode: "prepaid" | "postpaid", disconnected = 0): ConnectionGroup[] {
+function groups(counts: { t1: [number, number]; t2: [number, number]; t3: [number, number]; t4: [number, number]; pub: [number, number] }, tariff: number, options: { productiveUseOnCredit?: boolean; disconnected?: number } = {}): ConnectionGroup[] {
+  // Households and shops buy prepaid everywhere: a prepaid account cannot fall into arrears.
+  const mode = "prepaid" as const;
+  const disconnected = options.disconnected ?? 0;
   return [
     { tier: TIER_1, category: "residential", productiveUse: false, shape: "residential", count: counts.t1[0], dailyKwh: counts.t1[1], tariffNgnPerKwh: tariff, paymentMode: mode, disconnected },
     { tier: TIER_2, category: "residential", productiveUse: false, shape: "residential", count: counts.t2[0], dailyKwh: counts.t2[1], tariffNgnPerKwh: tariff, paymentMode: mode },
     { tier: TIER_3, category: "commercial", productiveUse: false, shape: "commercial", count: counts.t3[0], dailyKwh: counts.t3[1], tariffNgnPerKwh: tariff + 20, paymentMode: mode },
-    { tier: TIER_4, category: "commercial", productiveUse: true, shape: "productive", count: counts.t4[0], dailyKwh: counts.t4[1], tariffNgnPerKwh: tariff - 30, paymentMode: mode },
-    // Clinics, schools and the like are billed after the month everywhere, and pay late.
+    { tier: TIER_4, category: "commercial", productiveUse: true, shape: "productive", count: counts.t4[0], dailyKwh: counts.t4[1], tariffNgnPerKwh: tariff - 30, paymentMode: options.productiveUseOnCredit ? "postpaid" : mode },
+    // Clinics, schools and local-government offices are billed after the month everywhere, and pay late.
     { tier: PUBLIC, category: "public", productiveUse: false, shape: "public", count: counts.pub[0], dailyKwh: counts.pub[1], tariffNgnPerKwh: tariff, paymentMode: "postpaid" },
   ];
 }
@@ -133,13 +144,13 @@ export const SITES: readonly SiteDesign[] = [
     batteryKw: 80,
     batteryHealth: 0.95,
     minimumSoc: 0.15,
-    generator: { kva: 50, kw: 40, policy: "backup" },
+    generator: { kva: 50, kw: 40, policy: "cycle_charging", chargeTo: 0.45 },
     irradiation: { meanDaily: 5.6, low: 0.72, high: 1.12 },
     pvSystemEfficiency: 0.79,
     distributionLoss: 0.07,
     stationKw: 0.3,
-    groups: groups({ t1: [330, 0.28], t2: [60, 0.9], t3: [55, 1.6], t4: [14, 9], pub: [6, 3] }, 260, "prepaid"),
-    postpaid: { full: 0.5, none: 0.17 },
+    groups: groups({ t1: [330, 0.28], t2: [60, 0.9], t3: [55, 1.6], t4: [14, 9], pub: [6, 3] }, 260),
+    postpaid: { full: 0.34, none: 0.33 },
     interruptions: [
       { day: 9, hour: 10, hours: 2, cause: "planned_maintenance", planned: true, note: "Planned inverter service." },
       { day: 21, hour: 19, hours: 1, cause: "fault", planned: false, customers: 120, note: "Fault on one low-voltage branch." },
@@ -158,12 +169,12 @@ export const SITES: readonly SiteDesign[] = [
     batteryKw: 40,
     batteryHealth: 0.7,
     minimumSoc: 0.2,
-    generator: { kva: 60, kw: 48, policy: "evening_and_backup", outOfService: { fromDay: 17, toDay: 19 } },
+    generator: { kva: 60, kw: 48, policy: "load_following", outOfService: { fromDay: 17, toDay: 19 } },
     irradiation: { meanDaily: 4.7, low: 0.6, high: 1.2 },
     pvSystemEfficiency: 0.76,
     distributionLoss: 0.1,
     stationKw: 0.3,
-    groups: groups({ t1: [230, 0.3], t2: [30, 1.0], t3: [28, 2.0], t4: [9, 12], pub: [3, 3] }, 290, "prepaid"),
+    groups: groups({ t1: [230, 0.3], t2: [30, 1.0], t3: [28, 2.0], t4: [9, 12], pub: [3, 3] }, 290),
     postpaid: { full: 0.34, none: 0.33 },
     interruptions: [{ day: 5, hour: 14, hours: 3, cause: "fault", planned: false, note: "Fault at the powerhouse busbar." }],
     meterGaps: { meters: 6, fromDay: 12, days: 4 },
@@ -179,16 +190,18 @@ export const SITES: readonly SiteDesign[] = [
     pvKwp: 80,
     batteryKwh: 200,
     batteryKw: 60,
-    batteryHealth: 0.9,
+    batteryHealth: 0.75,
     minimumSoc: 0.15,
-    generator: { kva: 40, kw: 32, policy: "backup" },
+    // It charges an ageing battery only a third of the way: the battery is the site's weak point.
+    generator: { kva: 40, kw: 32, policy: "cycle_charging", chargeTo: 0.35 },
     irradiation: { meanDaily: 3.7, low: 0.5, high: 1.3 },
     pvSystemEfficiency: 0.77,
     distributionLoss: 0.14,
     stationKw: 0.3,
-    // Palm Landing sells on credit: every account is billed after the month.
-    groups: groups({ t1: [324, 0.3], t2: [40, 0.9], t3: [40, 1.5], t4: [8, 8], pub: [5, 3] }, 270, "postpaid", 24),
-    postpaid: { full: 0.46, none: 0.24 },
+    // Palm Landing sells to its mills and workshops on credit, as well as to its public institutions,
+    // and little of it is paid. Its households and shops buy prepaid like everyone else's.
+    groups: groups({ t1: [324, 0.3], t2: [40, 0.9], t3: [40, 1.5], t4: [8, 8], pub: [5, 3] }, 270, { productiveUseOnCredit: true, disconnected: 24 }),
+    postpaid: { full: 0.15, none: 0.5 },
     interruptions: [
       { day: 12, hour: 16, hours: 6, cause: "weather", planned: false, note: "Storm damage to the distribution network." },
       { day: 24, hour: 9, hours: 3, cause: "planned_maintenance", planned: true, note: "Planned line work." },
@@ -212,8 +225,8 @@ export const SITES: readonly SiteDesign[] = [
     pvSystemEfficiency: 0.79,
     distributionLoss: 0.05,
     stationKw: 0.25,
-    groups: groups({ t1: [110, 0.22], t2: [8, 0.7], t3: [9, 1.2], t4: [1, 6], pub: [2, 2.5] }, 260, "prepaid"),
-    postpaid: { full: 0.5, none: 0 },
+    groups: groups({ t1: [110, 0.22], t2: [8, 0.7], t3: [9, 1.2], t4: [1, 6], pub: [2, 2.5] }, 260),
+    postpaid: { full: 0.34, none: 0.33 },
     interruptions: [{ day: 15, hour: 8, hours: 2, cause: "fault", planned: false, note: "Inverter trip." }],
   },
 ];

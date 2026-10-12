@@ -584,16 +584,17 @@ something plausible to work on. None is a measurement or a benchmark.
 | Climatic zone (illustrative) | Sudan savanna, north-west | Guinea savanna, middle belt | Rainforest, south | Sudan savanna, north-east |
 | PV array | 100 kWp | 45 kWp | 80 kWp | 60 kWp |
 | Battery, nameplate | 240 kWh, 80 kW | 90 kWh, 40 kW | 200 kWh, 60 kW | 150 kWh, 40 kW |
-| What the battery holds today, of nameplate | 95% | 70% (aged) | 90% | 98% |
+| What the battery holds today, of nameplate | 95% | 70% (aged) | 75% (ageing) | 98% |
 | Lowest state of charge allowed | 15% | 20% | 15% | 15% |
-| Diesel generator | 50 kVA / 40 kW, backup | 60 kVA / 48 kW, every evening and backup | 40 kVA / 32 kW, backup | none |
+| Diesel generator | 50 kVA / 40 kW | 60 kVA / 48 kW | 40 kVA / 32 kW | none |
+| How the generator is run | Cycle charging, to 45% | Load following, every evening and as backup | Cycle charging, to 35% | n/a |
 | Mean daily in-plane irradiation, September | 5.6 kWh/m² | 4.7 kWh/m² | 3.7 kWh/m² | 5.3 kWh/m² |
 | A day's irradiation, of that mean | 72–112% | 60–120% | 50–130% | 75–112% |
 | PV output before curtailment, of rated power × irradiation | 79% | 76% | 77% | 79% |
 | Loss between powerhouse and customer meters | 7% | 10% | 14% | 5% |
 | Powerhouse's own draw | 0.3 kW | 0.3 kW | 0.3 kW | 0.25 kW |
 | Connections on the register | 465 | 300 | 417 (24 disconnected) | 130 |
-| How accounts pay | Prepaid | Prepaid | Postpaid (sold on credit) | Prepaid |
+| How accounts pay | Prepaid; public institutions postpaid | Prepaid; public institutions postpaid | Prepaid; public institutions and productive use postpaid | Prepaid; public institutions postpaid |
 | Commissioned | 2023 | 2019 | 2021 | 2024 |
 
 The irradiation figures are round assumptions that fall from north to
@@ -609,7 +610,7 @@ current or published rates**, and are flat per kWh.
 | Tier 1 (basic household) | 0.28 / 0.30 / 0.30 / 0.22 kWh | 330 / 230 / 324 / 110 | no |
 | Tier 2 (household) | 0.9 / 1.0 / 0.9 / 0.7 kWh | 60 / 30 / 40 / 8 | no |
 | Tier 3 (commercial) | 1.6 / 2.0 / 1.5 / 1.2 kWh | 55 / 28 / 40 / 9 | no |
-| Tier 4 (productive use: mills, workshops, cold rooms) | 9 / 12 / 8 / 6 kWh | 14 / 9 / 8 / 1 | yes |
+| Tier 4 (productive use: mills, workshops, cold rooms; on credit at Palm Landing) | 9 / 12 / 8 / 6 kWh | 14 / 9 / 8 / 1 | yes |
 | Public institution (clinic, school) | 3 / 3 / 3 / 2.5 kWh | 6 / 3 / 5 / 2 | no |
 
 | Assumed tariff, NGN per kWh | Tiers 1, 2, public | Tier 3 | Tier 4 |
@@ -632,16 +633,43 @@ current or published rates**, and are flat per kWh.
 
 Each hour, in this order: PV serves the load; surplus charges the battery;
 what the battery cannot take is curtailed. A shortfall is met from the
-battery. When the battery cannot meet it the generator runs, at no less
-than 30% of its rating, and what it makes beyond the shortfall charges the
-battery. With no generator able to run, the controller disconnects the
-site for the hour.
+battery. When the battery cannot meet it the generator runs, in the way its
+site runs it (below). With no generator able to run, the controller
+disconnects the site for the hour.
 
 - Battery: 95% efficient each way; starts the month half full.
-- Dry River's generator also runs every evening from 18:00 to 23:00.
-- Fuel: 0.08 litres an hour per kW of rating while running, plus 0.24
-  litres per kWh. A generator held at its minimum load therefore burns
-  about half a litre per kWh.
+- Fuel: 0.06 litres an hour per kW of rating while running, plus 0.22
+  litres per kWh. That is 0.28 litres per kWh at full output, 0.30 at
+  three quarters and 0.42 at 30%.
+
+### How each generator is run (Founder's decision, 2026-10-12)
+
+- **Cycle charging, at Tamarind Cross and Palm Landing.** The generator
+  starts when the battery cannot carry the load. It runs at 75% of its
+  rating, and what the load does not take charges the battery. It stops
+  when the battery reaches its setpoint or PV carries the load. So it
+  runs few hours, well loaded, at about 0.30 litres per kWh.
+- The setpoint is 45% of what the battery holds at Tamarind Cross, so
+  that the battery has room for the next day's sun. A higher one fills
+  the battery before dawn and curtails PV.
+- **Load following at low output, at Dry River. This is a designed
+  finding.** Its battery is small and aged (90 kWh nameplate, holding
+  70%), so it cannot carry the night. The generator runs every evening
+  from 18:00 to 23:00 and whenever the battery gives out, and makes only
+  what the load takes. Night load is about 15 kW on a 48 kW set, so it is
+  held at its 30% minimum for most of 315 hours: 0.42 litres per kWh
+  against 0.30 at the other two sites, with the risk of wet stacking that
+  long running at low load brings. The dataset holds no record of engine
+  condition; the fuel figure is what shows it.
+
+### Palm Landing's battery (Founder's decision, 2026-10-12)
+
+**Palm Landing's low state of charge is designed: the sign of an ageing,
+undersized battery.** It holds 75% of its 200 kWh nameplate, in the zone
+with the least sun, and its generator charges it only to 35%. Its mean
+state of charge is 38% and it touches its 15% floor, where Tamarind
+Cross's averages 58%. The analytics do not know its health: they show the
+low state of charge and 15.6 equivalent full cycles in the month.
 - The hour and fuel registers are read daily at midnight. Their opening
   values (4,120 hours, 38,250 litres) are invented.
 - Irradiance and the curtailment estimate are hourly means; state of
@@ -671,11 +699,20 @@ recorded as load shedding. None occurs this month.
   a commercial account, six to ten for productive use. An account buys 94
   to 106% of what its meter recorded. Every vend is paid as it is raised,
   so a prepaid account's collection is 100% by construction.
+- **No household and no shop is postpaid, at any site** (Founder's
+  decision, 2026-10-12). A prepaid account pays as it buys and cannot fall
+  into arrears, so poor collection is never theirs.
 - **Postpaid:** one bill at 23:30 on 30 September for what the meter
-  recorded. Public institutions are postpaid at every site and pay late:
-  a third in full, a third nothing, the rest 30 to 80%.
-- **Palm Landing sells on credit to every account**: 46% pay in full, 24%
-  nothing, the rest 30 to 80%.
+  recorded. Public institutions (a clinic, a school, a local-government
+  office) are postpaid at every site and pay late: a third in full, a
+  third nothing, the rest 30 to 80%.
+- **Palm Landing's poor collection comes from 13 accounts on credit**:
+  its 8 productive-use accounts (mills and workshops) and its 5 public
+  institutions. Of these, 15% pay in full, half pay nothing, and the rest
+  30 to 80%. The mills paid 3.9% of what they were billed and the public
+  institutions 57.7%; with so few accounts the split between the two is
+  the draw of the seed, not a design. The site collects 78.2% overall.
+  Its 364 households and 40 shops are prepaid and paid in full.
 - Payments are sized against this month's bill, which stands in for the
   settlement of earlier bills the dataset does not hold.
 - Disconnected accounts are not charged.
@@ -697,7 +734,7 @@ compared only with the calculation on that basis.
 | --- | --- |
 | Tamarind Cross | Agrees with its records. Its collection efficiency (99%) is stated on an accrual basis, so it is not comparable with the calculated cash figure. |
 | Dry River | Overstates its renewable fraction (68%) and its uptime without planned interruptions (99.5%); understates generator running hours (190). |
-| Palm Landing | Overstates collection (82%) and revenue collected (NGN 1.65 M). Counts all 417 accounts as connections, and says so. |
+| Palm Landing | Overstates collection (95%) and revenue collected (NGN 1.975 M): it reports what it billed its credit accounts nearly as if it had been paid. Counts all 417 accounts as connections, and says so. |
 | Granite Hill | Agrees with its records. Its uptime (99.9%) does not say which interruptions it counts, so it is not comparable. |
 
 The variances are designed findings. Do not retune a figure to remove one.

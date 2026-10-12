@@ -14,7 +14,8 @@ import { MINIGRID_CURRENCY, SITE_BILLING_SOURCE } from "./design.ts";
      meter recorded, and not equal to it: credit is carried over;
    - postpaid: one bill at the month-end run for what the smart
      meter recorded. Public institutions are postpaid at every site;
-     at Palm Landing every account is.
+     at Palm Landing the productive-use accounts are too. No
+     household or shop is: a prepaid account cannot owe.
 
    Payments are on a cash basis: money received during the month.
    For a postpaid account the amount received is sized against this
@@ -78,8 +79,7 @@ export function buildSiteBilling(month: SiteMonth): { billingRecords: BillingRec
       tariffCode: group.tier,
       provenance: demoProvenance(SITE_BILLING_SOURCE, id, recorded === undefined ? ESTIMATE_METHOD : undefined),
     });
-    // Public institutions pay late everywhere; other postpaid accounts pay as their site's customers do.
-    const behaviour = group.category === "public" ? { full: 0.34, none: 0.33 } : site.postpaid;
+    const behaviour = site.postpaid;
     const draw = random();
     const fraction = draw < behaviour.full ? 1 : draw < behaviour.full + behaviour.none ? 0 : 0.3 + random() * 0.5;
     if (fraction > 0) {

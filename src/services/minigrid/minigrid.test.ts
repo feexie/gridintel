@@ -47,9 +47,9 @@ describe("the mini-grid portfolio", () => {
 describe("each site shows the condition it was designed to", () => {
   it("Tamarind Cross: a well-run solar-hybrid", () => {
     const { energy, pv, generator, availability, commercial } = report("MG-TAM").performance;
-    assert.deepEqual([value(energy.energyGenerated), value(energy.renewableFraction, 1), value(energy.distributionLoss, 1)], [11866, 96.3, 7]);
-    assert.deepEqual([value(pv!.performanceRatio, 1), value(pv!.specificYield, 1)], [75.4, 114.2]);
-    assert.equal(value(generator!.runtime), 37);
+    assert.deepEqual([value(energy.energyGenerated), value(energy.renewableFraction, 1), value(energy.distributionLoss, 1)], [11904, 94.7, 7]);
+    assert.deepEqual([value(pv!.performanceRatio, 1), value(pv!.specificYield, 1)], [74.4, 112.7]);
+    assert.equal(value(generator!.runtime), 21);
     assert.equal(value(availability.all.availability, 2), 99.69);
     assert.deepEqual([value(commercial.connections), value(commercial.collectionEfficiency, 1), value(commercial.energySoldPerConnection, 1)], [465, 95.9, 22.5]);
     assert.equal(energy.energyGenerated.status, "ok");
@@ -58,7 +58,7 @@ describe("each site shows the condition it was designed to", () => {
   it("Dry River: half its energy from the generator, and the worst availability", () => {
     const { energy, generator, availability, storage } = report("MG-DRY").performance;
     assert.deepEqual([value(energy.renewableFraction, 1), value(energy.generatorShare, 1)], [49.6, 50.4]);
-    assert.deepEqual([value(generator!.runtime), value(generator!.fuelUsed), value(generator!.specificFuelConsumption, 2)], [315, 2290, 0.51]);
+    assert.deepEqual([value(generator!.runtime), value(generator!.fuelUsed), value(generator!.specificFuelConsumption, 2)], [315, 1898, 0.42]);
     assert.deepEqual([value(availability.all.availability, 2), availability.interruptions, value(availability.all.hoursOfSupply, 1)], [95.83, 7, 23]);
     assert.deepEqual(Object.keys(availability.hoursLostByCause ?? {}), ["fault"]);
     assert.equal(value(storage!.equivalentFullCycles, 1), 18.1);
@@ -73,12 +73,35 @@ describe("each site shows the condition it was designed to", () => {
     assert.equal(value(commercial.energySoldPerConnection, 1), 25.9);
   });
 
-  it("Palm Landing: poor collection, with 24 disconnected accounts kept out of the connection count", () => {
+  it("a cycle-charging generator burns about 0.3 litres per kWh; Dry River's, following a small night load, burns 0.42", () => {
+    const fuel = (siteId: string) => value(report(siteId).performance.generator!.specificFuelConsumption, 2);
+    assert.deepEqual([fuel("MG-TAM"), fuel("MG-PLM"), fuel("MG-DRY")], [0.3, 0.3, 0.42]);
+    // Palm Landing's generator makes the same energy in half the hours it ran when it followed the load.
+    const palm = report("MG-PLM").performance;
+    assert.deepEqual([value(palm.generator!.runtime), value(palm.energy.generatorGeneration)], [150, 3600]);
+    // Its battery is the weak point: charged only a third of the way, it averages well under half full.
+    assert.equal(value(palm.storage!.stateOfChargeMean), 38);
+  });
+
+  it("Palm Landing: poor collection that comes from its credit accounts, never from prepaid households", () => {
+    const classes = Object.fromEntries(report("MG-PLM").performance.commercial.byClass.map((one) => [one.customerClass, one]));
+    assert.deepEqual(Object.keys(classes), ["commercial", "productive_use", "public", "residential"]);
+    assert.deepEqual([classes.residential.postpaidAccounts, classes.residential.collectionEfficiency, classes.commercial.collectionEfficiency], [0, 1, 1]);
+    assert.deepEqual([classes.productive_use.accounts, classes.productive_use.postpaidAccounts, Math.round(classes.productive_use.notCollected)], [8, 8, 401110]);
+    assert.equal(Number(((classes.productive_use.collectionEfficiency as number) * 100).toFixed(1)), 3.9);
+    assert.deepEqual([classes.public.postpaidAccounts, Number(((classes.public.collectionEfficiency as number) * 100).toFixed(1))], [5, 57.7]);
+    // At every site what is not collected is owed by postpaid accounts alone.
+    for (const one of portfolio.result.sites) {
+      for (const group of one.performance.commercial.byClass.filter((candidate) => candidate.postpaidAccounts === 0)) assert.equal(group.notCollected, 0, `${one.site.id} ${group.customerClass}`);
+    }
+  });
+
+  it("Palm Landing: 24 disconnected accounts are kept out of the connection count", () => {
     const { energy, commercial } = report("MG-PLM").performance;
-    assert.deepEqual([value(commercial.collectionEfficiency, 1), value(commercial.connections), value(commercial.connectionsAll)], [61.2, 393, 417]);
-    assert.deepEqual([value(commercial.revenueBilled), value(commercial.revenueCollected)], [2078859, 1271476]);
-    assert.deepEqual(commercial.chargesByBasis, { meter_reading: 393, prepaid_vend: 0, estimated: 0 });
-    assert.deepEqual([value(energy.distributionLoss, 1), value(energy.renewableFraction, 1)], [14, 63.8]);
+    assert.deepEqual([value(commercial.collectionEfficiency, 1), value(commercial.connections), value(commercial.connectionsAll)], [78.2, 393, 417]);
+    assert.deepEqual([value(commercial.revenueBilled), value(commercial.revenueCollected)], [2076678, 1624223]);
+    assert.deepEqual(commercial.chargesByBasis, { meter_reading: 13, prepaid_vend: 1221, estimated: 0 });
+    assert.deepEqual([value(energy.distributionLoss, 1), value(energy.renewableFraction, 1)], [14, 62.3]);
   });
 
   it("Granite Hill: low demand, so most of what the array could give is curtailed and the performance ratio is low", () => {
@@ -123,8 +146,8 @@ describe("a site report's claims beside the records", () => {
   });
 
   it("Palm Landing overstates collection; its connection count is every account, as it says, and agrees on that basis", () => {
-    assert.equal(Number(comparison("MG-PLM", "collection_efficiency").variance.absolute?.toFixed(1)), -20.8);
-    assert.equal(Math.round(comparison("MG-PLM", "revenue_collected").variance.absolute as number), -378524);
+    assert.equal(Number(comparison("MG-PLM", "collection_efficiency").variance.absolute?.toFixed(1)), -16.8);
+    assert.equal(Math.round(comparison("MG-PLM", "revenue_collected").variance.absolute as number), -350777);
     const connections = comparison("MG-PLM", "connection_count");
     assert.deepEqual([connections.calculated.basis.connections, connections.calculated.value, connections.variance.absolute], ["all", 417, 0]);
   });

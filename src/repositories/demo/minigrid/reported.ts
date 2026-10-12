@@ -21,8 +21,10 @@ import { MINIGRID_CURRENCY, MINIGRID_ORGANIZATION_ID, MINIGRID_ORGANIZATION_NAME
      beside the calculated cash figure.
    - Dry River overstates its renewable fraction and its uptime, and
      understates its generator's running hours.
-   - Palm Landing overstates collection and revenue, and counts
-     every account on its register as a connection, which it says.
+   - Palm Landing overstates collection and revenue: it reports
+     what it billed its credit accounts nearly as if it had been
+     paid. It counts every account on its register as a connection,
+     which it says.
    - Granite Hill reports its uptime WITHOUT saying which
      interruptions it counts, so that figure is not comparable.
 ========================================================== */
@@ -67,9 +69,9 @@ function claims(figures: {
 }
 
 const REPORTS: Record<string, Claim[]> = {
-  "MG-TAM": claims({ generatedKwh: 11870, renewablePercent: 96, uptimePercent: 99.7, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 10450, connections: 465, connectionsBasis: "active", collectedNgn: 2563700, collectionPercent: 99, collectionBasis: "accrual", generatorHours: 37 }),
+  "MG-TAM": claims({ generatedKwh: 11900, renewablePercent: 95, uptimePercent: 99.7, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 10450, connections: 465, connectionsBasis: "active", collectedNgn: 2563700, collectionPercent: 99, collectionBasis: "accrual", generatorHours: 21 }),
   "MG-DRY": claims({ generatedKwh: 8930, renewablePercent: 68, uptimePercent: 99.5, uptimeBasis: UNPLANNED_ONLY, soldKwh: 7760, connections: 300, connectionsBasis: "active", collectedNgn: 2126000, collectionPercent: 97, collectionBasis: "cash", generatorHours: 190 }),
-  "MG-PLM": claims({ generatedKwh: 9370, renewablePercent: 64, uptimePercent: 98.8, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 7760, connections: 417, connectionsBasis: "all", collectedNgn: 1650000, collectionPercent: 82, collectionBasis: "cash", generatorHours: 305 }),
+  "MG-PLM": claims({ generatedKwh: 9550, renewablePercent: 62, uptimePercent: 98.8, uptimeBasis: ALL_INTERRUPTIONS, soldKwh: 7760, connections: 417, connectionsBasis: "all", collectedNgn: 1975000, collectionPercent: 95, collectionBasis: "cash", generatorHours: 150 }),
   "MG-GRN": claims({ generatedKwh: 1920, renewablePercent: 100, uptimePercent: 99.9, uptimeBasis: null, soldKwh: 1510, connections: 130, connectionsBasis: "active", collectedNgn: 365300, collectionPercent: 93, collectionBasis: "cash" }),
 };
 

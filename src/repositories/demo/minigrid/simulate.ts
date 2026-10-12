@@ -20,10 +20,13 @@ import { BATTERY_ASSET, GENERATOR_ASSET, OUTPUT_METER, PV_ASSET, SITE_METERING_S
    3. DISPATCH, each hour, in this order: PV serves the load; any
       surplus charges the battery; what the battery cannot take is
       curtailed. A shortfall is met from the battery; when the
-      battery cannot meet it, the generator runs (at no less than 30%
-      of its rating, the excess charging the battery); with no
-      generator able to run, the site is disconnected for the hour:
-      a low-battery interruption.
+      battery cannot meet it, the generator runs, by its site's
+      policy: CYCLE CHARGING (at about 75% of its rating, the excess
+      charging the battery, until the battery is charged) or LOAD
+      FOLLOWING (only what the load takes, held at 30% of its rating
+      when the load is below that). With no generator able to run,
+      the site is disconnected for the hour: a low-battery
+      interruption.
    4. RECORDS. Hourly energy of the PV, generator, battery and
       site-output meters; daily energy of each customer meter;
       irradiance, state of charge, the controller's curtailment
@@ -60,8 +63,10 @@ const SUN: readonly number[] = (() => {
 const CHARGE_EFFICIENCY = 0.95;
 const DISCHARGE_EFFICIENCY = 0.95;
 const GENERATOR_MINIMUM_LOAD = 0.3;
+/** The output a cycle-charging generator is run at, as a share of its rating. */
+const CYCLE_CHARGING_LOAD = 0.75;
 /** Fuel: litres an hour for each kW of rating while running, plus litres for each kWh produced. */
-const FUEL = { perRatedKwHour: 0.08, perKwh: 0.24 };
+const FUEL = { perRatedKwHour: 0.06, perKwh: 0.22 };
 const EVENING_HOURS = [18, 19, 20, 21, 22];
 const INITIAL_SOC = 0.5;
 /** Register readings before the month began; invented starting points. */
@@ -126,6 +131,7 @@ export function simulateSite(site: SiteDesign): SiteMonth {
   const capacity = site.batteryKwh * site.batteryHealth;
   const floor = capacity * site.minimumSoc;
   let stored = capacity * INITIAL_SOC;
+  let cycling = false;
   let runHours = OPENING_RUN_HOURS;
   let fuel = OPENING_FUEL_LITRES;
 
@@ -152,7 +158,10 @@ export function simulateSite(site: SiteDesign): SiteMonth {
       const need = sentOut + site.stationKw;
       const room = Math.max(0, (capacity - stored) / CHARGE_EFFICIENCY);
       const reserve = Math.max(0, (stored - floor) * DISCHARGE_EFFICIENCY);
-      const scheduled = generatorFit && generator.policy === "evening_and_backup" && EVENING_HOURS.includes(hour) && share > 0;
+      const scheduled = generatorFit && generator.policy === "load_following" && EVENING_HOURS.includes(hour) && share > 0;
+      const cycle = generatorFit && generator.policy === "cycle_charging";
+      // A cycle-charging generator that has started keeps running until the battery is charged or PV carries the load.
+      const running = cycle && cycling;
       let pv = 0;
       let genOut = 0;
       let charge = 0;
@@ -163,9 +172,9 @@ export function simulateSite(site: SiteDesign): SiteMonth {
       } else {
         pv = Math.min(potential, need);
         const shortfall = need - pv;
-        if (!scheduled && Math.min(site.batteryKw, reserve) >= shortfall) discharge = shortfall;
+        if (!scheduled && !running && Math.min(site.batteryKw, reserve) >= shortfall) discharge = shortfall;
         else if (generatorFit && share > 0) {
-          genOut = Math.min(generator.kw, Math.max(shortfall, generator.kw * GENERATOR_MINIMUM_LOAD));
+          genOut = Math.min(generator.kw, Math.max(shortfall, generator.kw * (cycle ? CYCLE_CHARGING_LOAD : GENERATOR_MINIMUM_LOAD)));
           // What the generator makes beyond the shortfall charges the battery; what it cannot take is not made.
           charge = Math.min(Math.max(0, genOut - shortfall), site.batteryKw, room);
           genOut = Math.min(genOut, shortfall + charge);
@@ -198,6 +207,7 @@ export function simulateSite(site: SiteDesign): SiteMonth {
       result = idle();
     }
     stored += result.charge * CHARGE_EFFICIENCY - result.discharge / DISCHARGE_EFFICIENCY;
+    cycling = generator !== null && generator.policy === "cycle_charging" && result.generator > 0 && stored < capacity * (generator.chargeTo ?? 1);
     if (result.generator > 0 && generator !== null) {
       runHours += 1;
       fuel += FUEL.perRatedKwHour * generator.kw + FUEL.perKwh * result.generator;

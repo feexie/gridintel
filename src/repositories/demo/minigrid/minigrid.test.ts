@@ -136,13 +136,17 @@ describe("the simulated month agrees with itself", () => {
 });
 
 describe("mini-grid charges and payments", () => {
-  it("pays every vend as it is raised, and bills Palm Landing and public institutions after the month", () => {
+  it("pays every vend as it is raised, and bills only public institutions and Palm Landing's productive-use accounts after the month", () => {
     const vends = dataset.billingRecords.filter((record) => record.basis === "prepaid_vend");
     const paid = new Map(dataset.payments.map((payment) => [payment.billingRecordId, payment.amount.amountMinor]));
-    assert.ok(vends.length > 2900 && vends.every((vend) => paid.get(vend.id) === vend.amount.amountMinor));
+    assert.ok(vends.length > 4000 && vends.every((vend) => paid.get(vend.id) === vend.amount.amountMinor));
     const bills = dataset.billingRecords.filter((record) => record.basis !== "prepaid_vend");
-    // 393 active accounts at Palm Landing, and the public institutions of the other three sites.
-    assert.equal(bills.length, 393 + 6 + 3 + 2);
+    // The public institutions of the four sites, and Palm Landing's eight mills and workshops on credit.
+    assert.equal(bills.length, 6 + 3 + 5 + 2 + 8);
+    // No household and no shop is sold to on credit: a prepaid account cannot owe.
+    const postpaid = registry.customers.filter((customer) => customer.paymentMode === "postpaid");
+    assert.ok(postpaid.every((customer) => customer.category === "public" || customer.productiveUse === true));
+    assert.equal(postpaid.length, 24);
     assert.ok(bills.every((bill) => bill.consumptionPeriod === DEMO_PERIOD && bill.tariffCode !== undefined));
   });
 
