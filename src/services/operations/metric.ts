@@ -9,6 +9,7 @@ import {
   LOADING_REFERENCE,
   RELIABILITY_REFERENCE,
   REVENUE_GAP_REFERENCE,
+  SITE_REFERENCE,
   SPATIAL_REFERENCE,
   SUPPLY_HOURS_REFERENCE,
   convertUnit,
@@ -31,7 +32,7 @@ import {
      derived    a residual: what is left after subtracting other figures
 ========================================================== */
 
-const METHODS = [ENERGY_REFERENCE, ATCC_REFERENCE, RELIABILITY_REFERENCE, LOADING_REFERENCE, SUPPLY_HOURS_REFERENCE, REVENUE_GAP_REFERENCE, CONDITIONS_REFERENCE, SPATIAL_REFERENCE];
+const METHODS = [ENERGY_REFERENCE, ATCC_REFERENCE, RELIABILITY_REFERENCE, LOADING_REFERENCE, SUPPLY_HOURS_REFERENCE, REVENUE_GAP_REFERENCE, CONDITIONS_REFERENCE, SPATIAL_REFERENCE, SITE_REFERENCE];
 
 export function methodView(ref: MethodologyRef): MethodView {
   const known = METHODS.find((method) => method.id === ref.id && method.version === ref.version) ?? statedRuleMethodology(ref);

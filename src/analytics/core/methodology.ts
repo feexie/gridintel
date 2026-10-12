@@ -223,6 +223,44 @@ export const CONDITIONS_REFERENCE: Methodology<ConditionParameters> = {
 };
 
 /* ==========================================================
+   SITE (MINI-GRID) PERFORMANCE
+========================================================== */
+
+export interface SiteParameters {
+  /** The irradiance a PV array is rated at, in W/m²: the reference for the performance ratio. */
+  referenceIrradianceWm2: number;
+  /**
+   * How far from an end of the period a register reading (a generator's hour meter, its fuel
+   * register) or a state-of-charge reading may be to stand for that end, in minutes.
+   */
+  endReadingToleranceMinutes: number;
+  /**
+   * What a change in state of charge is multiplied by to give the change in stored energy.
+   * Only the nameplate capacity is known, so the result is an estimate.
+   */
+  storedEnergyBasis: "nameplate_capacity";
+  /** An interruption its source says is still open is counted to the end of the period, provisionally. */
+  openInterruptions: "counted_to_period_end";
+}
+
+export const SITE_REFERENCE: Methodology<SiteParameters> = {
+  id: "gridintel.site.reference",
+  version: "0.1.0",
+  name: "GridIntel reference site performance",
+  description:
+    "A site's energy is accounted from its own generation: energy generated is the metered output of its PV arrays and generators; " +
+    "energy sent out is metered where the powerhouse hands over to the distribution network; energy delivered is what customer meters " +
+    "recorded. Storage loss is energy into storage less energy out of it less the change in stored energy, which is estimated from " +
+    "state of charge and nameplate capacity. Curtailment is the controller's estimate and is never subtracted from metered generation. " +
+    "Performance ratio is PV energy over rated power times in-plane irradiation at 1,000 W/m². Availability is customer-weighted from " +
+    "recorded interruptions. Missing intervals make a figure unavailable; nothing is substituted.",
+  authority: "gridintel_reference",
+  status: "draft",
+  disclaimer: REFERENCE_DISCLAIMER,
+  parameters: { referenceIrradianceWm2: 1000, endReadingToleranceMinutes: 60, storedEnergyBasis: "nameplate_capacity", openInterruptions: "counted_to_period_end" },
+};
+
+/* ==========================================================
    EQUIPMENT LOADING
 ========================================================== */
 
