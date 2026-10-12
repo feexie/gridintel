@@ -4,6 +4,23 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase 10b checkpoint (2026-10-12).** Since 10a:
+>
+> - **The Mini-grid workspace.** `/dashboard/minigrid` (the portfolio)
+>   and `/dashboard/minigrid/sites/[siteId]`. Read models in
+>   `src/services/minigrid/view.ts`, bound in `src/composition/minigrid.ts`
+>   to the operator's own repositories; components in
+>   `src/components/minigrid`.
+> - **What stands out** is found by five fixed rules in the read model,
+>   each printed with its finding. The screen ranks and filters nothing.
+> - **A reported claim about a site uses the same comparison view** as a
+>   network scope's (`ReportedComparisonView`), and the same component.
+> - **`MetricUnit` gained the site units** (litres per kWh, kWh per kWp,
+>   kWh per connection and others), formatted in one place.
+> - **`spatial.sites()`**: the map for a site screen. A located entity of
+>   kind `minigrid_site` links to its own screen from any map.
+> - **The warm-up covers the Mini-grid screens** on the request path.
+>
 > **State at the Phase 10a checkpoint (2026-10-12).** Since 7b (ADR 0015,
 > ADR 0016, which is proposed):
 >

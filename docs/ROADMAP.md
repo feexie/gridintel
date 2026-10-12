@@ -4,8 +4,9 @@ Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
 Last updated: 2026-10-12. Status: **Phase 10a is accepted** (the Founder,
-2026-10-12; merged to `main`, tag `phase-10a`). **Phase 10b, the screens, is
-in progress on branch `phase-10b`.** Phase 7 is
+2026-10-12; merged to `main`, tag `phase-10a`). **Phase 10b, the screens, is at
+its checkpoint on branch `phase-10b`, awaiting the Founder's review; it is
+not merged.** Phase 7 is
 complete (tags `phase-7a`, `phase-7b`). By the Founder's decision of
 2026-10-10, Phase 10 (Mini-grid Intelligence) comes next, ahead of Phase 8
 (ADR 0015). Phases 8 and 9 follow in their order.
@@ -1668,10 +1669,87 @@ more than three times as much.
 - Collection at every site is below 100% only because of its postpaid
   accounts, by design.
 
-### Phase 10b: Screens (not started; after the Founder approves 10a)
+### Phase 10b: Screens (at its checkpoint; branch `phase-10b`)
 
-A Mini-grid workspace (portfolio and site level), sites on the shared map,
-the reported-against-calculated comparison, embedded site maps.
+**The Founder's scope (2026-10-12).** A Mini-grid workspace in the menu,
+with a portfolio view and a site view; the sites layer on the shared map
+and embedded site maps; every figure with status, origin, and source and
+method; the SYNTHETIC DATA bar. Acceptance: within a minute on a phone, a
+funder can see which site over-reports, which burns diesel inefficiently,
+which is oversized for its demand, and where unpaid money sits.
+
+| Item | Status |
+| --- | --- |
+| Mini-grid Intelligence in the menu; the portfolio at `/dashboard/minigrid`, in place of the placeholder | Done |
+| Portfolio: what stands out, by five printed rules; the four sites side by side; collection by class over every site | Done |
+| Site view at `/dashboard/minigrid/sites/[siteId]`: generation mix and energy flow, PV and curtailment, battery, generator, availability and interruptions, commercial with collection by class, the report against the calculation | Done |
+| Sites on the shared map; a map on the portfolio and on every site screen; a site on any map leads to its screen | Done |
+| Read models and their rules (`src/services/minigrid/view.ts`), tested; browser tests, one of them the acceptance on a phone | Done |
+
+No dependency was added.
+
+**What was built.**
+
+- *Read models.* `minigridPortfolioView` and `minigridSiteView`. Every
+  figure is the site performance service's own, as a `MetricView`. A
+  reported claim uses the same comparison view as Utility, so the same
+  component draws it.
+- *What stands out.* Five rules, each printed under its finding: a report
+  that differs from the records (a claim on the same basis, more than 1%
+  of its own value away); the most fuel per kWh (when at least 20% above
+  the least); PV held back (at least half of what was available
+  curtailed); the site that left the most uncollected, with the classes
+  that owe it; and the class that paid the smallest share across the
+  portfolio. The thresholds are the engineer's, for the Founder to
+  confirm.
+- *Three additions to the analytics*, so that no component calculates:
+  the share of available PV that was curtailed, state of charge day by
+  day, and class totals added across sites (the rate taken of the sums).
+- *Screens.* `src/components/minigrid`: `Portfolio`, `Site` and what they
+  share. They compose the system components; the battery chart and the
+  generation-mix bar are drawn in CSS from the read model's figures.
+- *Map.* `spatial.sites()`: every site with the state outlines for
+  orientation. A site alone would be one mark on an empty ground. A site
+  selected on any map links to its own screen.
+- *Rendering.* Five more pages are built with the application (the
+  portfolio and four sites); on the request path they are warmed with the
+  rest.
+
+**Acceptance, on the demonstration, at 390 px wide** (a browser test holds
+each line). The portfolio opens on "What stands out":
+
+| The funder's question | What the screen says first |
+| --- | --- |
+| Which site over-reports? | "Dry River's report differs from its records on 3 of the 8 figures it states": renewable fraction 68.0% reported, 49.6% calculated (−18.4 pp); availability 99.5% against 95.8%; generator hours 190 against 315 |
+| Which burns diesel inefficiently? | "Dry River's generator burns the most fuel for each kWh it makes, and ran the longest": 0.51 L/kWh against 0.35 at Palm Landing; 315 hours |
+| Which is oversized for its demand? | "Granite Hill took less than half of the PV energy available to it": 72.4% curtailed (estimated); performance ratio 21.8%, 79.0% before curtailment |
+| Where does unpaid money sit? | "Palm Landing left the most revenue uncollected. All of it is owed by 13 postpaid accounts": productive use ₦147,140 (paid 64.7%), public institutions ₦96,001 (paid 20.8%); and across the portfolio, public institutions paid the smallest share (21.2%) |
+
+Palm Landing's report is also listed as differing (collection 97% against
+88.3%, revenue collected ₦2,015,000 against ₦1,833,537), as designed.
+
+**Choices made, for the Founder to confirm.**
+
+- *The menu item is "Sites"*, under a "Mini-grid Intelligence" heading.
+- *The unpaid-money finding names both of Palm Landing's credit classes.*
+  Its mills owe the larger sum and its institutions pay the smaller
+  share; the screen gives both figures and does not pick one.
+- *The agreement tolerance is 1%* of the reported value.
+- *A site screen's map shows all four sites*, with its own selected.
+- *No finding is raised for a claim that cannot be compared*; the counts
+  on each card and site screen show them.
+- *The site view has no per-day or per-hour energy chart.* Only state of
+  charge is drawn by day.
+
+**Known, and not done.**
+
+- The mini-grid read models take no viewer, like the Phase 6 ones; owed
+  before login.
+- The comparison table's note that the reported methodology "has not been
+  verified as equivalent" repeats on every row, as it does in Utility.
+- The overview page's platform cards are unchanged; its Mini-grid card
+  now leads to a working screen.
+- No site economics: the dataset holds no cost records.
 
 ## Phase 11: AI / MCP intelligence
 
