@@ -1,10 +1,11 @@
-import type { IsoTimestamp, Period } from "@/domain";
+import type { DataSource, IsoTimestamp, Period } from "@/domain";
 import type { GridIntelRepositories } from "../repositories/ports/index.ts";
 import type { OperationsRuntime } from "../services/operations/levels.ts";
 import type { ViewerContext } from "../services/spatial/viewer.ts";
 import { createMemoryCache } from "../services/analytics/cache.ts";
 import { DEMO_CLOCK, DEMO_NOTICE, DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
 import { withGeoBoundaries } from "../repositories/geoboundaries/index.ts";
+import { MINIGRID_DATA_SOURCES, createMinigridDemoRepositories } from "../repositories/demo/minigrid/index.ts";
 
 /* ==========================================================
    COMPOSITION ROOT
@@ -26,6 +27,8 @@ import { withGeoBoundaries } from "../repositories/geoboundaries/index.ts";
 interface ProcessState {
   repositories: GridIntelRepositories | null;
   results: ReturnType<typeof createMemoryCache>;
+  /** The mini-grid operator's records and the results computed from them: a set of their own. */
+  minigrid: { repositories: GridIntelRepositories | null; results: ReturnType<typeof createMemoryCache> };
   readiness: Readiness;
 }
 
@@ -39,7 +42,12 @@ interface ProcessState {
 export type Readiness = "not_started" | "warming" | "ready" | "failed";
 
 const globalState = globalThis as typeof globalThis & { __gridintel?: ProcessState };
-const state: ProcessState = (globalState.__gridintel ??= { repositories: null, results: createMemoryCache(), readiness: "not_started" });
+const state: ProcessState = (globalState.__gridintel ??= {
+  repositories: null,
+  results: createMemoryCache(),
+  minigrid: { repositories: null, results: createMemoryCache() },
+  readiness: "not_started",
+});
 
 export function getReadiness(): Readiness {
   return state.readiness;
@@ -84,8 +92,41 @@ export function datasetIsFixed(): boolean {
  * spatial services never relate the two (ADR 0014).
  */
 export function getRepositories(): GridIntelRepositories {
-  state.repositories ??= withGeoBoundaries(createDemoRepositories());
+  state.repositories ??= withDataSources(withGeoBoundaries(createDemoRepositories()), MINIGRID_DATA_SOURCES);
   return state.repositories;
+}
+
+/**
+ * The same repositories, with more data sources on their list. The list of data sources is the
+ * platform's: a record shown beside the utility's (a mini-grid site on the shared map) names a
+ * source that must be found there, so that it is known to be synthetic. No record is added.
+ */
+function withDataSources(repos: GridIntelRepositories, sources: readonly DataSource[]): GridIntelRepositories {
+  return { ...repos, sources: { listDataSources: async () => [...(await repos.sources.listDataSources()), ...sources] } };
+}
+
+/* ==========================================================
+   THE MINI-GRID OPERATOR'S RECORDS
+
+   A mini-grid operator is another organization than the
+   distribution utility, and its records are another set of
+   repositories with a result cache of their own (rule 3 below).
+   The utility's screens never read them, and nothing of the
+   utility's is mixed into a site's figures (ADR 0015).
+
+   Today both sets are synthetic demonstration data on the same
+   fixed clock.
+========================================================== */
+
+export function getMinigridRepositories(): GridIntelRepositories {
+  state.minigrid.repositories ??= createMinigridDemoRepositories();
+  return state.minigrid.repositories;
+}
+
+/** What the mini-grid read models are given: the operator's repositories, the clock and their own cache. */
+export function getMinigridRuntime(): OperationsRuntime {
+  const clock = getClock();
+  return { repos: getMinigridRepositories(), now: clock.now, period: clock.reportingPeriod, caveats: { tariffs: getDataNotice()?.caveats.tariffs }, cache: state.minigrid.results };
 }
 
 export interface RuntimeClock {
@@ -179,6 +220,7 @@ export function getViewer(): ViewerContext {
 
 export function invalidateResults(): void {
   state.results.clear();
+  state.minigrid.results.clear();
 }
 
 /** What every read model is given: the adapter, the clock, the dataset's caveats and the cache. */

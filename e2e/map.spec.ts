@@ -128,7 +128,7 @@ test("revenue not realised is totalled by the synthetic districts only, with wha
   await expect(panel).toContainText("It follows where transformers are, not where customers live.");
 });
 
-test("LGAs are fetched only when their layer is switched on, and mini-grid sites have a place with nothing in it", async ({ page }) => {
+test("LGAs are fetched only when their layer is switched on", async ({ page }) => {
   const asked: string[] = [];
   page.on("request", (request) => {
     if (request.url().includes("/api/areas/")) asked.push(new URL(request.url()).pathname);
@@ -139,9 +139,28 @@ test("LGAs are fetched only when their layer is switched on, and mini-grid sites
   await layer(page, "reference.lgas").check();
   await expect(page.locator("path.gi-outline-lga")).toHaveCount(774);
   expect(asked).toEqual(["/api/areas/state", "/api/areas/lga"]);
+});
+
+test("mini-grid sites fill their layer: off when the map opens, four synthetic sites when switched on", async ({ page }) => {
+  await open(page);
+  // The map opens on the utility network; the sites are elsewhere in the country and are not drawn until asked for.
+  await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(0);
+  await expect(page.locator("path.gi-kind-substation")).toHaveCount(2);
   const sites = page.locator('[data-layer="minigrid.sites"]');
-  await expect(sites.locator("input")).toBeDisabled();
-  await expect(sites).toContainText("No source of mini-grid sites is connected");
+  await expect(sites.locator("input")).toBeEnabled();
+  await expect(sites.locator("input")).not.toBeChecked();
+  await layer(page, "minigrid.sites").check();
+  await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(4);
+  await expect(page.getByText("SYNTHETIC DATA")).toBeVisible();
+  // A site is selected like any asset: its key figures, each with status and origin, and nothing upstream of it.
+  await page.locator("[data-select-asset]").selectOption("minigrid_site:MG-DRY");
+  await expect(selected(page)).toContainText("Dry River");
+  await expect(selected(page)).toContainText("Mini-grid site");
+  await expect(figure(page, "Renewable fraction")).toContainText("49.6%");
+  await expect(figure(page, "Renewable fraction")).toContainText("GridIntel reference site performance");
+  await expect(figure(page, "Active connections")).toContainText("300");
+  // A synthetic site is in no real state.
+  await expect(selected(page)).not.toContainText("Niger");
 });
 
 test("the boundary outlines come with their credit and where they came from", async ({ request }) => {

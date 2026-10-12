@@ -126,8 +126,11 @@ async function areaLayer(context: SpatialContext, scoped: ScopedModel, layer: La
  * supplies it and what it supplies are drawn; a focus the viewer cannot see gives an empty map.
  * With `figures: false` no layer's figures or key figures are asked for: an overlay, which marks
  * only what it has a figure for, is then empty, and each entity still says where it sits.
+ * `frame` names the layers whose entities set the box the map opens on: every layer drawn
+ * when it is absent. A layer that starts switched off can be left out of it, so that entities
+ * far from the rest do not set the opening view.
  */
-export function mapView(context: SpatialContext, options: { layers?: readonly string[]; focus?: LocatedRef; figures?: boolean } = {}): Promise<MapView> {
+export function mapView(context: SpatialContext, options: { layers?: readonly string[]; focus?: LocatedRef; figures?: boolean; frame?: readonly string[] } = {}): Promise<MapView> {
   const withFigures = options.figures !== false;
   const { runtime, registry, viewer } = context;
   const wanted = options.layers ?? registry.modules.flatMap((spatialModule) => spatialModule.layers.filter((layer) => layer.onByDefault).map((layer) => layer.id));
@@ -138,7 +141,7 @@ export function mapView(context: SpatialContext, options: { layers?: readonly st
   });
 
   const focus = options.focus === undefined ? "*" : entityKey(options.focus);
-  const key = `spatial:map|${chosen.map(({ layer }) => layer.id).join(",")}|${focus}|${withFigures ? "figures" : "places"}|${viewerScopeKey(viewer)}|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
+  const key = `spatial:map|${chosen.map(({ layer }) => layer.id).join(",")}|${focus}|${withFigures ? "figures" : "places"}|${options.frame?.join(",") ?? "*"}|${viewerScopeKey(viewer)}|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
   return (runtime.cache ?? NO_CACHE).get(key, async () => {
     const scoped = await scopeModel(runtime, registry, viewer);
     const within = options.focus === undefined ? null : ((await focusKeys(context, scoped, options.focus)) ?? new Set<string>());
@@ -195,7 +198,8 @@ export function mapView(context: SpatialContext, options: { layers?: readonly st
 
     const all = new SourceTrail();
     for (const sourcing of used) all.addSourcing(sourcing);
-    const shown = new Set(layers.flatMap((layer) => layer.features.map((feature) => `${feature.entity.kind}:${feature.entity.id}`)));
+    const framed = options.frame === undefined ? layers : layers.filter((layer) => options.frame?.includes(layer.id));
+    const shown = new Set(framed.flatMap((layer) => layer.features.map((feature) => `${feature.entity.kind}:${feature.entity.id}`)));
     return {
       modules: registry.modules.map((spatialModule) => ({ id: spatialModule.id, title: spatialModule.title, layers: spatialModule.layers.map((layer) => summary(spatialModule, layer)) })),
       layers,
