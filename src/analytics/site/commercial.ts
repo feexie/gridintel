@@ -35,7 +35,12 @@ import { siteCustomers, siteScope } from "./registry.ts";
    is unknown, so with any such account the share is not available.
 
    The same totals are given by tariff tier, as the operator names
-   its tiers. Amounts are in major currency units. Records in another
+   its tiers, and by CUSTOMER CLASS, to show who has not paid: an
+   account recorded as productive use is its own class, and any
+   other account is in the class of its category (residential,
+   commercial, public). Each class says how many of its accounts are
+   prepaid and postpaid, because a prepaid account pays as it buys
+   and cannot owe. Amounts are in major currency units. Records in another
    currency make the revenue figures unavailable; nothing is
    converted. With no billing records available at all every figure
    is missing, never zero.
@@ -49,6 +54,20 @@ export interface TierTotals {
   energySoldKwh: number | null;
   revenueBilled: number;
   revenueCollected: number;
+}
+
+export interface ClassTotals {
+  /** "productive_use", or the account's category; "not_recorded" for an account with neither. */
+  customerClass: string;
+  accounts: number;
+  prepaidAccounts: number;
+  postpaidAccounts: number;
+  revenueBilled: number;
+  revenueCollected: number;
+  /** Billed less collected in the period, on a cash basis. */
+  notCollected: number;
+  /** Collected ÷ billed; null for a class that was billed nothing. */
+  collectionEfficiency: number | null;
 }
 
 export interface SiteCommercial {
@@ -67,6 +86,8 @@ export interface SiteCommercial {
   productiveUse: { accounts: number; notRecorded: number };
   /** By tariff tier, in tier-name order; "not_recorded" holds accounts with no tier. */
   byTier: TierTotals[];
+  /** By customer class, in class-name order. */
+  byClass: ClassTotals[];
   /** Charges by how the energy was determined. */
   chargesByBasis: Record<BillingRecord["basis"], number>;
 }
@@ -105,21 +126,34 @@ export function computeSiteCommercial(params: {
   let collected = 0;
   let productiveKwh: number | null = 0;
   const tiers = new Map<string, TierTotals>();
+  const classes = new Map<string, ClassTotals>();
   for (const customer of accounts) {
     const tierName = customer.tariffTier ?? "not_recorded";
     let tier = tiers.get(tierName);
     if (tier === undefined) tiers.set(tierName, (tier = { tier: tierName, accounts: 0, activeAccounts: 0, energySoldKwh: 0, revenueBilled: 0, revenueCollected: 0 }));
     tier.accounts += 1;
     if (customer.accountStatus === "active") tier.activeAccounts += 1;
+    const className = customer.productiveUse === true ? "productive_use" : (customer.category ?? "not_recorded");
+    let group = classes.get(className);
+    if (group === undefined) classes.set(className, (group = { customerClass: className, accounts: 0, prepaidAccounts: 0, postpaidAccounts: 0, revenueBilled: 0, revenueCollected: 0, notCollected: 0, collectionEfficiency: null }));
+    group.accounts += 1;
+    if (customer.paymentMode === "prepaid") group.prepaidAccounts += 1;
+    if (customer.paymentMode === "postpaid") group.postpaidAccounts += 1;
     const entry = byAccount.get(customer.id);
     if (entry === undefined) continue;
     billed += entry.amountBilled;
     collected += entry.amountPaid;
     tier.revenueBilled += entry.amountBilled;
     tier.revenueCollected += entry.amountPaid;
+    group.revenueBilled += entry.amountBilled;
+    group.revenueCollected += entry.amountPaid;
     tier.energySoldKwh = tier.energySoldKwh === null || entry.energyBilledKwh === null ? null : tier.energySoldKwh + entry.energyBilledKwh;
     energyKwh = energyKwh === null || entry.energyBilledKwh === null ? null : energyKwh + entry.energyBilledKwh;
     if (customer.productiveUse === true) productiveKwh = productiveKwh === null || entry.energyBilledKwh === null ? null : productiveKwh + entry.energyBilledKwh;
+  }
+  for (const group of classes.values()) {
+    group.notCollected = group.revenueBilled - group.revenueCollected;
+    group.collectionEfficiency = group.revenueBilled === 0 ? null : group.revenueCollected / group.revenueBilled;
   }
   const chargesByBasis: SiteCommercial["chargesByBasis"] = { meter_reading: 0, prepaid_vend: 0, estimated: 0 };
   for (const record of billingRecords) {
@@ -199,6 +233,7 @@ export function computeSiteCommercial(params: {
     }),
     productiveUse: { accounts: accounts.filter((customer) => customer.productiveUse === true).length, notRecorded },
     byTier: [...tiers.values()].sort((a, b) => (a.tier < b.tier ? -1 : a.tier > b.tier ? 1 : 0)),
+    byClass: [...classes.values()].sort((a, b) => (a.customerClass < b.customerClass ? -1 : a.customerClass > b.customerClass ? 1 : 0)),
     chargesByBasis,
   };
 }

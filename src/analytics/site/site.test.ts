@@ -407,6 +407,16 @@ describe("site revenue and collection", () => {
     assert.deepEqual(result.chargesByBasis, { meter_reading: 1, prepaid_vend: 1, estimated: 0 });
   });
 
+  it("gives collection by customer class, with how many accounts of each are prepaid and postpaid", () => {
+    const classed = commercial({ registry: { customers: [customer("C1", "SP1", { productiveUse: true, paymentMode: "postpaid", category: "commercial" }), customer("C2", "SP2", { category: "residential", paymentMode: "prepaid" })] }, payments: [payment("P1", "C1", 1500), payment("P2", "C2", 2000)] });
+    assert.deepEqual(classed.byClass, [
+      { customerClass: "productive_use", accounts: 1, prepaidAccounts: 0, postpaidAccounts: 1, revenueBilled: 6000, revenueCollected: 1500, notCollected: 4500, collectionEfficiency: 0.25 },
+      { customerClass: "residential", accounts: 1, prepaidAccounts: 1, postpaidAccounts: 0, revenueBilled: 2000, revenueCollected: 2000, notCollected: 0, collectionEfficiency: 1 },
+    ]);
+    // A class that was billed nothing has no rate, not a rate of zero.
+    assert.equal(commercial({ charges: [], payments: [] }).byClass[0].collectionEfficiency, null);
+  });
+
   it("does not take an account with no productive-use flag to be a household", () => {
     const unknown = commercial({ registry: { customers: [customer("C1", "SP1", { productiveUse: true }), customer("C2", "SP2", { productiveUse: undefined })] } });
     assert.equal(unknown.productiveUseShare.status, "insufficient_data");
