@@ -3,7 +3,7 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-12. Status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-10-13. Status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -1750,9 +1750,35 @@ Palm Landing's report is also listed as differing (collection 97% against
   before login.
 - The comparison table's note that the reported methodology "has not been
   verified as equivalent" repeats on every row, as it does in Utility.
+  (Put right for site screens in the Phase 10 polish, below; Utility's
+  tables still repeat it.)
 - The overview page's platform cards are unchanged; its Mini-grid card
   now leads to a working screen.
 - No site economics: the dataset holds no cost records.
+
+### Phase 10 polish (2026-10-13; branch `phase-10-polish`, tag `phase-10-polish`)
+
+Five corrections asked for by the Founder after checking production on a
+phone.
+
+- *The unverified-methodology note is said once.* On a site screen it is
+  above the comparison table (`comparisonNote` in the site read model) and
+  on no row. The Utility comparison tables are unchanged and still carry
+  it on each row.
+- *Origin is a whole word beside every figure in a table*, in every
+  workspace: "Derived", "Calculated", never the first four letters.
+- *Collection efficiency on a site is shown under the name "GridIntel
+  reference collection".* It is calculated by the platform's one
+  collection calculation, recorded under `gridintel.atcc.reference`; only
+  the displayed name changes on site screens and the site's map figures.
+  The id and version are shown beside it as recorded.
+- *The map's selection panel gives the true reason an entity is in no
+  area* (`areasReason`, from the spatial service): synthetic data is not
+  placed in real states or LGAs and no synthetic district covers it; or it
+  crosses a boundary; or it has no location. For a site it also says that
+  no substation supplies it and that its connections are counted, not
+  drawn, in place of "Nothing above it is held" and "Nothing further".
+- *Asset labels*: "PV inverter", "Battery inverter".
 
 ## Phase 11: AI / MCP intelligence
 
