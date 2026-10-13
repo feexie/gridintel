@@ -4,6 +4,7 @@ import { events } from "./events.ts";
 import { executive } from "./executive.ts";
 import { minigrid } from "./minigrid.ts";
 import { operations } from "./operations.ts";
+import { overview } from "./overview.ts";
 import { reliability } from "./reliability.ts";
 import { revenue } from "./revenue.ts";
 import { spatial } from "./spatial.ts";
@@ -59,11 +60,15 @@ export async function warmResults(): Promise<void> {
       () => events.view(),
       // The map draws on the blocks above. Warmed for the viewer of the moment only: a result for
       // one viewer is never served to another, so a second viewer's first map is computed on request.
-      () => spatial.workspace(),
+      () => spatial.sector("utility"),
       () => spatial.embedded(),
       // The Mini-grid workspace: every site is computed for the portfolio, so the site screens are warm too.
       () => minigrid.portfolioView(),
       () => spatial.sites(),
+      () => spatial.sector("minigrid"),
+      // The overviews are put together from the read models above.
+      () => spatial.platform(),
+      () => overview.platform(),
     ];
     for (const step of steps) {
       await yieldToRequests();

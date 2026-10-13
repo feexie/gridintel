@@ -7,14 +7,18 @@ import { test } from "@playwright/test";
 const target = process.env.SCREENSHOTS;
 const OPERATIONS = "/dashboard/utility/operations";
 const SHOTS: [string, string][] = [
-  ["map", "/dashboard/map"],
+  ["platform-overview", "/dashboard"],
+  ["utility-overview", "/dashboard/utility"],
+  ["utility-map", "/dashboard/utility/map"],
+  ["utility-assistant-planned", "/dashboard/utility/ai"],
+  ["minigrid-overview", "/dashboard/minigrid"],
+  ["minigrid-map", "/dashboard/minigrid/map"],
   ["executive", "/dashboard/utility/executive"],
   ["reliability", "/dashboard/utility/reliability"],
   ["revenue", "/dashboard/utility/revenue"],
   ["assets", "/dashboard/utility/assets"],
   ["events", "/dashboard/utility/events"],
   ["not-found", "/no-such-page"],
-  ["utility-hub", "/dashboard/utility"],
   ["operations", OPERATIONS],
   ["region", `${OPERATIONS}/regions/demo-region-northfield`],
   ["substation", `${OPERATIONS}/substations/SS-RIV`],
@@ -31,7 +35,7 @@ const SHOTS: [string, string][] = [
   ["service-point-estimated-reading", `${OPERATIONS}/service-points/SP-OLD2-005`],
   ["service-point-reading-outside-window", `${OPERATIONS}/service-points/SP-OLD6-022`],
   ["service-point-ami", `${OPERATIONS}/service-points/SP-MKT2-005`],
-  ["minigrid-portfolio", "/dashboard/minigrid"],
+  ["minigrid-portfolio", "/dashboard/minigrid/sites"],
   ["minigrid-site-dry-river", "/dashboard/minigrid/sites/MG-DRY"],
   ["minigrid-site-granite-hill", "/dashboard/minigrid/sites/MG-GRN"],
   ["minigrid-site-palm-landing", "/dashboard/minigrid/sites/MG-PLM"],
@@ -39,13 +43,13 @@ const SHOTS: [string, string][] = [
 ];
 
 /** Screens also captured at the width of a phone. */
-const PHONE = ["map", "feeder-farm-road", "events", "minigrid-portfolio", "minigrid-site-dry-river", "minigrid-site-granite-hill", "minigrid-site-palm-landing", "minigrid-site-tamarind-cross"];
+const PHONE = ["platform-overview", "utility-overview", "utility-map", "utility-assistant-planned", "minigrid-overview", "minigrid-map", "executive", "feeder-farm-road", "events", "minigrid-portfolio", "minigrid-site-dry-river", "minigrid-site-granite-hill", "minigrid-site-palm-landing", "minigrid-site-tamarind-cross"];
 
 test.describe("screenshots", () => {
   test.skip(!target, "set SCREENSHOTS to a folder to capture");
   // The map with an asset selected, the district totals on and the open fault marked.
   test("map-trace", async ({ page }) => {
-    await page.goto("/dashboard/map");
+    await page.goto("/dashboard/utility/map");
     await page.locator(".leaflet-container path.gi-point").first().waitFor();
     await page.locator("[data-select-asset]").selectOption("distribution_transformer:DT-OLD-2");
     await page.locator('[data-layer="utility.districts"] input').check();

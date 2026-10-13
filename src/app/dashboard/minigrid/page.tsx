@@ -1,18 +1,11 @@
-import { MinigridPortfolio } from "@/components/minigrid/Portfolio";
+import { MinigridOverview } from "@/components/overview/SectorOverview";
 import { PreparingData } from "@/components/system/PreparingData";
-import { EmbeddedMap } from "@/components/system/map/EmbeddedMap";
-import { minigrid } from "@/composition/minigrid";
-import { spatial } from "@/composition/spatial";
+import { overview } from "@/composition/overview";
+import { MINIGRID_HOME } from "@/constants/navigation";
 import { preparing } from "../utility/screen";
 
-/* The Mini-grid workspace. Built with the application on the fixed demonstration dataset;
-   rendered on each request for any other (ADR 0012). */
-export default async function MinigridPage() {
+/* The Mini-grid Overview: what needs attention across the sites, with links in. */
+export default async function MinigridOverviewPage() {
   if (await preparing()) return <PreparingData />;
-  return (
-    <div className="space-y-4">
-      <MinigridPortfolio view={await minigrid.portfolioView()} />
-      <EmbeddedMap view={await spatial.sites()} title="The sites on the map" />
-    </div>
-  );
+  return <MinigridOverview view={await overview.minigrid()} home={MINIGRID_HOME} />;
 }

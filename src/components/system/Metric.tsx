@@ -21,7 +21,7 @@ export function StatusBadge({ status }: { status: DisplayStatus }) {
   return (
     <span
       title={STATUS_HINT[status]}
-      className={`inline-flex items-center gap-1 whitespace-nowrap border px-1.5 py-px text-micro font-medium uppercase tracking-wide ${STATUS_STYLE[status]}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] border px-1.5 py-px text-micro font-medium uppercase tracking-wide ${STATUS_STYLE[status]}`}
     >
       <span aria-hidden>{STATUS_MARK[status]}</span>
       {STATUS_LABEL[status]}
@@ -33,7 +33,7 @@ export function OriginTag({ origin }: { origin: DisplayOrigin }) {
   return (
     <span
       title={ORIGIN_HINT[origin]}
-      className="inline-flex border border-line-strong bg-line/60 px-1.5 py-px text-micro font-medium uppercase tracking-wide text-ink-3"
+      className="inline-flex rounded-[3px] border border-line-strong bg-line/60 px-1.5 py-px text-micro font-medium uppercase tracking-wide text-ink-3"
     >
       {ORIGIN_LABEL[origin]}
     </span>
@@ -139,7 +139,7 @@ export function MetricTile({
   children?: React.ReactNode;
 }) {
   return (
-    <div data-metric={metric.label} className="relative border border-line bg-well/40 px-3 py-2">
+    <div data-metric={metric.label} className="relative rounded-tile border border-line bg-well/40 px-3 py-2">
       <div className="flex items-start justify-between gap-2">
         <p className="text-caption uppercase tracking-wide text-ink-4">{metric.label}</p>
         {/* A figure the platform has no source for has no origin to state. */}
@@ -156,7 +156,7 @@ export function MetricTile({
           <span className="group-open:hidden">Source &amp; method ▸</span>
           <span className="hidden group-open:inline">Source &amp; method ▾</span>
         </summary>
-        <div className="absolute left-0 top-full z-30 mt-1 w-[26rem] max-w-[90vw] border border-line-strong bg-app p-3 shadow-xl shadow-black/60">
+        <div className="absolute left-0 top-full z-30 mt-1 w-[26rem] max-w-[90vw] rounded-tile border border-line-strong bg-panel p-3 shadow-pop">
           <SourceAndMethod metric={metric} sourcing={sourcing} />
         </div>
       </details>
@@ -200,7 +200,7 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border border-line bg-panel">
+    <section className="rounded-panel border border-line bg-panel shadow-panel">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
         <h2 className="text-xs font-semibold uppercase tracking-title text-ink-2">{title}</h2>
         {aside ? <div className="text-caption text-ink-4">{aside}</div> : null}

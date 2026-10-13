@@ -135,6 +135,7 @@ export function NetworkMap({
   incidents = [],
   compact = false,
   select,
+  open,
 }: {
   view: MapView;
   /** What is in progress, each with what is behind it; choosing one marks it on the map. */
@@ -143,13 +144,15 @@ export function NetworkMap({
   compact?: boolean;
   /** The entity selected when the map opens, as "<kind>:<id>". */
   select?: string;
+  /** The layers that are on when the map opens. Without it: each layer's own default, or all of them on a compact map. */
+  open?: readonly string[];
 }) {
   const themes = view.layers.filter((layer) => layer.exclusiveGroup !== null);
   const [on, setOn] = useState<ReadonlySet<string>>(
     // A map inside another screen was given exactly the layers that screen is about: all of them are on.
-    () => new Set(view.layers.filter((layer) => (compact || layer.onByDefault) && layer.exclusiveGroup === null).map((layer) => layer.id)),
+    () => new Set(view.layers.filter((layer) => (open ? open.includes(layer.id) : compact || layer.onByDefault) && layer.exclusiveGroup === null).map((layer) => layer.id)),
   );
-  const [theme, setTheme] = useState<string | null>(() => themes.find((layer) => layer.onByDefault)?.id ?? null);
+  const [theme, setTheme] = useState<string | null>(() => themes.find((layer) => (open ? open.includes(layer.id) : layer.onByDefault))?.id ?? null);
   const [selected, setSelected] = useState<string | null>(select ?? null);
   const [incident, setIncident] = useState<string | null>(null);
   const [outlines, setOutlines] = useState<Record<string, AreaOutlinesView | undefined>>({});
@@ -205,7 +208,7 @@ export function NetworkMap({
   return (
     <div className={`grid gap-3 ${compact ? "" : "xl:grid-cols-[minmax(0,1fr)_21rem]"}`} data-map>
       <div className="min-w-0 space-y-2">
-        <div className={`relative border border-line bg-well ${compact ? "h-72" : "h-[62vh] max-h-[46rem] min-h-80"}`}>
+        <div className={`relative overflow-hidden rounded-panel border border-line bg-well ${compact ? "h-72" : "h-[62vh] max-h-[46rem] min-h-80"}`}>
           <MapCanvas view={view} on={shown} selected={selected} highlighted={highlighted} outlines={outlines} onSelect={setSelected} />
           {/* On the map itself, so that they are in any picture taken of it. */}
           <div className="pointer-events-none absolute bottom-1 right-1 z-[500] max-w-[75%] space-y-0.5 text-right text-micro leading-tight text-ink-3" data-map-credits>
@@ -228,13 +231,13 @@ export function NetworkMap({
       </div>
 
       <div className={`min-w-0 space-y-3 ${compact ? "grid gap-3 space-y-0 md:grid-cols-2" : ""}`}>
-        <section className="border border-line bg-panel p-3" aria-label="Selected asset">
+        <section className="rounded-panel border border-line bg-panel p-3 shadow-panel" aria-label="Selected asset">
           <label className="block text-caption text-ink-5">
             Select an asset
             <select
               value={selected ?? ""}
               onChange={(event) => setSelected(event.target.value === "" ? null : event.target.value)}
-              className="mt-0.5 block w-full border border-line-strong bg-app px-1.5 py-1 text-xs text-ink"
+              className="gi-tap mt-0.5 block w-full rounded-tile border border-line-strong bg-app px-1.5 py-1 text-xs text-ink"
               data-select-asset
             >
               <option value="">Click the map, or choose here</option>
@@ -252,7 +255,7 @@ export function NetworkMap({
 
         <div className="space-y-3">
           {incidents.length > 0 ? (
-            <section className="border border-line bg-panel p-3" aria-label="In progress now">
+            <section className="rounded-panel border border-line bg-panel p-3 shadow-panel" aria-label="In progress now">
               <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">In progress now ({incidents.length})</h3>
               {incidents.map((one) => (
                 <div key={one.id} data-incident={one.id} className="text-xs">
@@ -275,7 +278,7 @@ export function NetworkMap({
             </section>
           ) : null}
 
-          <section className="border border-line bg-panel p-3" aria-label="Layers">
+          <section className="rounded-panel border border-line bg-panel p-3 shadow-panel" aria-label="Layers">
             <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">Layers</h3>
             {view.modules.map((spatialModule) => {
               const held = spatialModule.layers.flatMap((layer) => view.layers.find((candidate) => candidate.id === layer.id) ?? []);
@@ -308,7 +311,7 @@ export function NetworkMap({
           </section>
 
           {legends.length > 0 ? (
-            <section className="border border-line bg-panel p-3" aria-label="Legend" data-legend>
+            <section className="rounded-panel border border-line bg-panel p-3 shadow-panel" aria-label="Legend" data-legend>
               {legends.map((layer) => (
                 <div key={layer.id} className="mb-2 last:mb-0">
                   <h3 className="mb-1 text-caption uppercase tracking-wide text-ink-4">{layer.title}</h3>

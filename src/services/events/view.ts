@@ -1,13 +1,13 @@
 import type { AssetRef, EntityRef, ScopeRef } from "@/domain";
 import type { OpenOutage } from "../../analytics/index.ts";
 import type { Loaded, OperationsRuntime } from "../operations/levels.ts";
-import type { AlarmSubjectView, MetricView, SourcingView } from "../operations/views.ts";
+import type { AlarmSubjectView, MetricView } from "../operations/views.ts";
 import type { EventsWorkspaceView, OpenInterruptionRow, PlaceRow, PlaceView } from "./views.ts";
 import { feedersOfSubstation, placeOfAsset } from "../../analytics/index.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { openInterruptions } from "../analytics/openInterruptions.ts";
 import { activeAccountsUnder, alarmSubject, alarmsBlock, allAlarmsBlock, loadRegistry } from "../operations/levels.ts";
-import { registryCount, sourcingView, unavailable } from "../operations/metric.ts";
+import { mergeSourcing, registryCount, sourcingView, unavailable } from "../operations/metric.ts";
 import { CAUSE_LABEL } from "../reliability/view.ts";
 
 /* ==========================================================
@@ -125,11 +125,6 @@ function interruptionRow(loaded: Loaded, outage: OpenOutage): OpenInterruptionRo
 }
 
 /** The sources of two results, as one list. Synthetic as soon as either is. */
-function mergeSourcing(a: SourcingView, b: SourcingView): SourcingView {
-  const sources = new Map([...a.sources, ...b.sources].map((source) => [source.id, source]));
-  return { synthetic: a.synthetic || b.synthetic, sources: [...sources.values()].sort((x, y) => (x.id < y.id ? -1 : 1)) };
-}
-
 export async function eventsWorkspaceView(runtime: OperationsRuntime): Promise<EventsWorkspaceView> {
   const key = `view:events-workspace|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
   return (runtime.cache ?? NO_CACHE).get(key, () => build(runtime));

@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 /* The Mini-grid workspace: the sites side by side, what stands out among them, and one site in full. */
 
-const SITES = "/dashboard/minigrid";
-const site = (id: string) => `${SITES}/sites/${id}`;
+const SITES = "/dashboard/minigrid/sites";
+const site = (id: string) => `${SITES}/${id}`;
 const finding = (page: Page, key: string) => page.locator(`[data-finding="${key}"]`);
 const card = (page: Page, id: string) => page.locator(`[data-site="${id}"]`);
 const tile = (page: Page, label: string) => page.locator(`[data-metric="${label}"]`).first();
@@ -168,10 +168,9 @@ test("a site that is not in the register is said not to be, in the dashboard fra
   await expect(page.getByRole("note").getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
 });
 
-test("a site on the Map workspace leads to its own screen", async ({ page }) => {
-  await page.goto("/dashboard/map");
+test("a site on the Mini-grid GIS Map leads to its own screen", async ({ page }) => {
+  await page.goto("/dashboard/minigrid/map");
   await expect(page.locator(".leaflet-container path.gi-point").first()).toBeVisible();
-  await page.locator('[data-layer="minigrid.sites"] input').check();
   await page.locator("[data-select-asset]").selectOption("minigrid_site:MG-GRN");
   await expect(page.locator("[data-selected]").getByRole("link", { name: /Open the site/ })).toHaveAttribute("href", "/dashboard/minigrid/sites/MG-GRN");
 });

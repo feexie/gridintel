@@ -80,6 +80,12 @@ export function sourcingView(sourcing: Sourcing): SourcingView {
   };
 }
 
+/** The sources of two results as one list, each source once, in id order; synthetic when either is. */
+export function mergeSourcing(a: SourcingView, b: SourcingView): SourcingView {
+  const sources = new Map([...a.sources, ...b.sources].map((source) => [source.id, source]));
+  return { synthetic: a.synthetic || b.synthetic, sources: [...sources.values()].sort((x, y) => (x.id < y.id ? -1 : 1)) };
+}
+
 const EMPTY = { derivation: null, method: null, inputs: [], estimatedInputs: [], missingInputs: [], warnings: [], note: null };
 
 /** A figure the platform has no source for. */

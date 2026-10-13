@@ -15,5 +15,5 @@ export default async function MinigridSitePage({ params }: { params: Promise<{ s
   const id = decodeURIComponent(siteId);
   const view = await minigrid.siteView(id);
   if (view === null) notFound();
-  return <MinigridSite view={view} map={<EmbeddedMap view={await spatial.sites()} title="Where the site is" select={`minigrid_site:${id}`} />} />;
+  return <MinigridSite view={view} map={<EmbeddedMap view={await spatial.sites()} title="Where the site is" select={`minigrid_site:${id}`} sector="minigrid" />} />;
 }

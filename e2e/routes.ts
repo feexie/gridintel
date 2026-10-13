@@ -11,7 +11,12 @@ export const REQUEST_ENV = { ...process.env, GRIDINTEL_RENDER: "request" };
 export const OPERATIONS = "/dashboard/utility/operations";
 
 export const ROUTES = [
-  "/dashboard/map",
+  // The overviews, and each sector's GIS Map.
+  "/dashboard",
+  "/dashboard/utility",
+  "/dashboard/utility/map",
+  "/dashboard/minigrid",
+  "/dashboard/minigrid/map",
   "/dashboard/utility/executive",
   "/dashboard/utility/reliability",
   "/dashboard/utility/revenue",
@@ -32,7 +37,7 @@ export const ROUTES = [
   `${OPERATIONS}/service-points/SP-OLD2-001`,
   `${OPERATIONS}/service-points/SP-OLD2-004`,
   `${OPERATIONS}/service-points/SP-MKT2-005`,
-  // The Mini-grid workspace and one site.
-  "/dashboard/minigrid",
+  // The Sites workspace and one site.
+  "/dashboard/minigrid/sites",
   "/dashboard/minigrid/sites/MG-DRY",
 ];

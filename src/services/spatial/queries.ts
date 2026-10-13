@@ -333,12 +333,14 @@ export function areaOutlines(context: SpatialContext, kind: AreaKind): Promise<A
  * the entity it began at. An incident that began at an entity the viewer cannot see is not
  * given at all: its existence would say something about a place that is not the viewer's.
  */
-export function incidentsNow(context: SpatialContext): Promise<IncidentsView> {
-  return cached(context, "incidents", async (scoped) => {
+export function incidentsNow(context: SpatialContext, options: { modules?: readonly string[] } = {}): Promise<IncidentsView> {
+  return cached(context, `incidents|${options.modules?.join(",") ?? "*"}`, async (scoped) => {
     const incidents: IncidentView[] = [];
     const used: Sourcing[] = [];
     let coverage: CoverageView = "complete";
     for (const held of scoped.modules) {
+      // With `modules`, only what those modules hold: a sector's map shows its own sector.
+      if (options.modules !== undefined && !options.modules.includes(held.module.id)) continue;
       if (held.module.incidents === undefined) continue;
       const { result, sourcing } = await held.module.incidents(context.runtime);
       if (RANK[result.completeness] > RANK[coverage]) coverage = result.completeness;

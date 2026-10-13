@@ -23,11 +23,28 @@ import { getMinigridRuntime, getRuntime, getViewer } from "./runtime.ts";
 
 export const SPATIAL_REGISTRY = createSpatialRegistry([UTILITY_SPATIAL_MODULE, minigridSpatialModule(getMinigridRuntime), REFERENCE_SPATIAL_MODULE]);
 
-/** What the Map workspace shows: every registered layer but the service points, which are drawn for one transformer at a time. */
-const WORKSPACE_LAYERS = SPATIAL_REGISTRY.modules.flatMap((spatialModule) => spatialModule.layers.map((layer) => layer.id)).filter((id) => id !== "utility.service_points");
+/** The layers every sector's map carries beside its own: reference geography, for orientation. */
+const REFERENCE_LAYERS = REFERENCE_SPATIAL_MODULE.layers.map((layer) => layer.id);
 
-/** The layers that are on when the Map workspace opens. They set its opening view: a layer that starts switched off must not pull it out to the whole country. */
-const WORKSPACE_FRAME = SPATIAL_REGISTRY.modules.flatMap((spatialModule) => spatialModule.layers.filter((layer) => layer.onByDefault).map((layer) => layer.id));
+/**
+ * A sector's GIS Map (ADR 0017): the one shared map, given that sector's layers and the reference
+ * geography. `open` names the layers that are on when it opens; they also set its opening view,
+ * so a layer that starts switched off does not pull the map out to the whole country.
+ */
+const SECTOR_MAPS = {
+  // Every Utility layer but the service points, which are drawn for one transformer at a time.
+  utility: {
+    layers: [...UTILITY_SPATIAL_MODULE.layers.map((layer) => layer.id).filter((id) => id !== "utility.service_points"), ...REFERENCE_LAYERS],
+    open: [...UTILITY_SPATIAL_MODULE.layers.filter((layer) => layer.onByDefault).map((layer) => layer.id), ...REFERENCE_SPATIAL_MODULE.layers.filter((layer) => layer.onByDefault).map((layer) => layer.id)],
+  },
+  // The sites are the sector: they are on when its map opens, with the states to say where they are.
+  minigrid: { layers: ["minigrid.sites", ...REFERENCE_LAYERS], open: ["minigrid.sites", "reference.states"] },
+} as const;
+
+export type SectorId = keyof typeof SECTOR_MAPS;
+
+/** The small map of the Platform Overview: where each sector's assets are, among the states. */
+const PLATFORM_LAYERS = ["utility.substations", "minigrid.sites", "reference.states"];
 
 /** What a map embedded in another screen shows: the network, its loading, and what is wrong now. */
 const EMBEDDED_LAYERS = ["utility.substations", "utility.feeders", "utility.transformers", "utility.transformers.loading", "utility.open_outages", "utility.standing_alarms"];
@@ -39,8 +56,17 @@ function context(): SpatialContext {
 export const spatial = {
   /** The map: every registered layer, and the features of those asked for (each module's default layers when none are). */
   map: (layers?: readonly string[]) => mapView(context(), { layers }),
-  /** The Map workspace: every layer, and what is in progress with what is behind it. */
-  workspace: async () => ({ map: await mapView(context(), { layers: WORKSPACE_LAYERS, frame: WORKSPACE_FRAME }), incidents: await incidentsNow(context()) }),
+  /**
+   * A sector's GIS Map: its layers on the shared map, the layers that are on when it opens, and
+   * what that sector holds as in progress with what is behind it.
+   */
+  sector: async (sector: SectorId) => ({
+    map: await mapView(context(), { layers: SECTOR_MAPS[sector].layers, frame: SECTOR_MAPS[sector].open }),
+    open: SECTOR_MAPS[sector].open as readonly string[],
+    incidents: await incidentsNow(context(), { modules: [sector] }),
+  }),
+  /** The Platform Overview's map: every sector's assets, with no figure layer. */
+  platform: () => mapView(context(), { layers: PLATFORM_LAYERS }),
   /**
    * The map for another screen: the whole network, or with `focus` one asset with what supplies
    * it and what it supplies. A transformer or a service point is drawn with its service points.

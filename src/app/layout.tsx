@@ -38,13 +38,22 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/* The theme. The server sends the dark theme; this runs while the page is being read, before
+   anything is painted, and sets the reader's own choice or, without one, what their device asks
+   for (Next's guide "preventing flash before hydration"). The toggle in the shell writes the
+   same key. */
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("gridintel-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
+
 export default function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${plexSans.variable} ${plexMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

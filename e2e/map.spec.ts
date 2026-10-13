@@ -1,9 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { OPERATIONS } from "./routes";
 
-/* The shared map: the Map workspace, and the same component inside other screens. */
+/* The shared map: each sector's GIS Map, and the same component inside other screens. Most of
+   this file is about the Utility GIS Map, which holds the most layers. */
 
-const MAP = "/dashboard/map";
+const MAP = "/dashboard/utility/map";
+const MINIGRID_MAP = "/dashboard/minigrid/map";
 const CREDIT = "Boundaries: geoBoundaries (CC BY 4.0), Runfola et al. 2020";
 
 async function open(page: Page, route = MAP) {
@@ -21,7 +23,7 @@ test("the map shows the network on a plain ground, and says on the map itself wh
     if (!request.url().startsWith("http://localhost")) elsewhere.push(request.url());
   });
   await open(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Map");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("GIS Map");
   await expect(page.getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   // Two substations, four routes, 48 transformers coloured by loading.
   await expect(page.locator("path.gi-kind-substation")).toHaveCount(2);
@@ -141,16 +143,26 @@ test("LGAs are fetched only when their layer is switched on", async ({ page }) =
   expect(asked).toEqual(["/api/areas/state", "/api/areas/lga"]);
 });
 
-test("mini-grid sites fill their layer: off when the map opens, four synthetic sites when switched on", async ({ page }) => {
+test("each sector's GIS Map is the one shared map with that sector's layers", async ({ page }) => {
+  // Utility's map holds Utility's layers and the reference geography, and nothing of another sector.
   await open(page);
-  // The map opens on the utility network; the sites are elsewhere in the country and are not drawn until asked for.
-  await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(0);
   await expect(page.locator("path.gi-kind-substation")).toHaveCount(2);
-  const sites = page.locator('[data-layer="minigrid.sites"]');
-  await expect(sites.locator("input")).toBeEnabled();
-  await expect(sites.locator("input")).not.toBeChecked();
-  await layer(page, "minigrid.sites").check();
+  await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(0);
+  await expect(page.locator('[data-layer^="utility."]')).toHaveCount(10);
+  await expect(page.locator('[data-layer^="minigrid."]')).toHaveCount(0);
+  await expect(page.locator('[data-layer^="reference."]')).toHaveCount(2);
+  // Mini-grid's map is the same component: its sites are on when it opens, among the states.
+  await open(page, MINIGRID_MAP);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("GIS Map");
+  await expect(page.getByRole("main")).toContainText("Mini-grid Intelligence");
+  await expect(page.locator('[data-layer^="utility."]')).toHaveCount(0);
+  await expect(page.locator("path.gi-kind-substation")).toHaveCount(0);
+  await expect(layer(page, "minigrid.sites")).toBeChecked();
   await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(4);
+  await expect(page.locator("path.gi-outline-state")).toHaveCount(37);
+  await expect(page.locator("[data-map-credits]")).toContainText(CREDIT);
+  // The Mini-grid sector holds nothing as in progress, so it lists nothing as in progress.
+  await expect(page.locator("[data-incident]")).toHaveCount(0);
   await expect(page.getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   // A site is selected like any asset: its key figures, each with status and origin, and nothing upstream of it.
   await page.locator("[data-select-asset]").selectOption("minigrid_site:MG-DRY");
@@ -200,7 +212,7 @@ test("the same map is inside the Operations levels and Events / Alarms, on the p
   await expect(page.locator("path.gi-mark.gi-tone-alert")).toHaveCount(10);
   await expect(selected(page)).toHaveAttribute("data-selected", "feeder:FD-FRM");
   await expect(page.locator(".leaflet-container .gi-label")).toHaveText(["schematic"]);
-  await expect(page.getByRole("link", { name: /Open the Map workspace/ })).toHaveAttribute("href", MAP);
+  await expect(page.getByRole("link", { name: /Open the Utility GIS Map/ })).toHaveAttribute("href", MAP);
   // A transformer: with the connections it supplies.
   await open(page, `${OPERATIONS}/transformers/DT-OLD-2`);
   await expect(page.locator("path.gi-kind-service_point")).toHaveCount(135);

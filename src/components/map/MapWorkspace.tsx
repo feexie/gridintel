@@ -1,23 +1,25 @@
 import type { IncidentsView, MapView } from "@/services/spatial/views";
-import { Legend, MetricCell, Panel } from "@/components/system/Metric";
-import { HeadRow, Note, PageHead, Row, Table, Td, Th } from "@/components/system/Table";
+import { KeyFold, SectorBand } from "@/components/system/Brand";
+import { MetricCell, Panel } from "@/components/system/Metric";
+import { HeadRow, Note, Row, Table, Td, Th } from "@/components/system/Table";
 import { NetworkMap } from "@/components/system/map/NetworkMap";
 import { formatPeriod, formatTime } from "@/components/system/format";
 
-/* The Map workspace: the spatial view of the energy system the user operates. It belongs to the
-   platform, not to one module: it shows whatever layers the modules have registered. */
+/* A sector's GIS Map: the spatial view of the part of the energy system that sector operates.
+   The map is the platform's one shared component (ADR 0014); this screen gives it one sector's
+   layers (ADR 0017) and shows whatever those layers hold. Nothing here is written per sector. */
 
-export function MapWorkspace({ map, incidents }: { map: MapView; incidents: IncidentsView }) {
+export function MapWorkspace({ sector, lead, map, incidents, open }: { sector: string; lead: string; map: MapView; incidents: IncidentsView; open: readonly string[] }) {
   const totalled = map.layers.filter((layer) => layer.areaFeatures.some((feature) => feature.metric !== null));
   const real = map.sourcing.sources.filter((source) => source.licence !== undefined);
   return (
     <div className="space-y-4">
-      <PageHead eyebrow="Platform" title="Map">
-        Where the network is, what is wrong on it now and where the losses are. {formatPeriod(map.period)} · as of {formatTime(map.asOf)}. Every figure comes from the screen that owns it.
-      </PageHead>
-      <Legend />
+      <SectorBand eyebrow={sector} title="GIS Map">
+        {lead} Every figure comes from the screen that owns it.
+      </SectorBand>
 
-      <NetworkMap view={map} incidents={incidents.incidents} />
+      <NetworkMap view={map} incidents={incidents.incidents} open={open} />
+      <KeyFold />
       {incidents.coverage !== "complete" ? <Note tone="caution">The outage log is not complete, so an interruption that is not listed may still be in progress.</Note> : null}
 
       {totalled.map((layer) => (
@@ -62,8 +64,8 @@ export function MapWorkspace({ map, incidents }: { map: MapView; incidents: Inci
       <Panel title="What is on this map, and where it came from">
         <ul className="space-y-1 text-xs text-ink-3">
           <li>
-            <span className="text-ink-5">The network: </span>
-            {map.sourcing.synthetic ? "synthetic demonstration data. It describes no real asset, and it is in no real place: it is not listed in, or totalled by, any real state or LGA." : "the organization's own records."}
+            <span className="text-ink-5">What is drawn: </span>
+            {map.sourcing.synthetic ? "synthetic demonstration data. It describes no real asset, and it is in no real place: it is not listed in, or totalled by, any real state or LGA." : "the organization's own records."} {formatPeriod(map.period)}, as of {formatTime(map.asOf)}.
           </li>
           {real.map((source) => (
             <li key={source.id} data-source={source.id}>
