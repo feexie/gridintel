@@ -78,6 +78,8 @@ describe("reliability workspace", async () => {
 
   it("sets every reported figure beside its calculation, naming the scope, and lists what each report's rule changes", () => {
     assert.equal(view.comparisons.length, 12);
+    assert.match(view.comparisonNote ?? "", /has not been verified as equivalent to the GridIntel reference methods the calculations use\. This applies to every figure below\.$/);
+    assert.ok(view.comparisons.every((row) => row.caveats.every((caveat) => !/verified as equivalent/.test(caveat))));
     assert.ok(view.comparisons.every((row) => typeof row.statedFor === "string" && row.statedFor.length > 0));
     assert.deepEqual(
       view.ruleFindings.filter((found) => found.figure === "SAIDI").map((found) => [found.statedFor.id, Math.round((found.difference.value as number) * 10) / 10]),

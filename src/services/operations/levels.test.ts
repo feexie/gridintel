@@ -115,6 +115,11 @@ describe("operations read models", () => {
     assert.equal(substation.losses?.scopeNote, null);
     // The figure reported for the region can now be set beside a calculated one.
     assert.deepEqual(region.losses?.reported.map((row) => [row.label, row.sameBasis]), [["ATC&C", true], ["Collection efficiency", true]]);
+    // That the report's methodology is unverified is said once for the table, and on no row.
+    assert.match(region.losses?.reportedNote ?? "", /^The report's methodology \(".+"\) has not been verified as equivalent to the GridIntel reference methods the calculations use\. This applies to every figure below\.$/);
+    assert.ok(region.losses?.reported.every((row) => row.unverifiedMethodology !== null && row.caveats.every((caveat) => !/verified as equivalent/.test(caveat))));
+    assert.match(substation.reliability?.reportedNote ?? "", /This applies to every figure below\.$/);
+    assert.ok(substation.reliability?.reported.every((row) => row.caveats.every((caveat) => !/verified as equivalent/.test(caveat))));
   });
 
   it("give the same view model with and without the cache, and compute a block once with it", async () => {

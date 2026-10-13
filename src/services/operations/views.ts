@@ -129,6 +129,8 @@ export interface ReportedComparisonView {
   reasons: string[];
   /** Things to bear in mind that do not stop the comparison. */
   caveats: string[];
+  /** The reported methodology's name, when one is stated: it has not been verified as equivalent. Said once for the table, not on the row. */
+  unverifiedMethodology: string | null;
   /**
    * Set when the reported figure states an attribution rule other than the reference one, and
    * the calculation beside it was made on that rule: what the rule changes, as a finding.
@@ -208,6 +210,8 @@ export interface LossesView {
   }[];
   accounts: { inScope: number | null; billed: number };
   reported: ReportedComparisonView[];
+  /** Said once above the comparisons: the report's methodology has not been verified as equivalent. null when no figure states one. */
+  reportedNote: string | null;
 }
 
 /* ---------------- Revenue gap ---------------- */
@@ -304,6 +308,8 @@ export interface ReliabilityView {
   momentary: number;
   supply: SupplyView;
   reported: ReportedComparisonView[];
+  /** Said once above the comparisons: the report's methodology has not been verified as equivalent. null when no figure states one. */
+  reportedNote: string | null;
   /**
    * Attribution-rule findings: those of the scope's own reported figures, and on a substation
    * those of the feeders below it, each naming the scope it is stated for.

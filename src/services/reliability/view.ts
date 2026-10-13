@@ -6,6 +6,7 @@ import { convertUnit, feedersOfSubstation } from "../../analytics/index.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { scopeReliability } from "../analytics/reliability.ts";
 import { alarmSubject, attributedIndex, loadRegistry, reliabilityBlock, timeZoneOf } from "../operations/levels.ts";
+import { comparisonNote } from "../operations/comparison.ts";
 import { sourcingView } from "../operations/metric.ts";
 
 /* ==========================================================
@@ -150,6 +151,7 @@ async function build(runtime: OperationsRuntime): Promise<ReliabilityWorkspaceVi
     originsNote:
       "Interruptions other than load shedding, by the element the outage record names as where they began. A 33 kV line and the transmission station are not registry assets, so they keep the names the outage log gives them.",
     comparisons,
+    comparisonNote: comparisonNote(comparisons),
     ruleFindings,
     method: result.reliability.saidi.methodology,
   };

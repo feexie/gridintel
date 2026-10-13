@@ -105,7 +105,7 @@ export function Reliability({ view }: { view: ReliabilityWorkspaceView }) {
 
       <Panel title="Is it ours to fix? Reported against calculated" aside="Each reported figure beside the calculation that counts the same things">
         <RuleFindings findings={view.ruleFindings} />
-        <Comparisons rows={view.comparisons} />
+        <Comparisons rows={view.comparisons} note={view.comparisonNote} />
       </Panel>
 
       <ReliabilityPanel reliability={view.portfolio} showBand={false} />

@@ -66,6 +66,8 @@ export interface ReliabilityWorkspaceView {
   originsNote: string;
   /** Every reported reliability figure beside the calculation on its basis, each naming the scope it is stated for. */
   comparisons: ReportedComparisonView[];
+  /** Said once above the comparisons: the report's methodology has not been verified as equivalent. null when no figure states one. */
+  comparisonNote: string | null;
   /** What each feeder report's attribution rule changes. */
   ruleFindings: RuleFindingView[];
   method: { id: string; version: string };

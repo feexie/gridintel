@@ -6,6 +6,7 @@ import type { BandComplianceRow, ExecutiveView, TransformerLoadingRow, WhereToLo
 import { NO_CACHE } from "../analytics/cache.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
 import { alarmsBlock, attributedIndex, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
+import { comparisonNote } from "../operations/comparison.ts";
 import { ATTENTION_METHOD, MONEY_RANK_LIMIT, attention } from "./attention.ts";
 
 /* ==========================================================
@@ -155,8 +156,8 @@ async function portfolioView(runtime: OperationsRuntime): Promise<Portfolio> {
       lossRows.push(...stated((await lossesBlock(runtime, scope)).reported, name));
       reliabilityRows.push(...stated((await reliabilityBlock(runtime, scope, timeZone)).reported, name));
     }
-    if (losses.reported.length === 0) losses = { ...losses, reported: lossRows };
-    if (reliability.reported.length === 0) reliability = { ...reliability, reported: reliabilityRows };
+    if (losses.reported.length === 0) losses = { ...losses, reported: lossRows, reportedNote: comparisonNote(lossRows) };
+    if (reliability.reported.length === 0) reliability = { ...reliability, reported: reliabilityRows, reportedNote: comparisonNote(reliabilityRows) };
   }
 
   const bandCompliance: BandComplianceRow[] = feeders.map((feeder) => ({

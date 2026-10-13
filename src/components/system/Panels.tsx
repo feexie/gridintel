@@ -360,7 +360,7 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
           ) : null}
         </div>
       </div>
-      <Comparisons rows={losses.reported} />
+      <Comparisons rows={losses.reported} note={losses.reportedNote} />
     </Panel>
   );
 }
@@ -589,7 +589,7 @@ export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliabili
             {reliability.momentary > 0 ? ` ${reliability.momentary} momentary exposure(s) are not counted.` : ""}
           </p>
           <div className="mt-3">
-            <Comparisons rows={reliability.reported} />
+            <Comparisons rows={reliability.reported} note={reliability.reportedNote} />
           </div>
         </div>
         <SupplyStrip supply={reliability.supply} />

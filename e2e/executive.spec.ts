@@ -112,6 +112,8 @@ test("reported figures are compared at the scope they are stated for, and say so
   const saidi = page.getByRole("row", { name: /^SAIDI/ }).filter({ hasText: "Riverside" });
   await expect(saidi).toContainText("Stated for Riverside 33/11 kV injection substation; compared at that scope.");
   await expect(saidi).toContainText("Same basis");
+  await expect(page.locator("[data-comparison-note]").first()).toContainText("has not been verified as equivalent to the GridIntel reference methods the calculations use. This applies to every figure below.");
+  await expect(page.locator("tbody").filter({ hasText: "verified as equivalent" })).toHaveCount(0);
   await expect(saidi).toContainText("3.0 h");
   await expect(saidi).toContainText("6.9 h");
   await expect(page.getByRole("row", { name: /^ATC&C/ }).filter({ hasText: "Hillcrest" })).toContainText(

@@ -6,6 +6,7 @@ import type { SiteReport } from "./performance.ts";
 import type { ClassRowView, MinigridPortfolioView, MinigridSiteView, ReportStandingView, SiteCardView, SiteFindingView } from "./views.ts";
 import { combineClassTotals, convertUnit, toEpochMs } from "../../analytics/index.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
+import { comparisonCaveats, comparisonNote } from "../operations/comparison.ts";
 import { describeBasis } from "../operations/levels.ts";
 import { kpiMetric, sourcingView } from "../operations/metric.ts";
 import { siteMethodName } from "./method.ts";
@@ -142,21 +143,11 @@ function comparisonView(comparison: KpiComparison, currency: string | null): Rep
     variance: comparison.variance.absolute,
     varianceUnit: comparison.variance.absoluteUnit,
     reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
-    // That the report's methodology is unverified is true of the report, not of one figure: it is
-    // said once for the table (`methodologyNote`) and not repeated on each row.
-    caveats: comparison.issues.filter((issue) => !issue.blocking && issue.code !== "METHODOLOGY_NOT_VERIFIED").map((issue) => issue.message),
+    // That the report's methodology is unverified is said once for the table, not on each row.
+    ...comparisonCaveats(comparison),
     ruleFinding: null,
     document: reported.document?.title ?? null,
   };
-}
-
-/** Said once above a site's comparison table: the report's methodology has not been verified as equivalent. null when no figure states one. */
-function methodologyNote(comparisons: readonly KpiComparison[]): string | null {
-  const stated = comparisons.filter((comparison) => comparison.issues.some((issue) => issue.code === "METHODOLOGY_NOT_VERIFIED"));
-  if (stated.length === 0) return null;
-  const names = [...new Set(stated.flatMap((comparison) => comparison.reported.methodology?.name ?? []))].map((name) => `"${name}"`).join(", ");
-  const reach = stated.length === comparisons.length ? "This applies to every figure below." : `This applies to the ${stated.length} of ${comparisons.length} figures below that state a methodology.`;
-  return `The report's methodology (${names}) has not been verified as equivalent to the GridIntel reference methods the calculations use. ${reach}`;
 }
 
 /** Whether a comparable claim differs from the records by more than the tolerance. */
@@ -493,7 +484,7 @@ export function minigridSiteView(runtime: OperationsRuntime, siteId: string): Pr
       },
       report: reportStanding(report),
       comparisons: report.comparisons.map((comparison) => comparisonView(comparison, currency)),
-      comparisonNote: methodologyNote(report.comparisons),
+      comparisonNote: comparisonNote(report.comparisons.map(comparisonCaveats)),
       sourcing: sourcingView(found.sourcing),
     };
   });

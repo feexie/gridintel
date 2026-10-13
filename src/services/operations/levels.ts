@@ -63,6 +63,7 @@ import { sectionLosses } from "../analytics/losses.ts";
 import { scopeReliability } from "../analytics/reliability.ts";
 import { SourceTrail } from "../analytics/sourcing.ts";
 import { loadTopology } from "../analytics/topology.ts";
+import { comparisonCaveats, comparisonNote } from "./comparison.ts";
 import { figureMetric, inputMetric, inputView, kpiMetric, methodView, registryCount, sourcingView, unavailable } from "./metric.ts";
 
 /* ==========================================================
@@ -317,7 +318,7 @@ async function reportedComparisons(
           variance: comparison.variance.absolute,
           varianceUnit: comparison.variance.absoluteUnit,
           reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
-          caveats: comparison.issues.filter((issue) => !issue.blocking).map((issue) => issue.message),
+          ...comparisonCaveats(comparison),
           // A finding only where the comparison was in fact made on the reported rule.
           ruleFinding:
             reference === null || !comparison.sameBasis
@@ -401,6 +402,10 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
     ? `Estimate from a loss study: ${result.technicalLossStudy.document?.title ?? result.technicalLossStudy.id}. Technical loss is not metered.`
     : result.technicalLossNote;
 
+  const reported = await reportedComparisons(runtime, scope, [
+    { metric: "atcc", label: "ATC&C", candidates: () => [atcc.atcc] },
+    { metric: "collection_efficiency", label: "Collection efficiency", candidates: () => [atcc.collectionEfficiency] },
+  ]);
   return {
     sourcing: sourcingView(sourcing),
     sections: result.sections.map((section) => ({ kind: section.kind as "substation" | "feeder" | "distribution_transformer", id: section.id })),
@@ -522,10 +527,8 @@ async function buildLosses(runtime: OperationsRuntime, scope: ScopeRef): Promise
       })
       .sort((a, b) => b.revenueBilled - a.revenueBilled || (a.category < b.category ? -1 : 1)),
     accounts: { inScope: billing.accountsInScope, billed: billing.accountsBilled },
-    reported: await reportedComparisons(runtime, scope, [
-      { metric: "atcc", label: "ATC&C", candidates: () => [atcc.atcc] },
-      { metric: "collection_efficiency", label: "Collection efficiency", candidates: () => [atcc.collectionEfficiency] },
-    ]),
+    reported,
+    reportedNote: comparisonNote(reported),
   };
 }
 
@@ -574,7 +577,7 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
   const supplyStatus = supply.status;
   // A result that includes an interruption still open is provisional, and every index says so.
   const provisional = reliability.provisional?.note ?? null;
-  const view: Omit<ReliabilityView, "reported" | "ruleFindings"> = {
+  const view: Omit<ReliabilityView, "reported" | "reportedNote" | "ruleFindings"> = {
     sourcing: sourcingView(sourcing),
     saidi: kpiMetric("SAIDI", reliability.saidi, { note: provisional }),
     saifi: kpiMetric("SAIFI", reliability.saifi, { note: provisional }),
@@ -651,7 +654,7 @@ async function buildReliability(runtime: OperationsRuntime, scope: ScopeRef, tim
           basis?.interruptionClasses === undefined ? null : reliabilityOnBasis(reliability, basis.interruptionClasses)[metric],
       })),
     );
-  return { ...view, reported, ruleFindings: reported.flatMap((row) => (row.ruleFinding === null ? [] : [row.ruleFinding])) };
+  return { ...view, reported, reportedNote: comparisonNote(reported), ruleFindings: reported.flatMap((row) => (row.ruleFinding === null ? [] : [row.ruleFinding])) };
 }
 
 /** A substation's reliability with the attribution-rule findings of its feeders after its own. */

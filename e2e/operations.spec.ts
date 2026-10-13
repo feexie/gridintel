@@ -132,6 +132,10 @@ test("reported SAIDI is set beside the network-only calculation, on the same bas
   const row = page.getByRole("row", { name: /^SAIDI/ });
   await expect(row).toContainText("Same basis");
   await expect(row).toContainText("network interruptions only");
+  // The report's methodology being unverified is said once above each table, on no row.
+  await expect(page.locator("[data-comparison-note]")).toHaveCount(2);
+  for (const note of await page.locator("[data-comparison-note]").all()) await expect(note).toContainText("has not been verified as equivalent to the GridIntel reference methods the calculations use. This applies to every figure below.");
+  await expect(page.locator("tbody").filter({ hasText: "verified as equivalent" })).toHaveCount(0);
   await expect(row).toContainText("3.0 h");
   await expect(row).toContainText("6.9 h");
   // The total, with load shedding, is the headline figure and is far larger.
