@@ -7,7 +7,9 @@ Last updated: 2026-10-13. Status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
-`phase-7b`). **No phase is in progress: the Founder chooses the next one.**
+`phase-7b`). **No phase is in progress.** New phases are paused while the Founder shows
+GridIntel to a few people (2026-10-13); the next phase will be chosen from
+their feedback.
 
 ## Completed
 
@@ -1750,8 +1752,8 @@ Palm Landing's report is also listed as differing (collection 97% against
   before login.
 - The comparison table's note that the reported methodology "has not been
   verified as equivalent" repeats on every row, as it does in Utility.
-  (Put right for site screens in the Phase 10 polish, below; Utility's
-  tables still repeat it.)
+  (Put right in the Phase 10 polish, below, for site screens and then
+  for Utility's tables.)
 - The overview page's platform cards are unchanged; its Mini-grid card
   now leads to a working screen.
 - No site economics: the dataset holds no cost records.
@@ -1763,8 +1765,12 @@ phone.
 
 - *The unverified-methodology note is said once.* On a site screen it is
   above the comparison table (`comparisonNote` in the site read model) and
-  on no row. The Utility comparison tables are unchanged and still carry
-  it on each row.
+  on no row. The Utility comparison tables followed on the Founder's
+  word (tag `phase-10-polish-2`): Operations levels, Executive and
+  Reliability each say it once above the table. One helper
+  (`src/services/operations/comparison.ts`) builds the note for every
+  workspace; a row keeps the methodology's name so that rows gathered
+  from several scopes still get one note.
 - *Origin is a whole word beside every figure in a table*, in every
   workspace: "Derived", "Calculated", never the first four letters.
 - *Collection efficiency on a site is shown under the name "GridIntel
