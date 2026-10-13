@@ -1,6 +1,6 @@
-/* The menu. Every sector has the same structure: Overview, GIS Map, AI Assistant, then its
-   workspaces (ADR 0017). A sector that joins later (DER, Planning) is one more group of the same
-   shape.
+/* The menu. Across the top, the sectors; down the side, the screens of the sector the reader is
+   in. Every sector has the same structure: Overview, GIS Map, AI Assistant, then its workspaces
+   (ADR 0017). A sector that joins later (DER, Planning) is one more entry of the same shape.
 
    Every item leads to a screen that exists. An item marked `planned` leads to a page that says
    what is not built yet, and the menu marks it so before it is opened. */
@@ -16,14 +16,27 @@ export type NavigationItem = {
   planned?: boolean;
 };
 
-export type NavigationGroup = {
+export type SectorId = "platform" | "utility" | "minigrid" | "der" | "planning";
+
+export type Sector = {
+  id: SectorId;
+  /** The short name, in the row of sectors. */
   label: string;
-  items: NavigationItem[];
+  /** The full name, above the sector's own screens. */
+  title: string;
+  home: string;
+  /** Not built yet. Shown with the word "Planned" in the row of sectors. */
+  planned?: boolean;
+  /** The screens every sector opens with. */
+  opening: NavigationItem[];
+  workspaces: NavigationItem[];
 };
 
 export const PLATFORM_HOME = "/dashboard";
 export const UTILITY_HOME = "/dashboard/utility";
 export const MINIGRID_HOME = "/dashboard/minigrid";
+export const DER_HOME = "/dashboard/der";
+export const PLANNING_HOME = "/dashboard/planning";
 
 export const UTILITY_WORKSPACES: NavigationItem[] = [
   { label: "Executive", href: `${UTILITY_HOME}/executive`, description: "What is happening across the portfolio, and where should I look first?" },
@@ -39,7 +52,7 @@ export const MINIGRID_WORKSPACES: NavigationItem[] = [
 ];
 
 /** The three screens every sector opens with, in this order. */
-function sector(home: string, map: string): NavigationItem[] {
+function opening(home: string, map: string): NavigationItem[] {
   return [
     { label: "Overview", href: home, exact: true, description: "What needs attention here?" },
     { label: "GIS Map", href: `${home}/map`, description: map },
@@ -47,17 +60,34 @@ function sector(home: string, map: string): NavigationItem[] {
   ];
 }
 
-export const navigationGroups: NavigationGroup[] = [
+/** A sector that is not built has one page, which says so. */
+function notBuilt(home: string): NavigationItem[] {
+  return [{ label: "Overview", href: home, exact: true, planned: true, description: "Planned. Not built yet." }];
+}
+
+export const sectors: Sector[] = [
+  { id: "platform", label: "Platform", title: "Platform", home: PLATFORM_HOME, opening: [{ label: "Overview", href: PLATFORM_HOME, exact: true }], workspaces: [] },
   {
-    label: "Platform",
-    items: [{ label: "Overview", href: PLATFORM_HOME, exact: true }],
+    id: "utility",
+    label: "Utility",
+    title: "Utility Intelligence",
+    home: UTILITY_HOME,
+    opening: opening(UTILITY_HOME, "Where is the network, what is wrong on it now, and where are the losses?"),
+    workspaces: UTILITY_WORKSPACES,
   },
   {
-    label: "Utility Intelligence",
-    items: [...sector(UTILITY_HOME, "Where is the network, what is wrong on it now, and where are the losses?"), ...UTILITY_WORKSPACES],
+    id: "minigrid",
+    label: "Mini-grid",
+    title: "Mini-grid Intelligence",
+    home: MINIGRID_HOME,
+    opening: opening(MINIGRID_HOME, "Where are the sites, and how does each one stand?"),
+    workspaces: MINIGRID_WORKSPACES,
   },
-  {
-    label: "Mini-grid Intelligence",
-    items: [...sector(MINIGRID_HOME, "Where are the sites, and how does each one stand?"), ...MINIGRID_WORKSPACES],
-  },
+  { id: "der", label: "DER", title: "DER Intelligence", home: DER_HOME, planned: true, opening: notBuilt(DER_HOME), workspaces: [] },
+  { id: "planning", label: "Planning", title: "Planning", home: PLANNING_HOME, planned: true, opening: notBuilt(PLANNING_HOME), workspaces: [] },
 ];
+
+/** The sector an address is in. An address in none of them is the platform's. */
+export function sectorOf(pathname: string): Sector {
+  return sectors.find((sector) => sector.id !== "platform" && (pathname === sector.home || pathname.startsWith(`${sector.home}/`))) ?? sectors[0];
+}

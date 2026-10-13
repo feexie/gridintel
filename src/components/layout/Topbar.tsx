@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { sectorOf } from "@/constants/navigation";
 import Menu from "./Menu";
+import SectorSwitcher from "./SectorSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import Wordmark from "./Wordmark";
 
-/* The frame on a screen too narrow for the sidebar: one row with the name and the menu button.
-   The menu opens over the page, so it takes none of the screen until it is asked for. */
+/* The frame on a screen too narrow for the sidebar: one row with the name and the menu button,
+   which names the sector the reader is in. The menu opens over the page, so it takes none of the
+   screen until it is asked for: the sectors first, then the screens of this one. */
 export default function Topbar() {
   const [open, setOpen] = useState(false);
+  const sector = sectorOf(usePathname());
 
   useEffect(() => {
     if (!open) return;
@@ -27,6 +32,7 @@ export default function Topbar() {
           type="button"
           aria-expanded={open}
           aria-controls="gi-menu"
+          aria-label={open ? "Close the menu" : `Menu: ${sector.label}`}
           onClick={() => setOpen(!open)}
           data-menu-button
           className="gi-tap inline-flex items-center gap-2 rounded-tile border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-2"
@@ -34,11 +40,14 @@ export default function Topbar() {
           <span aria-hidden className="text-base leading-none">
             {open ? "✕" : "☰"}
           </span>
-          {open ? "Close" : "Menu"}
+          {open ? "Close" : <span data-menu-sector>{sector.label}</span>}
         </button>
       </div>
       {open ? (
         <div id="gi-menu" className="absolute inset-x-0 z-[1100] max-h-[calc(100dvh-3.25rem)] overflow-y-auto border-b border-line bg-panel px-2 pb-4 pt-2 shadow-pop" data-menu>
+          <div className="mb-3 border-b border-line px-1 pb-3">
+            <SectorSwitcher wrap onNavigate={() => setOpen(false)} />
+          </div>
           <Menu onNavigate={() => setOpen(false)} />
           <div className="mt-4 border-t border-line px-3 pt-3">
             <ThemeToggle />

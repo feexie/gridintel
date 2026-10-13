@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { PlatformOverviewView, PlatformSectorView } from "@/services/overview/views";
-import { MINIGRID_HOME, UTILITY_HOME } from "@/constants/navigation";
+import { DER_HOME, MINIGRID_HOME, PLANNING_HOME, UTILITY_HOME } from "@/constants/navigation";
 import { AttentionList } from "@/components/system/Attention";
 import { EnergySystemArt, KeyFold, PlannedTag } from "@/components/system/Brand";
 import { Panel } from "@/components/system/Metric";
@@ -26,8 +26,8 @@ const PROMISES = [
 ];
 
 const TO_JOIN = [
-  { title: "DER Intelligence", text: "Solar, storage, inverters and generators as fleets: performance, aggregation and dispatch." },
-  { title: "Planning", text: "Load growth, capacity, scenarios and investment priorities, from the same records." },
+  { title: "DER Intelligence", href: DER_HOME, text: "Solar, storage, inverters and generators as fleets: performance, aggregation and dispatch." },
+  { title: "Planning", href: PLANNING_HOME, text: "Load growth, capacity, scenarios and investment priorities, from the same records." },
 ];
 
 function Hero() {
@@ -119,7 +119,10 @@ export function PlatformOverview({ view, map }: { view: PlatformOverviewView; ma
           {TO_JOIN.map((sector) => (
             <li key={sector.title} className="rounded-tile border border-dashed border-line-strong px-3 py-2">
               <p className="flex items-center gap-2 text-sm font-semibold text-ink-3">
-                {sector.title} <PlannedTag />
+                <Link href={sector.href} className="hover:text-ink hover:underline">
+                  {sector.title}
+                </Link>{" "}
+                <PlannedTag />
               </p>
               <p className="mt-0.5 text-caption leading-snug text-ink-4">{sector.text}</p>
             </li>

@@ -1844,8 +1844,12 @@ No dependency was added.
 **What was built.**
 
 - *Navigation and shell.* Platform: Overview. Each sector: Overview, GIS
-  Map, AI Assistant (marked "Planned"), then its workspaces. A sidebar on a
-  desktop; on a phone one row with a Menu button. The data bar folds on a
+  Map, AI Assistant (marked "Planned"), then its workspaces. By the
+  Founder's sketch (2026-10-13): the sectors are a row across the top
+  (Platform, Utility, Mini-grid, and DER and Planning marked "Planned"),
+  and the sidebar holds only the screens of the sector the reader is in. On
+  a phone, one row with a button that names the sector and opens the menu:
+  the sectors, then this sector's screens. The data bar folds on a
   phone to the SYNTHETIC DATA label, the period and the as-of time, with the
   sentence about the dataset one tap away. On a phone the page starts
   126 px down, where it started 251 px down.
@@ -1913,7 +1917,9 @@ sideways as a whole page. The proposal says what UI-B would do to each.
   notes) still have square corners.
 - The Platform Overview's map lists its layers and the asset picker under
   it, as every embedded map does; a smaller form of the map is for UI-B.
-- `/dashboard/intelligence/ai`, `/dashboard/der`, `/dashboard/planning`,
+- `/dashboard/der` and `/dashboard/planning` are now each the one page of
+  a sector not built: it says so and holds no figure.
+- `/dashboard/intelligence/ai`,
   `/dashboard/reports` and `/dashboard/settings` are still bare "Coming
   Soon" pages, reachable only by address.
 

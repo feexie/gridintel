@@ -67,21 +67,33 @@ are. The figures below are those measurements.
 
 ## 2. Navigation (built in the prototype)
 
+The frame is the Founder's sketch (2026-10-13, after the first form of this
+prototype, which listed every sector in one long sidebar): **the sectors
+across the top, and down the side only the screens of the sector the reader
+is in.**
+
 ```text
-Platform
-  Overview
-Utility Intelligence
-  Overview
-  GIS Map
-  AI Assistant            planned
-  Executive, Operations, Reliability, Revenue, Assets, Events / Alarms
-Mini-grid Intelligence
-  Overview
-  GIS Map
-  AI Assistant            planned
-  Sites
-DER, Planning             to join with the same structure
+GridIntel   [ Platform | Utility | Mini-grid | DER planned | Planning planned ]
+--------------+---------------------------------------------------------------
+UTILITY       |
+ Overview     |
+ GIS Map      |
+ AI Assistant |   planned          the page
+ ---------    |
+ Executive    |
+ Operations   |
+ Reliability  |
+ Revenue      |
+ Assets       |
+ Events       |
 ```
+
+| Sector | Its menu |
+| --- | --- |
+| Platform | Overview |
+| Utility | Overview, GIS Map, AI Assistant (planned); then Executive, Operations, Reliability, Revenue, Assets, Events / Alarms |
+| Mini-grid | Overview, GIS Map, AI Assistant (planned); then Sites |
+| DER, Planning | Not built. Each is in the row of sectors with the word "Planned" and has one page that says so |
 
 | Address | Screen |
 | --- | --- |
@@ -93,12 +105,21 @@ DER, Planning             to join with the same structure
 | `/dashboard/minigrid/map` | Mini-grid GIS Map |
 | `/dashboard/minigrid/ai` | Mini-grid AI Assistant (planned) |
 | `/dashboard/minigrid/sites` | Sites (moved from `/dashboard/minigrid`) |
+| `/dashboard/der`, `/dashboard/planning` | The one page of a sector not built yet: says so, what it is for, and the structure it will have. No figure |
 | `/dashboard/map`, `/dashboard/intelligence/gis` | Redirect to the Platform Overview |
 
-- On a desktop the menu is a sidebar. On a phone it is one row with a Menu
-  button; the menu opens over the page and closes when a screen is chosen.
+- On a desktop the sectors are a row beside the name, and the sector's
+  screens are a sidebar with a rule between the three every sector opens
+  with and its workspaces. Choosing a sector opens its Overview.
+- On a phone there is one row with the name and a button that names the
+  sector the reader is in. It opens the menu over the page: the sectors
+  first, then this sector's screens. It closes when a screen is chosen. A
+  row of five sectors does not fit 390 px without sliding sideways, so on a
+  phone the sectors are inside the menu, not above the page.
 - "AI Assistant" carries the word "Planned" in a dashed outline in the
-  menu.
+  menu, and so do DER and Planning in the row of sectors.
+- The Platform's sidebar holds one item, Overview. It is kept so that the
+  frame does not change shape between sectors.
 - The data bar on a phone is two lines: the SYNTHETIC DATA label, the
   period and the as-of time are always in view; the sentence that says what
   the dataset is opens with one tap ("What is this?").
@@ -247,7 +268,7 @@ not liked, B is the safer second: it is the best on a phone in daylight.
 
 ## 5. What the prototype is, and is not
 
-**Built**: the navigation and the shell (sidebar, phone menu, the folding
+**Built**: the navigation and the shell (the row of sectors, the sector's sidebar, phone menu, the folding
 data bar, a theme button); light and dark themes from one set of tokens; the
 Platform Overview; the Utility and Mini-grid Overviews; a GIS Map for each
 sector; the AI Assistant (planned) page for each sector; the redirects; the

@@ -4,8 +4,6 @@ import { OPERATIONS, ROUTES } from "./routes";
 /* The menu, the one heading per page, and the one bar that says what data a screen shows. */
 
 const PLACEHOLDERS = [
-  "/dashboard/der",
-  "/dashboard/planning",
   "/dashboard/reports",
   "/dashboard/settings",
   "/dashboard/intelligence/ai",
@@ -15,43 +13,72 @@ const PLACEHOLDERS = [
 const UTILITY = "/dashboard/utility";
 const MINIGRID = "/dashboard/minigrid";
 const ASSISTANTS = [`${UTILITY}/ai`, `${MINIGRID}/ai`];
+const PLANNED_SECTORS = ["/dashboard/der", "/dashboard/planning"];
 
-test("every sector has the same menu: Overview, GIS Map, AI Assistant marked planned, then its workspaces", async ({ page }) => {
+test("the sectors are across the top, and the menu holds the screens of the sector the reader is in", async ({ page }) => {
   await page.goto(UTILITY);
+  // The row of sectors: the same five on every screen, the ones not built marked so in a word.
+  const sectors = page.locator("[data-sector-bar]").getByRole("navigation", { name: "Sectors" });
+  await expect(sectors.getByRole("link")).toHaveText(["Platform", "Utility", "Mini-grid", "DERPlanned", "PlanningPlanned"]);
+  expect(await sectors.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")))).toEqual(["/dashboard", UTILITY, MINIGRID, ...PLANNED_SECTORS]);
+  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Utility"]);
+
   const menu = page.getByRole("navigation", { name: "Main" });
-  const links = await menu.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
-  expect(links).toEqual([
-    "/dashboard",
-    UTILITY,
-    `${UTILITY}/map`,
-    `${UTILITY}/ai`,
-    `${UTILITY}/executive`,
-    OPERATIONS,
-    `${UTILITY}/reliability`,
-    `${UTILITY}/revenue`,
-    `${UTILITY}/assets`,
-    `${UTILITY}/events`,
-    MINIGRID,
-    `${MINIGRID}/map`,
-    `${MINIGRID}/ai`,
-    `${MINIGRID}/sites`,
-  ]);
+  const hrefs = () => menu.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
+  const visited: string[] = [];
+  // Utility: Overview, GIS Map, AI Assistant marked planned, then its six workspaces. Nothing of another sector.
+  await expect(menu).toContainText("Utility Intelligence");
+  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`]);
+  await expect(menu.getByRole("link")).toContainText(["Overview", "GIS Map", "AI AssistantPlanned"]);
+  await expect(menu.locator("[data-planned]")).toHaveCount(1);
+  await expect(menu.locator("[data-workspaces]").getByRole("link")).toHaveCount(6);
+  visited.push(...(await hrefs()));
+
+  // Choosing a sector opens its Overview and changes the menu to its screens: the same structure.
+  await sectors.getByRole("link", { name: "Mini-grid" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/minigrid$/);
+  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
+  await expect(menu).toContainText("Mini-grid Intelligence");
+  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`]);
+  await expect(menu.getByRole("link")).toHaveText(["Overview", "GIS Map", "AI AssistantPlanned", "Sites"]);
+  visited.push(...(await hrefs()));
+  // A screen below a workspace is still in its sector.
+  await page.goto(`${MINIGRID}/sites/MG-DRY`);
+  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
+
   // There is no top-level Map: the platform has an Overview only.
-  await expect(menu.getByRole("region", { name: "Platform" }).getByRole("link")).toHaveText(["Overview"]);
-  for (const sector of ["Utility Intelligence", "Mini-grid Intelligence"]) {
-    const items = menu.getByRole("region", { name: sector }).getByRole("link");
-    // What is not built is marked so in a word, in the menu, before it is opened.
-    expect((await items.allTextContents()).slice(0, 3), sector).toEqual(["Overview", "GIS Map", "AI AssistantPlanned"]);
-    await expect(menu.getByRole("region", { name: sector }).locator("[data-planned]"), sector).toHaveCount(1);
-  }
-  await expect(menu.getByRole("region", { name: "Utility Intelligence" }).getByRole("link")).toHaveCount(9);
-  await expect(menu.getByRole("region", { name: "Mini-grid Intelligence" }).getByRole("link")).toContainText(["Overview", "GIS Map", "AI Assistant", "Sites"]);
-  // Every link in the menu leads to a screen that exists: none says "Coming Soon".
-  for (const href of links) {
+  await sectors.getByRole("link", { name: "Platform" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(menu.getByRole("link")).toHaveText(["Overview"]);
+  visited.push(...(await hrefs()));
+
+  // Every link in the menu and in the row of sectors leads to a screen that exists: none says "Coming Soon".
+  for (const href of [...visited, ...PLANNED_SECTORS]) {
     await page.goto(href);
     await expect(page.getByText("Coming Soon"), href).toHaveCount(0);
   }
-  for (const href of PLACEHOLDERS) expect(links, href).not.toContain(href);
+  for (const href of PLACEHOLDERS) expect(visited, href).not.toContain(href);
+});
+
+test("a sector that is not built says so, in the row of sectors, in the menu and on its one page", async ({ page }) => {
+  for (const [route, name] of [
+    ["/dashboard/der", "DER Intelligence"],
+    ["/dashboard/planning", "Planning"],
+  ]) {
+    await page.goto(route);
+    const main = page.getByRole("main");
+    await expect(main.getByRole("heading", { level: 1 }), route).toHaveText("Overview");
+    await expect(main, route).toContainText("Planned · not built");
+    await expect(main, route).toContainText(`${name} is not built yet. There is no data and no figure on this page.`);
+    await expect(main.locator("[data-planned-structure] li"), route).toHaveText([/^Overview/, /^GIS Map/, /^AI Assistant/, /^Workspaces/]);
+    // No figure, and nothing to operate.
+    await expect(main.locator("[data-metric], [data-figure], input, textarea, select, button, form"), route).toHaveCount(0);
+    const menu = page.getByRole("navigation", { name: "Main" });
+    await expect(menu.getByRole("link"), route).toHaveText(["OverviewPlanned"]);
+    await expect(menu, route).toContainText("Not built yet.");
+    await expect(page.locator("[data-sector-bar] [aria-current=true]"), route).toContainText("Planned");
+    await expect(page.getByRole("note", { name: "About the data on this screen" }), route).toContainText("SYNTHETIC DATA");
+  }
 });
 
 test("an AI Assistant page says it is not built, gives example questions, and is nothing like a working assistant", async ({ page }) => {
@@ -154,11 +181,22 @@ test("on a phone the menu opens on request, the data bar stays in view and nothi
   await expect(bar.getByText("It describes no real network")).toBeVisible();
   // The menu is closed until asked for, and closes when a screen is chosen.
   await expect(page.locator("[data-menu]")).toHaveCount(0);
+  // It names the sector the reader is in, and holds the sectors and then this sector's screens.
+  await expect(page.locator("[data-menu-button]")).toHaveText(/Utility/);
   await page.locator("[data-menu-button]").click();
-  await expect(page.locator("[data-menu]").getByRole("link")).toHaveCount(14);
-  await page.locator("[data-menu]").getByRole("link", { name: "Sites" }).click();
+  const drawer = page.locator("[data-menu]");
+  await expect(drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link")).toHaveCount(5);
+  await expect(drawer.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(9);
+  // Nothing in the open menu is wider than the screen.
+  expect(await drawer.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  await drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link", { name: "Mini-grid" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/minigrid$/);
+  await expect(drawer).toHaveCount(0);
+  await expect(page.locator("[data-menu-button]")).toHaveText(/Mini-grid/);
+  await page.locator("[data-menu-button]").click();
+  await drawer.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Sites" }).click();
   await expect(page).toHaveURL(/\/dashboard\/minigrid\/sites$/);
-  await expect(page.locator("[data-menu]")).toHaveCount(0);
+  await expect(drawer).toHaveCount(0);
 });
 
 test("the theme can be changed and is kept", async ({ page }) => {
@@ -207,7 +245,7 @@ test("the old Map addresses lead to the Platform Overview", async ({ page }) => 
 });
 
 test("every page has exactly one h1", async ({ page }) => {
-  const pages = [...ROUTES, ...ASSISTANTS, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
+  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
   test.setTimeout(pages.length * 6_000);
   for (const route of pages) {
     await page.goto(route);

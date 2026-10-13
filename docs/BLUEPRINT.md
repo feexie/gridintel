@@ -32,7 +32,11 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 >   components: `Attention` (the one way a finding is shown), `Visuals`
 >   (loss split, site mix), `Brand` (hero art, sector band, planned tag,
 >   the folded key). Brand areas (`.gi-hero`, `.gi-band`) hold no figure.
-> - **Shell.** `components/layout`: `Menu` (shared by the sidebar and the
+> - **Shell.** The sectors are a row across the top (`SectorSwitcher`);
+>   the menu holds the screens of the sector the address is in
+>   (`sectors` and `sectorOf` in `src/constants/navigation.ts`). A sector
+>   not built (DER, Planning) has one page, `SectorPlanned`.
+>   `components/layout`: `Menu` (shared by the sidebar and the
 >   phone's menu), `Topbar` (a client component that opens the menu),
 >   `ThemeToggle`, `Wordmark`. `DataBar` is a client component, so that its
 >   sentence can fold on a phone.
