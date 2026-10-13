@@ -91,6 +91,9 @@ async function traceOf(context: SpatialContext, entity: SpatialEntity): Promise<
     downstream: behind.downstream.map((group) => ({ kind: group.kind, kindLabel: group.kindLabel, count: group.count })),
     downstreamKnown: behind.downstreamKnown,
     areas: behind.areas.map((area) => ({ id: area.id, name: area.name })),
+    areasReason: behind.areasReason,
+    noUpstreamReason: behind.noUpstreamReason,
+    noDownstreamReason: behind.noDownstreamReason,
     facts: behind.facts,
   };
 }

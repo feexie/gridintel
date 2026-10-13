@@ -22,7 +22,7 @@ test("the map shows the network on a plain ground, and says on the map itself wh
   });
   await open(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Map");
-  await expect(page.getByText("SYNTHETIC DATA")).toBeVisible();
+  await expect(page.getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   // Two substations, four routes, 48 transformers coloured by loading.
   await expect(page.locator("path.gi-kind-substation")).toHaveCount(2);
   await expect(page.locator("path.gi-line")).toHaveCount(4);
@@ -151,7 +151,7 @@ test("mini-grid sites fill their layer: off when the map opens, four synthetic s
   await expect(sites.locator("input")).not.toBeChecked();
   await layer(page, "minigrid.sites").check();
   await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(4);
-  await expect(page.getByText("SYNTHETIC DATA")).toBeVisible();
+  await expect(page.getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   // A site is selected like any asset: its key figures, each with status and origin, and nothing upstream of it.
   await page.locator("[data-select-asset]").selectOption("minigrid_site:MG-DRY");
   await expect(selected(page)).toContainText("Dry River");
@@ -178,7 +178,7 @@ test("the boundary outlines come with their credit and where they came from", as
 test("the map works on a phone screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page);
-  await expect(page.getByText("SYNTHETIC DATA")).toBeVisible();
+  await expect(page.getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   // Nothing is wider than the screen.
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const box = await page.locator(".leaflet-container").boundingBox();
@@ -194,7 +194,7 @@ test("the map works on a phone screen", async ({ page }) => {
 test("the same map is inside the Operations levels and Events / Alarms, on the part of the network each is about", async ({ page }) => {
   // A feeder: itself, its substation and its transformers, with the feeder selected.
   await open(page, `${OPERATIONS}/feeders/FD-FRM`);
-  await expect(page.getByText("SYNTHETIC DATA")).toBeVisible();
+  await expect(page.getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   await expect(page.locator("path.gi-line")).toHaveCount(1);
   await expect(page.locator("path.gi-kind-substation")).toHaveCount(1);
   await expect(page.locator("path.gi-mark.gi-tone-alert")).toHaveCount(10);

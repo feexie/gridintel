@@ -63,6 +63,10 @@ export interface ModuleTrace {
   downstreamKnown: boolean;
   /** Counts of what is behind the entity, made over the entities the viewer sees. */
   facts: MetricView[];
+  /** What to say when nothing supplies it, where the module knows why (a site generates its own energy). */
+  noUpstreamReason?: string;
+  /** What to say when nothing it supplies is listed, where the module knows why (connections that are counted, not drawn). */
+  noDownstreamReason?: string;
 }
 
 /** A figure of the module's that can be totalled by area: one value per entity, from one of its services. */

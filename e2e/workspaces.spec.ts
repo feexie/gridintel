@@ -93,8 +93,8 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
   await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("26.9%");
   await expect(loss.locator('[data-row="FD-GOV"]')).toContainText("₦15,639,570");
   // Commercial loss is marked as derived, collection loss as calculated.
-  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("27.9%≈Deri");
-  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("23.1%≈Calc");
+  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("27.9%≈Derived");
+  await expect(loss.locator('[data-row="FD-OLD"]')).toContainText("23.1%≈Calculated");
   await expect(page.locator("[data-loss-feeder]")).toHaveCount(4);
   await expect(panel(page, /^Commercial against collection loss/)).toContainText("never set against each other");
   await loss.getByRole("link", { name: "Old Town 11 kV feeder" }).click();

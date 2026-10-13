@@ -80,12 +80,14 @@ test("a site in full: energy flow, PV, battery, generator, availability and comm
   await page.goto(site("MG-TAM"));
   await expect(page.getByRole("note").getByText("SYNTHETIC DATA", { exact: true })).toBeVisible();
   await expect(page.locator("[data-assets]")).toContainText("Solar PV array: 100 kWp");
+  await expect(page.locator("[data-assets]")).toContainText("PV inverter: 100 kVA");
+  await expect(page.locator("[data-assets]")).toContainText("Battery inverter: 80 kVA");
   await expect(page.locator("[data-mix]")).toContainText("Solar PV 94.7%");
   const flow = page.locator('[data-table="energy-flow"]');
   await expect(flow.locator("tbody tr")).toHaveCount(8);
   await expect(flow.locator('[data-row="Energy generated"]')).toContainText("11,904 kWh");
   await expect(flow.locator('[data-row="Energy sent out"]')).toContainText("11,245 kWh");
-  await expect(flow.locator('[data-row="Station use"]')).toContainText("Deri");
+  await expect(flow.locator('[data-row="Station use"]')).toContainText("Derived");
 
   await expect(tile(page, "Performance ratio")).toContainText("74.4%");
   await expect(tile(page, "Fuel per kWh")).toContainText("0.35 L/kWh");
@@ -96,6 +98,9 @@ test("a site in full: energy flow, PV, battery, generator, availability and comm
   await expect(tile(page, "Availability")).toContainText("99.7%");
   await expect(page.locator('[data-table="interruptions"] tbody tr')).toHaveCount(2);
   await expect(tile(page, "Collection efficiency")).toContainText("96.0%");
+  // Collection is named for what it does on a site, not for the utility figure it shares a methodology with.
+  await expect(tile(page, "Collection efficiency")).toContainText("GridIntel reference collection");
+  await expect(tile(page, "Collection efficiency")).not.toContainText("ATC&C");
 
   // Source and method behind a figure: its inputs, each with its origin, and the methodology.
   await tile(page, "Renewable fraction").locator("summary").click();
@@ -107,6 +112,9 @@ test("a site in full: energy flow, PV, battery, generator, availability and comm
   await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(4);
   await expect(page.locator("path.gi-selected")).toHaveCount(1);
   await expect(page.locator("[data-selected]")).toHaveAttribute("data-selected", "minigrid_site:MG-TAM");
+  await expect(page.locator("[data-selected] [data-trace]")).toContainText("Synthetic data is not placed in real states or LGAs, and no synthetic district covers it.");
+  await expect(page.locator("[data-selected] [data-trace]")).toContainText("No substation: the site generates its own energy.");
+  await expect(page.locator("[data-selected] [data-trace]")).toContainText("Its own connections, counted below.");
 });
 
 test("the site report against the calculation: same basis or not comparable, never a variance across bases", async ({ page }) => {
@@ -120,6 +128,9 @@ test("the site report against the calculation: same basis or not comparable, nev
   await expect(row("Renewable fraction")).toContainText("-18.4 pp");
   await expect(row("Renewable fraction")).toContainText("Reported counts: a share of energy generated.");
   await expect(row("Availability")).toContainText("planned work excluded");
+  // The report's methodology being unverified is said once above the table, on no row.
+  await expect(report.locator("[data-comparison-note]")).toContainText("has not been verified as equivalent to the GridIntel reference methods the calculations use. This applies to every figure below.");
+  await expect(report.locator("tbody")).not.toContainText("verified as equivalent");
 
   // A gap is said to be one: six meters did not report, so three figures have no value.
   await expect(page.getByText("294 of 300 connections have a meter that recorded the whole month.")).toBeVisible();

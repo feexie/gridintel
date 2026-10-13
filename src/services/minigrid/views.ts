@@ -171,5 +171,7 @@ export interface MinigridSiteView {
   };
   report: ReportStandingView;
   comparisons: ReportedComparisonView[];
+  /** Said once above the comparison: the report's methodology has not been verified as equivalent. null when no figure states one. */
+  comparisonNote: string | null;
   sourcing: SourcingView;
 }

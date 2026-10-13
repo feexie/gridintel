@@ -72,7 +72,7 @@ function Selected({ features, layers }: { features: { layer: MapLayerView; featu
           <dt className="text-ink-5">Supplied from</dt>
           <dd className="text-ink-2">
             {own.trace.upstream.length === 0
-              ? "Nothing above it is held"
+              ? (own.trace.noUpstreamReason ?? "Nothing above it is held")
               : own.trace.upstream.map((above, i) => (
                   <span key={`${above.kind}:${above.id}`}>
                     {i > 0 ? <span className="text-ink-5"> ‹ </span> : null}
@@ -87,13 +87,13 @@ function Selected({ features, layers }: { features: { layer: MapLayerView; featu
                 ))}
           </dd>
           <dt className="text-ink-5">In</dt>
-          <dd className="text-ink-2">{own.trace.areas.length === 0 ? "No single district (it crosses a boundary, or none is held)" : own.trace.areas.map((area) => area.name).join(", ")}</dd>
+          <dd className="text-ink-2">{own.trace.areas.length === 0 ? (own.trace.areasReason ?? "No area is named") : own.trace.areas.map((area) => area.name).join(", ")}</dd>
           <dt className="text-ink-5">Supplies</dt>
           <dd className="text-ink-2">
             {!own.trace.downstreamKnown
               ? "Not recorded in the registry"
               : own.trace.downstream.length === 0
-                ? "Nothing further"
+                ? (own.trace.noDownstreamReason ?? "Nothing further")
                 : own.trace.downstream.map((group) => `${group.count} ${group.kindLabel.toLowerCase()}${group.count === 1 ? "" : "s"}`).join(", ")}
           </dd>
         </dl>

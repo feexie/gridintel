@@ -208,12 +208,16 @@ describe("mini-grid sites on the spatial platform", () => {
     assert.deepEqual(dry?.trace?.facts.map((fact) => [fact.label, fact.value, fact.unit]), [["Active connections", commercial.connections.value, "count"]]);
     assert.deepEqual([figure("Energy generated")?.unit, figure("Energy generated")?.status, figure("Energy generated")?.origin], ["kWh", "ok", "calculated"]);
     assert.equal(figure("Energy generated")?.method?.name, "GridIntel reference site performance");
+    assert.equal(figure("Collection efficiency")?.method?.name, "GridIntel reference collection");
   });
 
   it("trace a site to nothing upstream: no substation supplies it", async () => {
     const behind = await whatIsBehind(spatial, { kind: "minigrid_site", id: "MG-PLM" });
     assert.deepEqual([behind?.upstream.length, behind?.downstream.length], [0, 0]);
     assert.deepEqual(behind?.facts.map((fact) => [fact.label, fact.value]), [["Active connections", 393]]);
+    assert.deepEqual([behind?.noUpstreamReason, behind?.noDownstreamReason], ["No substation: the site generates its own energy.", "Its own connections, counted below. They have no recorded location, so none is drawn."]);
+    // It is in no area, and the reason given is the true one.
+    assert.deepEqual([behind?.areas, behind?.areasReason], [[], "Synthetic data is not placed in real states or LGAs, and no synthetic district covers it."]);
     assert.equal(await whatIsBehind(spatial, { kind: "minigrid_site", id: "MG-NOWHERE" }), null);
   });
 

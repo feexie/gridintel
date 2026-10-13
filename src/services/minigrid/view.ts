@@ -8,6 +8,7 @@ import { combineClassTotals, convertUnit, toEpochMs } from "../../analytics/inde
 import { NO_CACHE } from "../analytics/cache.ts";
 import { describeBasis } from "../operations/levels.ts";
 import { kpiMetric, sourcingView } from "../operations/metric.ts";
+import { siteMethodName } from "./method.ts";
 import { sitePerformance, sitePortfolio } from "./performance.ts";
 
 /* ==========================================================
@@ -90,7 +91,7 @@ const UNIT: Partial<Record<CalculatedKpi["unit"], MetricUnit>> = {
 
 /** A site figure as a MetricView, in its own unit; a percentage becomes a fraction. */
 function figure(label: string, kpi: CalculatedKpi, options: { note?: string; currency?: string | null } = {}): MetricView {
-  const view = kpiMetric(label, kpi, { unit: UNIT[kpi.unit], note: options.note ?? null });
+  const view = siteMethodName(kpiMetric(label, kpi, { unit: UNIT[kpi.unit], note: options.note ?? null }), kpi);
   return kpi.unit === "currency" ? { ...view, currency: options.currency ?? null } : view;
 }
 
@@ -141,10 +142,21 @@ function comparisonView(comparison: KpiComparison, currency: string | null): Rep
     variance: comparison.variance.absolute,
     varianceUnit: comparison.variance.absoluteUnit,
     reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
-    caveats: comparison.issues.filter((issue) => !issue.blocking).map((issue) => issue.message),
+    // That the report's methodology is unverified is true of the report, not of one figure: it is
+    // said once for the table (`methodologyNote`) and not repeated on each row.
+    caveats: comparison.issues.filter((issue) => !issue.blocking && issue.code !== "METHODOLOGY_NOT_VERIFIED").map((issue) => issue.message),
     ruleFinding: null,
     document: reported.document?.title ?? null,
   };
+}
+
+/** Said once above a site's comparison table: the report's methodology has not been verified as equivalent. null when no figure states one. */
+function methodologyNote(comparisons: readonly KpiComparison[]): string | null {
+  const stated = comparisons.filter((comparison) => comparison.issues.some((issue) => issue.code === "METHODOLOGY_NOT_VERIFIED"));
+  if (stated.length === 0) return null;
+  const names = [...new Set(stated.flatMap((comparison) => comparison.reported.methodology?.name ?? []))].map((name) => `"${name}"`).join(", ");
+  const reach = stated.length === comparisons.length ? "This applies to every figure below." : `This applies to the ${stated.length} of ${comparisons.length} figures below that state a methodology.`;
+  return `The report's methodology (${names}) has not been verified as equivalent to the GridIntel reference methods the calculations use. ${reach}`;
 }
 
 /** Whether a comparable claim differs from the records by more than the tolerance. */
@@ -186,11 +198,16 @@ function nameplate(asset: GenerationAsset): string {
     case "generator":
       return `${asset.ratingKva} kVA, ${asset.ratedPowerKw} kW, ${asset.fuel}`;
     case "inverter":
-      return `${asset.ratingKva} kVA, ${asset.role} inverter`;
+      return `${asset.ratingKva} kVA`;
   }
 }
 
-const KIND_LABEL: Record<GenerationAsset["kind"], string> = { solar_pv: "Solar PV array", battery: "Battery", generator: "Generator", inverter: "Inverter" };
+const KIND_LABEL: Record<Exclude<GenerationAsset["kind"], "inverter">, string> = { solar_pv: "Solar PV array", battery: "Battery", generator: "Generator" };
+const INVERTER_LABEL: Record<Extract<GenerationAsset, { kind: "inverter" }>["role"], string> = { pv: "PV inverter", battery: "Battery inverter", hybrid: "Hybrid inverter" };
+
+function assetLabel(asset: GenerationAsset): string {
+  return asset.kind === "inverter" ? INVERTER_LABEL[asset.role] : KIND_LABEL[asset.kind];
+}
 
 function card(report: SiteReport): SiteCardView {
   const { site, assets, performance } = report;
@@ -358,7 +375,7 @@ export function minigridSiteView(runtime: OperationsRuntime, siteId: string): Pr
       name: site.name,
       operator: report.operator?.name ?? null,
       commissioned: site.commissionedAt ?? null,
-      assets: assets.map((asset) => ({ id: asset.id, kind: asset.kind, label: KIND_LABEL[asset.kind], nameplate: nameplate(asset) })),
+      assets: assets.map((asset) => ({ id: asset.id, kind: asset.kind, label: assetLabel(asset), nameplate: nameplate(asset) })),
       energy: {
         mix: [
           { label: "Solar PV", energy: figure("PV generation", energy.pvGeneration), share: figure("Renewable fraction", energy.renewableFraction), series: "renewable" },
@@ -476,6 +493,7 @@ export function minigridSiteView(runtime: OperationsRuntime, siteId: string): Pr
       },
       report: reportStanding(report),
       comparisons: report.comparisons.map((comparison) => comparisonView(comparison, currency)),
+      comparisonNote: methodologyNote(report.comparisons),
       sourcing: sourcingView(found.sourcing),
     };
   });

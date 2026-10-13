@@ -201,6 +201,7 @@ describe("what is behind an asset", () => {
     assert.equal(behind?.subject.name, "Riverbank transformer");
     assert.deepEqual(behind?.upstream.map((entity) => [entity.kind, entity.id]), [["feeder", "FD-OLD"], ["power_transformer", "PT-RIV-1"], ["substation", "SS-RIV"]]);
     assert.deepEqual(behind?.areas.map((area) => area.id), ["demo-district-south"]);
+    assert.equal(behind?.areasReason, null);
     assert.deepEqual(behind?.downstream.map((group) => [group.kind, group.count, group.entities?.length]), [["service_point", 135, 135]]);
     assert.deepEqual(behind?.facts.map((fact) => [fact.label, fact.value, fact.status, fact.origin]), [
       ["Connections behind it", 135, "ok", "calculated"],
@@ -218,6 +219,7 @@ describe("what is behind an asset", () => {
     assert.equal(behind?.facts.find((fact) => fact.label === "Active accounts behind it")?.value, 1015);
     // The route crosses a district boundary, so the feeder is in no single district.
     assert.deepEqual(behind?.areas, []);
+    assert.equal(behind?.areasReason, "It crosses the boundary of a synthetic district, so it is in no single one. Synthetic data is not placed in real states or LGAs.");
     // The power transformer that carries Farm Road alone has the same customers behind it, and is shown at its substation.
     const transformer = await whatIsBehind(context, { kind: "power_transformer", id: "PT-HIL-2" });
     assert.equal(transformer?.subject.basis, "inherited");

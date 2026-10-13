@@ -134,11 +134,16 @@ export function RuleFindings({ findings, scopeId }: { findings: RuleFindingView[
 }
 
 /** Reported figures beside the calculated figure on the same basis, or the reason there is none. */
-export function Comparisons({ rows }: { rows: ReportedComparisonView[] }) {
+export function Comparisons({ rows, note }: { rows: ReportedComparisonView[]; note?: string | null }) {
   if (rows.length === 0) return null;
   return (
     <div>
       <SubHead>Reported versus calculated</SubHead>
+      {note ? (
+        <p className="mb-1 text-caption leading-snug text-ink-4" data-comparison-note>
+          Note: {note}
+        </p>
+      ) : null}
       <Table>
         <HeadRow>
             <Th>Figure</Th>

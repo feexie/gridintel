@@ -7,6 +7,7 @@ import { siteCustomers } from "../../analytics/index.ts";
 import { SourceTrail } from "../analytics/sourcing.ts";
 import { kpiMetric, registryCount } from "../operations/metric.ts";
 import { entityKey } from "../spatial/module.ts";
+import { siteMethodName } from "./method.ts";
 import { loadSites, sitePerformance } from "./performance.ts";
 
 /* ==========================================================
@@ -65,7 +66,7 @@ async function keyFigures(runtime: SiteRuntime, shown: readonly SpatialEntity[])
       ...(pv === null ? [] : [kpiMetric("PV performance ratio", pv.performanceRatio, { note: "Counts curtailment as a loss." })]),
       kpiMetric("Availability", availability.all.availability, { note: availability.provisional ? "Provisional: includes an interruption still open." : "Every recorded interruption counted, planned or not." }),
       // Active connections are in the site's trace, as a count from the register; they are not repeated here.
-      kpiMetric("Collection efficiency", commercial.collectionEfficiency, { note: "Cash basis: money received in the period over charges raised in it." }),
+      siteMethodName(kpiMetric("Collection efficiency", commercial.collectionEfficiency, { note: "Cash basis: money received in the period over charges raised in it." }), commercial.collectionEfficiency),
     ]);
   }
   return { result: figures, sourcing: await trail.resolve(runtime.repos.sources) };
@@ -92,6 +93,8 @@ export function minigridSpatialModule(sites?: () => SiteRuntime): SpatialModule 
         upstream: [],
         downstream: [],
         downstreamKnown: true,
+        noUpstreamReason: "No substation: the site generates its own energy.",
+        noDownstreamReason: "Its own connections, counted below. They have no recorded location, so none is drawn.",
         facts: [registryCount("Active connections", complete ? active : null, complete ? null : "The site register is not complete, so the count is not known.")],
       };
     },

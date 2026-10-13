@@ -1,4 +1,4 @@
-import type { AreaKind, Coordinates, LocatedRef } from "@/domain";
+import type { AreaKind, Coordinates, EntityLocation, LocatedRef } from "@/domain";
 import type { Completeness } from "../../repositories/ports/index.ts";
 import type { AllocatedTotal } from "../../analytics/index.ts";
 import type { Sourcing } from "../analytics/sourcing.ts";
@@ -163,6 +163,22 @@ export function whatIsInside(context: SpatialContext, areaId: string, options: {
 
 /* ---------------- What is behind an entity ---------------- */
 
+/**
+ * Why a subject is in no area, said as what is true of it. An entity is compared only with areas
+ * of its own kind of source (`relates`): a synthetic one is never placed in a real state or LGA.
+ */
+function noAreaReason(scoped: ScopedModel, location: EntityLocation | null): string {
+  if (location === null) return "It has no recorded location, so no area can be named.";
+  const synthetic = scoped.syntheticSources.has(location.provenance.sourceSystem);
+  const crosses = scoped.areas.some((area) => relates(scoped, area, location) && geometryTouchesArea(location.geometry, area.geometry));
+  if (synthetic) {
+    return crosses
+      ? "It crosses the boundary of a synthetic district, so it is in no single one. Synthetic data is not placed in real states or LGAs."
+      : "Synthetic data is not placed in real states or LGAs, and no synthetic district covers it.";
+  }
+  return crosses ? "It crosses a boundary, so it is in no single area." : "None of the areas held covers it.";
+}
+
 /** null when the entity is not one the viewer may see, which is also the answer for one that does not exist. */
 export function whatIsBehind(context: SpatialContext, ref: LocatedRef, options: { list?: readonly string[] } = {}): Promise<BehindView | null> {
   return cached(context, `behind|${entityKey(ref)}|${[...(options.list ?? [])].sort().join(",")}`, async (scoped) => {
@@ -173,14 +189,18 @@ export function whatIsBehind(context: SpatialContext, ref: LocatedRef, options: 
     // The module names what is connected; only what this viewer sees of it goes any further.
     const seen = (refs: readonly LocatedRef[]) => refs.flatMap((other) => scoped.byKey.get(entityKey(other)) ?? []);
     const location = subject.entity.location;
+    // The areas the subject is in; a synthetic subject is in no real area.
+    const areas = location === null ? [] : scoped.areas.filter((area) => relates(scoped, area, location) && geometryWithinArea(location.geometry, area.geometry));
     return {
       subject: entityView(subject.module, subject.entity),
       upstream: seen(trace.upstream).map((held) => entityView(held.module, held.entity)),
       downstream: groups(seen(trace.downstream), options.list),
       downstreamKnown: trace.downstreamKnown,
       facts: trace.facts,
-      // The areas the subject is in; a synthetic subject is in no real area.
-      areas: location === null ? [] : scoped.areas.filter((area) => relates(scoped, area, location) && geometryWithinArea(location.geometry, area.geometry)).map(areaView),
+      areas: areas.map(areaView),
+      areasReason: areas.length > 0 ? null : noAreaReason(scoped, location),
+      noUpstreamReason: trace.noUpstreamReason ?? null,
+      noDownstreamReason: trace.noDownstreamReason ?? null,
       scopeLimited: scoped.limited,
       sourcing: sourcingView(await sourcingOf(context, [scoped.modules.find((held) => held.module.id === subject.module.id)?.sourcing ?? scoped.areaSourcing])),
     };

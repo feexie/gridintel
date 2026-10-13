@@ -184,7 +184,7 @@ export function MetricCell({ metric, mark }: { metric: MetricView | undefined; m
       <span aria-label={STATUS_LABEL[metric.status]} className={`text-micro ${STATUS_STYLE[metric.status].split(" ")[1]}`}>
         {STATUS_MARK[metric.status]}
       </span>
-      {metric.value === null ? null : <span className="text-nano uppercase text-ink-5">{ORIGIN_LABEL[metric.origin].slice(0, 4)}</span>}
+      {metric.value === null ? null : <span className="text-nano uppercase text-ink-5">{ORIGIN_LABEL[metric.origin]}</span>}
       {mark ? <span className="font-sans text-caption text-caution">{mark}</span> : null}
     </span>
   );

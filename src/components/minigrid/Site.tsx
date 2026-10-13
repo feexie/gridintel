@@ -246,7 +246,7 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
           </p>
           {view.comparisons.length === 0 ? <p className="text-xs text-ink-4">No reported figure is held for this site and month.</p> : (
             <div className="overflow-x-auto">
-              <Comparisons rows={view.comparisons} />
+              <Comparisons rows={view.comparisons} note={view.comparisonNote} />
             </div>
           )}
         </Panel>

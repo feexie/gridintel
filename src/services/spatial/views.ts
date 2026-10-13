@@ -118,6 +118,11 @@ export interface BehindView extends SpatialResultBase {
   facts: MetricView[];
   /** The areas the subject is in. */
   areas: AreaView[];
+  /** Why no area is named, when none is; null when one is. */
+  areasReason: string | null;
+  /** The module's own words for why nothing supplies the subject, or why nothing it supplies is listed; null when it gave none. */
+  noUpstreamReason: string | null;
+  noDownstreamReason: string | null;
 }
 
 /* ---------------- Incidents ---------------- */
@@ -242,6 +247,10 @@ export interface FeatureTraceView {
   downstream: { kind: string; kindLabel: string; count: number }[];
   downstreamKnown: boolean;
   areas: { id: string; name: string }[];
+  /** Why no area is named, when none is; null when one is. */
+  areasReason: string | null;
+  noUpstreamReason: string | null;
+  noDownstreamReason: string | null;
   facts: MetricView[];
 }
 

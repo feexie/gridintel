@@ -146,7 +146,7 @@ describe("the Mini-grid site view", () => {
     assert.equal(granite.generator, null);
     assert.equal(granite.storage?.byDay.length, 30);
     assert.ok(granite.storage!.byDay.every((day) => day.lowest !== null && day.highest !== null && day.lowest <= (day.mean as number) && (day.mean as number) <= day.highest));
-    assert.deepEqual(granite.assets.map((asset) => asset.label), ["Battery", "Inverter", "Inverter", "Solar PV array"]);
+    assert.deepEqual(granite.assets.map((asset) => [asset.label, asset.nameplate]).filter(([label]) => label.endsWith("inverter")), [["Battery inverter", "40 kVA"], ["PV inverter", "60 kVA"]]);
   });
 
   it("lists the interruptions as the log holds them, and the hours lost by cause", async () => {
@@ -171,6 +171,12 @@ describe("the Mini-grid site view", () => {
   it("sets every claim of the report beside the calculation, saying what each counts or why they cannot be compared", async () => {
     const view = (await minigridSiteView(runtime, "MG-TAM"))!;
     assert.equal(view.comparisons.length, 8);
+    // That the report's methodology is unverified is said once for the table, and on no row.
+    assert.match(view.comparisonNote ?? "", /^The report's methodology \(".+"\) has not been verified as equivalent to the GridIntel reference methods the calculations use\. This applies to every figure below\.$/);
+    assert.ok(view.comparisons.every((row) => row.caveats.every((caveat) => !/verified as equivalent/.test(caveat))));
+    // Collection on a site is named for what it does there; the methodology's id is as recorded.
+    assert.deepEqual([view.commercial.collectionEfficiency.method?.name, view.commercial.collectionEfficiency.method?.id], ["GridIntel reference collection", "gridintel.atcc.reference"]);
+    assert.equal(view.comparisons.find((row) => row.label === "Collection efficiency")?.calculated.method?.name, "GridIntel reference collection");
     const accrual = view.comparisons.find((row) => row.label === "Collection efficiency")!;
     assert.deepEqual([accrual.comparable, accrual.variance, accrual.reportedBasis], [false, null, "collection on an accrual basis"]);
     assert.ok(accrual.reasons.length > 0);
