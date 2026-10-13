@@ -1,0 +1,87 @@
+/* Direction B: "Clean light".
+   Not part of the application. The screenshot script lays this sheet over the prototype to show
+   the same screens in this direction (docs/design/UI-A-PROPOSAL.md).
+
+   Light first, white and cool grey, one cobalt accent, soft corners, more air and no gradient
+   anywhere. It reads as a careful analytics product: quiet, and easy in daylight on a phone. */
+
+html[data-theme="dark"],
+html[data-theme="light"] {
+  --radius-panel: 0.625rem;
+  --radius-tile: 0.5rem;
+}
+html[data-theme="light"] {
+  --color-app: #ffffff;
+  --color-panel: #ffffff;
+  --color-well: #edf0f4;
+  --color-line: #e3e7ed;
+  --color-line-strong: #cbd2dc;
+  --color-line-bold: #9ca6b5;
+  --color-ink: #101418;
+  --color-ink-2: #1f262e;
+  --color-ink-3: #38414c;
+  --color-ink-4: #57626f;
+  --color-ink-5: #6a7584;
+  --color-link: #1554c0;
+  --color-link-hover: #0e3d8f;
+  --color-brand: #1a5fd6;
+  --color-brand-strong: #1a5fd6;
+  --color-brand-soft: #eaf1fd;
+  --shadow-panel: 0 0 0 0 transparent;
+}
+html[data-theme="dark"] {
+  --color-app: #111315;
+  --color-panel: #17191c;
+  --color-well: #22262b;
+  --color-line: #272b31;
+  --color-line-strong: #383e46;
+  --color-line-bold: #555d68;
+  --color-ink: #f3f4f5;
+  --color-ink-2: #e1e3e6;
+  --color-ink-3: #c5c9ce;
+  --color-ink-4: #9ba2ab;
+  --color-ink-5: #808893;
+  --color-link: #8db4ff;
+  --color-link-hover: #b9d1ff;
+  --color-brand: #6ea0ff;
+  --color-brand-strong: #2f6fe0;
+  --color-brand-soft: #172338;
+}
+.gi-hero {
+  background: var(--color-brand-soft);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+}
+.gi-hero::before {
+  display: none;
+}
+.gi-hero p {
+  color: var(--color-ink-3) !important;
+}
+.gi-hero a:first-of-type {
+  background: var(--color-brand-strong);
+  color: #ffffff;
+}
+.gi-hero a:last-of-type {
+  border-color: var(--color-line-bold);
+  color: var(--color-ink);
+}
+/* The art is drawn in white for a dark ground; here it is drawn in the brand colour. */
+.gi-hero svg [stroke="#ffffff"],
+.gi-hero svg g[stroke="#ffffff"] * {
+  stroke: var(--color-brand);
+}
+.gi-hero svg [fill="#ffffff"] {
+  fill: var(--color-brand);
+}
+.gi-hero svg .gi-flow,
+.gi-hero svg .gi-flow * {
+  stroke: var(--color-brand);
+  animation: none;
+}
+.gi-band {
+  background: var(--color-panel);
+}
+main {
+  background: var(--color-app);
+}

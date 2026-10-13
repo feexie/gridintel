@@ -1,0 +1,80 @@
+/* Direction A: "Control room".
+   Not part of the application. The screenshot script lays this sheet over the prototype to show
+   the same screens in this direction (docs/design/UI-A-PROPOSAL.md).
+
+   Dark first, near-black blue, one cyan accent, square corners, dense. It reads as an operations
+   console: the look of SCADA and network-management screens, refined. */
+
+html[data-theme="dark"],
+html[data-theme="light"] {
+  --radius-panel: 2px;
+  --radius-tile: 2px;
+  --tracking-title: 0.16em;
+  --tracking-eyebrow: 0.22em;
+}
+html[data-theme="dark"] {
+  --color-app: #05080f;
+  --color-panel: #0a101b;
+  --color-well: #131c2c;
+  --color-line: #1a2536;
+  --color-line-strong: #2a3a52;
+  --color-line-bold: #3f536f;
+  --color-ink: #f2f7fb;
+  --color-ink-2: #dbe5ee;
+  --color-ink-3: #bccad8;
+  --color-ink-4: #8fa2b6;
+  --color-ink-5: #71859b;
+  --color-link: #5fd4f0;
+  --color-link-hover: #a3e9fa;
+  --color-brand: #2cc4e8;
+  --color-brand-strong: #0e93b8;
+  --color-brand-soft: #0b2230;
+  --shadow-panel: 0 0 0 0 transparent;
+}
+html[data-theme="light"] {
+  --color-app: #eef1f4;
+  --color-panel: #fbfcfd;
+  --color-well: #dfe5eb;
+  --color-line: #d2dae2;
+  --color-line-strong: #b4c0cc;
+  --color-line-bold: #8797a8;
+  --color-ink: #06101c;
+  --color-ink-2: #14212f;
+  --color-ink-3: #2b3a4a;
+  --color-ink-4: #4a5b6d;
+  --color-ink-5: #5f7184;
+  --color-link: #046f8f;
+  --color-link-hover: #03536b;
+  --color-brand: #057fa3;
+  --color-brand-strong: #057fa3;
+  --color-brand-soft: #dff2f8;
+  --shadow-panel: 0 0 0 0 transparent;
+}
+.gi-hero {
+  background:
+    linear-gradient(90deg, rgb(44 196 232 / 0.16) 0%, transparent 60%),
+    #060b14;
+  border: 1px solid #1f3147;
+}
+.gi-hero::before {
+  background-size: 20px 20px;
+  background-image: linear-gradient(rgb(95 212 240 / 0.12) 1px, transparent 1px), linear-gradient(90deg, rgb(95 212 240 / 0.12) 1px, transparent 1px);
+  mask-image: none;
+}
+.gi-hero h1 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.gi-hero a:first-of-type {
+  background: #2cc4e8;
+  color: #04121a;
+}
+.gi-band {
+  background: var(--color-panel);
+  border-left: 3px solid var(--color-brand);
+}
+h1,
+h2,
+h3 {
+  letter-spacing: 0;
+}

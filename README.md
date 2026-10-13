@@ -109,9 +109,13 @@ Adapters (src/repositories/memory, demo)
 
 | Route | Status |
 | --- | --- |
-| `/dashboard` | Platform overview |
-| `/dashboard/map` | Map: the network on a plain ground, transformers coloured by loading, ATC&C, revenue not realised or band compliance, interruptions in progress with what is behind them, standing alarms, totals by synthetic district, and state and LGA boundaries for orientation. The same map is inside the Operations levels and Events / Alarms |
-| `/dashboard/utility` | Utility Intelligence suite hub |
+| `/dashboard` | Platform Overview: what GridIntel does, the first findings of each sector, and every sector on one small map |
+| `/dashboard/utility` | Utility Overview: what needs attention on the network, with links in |
+| `/dashboard/utility/map` | Utility GIS Map: the network on a plain ground, transformers coloured by loading, ATC&C, revenue not realised or band compliance, interruptions in progress with what is behind them, standing alarms, totals by synthetic district, and state and LGA boundaries for orientation. The same map is inside the Operations levels and Events / Alarms |
+| `/dashboard/utility/ai`, `/dashboard/minigrid/ai` | AI Assistant: planned, not built. The page says so, and what it will answer |
+| `/dashboard/minigrid` | Mini-grid Overview: what needs attention across the sites |
+| `/dashboard/minigrid/map` | Mini-grid GIS Map: the same map with the sites |
+| `/dashboard/minigrid/sites` | Sites: the sites side by side, and each site in full |
 | `/dashboard/utility/operations` | Operations Center: drill from region to substation, feeder, transformer and service point. ATC&C decomposition, reliability with attribution, service-band compliance and peak loading, each with status, origin, source and method |
 | `/dashboard/utility/executive` | Executive: a ranked "where to look first" list, ATC&C with its technical / commercial / collection split, reliability with attribution, service-band compliance per feeder, transformer peak loading, and reported figures against calculated ones on the same basis |
 | Other routes | Placeholders |

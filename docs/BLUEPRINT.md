@@ -4,6 +4,39 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase UI-A checkpoint (2026-10-13; branch `phase-ui-a`,
+> a prototype, not merged).** Since Phase 10 (ADR 0017):
+>
+> - **Every sector has the same structure**: Overview, GIS Map, AI
+>   Assistant, then its workspaces (`src/constants/navigation.ts`). There
+>   is no top-level Map.
+> - **A sector's GIS Map is a configuration of the shared map.**
+>   `spatial.sector(id)` in `src/composition/spatial.ts` names the sector's
+>   layers and which are on when it opens; `spatial.platform()` is the
+>   Platform Overview's map. `incidentsNow` can be asked for some modules
+>   only. The component (`NetworkMap`) takes the layers to open with.
+> - **Overview read models**: `src/services/overview/views.ts` (one shape
+>   for every sector), `utility/overview.ts`, `minigrid/overview.ts`,
+>   `platform/overview.ts`, bound in `src/composition/overview.ts`. They are
+>   put together from the Executive, Events, Assets and Mini-grid portfolio
+>   read models and add no figure. Not cached themselves: what they are made
+>   of is.
+> - **AI is planned per sector on the GIS pattern** (ADR 0017): one AI
+>   layer; each sector registers tools over its own services. Nothing is
+>   built. `src/components/ai/AssistantPlanned.tsx` is the page that says
+>   so.
+> - **Design system.** Tokens in `globals.css` are the dark theme;
+>   `html[data-theme="light"]` overrides the same roles. New roles: brand,
+>   panel and tile radius, panel shadow, alert surface. A script in
+>   `app/layout.tsx` sets the theme before the first paint. New system
+>   components: `Attention` (the one way a finding is shown), `Visuals`
+>   (loss split, site mix), `Brand` (hero art, sector band, planned tag,
+>   the folded key). Brand areas (`.gi-hero`, `.gi-band`) hold no figure.
+> - **Shell.** `components/layout`: `Menu` (shared by the sidebar and the
+>   phone's menu), `Topbar` (a client component that opens the menu),
+>   `ThemeToggle`, `Wordmark`. `DataBar` is a client component, so that its
+>   sentence can fold on a phone.
+>
 > **State at the end of Phase 10 (2026-10-12; 10b accepted and merged).**
 > Since 10a:
 >

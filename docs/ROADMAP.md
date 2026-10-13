@@ -7,9 +7,18 @@ Last updated: 2026-10-13. Status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
-`phase-7b`). **No phase is in progress.** New phases are paused while the Founder shows
-GridIntel to a few people (2026-10-13); the next phase will be chosen from
-their feedback.
+`phase-7b`). **In progress: Phase UI (the UI revamp), sub-phase UI-A, a
+proposal with a prototype on branch `phase-ui-a`, stopped at its checkpoint
+for the Founder to choose a visual direction** (2026-10-13). Nothing of it
+is merged to `main`.
+
+**Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
+before GridIntel is shown to people. After it the next modules are **DER
+Intelligence, then Planning**; that order is to be confirmed after user
+feedback. **AI (Phase 11) will be built per sector**: one AI layer for the
+platform, each sector registering its own tools over its own services (ADR
+0017). Phases 8 and 9 keep their numbers and their place is not decided
+here.
 
 ## Completed
 
@@ -1786,19 +1795,155 @@ phone.
   drawn, in place of "Nothing above it is held" and "Nothing further".
 - *Asset labels*: "PV inverter", "Battery inverter".
 
+## Phase UI: the UI revamp (in progress; UI-A at its checkpoint, 2026-10-13)
+
+**Purpose (Founder, 2026-10-13).** Before GridIntel is shown to people: a
+modern, premium AI and data product on the surface, applied to a serious
+energy operations tool. Brand areas may be striking; data areas stay sharp.
+Phone first, at 390 px. Light and dark. IBM Plex kept.
+
+**Goals.**
+
+1. GIS inside each sector, by the shared map component only. No top-level
+   Map; a small all-sectors map on the Platform Overview; the old addresses
+   redirect there.
+2. AI inside each sector, on the same pattern (ADR 0017). No AI is built.
+   Each sector has an "AI Assistant (planned)" page.
+3. Each sector Overview answers "what needs attention here?" in a few
+   lines, with links in.
+4. A Platform Overview that tells a first-time visitor in 30 seconds what
+   GridIntel does.
+5. Every screen readable and usable at 390 px. Less text on first view;
+   rules, notes, and source and method one tap away, never removed.
+6. Visual consistency from the design system, and one way of showing a
+   finding.
+
+**Rules.** No figure computed in a component. Every figure keeps status,
+origin, source and method. The SYNTHETIC DATA bar stays on every screen.
+Nothing that tells the truth about the data is removed, only moved or
+folded. A new UI or animation library is a decision gate.
+
+### Phase UI-A: proposal and prototype (at its checkpoint; branch `phase-ui-a`, not merged)
+
+The proposal is `docs/design/UI-A-PROPOSAL.md`: the audit of every screen at
+desktop and 390 px, the navigation, each screen's layout, and three visual
+directions. The decision on AI and GIS inside each sector is ADR 0017.
+
+| Item | Status |
+| --- | --- |
+| Audit of every current screen at desktop and 390 px, measured in a browser | Done; proposal, section 1 |
+| The new navigation, every sector with the same structure | Done, built |
+| Each screen's layout | Done; built for six screens, proposed for the rest |
+| Three visual directions, each on the Platform Overview and one data screen, desktop and phone, with its palette | Done: Control room, Clean light, Energy brand |
+| Prototype in the recommended direction (Energy brand): Platform Overview, Utility Overview and GIS Map, Mini-grid Overview and GIS Map, AI Assistant (planned) | Done |
+| ADR 0017 | Done |
+| The direction chosen by the Founder | **Open. Nothing else is rebuilt until it is.** |
+
+No dependency was added.
+
+**What was built.**
+
+- *Navigation and shell.* Platform: Overview. Each sector: Overview, GIS
+  Map, AI Assistant (marked "Planned"), then its workspaces. A sidebar on a
+  desktop; on a phone one row with a Menu button. The data bar folds on a
+  phone to the SYNTHETIC DATA label, the period and the as-of time, with the
+  sentence about the dataset one tap away. On a phone the page starts
+  126 px down, where it started 251 px down.
+- *Addresses.* `/dashboard/utility/map`, `/dashboard/minigrid/map`,
+  `/dashboard/utility/ai`, `/dashboard/minigrid/ai`. Sites moved to
+  `/dashboard/minigrid/sites`; `/dashboard/minigrid` is the sector's
+  Overview. `/dashboard/map` and `/dashboard/intelligence/gis` redirect to
+  `/dashboard`.
+- *Overview read models* (`src/services/overview`, `utility/overview.ts`,
+  `minigrid/overview.ts`, `platform/overview.ts`; tested). They add no
+  figure: every number is the `MetricView` of the screen a line leads to.
+  Utility's lines come from five fixed rules in a fixed order (every
+  interruption in progress; every transformer over its rating; the feeder
+  first by revenue not realised; standing source alarms; assets listed).
+  Mini-grid's are the portfolio's own findings, line for line. The Platform
+  Overview shows the first line of each rule of each sector, up to three,
+  and prints that rule. The two sectors' figures are shown side by side and
+  never added.
+- *One way of showing a finding* (`components/system/Attention.tsx`): a
+  mark and a word (Act, Check, Note), one sentence, the figure with status
+  and origin, a link, and the rule with source and method folded under it.
+- *Two visuals from service figures*: ATC&C loss as its three parts, and
+  generation mix by site. Each writes its values beside its marks.
+- *Design tokens.* Light and dark themes from one set of roles; a brand
+  colour; panel shape and depth; type one step larger (body 13 px, nothing
+  under 10 px). The reader's device chooses the theme and their choice is
+  kept.
+- *Status colours made colour-blind safe.* Measured, the green of "ok" and
+  the red of "alert" were one colour to a red-green colour-blind reader.
+  "ok" is now a teal; the three pass as a set for the three kinds of colour
+  blindness in both themes. Marks and words are unchanged.
+
+**On the demonstration.** The Utility Overview opens on: the fault on Farm
+Road (1,015 customers affected, as the outage record gives it); Riverbank
+transformer at 121.2% and Government Avenue transformer 3 at 110.6% of
+rating; Government Avenue feeder with the largest revenue not realised
+(₦16,953,603, a monthly estimate); 4 source alarms standing; 10 of 55
+assets listed. The Mini-grid Overview opens on Dry River's report differing
+from its records on 3 of 8 figures.
+
+**Checks.** `npm run verify` green in one run: typecheck clean; 651 unit
+tests (9 new, for the overview read models); lint clean; both builds; 68
+browser tests against both builds (13 more than before: the menu, the
+planned pages, the overviews, the phone frame, the theme, each sector's
+map, the redirects). Every route is inside the 500 ms budget on both
+builds; the five new screens take 9 to 24 ms built ahead and 37 to 87 ms on
+request (median of five). Screenshots at desktop and phone width:
+`docs/screenshots/phase-ui-a` (`prototype`, and `directions` for the three
+directions).
+
+**Not rebuilt.** Executive, Operations and its levels, Reliability, Revenue,
+Assets, Events / Alarms, Sites and the site screens. They take the new
+tokens and are otherwise as they were: on a phone nine of them still scroll
+sideways as a whole page. The proposal says what UI-B would do to each.
+
+**Known, and not done.**
+
+- The old Platform Overview's sections (architecture diagram, founder's
+  story, partner logos) are not on the new one. Their files are still in the
+  repository; nothing links to them. Whether any of it returns is the
+  Founder's decision.
+- The overview read models take no viewer, like the read models they are
+  put together from; owed before login.
+- Boxes that are not built from the panel component (site cards, a few
+  notes) still have square corners.
+- The Platform Overview's map lists its layers and the asset picker under
+  it, as every embedded map does; a smaller form of the map is for UI-B.
+- `/dashboard/intelligence/ai`, `/dashboard/der`, `/dashboard/planning`,
+  `/dashboard/reports` and `/dashboard/settings` are still bare "Coming
+  Soon" pages, reachable only by address.
+
 ## Phase 11: AI / MCP intelligence
 
-**Goal.** Natural-language query and explanation over services.
+**Goal.** Natural-language query and explanation over services, **built per
+sector** (Founder, 2026-10-13; ADR 0017): one AI layer for the platform;
+each sector registers its own tools wrapping its own services; answers cite
+service results with their status and origin and respect the viewer's scope.
 **Includes.** Tools wrapping services one-to-one, PII filtering, citations to
 source results, the synthetic marker carried into every answer, tool-call
-audit.
+audit. Each sector's "AI Assistant (planned)" page is replaced by the
+assistant with that sector's tools.
 **Dependencies.** Phases 6 and 8. External integration is a decision gate.
 **Acceptance.** Every factual statement in an answer links to a service
 result; the assistant states "insufficient data" where the engine does.
 
-## Phase 12: Planning and optimization
+## DER Intelligence (next module after the UI revamp; order to be confirmed after user feedback)
 
-**Goal.** Load growth, capacity, scenarios, investment prioritization.
+**Goal.** Distributed energy resources as operating assets: solar PV,
+storage, inverters and generators as fleets; performance, aggregation and
+dispatch. It was left out of Phase 10 on purpose.
+**Structure.** The same as every sector: Overview, GIS Map, AI Assistant,
+then its workspaces (ADR 0017).
+**Not yet scoped.** Scope and acceptance are set when the phase is approved.
+
+## Phase 12: Planning and optimization (the module after DER; order to be confirmed after user feedback)
+
+**Goal.** Load growth, capacity, scenarios, investment prioritization. It
+joins with the same structure as every sector (ADR 0017).
 **Dependencies.** Phases 7 and 9; financial domain objects.
 **Acceptance.** A scenario produces capacity shortfalls and costed options
 with stated assumptions.
