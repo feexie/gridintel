@@ -11,6 +11,7 @@ import { describeBasis } from "../operations/levels.ts";
 import { kpiMetric, sourcingView } from "../operations/metric.ts";
 import { siteMethodName } from "./method.ts";
 import { sitePerformance, sitePortfolio } from "./performance.ts";
+import { AGREEMENT_TOLERANCE } from "../operations/comparison.ts";
 
 /* ==========================================================
    SERVICES — MINI-GRID READ MODELS
@@ -41,8 +42,7 @@ import { sitePerformance, sitePortfolio } from "./performance.ts";
                        paid the smallest share of what it was billed
 ========================================================== */
 
-/** A reported figure agrees with the records when it is within this fraction of the reported value. */
-export const AGREEMENT_TOLERANCE = 0.01;
+export { AGREEMENT_TOLERANCE };
 const FUEL_MARGIN = 1.2;
 const HELD_BACK_SHARE = 0.5;
 
@@ -141,6 +141,7 @@ function comparisonView(comparison: KpiComparison, currency: string | null): Rep
     sameBasis: comparison.sameBasis,
     comparable: comparison.comparable,
     variance: comparison.variance.absolute,
+    relativeVariance: comparison.variance.relative,
     varianceUnit: comparison.variance.absoluteUnit,
     reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
     // That the report's methodology is unverified is said once for the table, not on each row.
@@ -155,6 +156,15 @@ function differs(comparison: KpiComparison): boolean {
   const { relative, absolute } = comparison.variance;
   // A claim of zero has no relative difference: any difference from it counts.
   return comparison.comparable && (relative === null ? absolute !== null && absolute !== 0 : Math.abs(relative) > AGREEMENT_TOLERANCE);
+}
+
+/** How the differing figures of a report are ordered, in words. */
+export const LARGEST_FIRST = "The largest difference is shown first, measured against the reported figure itself, so that figures in different units can be set side by side.";
+
+/** Largest difference relative to the reported figure first; a claim of zero that differs at all before any other; ties by label. */
+function largestFirst(comparisons: readonly KpiComparison[]): KpiComparison[] {
+  const size = (comparison: KpiComparison) => (comparison.variance.relative === null ? Number.POSITIVE_INFINITY : Math.abs(comparison.variance.relative));
+  return [...comparisons].sort((a, b) => size(b) - size(a) || (a.reported.metric < b.reported.metric ? -1 : a.reported.metric > b.reported.metric ? 1 : 0));
 }
 
 function reportStanding(report: SiteReport): ReportStandingView {
@@ -225,8 +235,8 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
   const found: SiteFindingView[] = [];
   const named = (report: SiteReport) => ({ id: report.site.id, name: report.site.name });
 
-  // report_differs: most differing claims first.
-  const withVariances = reports.map((report) => ({ report, differing: report.comparisons.filter(differs) })).filter((one) => one.differing.length > 0);
+  // report_differs: most differing claims first; within a site, the largest difference first.
+  const withVariances = reports.map((report) => ({ report, differing: largestFirst(report.comparisons.filter(differs)) })).filter((one) => one.differing.length > 0);
   withVariances.sort((a, b) => b.differing.length - a.differing.length || (a.report.site.id < b.report.site.id ? -1 : 1));
   for (const { report, differing } of withVariances) {
     found.push({
@@ -237,7 +247,7 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
       figures: [],
       comparisons: differing.map((comparison) => comparisonView(comparison, report.performance.commercial.currency)),
       classes: [],
-      ruleText: `A reported figure on the same basis as the calculation, and more than ${AGREEMENT_TOLERANCE * 100}% of its own value away from it.`,
+      ruleText: `A reported figure on the same basis as the calculation, and more than ${AGREEMENT_TOLERANCE * 100}% of its own value away from it. ${LARGEST_FIRST}`,
     });
   }
 

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { PLATFORM_HOME } from "@/constants/navigation";
 
-/* The name of the product. It is not the heading of the page: each page has one h1 of its own. */
-export default function Wordmark() {
-  return (
-    <Link href={PLATFORM_HOME} className="flex items-center gap-2.5" aria-label="GridIntel, platform overview">
+/* The name of the product. It is not the heading of the page: each page has one h1 of its own.
+   It leads to where the viewer's GridIntel starts; a viewer who may open nothing gets the name
+   without a link. */
+export default function Wordmark({ href }: { href: string | null }) {
+  const mark = (
+    <>
       {/* The mark: three nodes of a network on the brand colour. */}
       <svg aria-hidden viewBox="0 0 28 28" className="h-7 w-7 shrink-0">
         <rect width="28" height="28" rx="8" fill="var(--color-brand-strong)" />
@@ -17,6 +18,13 @@ export default function Wordmark() {
         <span className="block text-sm font-semibold tracking-tight text-ink">GridIntel</span>
         <span className="block text-micro text-ink-5">Energy intelligence</span>
       </span>
+    </>
+  );
+  return href === null ? (
+    <span className="flex items-center gap-2.5">{mark}</span>
+  ) : (
+    <Link href={href} className="flex items-center gap-2.5" aria-label="GridIntel, home">
+      {mark}
     </Link>
   );
 }

@@ -180,7 +180,7 @@ const base = withGeoBoundaries(createDemoRepositories());
 // As the composition root does: the platform's list of data sources includes the operator's.
 const runtime = { repos: { ...base, sources: { listDataSources: async () => [...(await base.sources.listDataSources()), ...MINIGRID_DATA_SOURCES] } }, now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {}, cache: createMemoryCache() };
 const sites = minigridSpatialModule(() => ({ repos, now: DEMO_CLOCK, period: DEMO_PERIOD, cache }));
-const spatial: SpatialContext = { runtime, registry: createSpatialRegistry([UTILITY_SPATIAL_MODULE, sites, REFERENCE_SPATIAL_MODULE]), viewer: { viewerId: "public-demo", organizationId: null, access: { kind: "everything" } } };
+const spatial: SpatialContext = { runtime, registry: createSpatialRegistry([UTILITY_SPATIAL_MODULE, sites, REFERENCE_SPATIAL_MODULE]), viewer: { viewerId: "public-demo", organizationId: null, screens: { kind: "everything" }, access: { kind: "everything" } } };
 
 describe("mini-grid sites on the spatial platform", () => {
   it("fill the layer registered for them: four sites, located, complete and synthetic", async () => {

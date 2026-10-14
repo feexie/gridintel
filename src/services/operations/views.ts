@@ -124,6 +124,8 @@ export interface ReportedComparisonView {
   comparable: boolean;
   /** calculated − reported, in the reported unit (percentage points for ratios); null unless on the same basis. */
   variance: number | null;
+  /** (calculated − reported) ÷ |reported|; null unless on the same basis, or when the reported figure is zero. */
+  relativeVariance: number | null;
   varianceUnit: string;
   /** Why the figures are not comparable. Empty when they are. */
   reasons: string[];

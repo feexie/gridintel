@@ -14,6 +14,7 @@ const UTILITY = "/dashboard/utility";
 const MINIGRID = "/dashboard/minigrid";
 const ASSISTANTS = [`${UTILITY}/ai`, `${MINIGRID}/ai`];
 const PLANNED_SECTORS = ["/dashboard/der", "/dashboard/planning"];
+const REFUSED = "/dashboard/refused";
 
 test("the sectors are across the top, and the menu holds the screens of the sector the reader is in", async ({ page }) => {
   await page.goto(UTILITY);
@@ -46,11 +47,13 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   await page.goto(`${MINIGRID}/sites/MG-DRY`);
   await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
 
-  // There is no top-level Map: the platform has an Overview only.
+  // There is no top-level Map: the platform has an Overview only, so it has no sidebar and its page takes the full width.
   await sectors.getByRole("link", { name: "Platform" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(menu.getByRole("link")).toHaveText(["Overview"]);
-  visited.push(...(await hrefs()));
+  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Platform"]);
+  await expect(page.locator("aside")).toHaveCount(0);
+  await expect(menu).toHaveCount(0);
+  expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().left)).toBe(0);
 
   // Every link in the menu and in the row of sectors leads to a screen that exists: none says "Coming Soon".
   for (const href of [...visited, ...PLANNED_SECTORS]) {
@@ -104,20 +107,23 @@ test("an AI Assistant page says it is not built, gives example questions, and is
 test("the Platform Overview says what GridIntel does, shows every sector on one map and leads into each sector's findings", async ({ page }) => {
   await page.goto("/dashboard");
   const main = page.getByRole("main");
-  await expect(main.getByRole("heading", { level: 1 })).toContainText("See where energy and money are lost");
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText("Know what your network is really doing, not just what the report says.");
   // The hero is a brand area: it holds no figure.
   await expect(main.locator("[data-hero] [data-figure], [data-hero] [data-metric]")).toHaveCount(0);
   // Three lines of each sector, each a line of that sector's own Overview, with status and origin.
   const utility = main.locator('[data-sector="utility"]');
   await expect(utility.locator("[data-attention]")).toHaveCount(3);
-  await expect(utility.locator("[data-attention]").first()).toContainText("Fault at Farm Road 11 kV feeder, 10 elements still without supply.");
+  await expect(utility.locator("[data-attention]").first()).toContainText("Fault at Farm Road 11 kV feeder, 10 transformers still without supply.");
   await expect(utility.locator("[data-attention]").first()).toContainText("1,015");
-  await expect(utility.locator('[data-attention="revenue:FD-GOV"]')).toContainText("₦16,953,603");
-  await expect(utility.locator('[data-attention="revenue:FD-GOV"]')).toContainText("Estimated inputs");
-  await expect(utility.locator('[data-attention="revenue:FD-GOV"]')).toContainText("Derived");
+  // Each sector's largest difference between a report and the records is among its lines.
+  const hillcrest = utility.locator('[data-attention^="report_differs:"]');
+  await expect(hillcrest).toContainText("Hillcrest 33/11 kV injection substation: the SAIDI its report states is furthest from the outage log.");
+  await expect(hillcrest).toContainText("SAIDI1.9 h reported · 23.1 h calculated (+21.2 h)");
   const minigrid = main.locator('[data-sector="minigrid"]');
   await expect(minigrid.locator("[data-attention]")).toHaveCount(3);
   await expect(minigrid.locator('[data-attention="report_differs:MG-DRY"]')).toContainText("Dry River's report differs from its records on 3 of the 8 figures it states.");
+  // A report line leads with its largest difference, measured against the reported figure.
+  await expect(minigrid.locator('[data-attention="report_differs:MG-DRY"]')).toContainText("Generator running hours");
   await expect(main).toContainText("Listed by fixed rules, not by AI.");
   // The rule and the source and method of a line are one tap away, not left out.
   const fault = utility.locator("[data-attention]").first();
@@ -139,7 +145,7 @@ test("a sector's Overview says what needs attention, in the fixed order of its r
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText("Overview");
   const lines = main.locator("[data-attention]");
-  expect(await lines.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-attention")?.split(":")[0]))).toEqual(["in_progress", "asset_risk", "asset_risk", "revenue", "standing_alarms", "assets_listed"]);
+  expect(await lines.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-attention")?.split(":")[0]))).toEqual(["in_progress", "asset_risk", "asset_risk", "revenue", "report_differs", "standing_alarms", "assets_listed"]);
   // A line is never told by colour alone: it carries a mark and a word.
   await expect(lines.first()).toContainText("▲Act·In progress now");
   await expect(main.locator('[data-attention="asset_risk:DT-OLD-2"]')).toContainText("121.2%");
@@ -205,7 +211,7 @@ test("the theme can be changed and is kept", async ({ page }) => {
   const html = page.locator("html");
   // Without a choice, the device's own setting.
   await expect(html).toHaveAttribute("data-theme", "light");
-  await page.locator("aside [data-theme-toggle]").click();
+  await page.locator("[data-sector-bar] [data-theme-toggle]").click();
   await expect(html).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "dark");
@@ -230,9 +236,6 @@ test("the menu marks the workspace the reader is in, at any depth", async ({ pag
   expect(await menu.locator('[aria-current="page"]').getAttribute("href")).toBe(`${MINIGRID}/map`);
   await page.goto(UTILITY);
   expect(await menu.locator('[aria-current="page"]').getAttribute("href")).toBe(UTILITY);
-  // The overview is not marked on the pages below it.
-  await page.goto("/dashboard");
-  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Overview"]);
 });
 
 test("the old Map addresses lead to the Platform Overview", async ({ page }) => {
@@ -245,7 +248,7 @@ test("the old Map addresses lead to the Platform Overview", async ({ page }) => 
 });
 
 test("every page has exactly one h1", async ({ page }) => {
-  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
+  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, REFUSED, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
   test.setTimeout(pages.length * 6_000);
   for (const route of pages) {
     await page.goto(route);
@@ -283,4 +286,18 @@ test("the site asks not to be indexed: a robots meta on every page and a robots.
   expect(robots.ok()).toBe(true);
   const lines = (await robots.text()).split("\n").map((line) => line.trim()).filter(Boolean);
   expect(lines).toEqual(["User-Agent: *", "Disallow: /"]);
+});
+
+test("the public demonstration may open every screen, and the page a refused route is answered with says only that it is not open", async ({ page, request }) => {
+  // The viewer of the demonstration holds everything: nothing in its menu or its routes is refused.
+  for (const route of ["/dashboard", UTILITY, `${UTILITY}/revenue`, `${OPERATIONS}/feeders/FD-OLD`, MINIGRID, `${MINIGRID}/sites/MG-DRY`, ...PLANNED_SECTORS]) {
+    const response = await request.get(route);
+    expect(response.status(), route).toBe(200);
+  }
+  // Which routes a narrower grant refuses is tested where the grant is decided (src/constants/access.test.ts).
+  await page.goto(REFUSED);
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Not open to you");
+  await expect(page.locator("[data-refused]")).toContainText("Your access does not include this screen.");
+  await expect(page.locator("[data-refused] [data-metric], [data-refused] [data-figure]")).toHaveCount(0);
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
 });

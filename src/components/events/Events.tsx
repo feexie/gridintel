@@ -47,7 +47,7 @@ function Interruptions({ rows, name }: { rows: OpenInterruptionRow[]; name: stri
               <Place place={row.place} />
             </Td>
             <Td>
-              {formatNumber(row.affected.length)} {row.affected.length === 1 ? "element" : "elements"}
+              {row.affectedWords}
               <span className="block text-micro leading-snug text-ink-5">{row.affected.map((subject) => subject.label).join(", ")}</span>
             </Td>
             <Td>

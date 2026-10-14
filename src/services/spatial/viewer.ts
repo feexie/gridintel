@@ -28,12 +28,21 @@ import type { TerritoryPart } from "@/domain";
    `viewerScopeKey`: the organization and the full territory, written
    out. Two viewers share a cached result only when both are equal.
 
-   Logging in, and where an organization's territory is kept, come
-   with the API boundary (Phase 8). Until then the composition root
-   supplies the one public viewer.
+   WHICH SCREENS A VIEWER MAY OPEN is a second, separate grant
+   (ADR 0018): everything, or a list of permission keys of sectors
+   and screens ("utility", "utility.revenue"). It decides the menu
+   and the routes (src/constants/access.ts); the territory decides
+   the records. A list with no key opens no screen.
+
+   Logging in, and where an organization's territory and a viewer's
+   grant are kept, come with the API boundary (Phase 8). Until then
+   the composition root supplies the one public viewer.
 ========================================================== */
 
 export type ViewerAccess = { kind: "everything" } | { kind: "territory"; parts: readonly TerritoryPart[] };
+
+/** The sectors and screens a viewer may open: everything, or the permission keys listed. */
+export type ScreenGrant = { kind: "everything" } | { kind: "listed"; keys: readonly string[] };
 
 export interface ViewerContext {
   /** Who is asking: an account, or the name of a standing viewer such as the public demonstration. */
@@ -41,6 +50,8 @@ export interface ViewerContext {
   /** The organization the viewer acts for; null for a viewer that belongs to none. */
   organizationId: string | null;
   access: ViewerAccess;
+  /** Which sectors and screens the viewer may open. */
+  screens: ScreenGrant;
 }
 
 /** True when the viewer's results are limited to a territory. */

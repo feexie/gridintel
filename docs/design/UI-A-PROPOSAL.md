@@ -286,6 +286,15 @@ SVG and CSS written by hand. No UI or animation library is proposed.
 
 ## 6. Decisions for the Founder
 
+**Decided (Founder, 2026-10-14).** 1: C, "Energy brand". 2: teal kept.
+3, 6, 7: accepted. 4: partner logos removed for good; the founder's story
+and the architecture diagram go to a separate About page later. 5: "Know
+what your network is really doing, not just what the report says." Also:
+the Platform has no sidebar; the Platform Overview always shows each
+sector's largest report-against-records difference; plain words for what
+is off supply; permission-driven navigation (ADR 0018). The questions as
+they were put:
+
 1. **The visual direction**: A, B or C.
 2. **"ok" as a teal instead of a green**, for colour-blind safety. It is
    built; it can be put back, at the cost of the green and the red being

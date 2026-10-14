@@ -1,12 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { sectorOf } from "@/constants/navigation";
+import { sectorOf, type Sector } from "@/constants/navigation";
 import NavItem from "./NavItem";
 
-/** The screens of the sector the reader is in: the same list in the sidebar and in the menu a phone opens. */
-export default function Menu({ onNavigate }: { onNavigate?: () => void }) {
-  const sector = sectorOf(usePathname());
+/** The screens the viewer may open in the sector they are in: the same list in the sidebar and in the menu a phone opens. */
+export default function Menu({ navigation, onNavigate }: { navigation: Sector[]; onNavigate?: () => void }) {
+  const sector = sectorOf(usePathname(), navigation);
+  if (sector === undefined) return null;
   return (
     <nav aria-label="Main" data-sector-menu={sector.id}>
       <p className="mb-1 px-3 text-micro font-semibold uppercase tracking-title text-ink-5">{sector.title}</p>
@@ -16,7 +17,7 @@ export default function Menu({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </div>
       {sector.workspaces.length > 0 ? (
-        <div className="mt-2 space-y-0.5 border-t border-line pt-2" data-workspaces>
+        <div className={`space-y-0.5 ${sector.opening.length > 0 ? "mt-2 border-t border-line pt-2" : ""}`} data-workspaces>
           {sector.workspaces.map((item) => (
             <NavItem key={item.href} item={item} onNavigate={onNavigate} />
           ))}

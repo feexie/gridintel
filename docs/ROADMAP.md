@@ -1446,7 +1446,13 @@ warm, which is a paid Vercel feature.
 
 **Goal.** Services reachable over HTTP with validated contracts.
 **Includes.** Route handlers, runtime schemas (Zod, already installed), error
-model, structured logging, auth boundary design.
+model, structured logging, auth boundary design. Logging in fills the
+viewer's screen grant of ADR 0018 from the request (departments as sets of
+permission keys); each screen and API route then checks the grant where its
+data is read, besides the proxy.
+**Later hosting option, not decided.** Serving each sector from its own
+subdomain (for example `utility.` and `minigrid.`); the addresses stay
+`/dashboard/...` until then (Founder, 2026-10-14).
 **Dependencies.** Phase 6 service contracts stable.
 **Risks.** Auth and security are decision gates.
 **Acceptance.** Every service has a documented, validated endpoint; invalid
@@ -1837,7 +1843,8 @@ directions. The decision on AI and GIS inside each sector is ADR 0017.
 | Three visual directions, each on the Platform Overview and one data screen, desktop and phone, with its palette | Done: Control room, Clean light, Energy brand |
 | Prototype in the recommended direction (Energy brand): Platform Overview, Utility Overview and GIS Map, Mini-grid Overview and GIS Map, AI Assistant (planned) | Done |
 | ADR 0017 | Done |
-| The direction chosen by the Founder | **Open. Nothing else is rebuilt until it is.** |
+| The direction chosen by the Founder | **Done: C, "Energy brand"** (Founder, 2026-10-14) |
+| The Founder's decisions on the prototype, built (below) | Done |
 
 No dependency was added.
 
@@ -1882,13 +1889,46 @@ No dependency was added.
   "ok" is now a teal; the three pass as a set for the three kinds of colour
   blindness in both themes. Marks and words are unchanged.
 
+**The Founder's decisions on the prototype (2026-10-14), built.**
+
+- *Direction C, "Energy brand"*, chosen. Teal for "ok" kept. The other
+  UI-A decisions accepted.
+- *Partner logos removed for good*: the carousel, its data and the logo
+  files are deleted. No partner is shown unless a written partnership
+  exists. The founder's story and the architecture diagram go to a separate
+  About page later; their files are kept, unlinked.
+- *The Platform has no sidebar*: its one screen takes the full width. The
+  theme switch moved to the top bar.
+- *The hero line*: "Know what your network is really doing, not just what
+  the report says."
+- *A report against the records on the Platform Overview.* Utility has a
+  sixth rule, `report_differs`: the reported reliability figure furthest
+  from the calculation on its own basis. Each sector's lines on the
+  Platform Overview always include its largest such difference, by a
+  printed rule. "Largest" is measured against the reported figure itself
+  (the same measure as the 1% agreement tolerance), so that figures in
+  different units can be set side by side; a report line in both sectors
+  leads with its largest difference.
+- *Plain words*: an interruption names what is still off by kind, "10
+  transformers", not "10 elements", on the overviews and in Events /
+  Alarms.
+- *Permission-driven navigation* (ADR 0018): every sector and screen has a
+  permission key; the row of sectors, the menu and the routes show only
+  what the viewer's grant opens; a refused address is answered with 403 and
+  a page that says so. The demonstration viewer holds everything. No login
+  and no user management are built.
+
 **On the demonstration.** The Utility Overview opens on: the fault on Farm
-Road (1,015 customers affected, as the outage record gives it); Riverbank
-transformer at 121.2% and Government Avenue transformer 3 at 110.6% of
-rating; Government Avenue feeder with the largest revenue not realised
-(₦16,953,603, a monthly estimate); 4 source alarms standing; 10 of 55
-assets listed. The Mini-grid Overview opens on Dry River's report differing
-from its records on 3 of 8 figures.
+Road (1,015 customers affected, as the outage record gives it; 10
+transformers still off); Riverbank transformer at 121.2% and Government
+Avenue transformer 3 at 110.6% of rating; Government Avenue feeder with the
+largest revenue not realised (₦16,953,603, a monthly estimate); Hillcrest
+substation's reported SAIDI, 1.9 h against 23.1 h from the outage log (11 of
+the 12 reliability figures reported differ); 4 source alarms standing; 10
+of 55 assets listed. The Mini-grid Overview opens on Dry River's report
+differing from its records on 3 of 8 figures, led by generator running
+hours (190 h reported, 315 h logged), then renewable fraction (68%
+reported, 49.6% calculated).
 
 **Checks.** `npm run verify` green in one run: typecheck clean; 651 unit
 tests (9 new, for the overview read models); lint clean; both builds; 68
@@ -1907,12 +1947,11 @@ sideways as a whole page. The proposal says what UI-B would do to each.
 
 **Known, and not done.**
 
-- The old Platform Overview's sections (architecture diagram, founder's
-  story, partner logos) are not on the new one. Their files are still in the
-  repository; nothing links to them. Whether any of it returns is the
-  Founder's decision.
+- The founder's story and the architecture diagram wait for an About page
+  (Founder, 2026-10-14); their files are kept, unlinked.
 - The overview read models take no viewer, like the read models they are
-  put together from; owed before login.
+  put together from; owed before login. Links inside pages are not cut to
+  the viewer's grant (ADR 0018).
 - Boxes that are not built from the panel component (site cards, a few
   notes) still have square corners.
 - The Platform Overview's map lists its layers and the asset picker under

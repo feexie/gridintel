@@ -14,7 +14,7 @@ import { LIST_LIMIT, MAX_SEARCH_METRES, totalsByArea, whatIsBehind, whatIsHere, 
 /* The spatial services on the synthetic demonstration network, for the public viewer, who sees
    everything. What a restricted viewer sees is in viewerScope.test.ts. */
 
-const PUBLIC: ViewerContext = { viewerId: "public-demo", organizationId: null, access: { kind: "everything" } };
+const PUBLIC: ViewerContext = { viewerId: "public-demo", organizationId: null, screens: { kind: "everything" }, access: { kind: "everything" } };
 const runtime = { repos: createDemoRepositories(), now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {}, cache: createMemoryCache() };
 const registry = createSpatialRegistry([UTILITY_SPATIAL_MODULE]);
 const context: SpatialContext = { runtime, registry, viewer: PUBLIC };

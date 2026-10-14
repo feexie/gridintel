@@ -19,7 +19,7 @@ import { areaOutlines, totalsByArea, whatIsBehind, whatIsHere, whatIsInside } fr
 
 const repos = withGeoBoundaries(createDemoRepositories());
 const runtime = { repos, now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {}, cache: createMemoryCache() };
-const PUBLIC: ViewerContext = { viewerId: "public-demo", organizationId: null, access: { kind: "everything" } };
+const PUBLIC: ViewerContext = { viewerId: "public-demo", organizationId: null, screens: { kind: "everything" }, access: { kind: "everything" } };
 const context: SpatialContext = { runtime, registry: createSpatialRegistry([UTILITY_SPATIAL_MODULE]), viewer: PUBLIC };
 
 const states = (await repos.spatial.listAreas({ kinds: ["state"] })).records;
@@ -153,7 +153,7 @@ describe("a synthetic network is never related to a real area", () => {
   });
 
   it("gives a viewer whose territory is a real state none of the synthetic network", async () => {
-    const viewer: ViewerContext = { viewerId: "user@adamawa", organizationId: "adamawa-co", access: { kind: "territory", parts: [{ kind: "areas", areaIds: [stateThere?.id as string, lgaThere?.id as string] }] } };
+    const viewer: ViewerContext = { viewerId: "user@adamawa", organizationId: "adamawa-co", screens: { kind: "everything" }, access: { kind: "territory", parts: [{ kind: "areas", areaIds: [stateThere?.id as string, lgaThere?.id as string] }] } };
     const map = await mapView({ ...context, viewer });
     assert.ok(map.layers.length > 3 && map.layers.every((layer) => layer.features.length === 0 && layer.areaFeatures.length === 0));
     assert.equal(map.scopeLimited, true);

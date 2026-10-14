@@ -23,7 +23,7 @@ describe("service point on the demonstration adapter", () => {
 
   it("draws where the connection is, with what supplies it, still without building the whole dataset", async () => {
     const runtime = { repos: createDemoRepositories(), now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {} };
-    const context = { runtime, registry: createSpatialRegistry([UTILITY_SPATIAL_MODULE, MINIGRID_SPATIAL_MODULE, REFERENCE_SPATIAL_MODULE]), viewer: { viewerId: "public-demo", organizationId: null, access: { kind: "everything" as const } } };
+    const context = { runtime, registry: createSpatialRegistry([UTILITY_SPATIAL_MODULE, MINIGRID_SPATIAL_MODULE, REFERENCE_SPATIAL_MODULE]), viewer: { viewerId: "public-demo", organizationId: null, screens: { kind: "everything" as const }, access: { kind: "everything" as const } } };
     const map = await mapView(context, { layers: ["utility.substations", "utility.feeders", "utility.transformers", "utility.service_points"], focus: { kind: "service_point", id: "SP-OLD2-001" }, figures: false });
     assert.deepEqual(map.layers.map((layer) => layer.features.map((feature) => feature.entity.id)), [["SS-RIV"], ["FD-OLD"], ["DT-OLD-2"], ["SP-OLD2-001"]]);
     // No figure of any service is on it, and each asset still says where it sits.

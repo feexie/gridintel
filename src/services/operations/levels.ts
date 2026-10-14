@@ -316,6 +316,7 @@ async function reportedComparisons(
           sameBasis: comparison.sameBasis,
           comparable: comparison.comparable,
           variance: comparison.variance.absolute,
+          relativeVariance: comparison.variance.relative,
           varianceUnit: comparison.variance.absoluteUnit,
           reasons: comparison.issues.filter((issue) => issue.blocking).map((issue) => issue.message),
           ...comparisonCaveats(comparison),

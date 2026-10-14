@@ -5,6 +5,7 @@ import { assets } from "./assets.ts";
 import { events } from "./events.ts";
 import { executive } from "./executive.ts";
 import { minigrid } from "./minigrid.ts";
+import { reliability } from "./reliability.ts";
 
 /* ==========================================================
    COMPOSITION — OVERVIEWS
@@ -19,7 +20,7 @@ import { minigrid } from "./minigrid.ts";
    Overview, side by side and never added together.
 ========================================================== */
 
-const utility = async () => utilityOverviewView({ executive: await executive.view("top"), events: await events.view(), assets: await assets.view("top") });
+const utility = async () => utilityOverviewView({ executive: await executive.view("top"), events: await events.view(), assets: await assets.view("top"), reliability: await reliability.view() });
 const minigridOverview = async () => minigridOverviewView(await minigrid.portfolioView());
 
 export const overview = {

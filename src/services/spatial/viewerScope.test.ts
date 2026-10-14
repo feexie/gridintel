@@ -56,8 +56,8 @@ const registry = createSpatialRegistry([{ ...UTILITY_SPATIAL_MODULE, layers: [..
 const ALL_LAYERS = registry.modules.flatMap((spatialModule) => spatialModule.layers.map((layer) => layer.id));
 const DISTRICTS = ["demo-district-south", "demo-district-north-west", "demo-district-north-east"];
 
-const PUBLIC: ViewerContext = { viewerId: "public-demo", organizationId: null, access: { kind: "everything" } };
-const restricted = (name: string, parts: TerritoryPart[]): ViewerContext => ({ viewerId: `user@${name}`, organizationId: name, access: { kind: "territory", parts } });
+const PUBLIC: ViewerContext = { viewerId: "public-demo", organizationId: null, screens: { kind: "everything" }, access: { kind: "everything" } };
+const restricted = (name: string, parts: TerritoryPart[]): ViewerContext => ({ viewerId: `user@${name}`, organizationId: name, screens: { kind: "everything" }, access: { kind: "territory", parts } });
 
 const { snapshot } = await repos.registry.getSnapshot({ asOf: DEMO_CLOCK });
 const { located } = registryLocations(snapshot);

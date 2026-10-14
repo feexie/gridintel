@@ -79,7 +79,7 @@ function accountsBehind(loaded: Loaded, ref: AssetRef | null): MetricView {
 
 const COUNT_BASIS: Record<OpenOutage["customerCountBasis"], { origin: MetricView["origin"]; words: string }> = {
   recorded: { origin: "measured", words: "Counted for this interruption and written in the outage record." },
-  topology_derived: { origin: "calculated", words: "Read from the network model: the accounts connected under the elements still without supply." },
+  topology_derived: { origin: "calculated", words: "Read from the network model: the accounts connected under the parts of the network still without supply." },
   estimated: { origin: "estimated", words: "A judgement written in the outage record, with no count and no model behind it." },
   mixed: { origin: "calculated", words: "The sum of the counts the outage record gives for the parts still off, which were not all obtained the same way." },
 };
@@ -105,9 +105,35 @@ function customersMetric(outage: OpenOutage): MetricView {
 
 const refIfResolved = (ref: EntityRef): AssetRef | null => ("id" in ref ? ref : null);
 
+/** The plain name of each kind of part, singular and plural. */
+const PART_WORDS: Record<NonNullable<AlarmSubjectView["assetKind"]> | "unmatched", [string, string]> = {
+  distribution_transformer: ["transformer", "transformers"],
+  power_transformer: ["power transformer", "power transformers"],
+  feeder: ["feeder", "feeders"],
+  substation: ["substation", "substations"],
+  service_point: ["service point", "service points"],
+  meter: ["meter", "meters"],
+  edge_device: ["monitor", "monitors"],
+  site: ["site", "sites"],
+  generation_asset: ["generating unit", "generating units"],
+  unmatched: ["part not in the registry", "parts not in the registry"],
+};
+
+/** "10 transformers", "1 feeder and 3 transformers": the parts counted by kind, in the order they first appear. */
+export function partsInWords(parts: readonly AlarmSubjectView[]): string {
+  const counts = new Map<keyof typeof PART_WORDS, number>();
+  for (const part of parts) {
+    const kind = part.assetKind ?? "unmatched";
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  const phrases = [...counts].map(([kind, count]) => `${count.toLocaleString("en-GB")} ${PART_WORDS[kind][count === 1 ? 0 : 1]}`);
+  return phrases.length <= 1 ? (phrases[0] ?? "nothing") : `${phrases.slice(0, -1).join(", ")} and ${phrases.at(-1)}`;
+}
+
 function interruptionRow(loaded: Loaded, outage: OpenOutage): OpenInterruptionRow {
   // The latest restoration the record gives for the parts listed; null when any of them has none.
   const restored = outage.exposures.map((exposure) => exposure.restoredAt);
+  const affected = outage.exposures.map((exposure) => alarmSubject(loaded, exposure.affected));
   const lastRestored = restored.every((time): time is string => time !== null) ? ([...restored].sort().at(-1) ?? null) : null;
   return {
     outageId: outage.outageId,
@@ -115,7 +141,8 @@ function interruptionRow(loaded: Loaded, outage: OpenOutage): OpenInterruptionRo
     beganAt: alarmSubject(loaded, outage.origin),
     // Where it began; for an origin that is not a registry asset, where its first part is.
     place: placeView(loaded, refIfResolved(outage.origin) ?? refIfResolved(outage.exposures[0].affected)),
-    affected: outage.exposures.map((exposure) => alarmSubject(loaded, exposure.affected)),
+    affected,
+    affectedWords: partsInWords(affected),
     cause: CAUSE_LABEL[outage.cause] ?? outage.cause,
     planned: outage.planned,
     interruptedAt: outage.interruptedAt,

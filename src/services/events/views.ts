@@ -43,8 +43,10 @@ export interface OpenInterruptionRow {
   /** Where the outage record says the interruption began, and where that is. */
   beganAt: AlarmSubjectView;
   place: PlaceView;
-  /** The elements still without supply. */
+  /** The parts of the network still without supply. */
   affected: AlarmSubjectView[];
+  /** The same, counted by kind in plain words: "10 transformers". */
+  affectedWords: string;
   cause: string;
   planned: boolean | null;
   interruptedAt: string;

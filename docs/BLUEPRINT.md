@@ -36,6 +36,11 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 >   the menu holds the screens of the sector the address is in
 >   (`sectors` and `sectorOf` in `src/constants/navigation.ts`). A sector
 >   not built (DER, Planning) has one page, `SectorPlanned`.
+> - **What a viewer may open** (ADR 0018). `ViewerContext.screens` is a
+>   grant: everything, or permission keys (`utility`, `utility.revenue`).
+>   `src/constants/access.ts` cuts the menu to it and answers whether an
+>   address opens; `src/proxy.ts` answers a refused address with 403 and
+>   `/dashboard/refused`. The viewer is in `src/composition/viewer.ts`.
 >   `components/layout`: `Menu` (shared by the sidebar and the
 >   phone's menu), `Topbar` (a client component that opens the menu),
 >   `ThemeToggle`, `Wordmark`. `DataBar` is a client component, so that its

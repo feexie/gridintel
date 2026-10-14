@@ -36,7 +36,7 @@ function Hero() {
       <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
         <div>
           <p className="text-micro font-semibold uppercase tracking-eyebrow text-white/75">GridIntel · Energy intelligence platform</p>
-          <h1 className="mt-2 max-w-xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">See where energy and money are lost, and trace every figure to its source.</h1>
+          <h1 className="mt-2 max-w-xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Know what your network is really doing, not just what the report says.</h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">
             GridIntel turns the records a utility or a mini-grid operator already holds into answers: what is failing, what it costs, and whether reported figures match the records.
           </p>

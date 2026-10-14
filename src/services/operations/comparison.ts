@@ -15,6 +15,21 @@ import type { ReportedComparisonView } from "./views.ts";
 
 const NOT_VERIFIED = "METHODOLOGY_NOT_VERIFIED";
 
+/** A reported figure agrees with the records when it is within this fraction of the reported value. Every sector uses the same. */
+export const AGREEMENT_TOLERANCE = 0.01;
+
+/** True when a reported figure is on the same basis as the calculation and further from it than the tolerance. */
+export function rowDiffers(row: Pick<ReportedComparisonView, "comparable" | "variance" | "relativeVariance">): boolean {
+  // A claim of zero has no relative difference: any difference from it counts.
+  return row.comparable && (row.relativeVariance === null ? row.variance !== null && row.variance !== 0 : Math.abs(row.relativeVariance) > AGREEMENT_TOLERANCE);
+}
+
+/** Largest difference relative to the reported figure first; a claim of zero that differs before any other. */
+export function byLargestDifference(a: Pick<ReportedComparisonView, "relativeVariance">, b: Pick<ReportedComparisonView, "relativeVariance">): number {
+  const size = (row: Pick<ReportedComparisonView, "relativeVariance">) => (row.relativeVariance === null ? Number.POSITIVE_INFINITY : Math.abs(row.relativeVariance));
+  return size(b) - size(a);
+}
+
 /** A comparison's caveats for its row, with the unverified methodology kept apart for the table's note. */
 export function comparisonCaveats(comparison: Pick<KpiComparison, "issues" | "reported">): Pick<ReportedComparisonView, "caveats" | "unverifiedMethodology"> {
   const unverified = comparison.issues.some((issue) => issue.code === NOT_VERIFIED);

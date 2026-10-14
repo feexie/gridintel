@@ -20,7 +20,7 @@ import { UTILITY_SPATIAL_MODULE } from "./spatial.ts";
 
 const runtime = { repos: withGeoBoundaries(createDemoRepositories()), now: DEMO_CLOCK, period: DEMO_PERIOD, caveats: {}, cache: createMemoryCache() };
 const registry = createSpatialRegistry([UTILITY_SPATIAL_MODULE, MINIGRID_SPATIAL_MODULE, REFERENCE_SPATIAL_MODULE]);
-const context: SpatialContext = { runtime, registry, viewer: { viewerId: "public-demo", organizationId: null, access: { kind: "everything" } } };
+const context: SpatialContext = { runtime, registry, viewer: { viewerId: "public-demo", organizationId: null, screens: { kind: "everything" }, access: { kind: "everything" } } };
 const EVERY_LAYER = registry.modules.flatMap((spatialModule) => spatialModule.layers.map((layer) => layer.id));
 
 const map = await mapView(context, { layers: EVERY_LAYER.filter((id) => id !== "utility.service_points") });

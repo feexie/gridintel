@@ -12,10 +12,3 @@ export interface ArchitectureStep {
   description: string;
   image?: string;
 }
-
-export interface Partner {
-  id: string;
-  name: string;
-  logo: string;
-  website?: string;
-}

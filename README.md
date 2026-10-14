@@ -113,6 +113,7 @@ Adapters (src/repositories/memory, demo)
 | `/dashboard/utility` | Utility Overview: what needs attention on the network, with links in |
 | `/dashboard/utility/map` | Utility GIS Map: the network on a plain ground, transformers coloured by loading, ATC&C, revenue not realised or band compliance, interruptions in progress with what is behind them, standing alarms, totals by synthetic district, and state and LGA boundaries for orientation. The same map is inside the Operations levels and Events / Alarms |
 | `/dashboard/utility/ai`, `/dashboard/minigrid/ai` | AI Assistant: planned, not built. The page says so, and what it will answer |
+| `/dashboard/refused` | What a viewer is shown, with 403, at a screen their access does not include (ADR 0018) |
 | `/dashboard/der`, `/dashboard/planning` | DER Intelligence and Planning: planned, not built. One page each, which says so |
 | `/dashboard/minigrid` | Mini-grid Overview: what needs attention across the sites |
 | `/dashboard/minigrid/map` | Mini-grid GIS Map: the same map with the sites |

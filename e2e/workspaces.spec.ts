@@ -181,7 +181,7 @@ test("Events / Alarms: what is wrong now in three separate lists, where, and who
   await expect(now.locator('[data-now="interruptions"]')).toContainText("Interruptions in progress (1)");
   const inProgress = now.locator('[data-table="in-progress"] tbody tr');
   await expect(inProgress).toHaveCount(1);
-  for (const text of ["Farm Road 11 kV feeder", "OUT-2026-09-30-FD-FRM-FAULT", "10 elements", "Fault", "30 Sep 2026, 23:20 WAT", "No restoration time recorded", "Open", "1,015"]) {
+  for (const text of ["Farm Road 11 kV feeder", "OUT-2026-09-30-FD-FRM-FAULT", "10 transformers", "Fault", "30 Sep 2026, 23:20 WAT", "No restoration time recorded", "Open", "1,015"]) {
     await expect(inProgress.nth(0)).toContainText(text);
   }
   // A record with no restoration time and no open status is a data-quality item, kept apart and not counted.

@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { sectorOf, sectors } from "@/constants/navigation";
+import { sectorOf, type Sector } from "@/constants/navigation";
 
-/* The row of sectors. Choosing one opens its Overview and puts its screens in the menu. A sector
-   that is not built is marked so in a word, not by paler text alone. */
-export default function SectorSwitcher({ onNavigate, wrap = false }: { onNavigate?: () => void; wrap?: boolean }) {
-  const current = sectorOf(usePathname());
+/* The row of sectors the viewer may open. Choosing one opens its Overview (or the first of its
+   screens the viewer may open) and puts its screens in the menu. A sector that is not built is
+   marked so in a word, not by paler text alone. */
+export default function SectorSwitcher({ navigation, onNavigate, wrap = false }: { navigation: Sector[]; onNavigate?: () => void; wrap?: boolean }) {
+  const current = sectorOf(usePathname(), navigation);
   return (
     <nav aria-label="Sectors" data-sectors>
       <ul className={`flex gap-1 ${wrap ? "flex-wrap" : "rounded-panel border border-line bg-app p-1"}`}>
-        {sectors.map((sector) => {
-          const isCurrent = sector.id === current.id;
+        {navigation.map((sector) => {
+          const isCurrent = sector.id === current?.id;
           return (
             <li key={sector.id}>
               <Link
