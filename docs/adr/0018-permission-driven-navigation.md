@@ -88,7 +88,9 @@ separate question, and it belongs on the same viewer.
   Links inside pages (the "Go to" cards, a finding's link, the Platform
   Overview's sector sections) are not yet cut to the grant: a viewer would
   be refused at them, not shown them. The Platform Overview read model will
-  take the viewer and leave out the sectors it may not open.
+  take the viewer and leave out the sectors it may not open. The Founder
+  made the three (screen checks, API checks, in-page links) part of Phase
+  8's acceptance (2026-10-14).
 - Permission keys are a second axis beside the territory of ADR 0014: a
   viewer may open Revenue for one territory only. The two never stand in
   for each other.

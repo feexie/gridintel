@@ -3,14 +3,13 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-13. Status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-10-14. Status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
-`phase-7b`). **In progress: Phase UI (the UI revamp), sub-phase UI-A, a
-proposal with a prototype on branch `phase-ui-a`, stopped at its checkpoint
-for the Founder to choose a visual direction** (2026-10-13). Nothing of it
-is merged to `main`.
+`phase-7b`). **Phase UI-A is accepted** (Founder, 2026-10-14, checked on a
+phone; merged to `main`, tag `phase-ui-a`). **In progress: Phase UI-B**, the
+remaining screens rebuilt in direction C, on branch `phase-ui-b`.
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -1456,7 +1455,16 @@ subdomain (for example `utility.` and `minigrid.`); the addresses stay
 **Dependencies.** Phase 6 service contracts stable.
 **Risks.** Auth and security are decision gates.
 **Acceptance.** Every service has a documented, validated endpoint; invalid
-input is rejected with a typed error; contract tests pass.
+input is rejected with a typed error; contract tests pass. Must also be done
+(Founder, 2026-10-14; ADR 0018):
+
+- every screen checks the viewer's grant where its data is read, not only
+  the proxy;
+- every API route (`/api/areas` and those this phase adds) checks the grant;
+- links inside pages are cut to the viewer's grant: the "Go to" cards, a
+  finding's link, and the Platform Overview's sector sections (a sector the
+  viewer may not open is left out). A viewer is never shown a link they
+  would be refused at. Tests hold each of the three.
 
 ## Phase 9: Production data architecture
 
@@ -1801,7 +1809,7 @@ phone.
   drawn, in place of "Nothing above it is held" and "Nothing further".
 - *Asset labels*: "PV inverter", "Battery inverter".
 
-## Phase UI: the UI revamp (in progress; UI-A at its checkpoint, 2026-10-13)
+## Phase UI: the UI revamp (in progress; UI-A accepted 2026-10-14, UI-B in progress)
 
 **Purpose (Founder, 2026-10-13).** Before GridIntel is shown to people: a
 modern, premium AI and data product on the surface, applied to a serious
@@ -1829,7 +1837,7 @@ origin, source and method. The SYNTHETIC DATA bar stays on every screen.
 Nothing that tells the truth about the data is removed, only moved or
 folded. A new UI or animation library is a decision gate.
 
-### Phase UI-A: proposal and prototype (at its checkpoint; branch `phase-ui-a`, not merged)
+### Phase UI-A: proposal and prototype (accepted and merged 2026-10-14; tag `phase-ui-a`)
 
 The proposal is `docs/design/UI-A-PROPOSAL.md`: the audit of every screen at
 desktop and 390 px, the navigation, each screen's layout, and three visual
@@ -1940,6 +1948,15 @@ request (median of five). Screenshots at desktop and phone width:
 `docs/screenshots/phase-ui-a` (`prototype`, and `directions` for the three
 directions).
 
+**Accepted (Founder, 2026-10-14, checked on a phone).**
+
+- *Dry River's report line* keeps the one rule: largest difference relative
+  to the reported figure, so generator running hours lead. Figures are not
+  ranked by hand to tell a preferred story.
+- *In-page links cut to the viewer's grant* are deferred to Phase 8 and are
+  in its acceptance, with the per-screen and per-API grant checks of ADR
+  0018.
+
 **Not rebuilt.** Executive, Operations and its levels, Reliability, Revenue,
 Assets, Events / Alarms, Sites and the site screens. They take the new
 tokens and are otherwise as they were: on a phone nine of them still scroll
@@ -1951,7 +1968,8 @@ sideways as a whole page. The proposal says what UI-B would do to each.
   (Founder, 2026-10-14); their files are kept, unlinked.
 - The overview read models take no viewer, like the read models they are
   put together from; owed before login. Links inside pages are not cut to
-  the viewer's grant (ADR 0018).
+  the viewer's grant (ADR 0018); deferred to Phase 8 and made part of its
+  acceptance (Founder, 2026-10-14).
 - Boxes that are not built from the panel component (site cards, a few
   notes) still have square corners.
 - The Platform Overview's map lists its layers and the asset picker under
