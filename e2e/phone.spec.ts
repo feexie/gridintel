@@ -19,6 +19,8 @@ const REBUILT = [
   `${OPERATIONS}/service-points/SP-OLD2-001`,
   `${OPERATIONS}/service-points/SP-MKT2-005`,
   "/dashboard/utility/reliability",
+  "/dashboard/utility/revenue",
+  "/dashboard/utility/revenue/all",
 ];
 
 for (const route of REBUILT) {
