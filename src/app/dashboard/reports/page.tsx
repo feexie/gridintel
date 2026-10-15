@@ -1,7 +1,7 @@
-export default function Page() {
-  return (
-    <div>
-      <h1>Coming Soon</h1>
-    </div>
-  );
+import { allReportsIndex } from "../reportRoutes";
+
+/* Every report the viewer may open, across sectors. Open to anyone who may open one report
+   (constants/access.ts). */
+export default function AllReportsPage() {
+  return allReportsIndex();
 }

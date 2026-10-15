@@ -136,6 +136,7 @@ function comparisonView(comparison: KpiComparison, currency: string | null): Rep
       note: null,
     },
     calculated: figure(`${label} (calculated)`, calculated, { currency }),
+    reportedPeriod: reported.period,
     reportedBasis: basisWords(comparison, "reported"),
     calculatedBasis: basisWords(comparison, "calculated"),
     sameBasis: comparison.sameBasis,
@@ -222,7 +223,7 @@ function card(report: SiteReport): SiteCardView {
     renewableFraction: figure("Renewable fraction", energy.renewableFraction, { note: "Share of energy generated." }),
     fuelPerKwh: generator === null ? null : figure("Fuel per kWh", generator.specificFuelConsumption, { note: "Litres of fuel for each kWh the generator made." }),
     availability: figure("Availability", availability.all.availability, { note: "Every recorded interruption counted, planned or not." }),
-    energySoldPerConnection: figure("Energy sold per connection", commercial.energySoldPerConnection, { note: "Energy billed in the month, per active connection." }),
+    energySoldPerConnection: figure("Energy sold per connection", commercial.energySoldPerConnection, { note: "Energy billed in the period, per active connection." }),
     collectionEfficiency: figure("Collection efficiency", commercial.collectionEfficiency, { note: "Cash basis.", currency }),
     performanceRatio: pv === null ? null : figure("PV performance ratio", pv.performanceRatio, { note: "Counts curtailment as a loss." }),
     curtailedShare: pv === null ? null : figure("PV curtailed", pv.curtailedShare, { note: "Share of the PV energy that was available. The controller's estimate." }),
@@ -438,7 +439,7 @@ export function minigridSiteView(runtime: OperationsRuntime, siteId: string): Pr
               nameplate: engine === undefined ? "" : nameplate(engine),
               figures: [
                 figure("Fuel per kWh", generator.specificFuelConsumption, { note: "Litres of fuel for each kWh the generator made." }),
-                figure("Running hours", generator.runtime, { note: "The advance of the hour meter over the month." }),
+                figure("Running hours", generator.runtime, { note: "The advance of the hour meter over the period." }),
                 figure("Fuel used", generator.fuelUsed),
                 figure("Generator generation", energy.generatorGeneration),
                 figure("Generator's share of energy", energy.generatorShare),
@@ -483,7 +484,7 @@ export function minigridSiteView(runtime: OperationsRuntime, siteId: string): Pr
       commercial: {
         figures: [
           figure("Revenue billed", commercial.revenueBilled, { currency }),
-          figure("Revenue collected", commercial.revenueCollected, { currency, note: "Cash basis: money received in the month." }),
+          figure("Revenue collected", commercial.revenueCollected, { currency, note: "Cash basis: money received in the period." }),
           figure("Active connections", commercial.connections),
           figure("Energy sold", commercial.energySold, { note: "Energy billed. For a prepaid account that is energy purchased, not energy used." }),
           figure("Energy sold per connection", commercial.energySoldPerConnection),
@@ -491,7 +492,7 @@ export function minigridSiteView(runtime: OperationsRuntime, siteId: string): Pr
           figure("Revenue per connection", commercial.revenuePerConnection, { currency }),
           figure("Productive-use share of energy sold", commercial.productiveUseShare),
         ],
-        collectionEfficiency: figure("Collection efficiency", commercial.collectionEfficiency, { note: "Cash basis: received in the month against billed in the month." }),
+        collectionEfficiency: figure("Collection efficiency", commercial.collectionEfficiency, { note: "Cash basis: received in the period against billed in the period." }),
         byClass: classRows(commercial.byClass),
         byTier: commercial.byTier.map((tier) => ({ ...tier })),
         currency,

@@ -9,7 +9,7 @@ const STATUS_STYLE: Record<DisplayStatus, string> = {
   not_available: "border-line-bold text-ink-4",
 };
 
-const STATUS_MARK: Record<DisplayStatus, string> = {
+export const STATUS_MARK: Record<DisplayStatus, string> = {
   ok: "●",
   calculated_with_estimates: "≈",
   insufficient_data: "!",

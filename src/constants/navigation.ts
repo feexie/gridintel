@@ -53,10 +53,57 @@ export const UTILITY_WORKSPACES: NavigationItem[] = [
   { key: "utility.revenue", label: "Revenue", href: `${UTILITY_HOME}/revenue`, description: "Where is revenue not realised, who is not paying, and is the loss commercial or collection?" },
   { key: "utility.assets", label: "Assets", href: `${UTILITY_HOME}/assets`, description: "Which assets require attention?" },
   { key: "utility.events", label: "Events / Alarms", href: `${UTILITY_HOME}/events`, description: "What is wrong now, where, and who is affected?" },
+  { key: "utility.reports", label: "Reports", href: `${UTILITY_HOME}/reports`, description: "Which reports can I download, for which period?" },
 ];
 
 export const MINIGRID_WORKSPACES: NavigationItem[] = [
   { key: "minigrid.sites", label: "Sites", href: `${MINIGRID_HOME}/sites`, description: "Which sites are underperforming and why, and do their reports match the records?" },
+  { key: "minigrid.reports", label: "Reports", href: `${MINIGRID_HOME}/reports`, description: "Which reports can I download, for which period?" },
+];
+
+/* ==========================================================
+   REPORTS (ADR 0019)
+
+   Each report has a permission key of its own, below its sector's
+   Reports screen: "utility.reports.reliability". Holding the Reports
+   screen's key opens every report of the sector; holding one
+   report's key opens that report and the sector's list of reports,
+   which then shows that report only. A regulator, for example, may
+   be given the reliability report and nothing else.
+
+   A report marked `planned` is listed, says it is not built, and has
+   no page.
+========================================================== */
+
+export type ReportId = "reliability" | "operations" | "daily-brief" | "site-performance" | "compliance";
+
+export type ReportItem = {
+  /** The permission key, e.g. "utility.reports.reliability". */
+  key: string;
+  id: ReportId;
+  sector: "utility" | "minigrid";
+  label: string;
+  /** Who the report is for. */
+  audience: string;
+  href: string;
+  description: string;
+  planned?: boolean;
+};
+
+/** Where every report the viewer may open is listed, across sectors. */
+export const ALL_REPORTS_PATH = "/dashboard/reports";
+
+const report = (sector: ReportItem["sector"], id: ReportId, label: string, audience: string, description: string, planned = false): ReportItem => {
+  const home = sector === "utility" ? UTILITY_HOME : MINIGRID_HOME;
+  return { key: `${sector}.reports.${id}`, id, sector, label, audience, href: `${home}/reports/${id}`, description, ...(planned ? { planned } : {}) };
+};
+
+export const REPORTS: ReportItem[] = [
+  report("utility", "reliability", "Reliability and service standards", "Regulator; the DisCo's network planning", "SAIDI, SAIFI and CAIDI by feeder and substation, attribution by where interruptions began, service-band compliance by day, and the DisCo's reported figures against the calculation on their basis."),
+  report("utility", "operations", "DisCo operations", "DisCo management", "ATC&C and its parts, revenue not realised, collection by customer class, assets over rating, outages and alarms.", true),
+  report("utility", "daily-brief", "Daily operations brief", "Control room; DisCo management", "One page for any day: interruptions in progress, standing alarms, derived conditions and overloads at the day's end.", true),
+  report("minigrid", "site-performance", "Mini-grid site performance", "Mini-grid operator", "Each site and the portfolio: energy, plant, availability and revenue.", true),
+  report("minigrid", "compliance", "Mini-grid compliance and results", "Mini-grid regulator; programme funder", "Availability and hours of supply, connections, the tariff as an assumption, and each site's report against its records."),
 ];
 
 /** The three screens every sector opens with, in this order. */

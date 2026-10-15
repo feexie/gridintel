@@ -27,7 +27,7 @@ export default function Topbar({ navigation, home }: { navigation: Sector[]; hom
   }, [open]);
 
   return (
-    <header className="border-b border-line bg-panel lg:hidden">
+    <header className="border-b border-line bg-panel lg:hidden print:hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-2">
         <Wordmark href={home} />
         <button

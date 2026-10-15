@@ -1,5 +1,5 @@
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
-import { PLATFORM_HOME, sectors, type NavigationItem, type Sector } from "./navigation.ts";
+import { ALL_REPORTS_PATH, PLATFORM_HOME, REPORTS, sectors, type NavigationItem, type ReportItem, type Sector } from "./navigation.ts";
 
 /* ==========================================================
    WHICH SCREENS A VIEWER MAY OPEN (ADR 0018)
@@ -14,6 +14,14 @@ import { PLATFORM_HOME, sectors, type NavigationItem, type Sector } from "./navi
    from the one grant, so they cannot disagree: what a viewer is not
    shown, they are refused at its address. Nothing is open by
    default: a list that holds no key opens nothing.
+
+   A report has a key below its sector's Reports screen
+   ("utility.reports.reliability", ADR 0019). Holding a key opens
+   everything below it, so "utility.reports" opens every report of the
+   sector. Holding a report's key also opens the screen above it, the
+   sector's list of reports, which shows that viewer only the reports
+   they may open; and the list of every report (/dashboard/reports)
+   opens to anyone who may open one.
 
    A department is a set of keys, e.g. a revenue department holds
    "utility.overview", "utility.map" and "utility.revenue". Who holds
@@ -30,8 +38,29 @@ function holds(grant: ScreenGrant, key: string): boolean {
   return grant.kind === "everything" || grant.keys.includes(key);
 }
 
+/** True when the grant holds the key or a key above it ("utility.reports" is above "utility.reports.reliability"). */
+function holdsOrAbove(grant: ScreenGrant, key: string): boolean {
+  const parts = key.split(".");
+  return parts.some((_, i) => holds(grant, parts.slice(0, i + 1).join(".")));
+}
+
+/** True when the grant holds a key below this one: a report below a Reports screen. */
+function holdsBelow(grant: ScreenGrant, key: string): boolean {
+  return grant.kind === "everything" || grant.keys.some((held) => held.startsWith(`${key}.`));
+}
+
+function opensKey(grant: ScreenGrant, key: string): boolean {
+  if (key === "platform.reports") return REPORTS.some((report) => !report.planned && opensKey(grant, report.key));
+  return holdsOrAbove(grant, key) || holdsBelow(grant, key);
+}
+
 function opens(grant: ScreenGrant, sector: Sector, item: NavigationItem): boolean {
-  return holds(grant, sector.id) || holds(grant, item.key);
+  return holds(grant, sector.id) || opensKey(grant, item.key);
+}
+
+/** The reports a viewer may open, in the catalogue's order; of one sector when it is given. A planned report is listed with the others. */
+export function reportsFor(grant: ScreenGrant, sector?: ReportItem["sector"]): ReportItem[] {
+  return REPORTS.filter((report) => (sector === undefined || report.sector === sector) && holdsOrAbove(grant, report.key));
 }
 
 /** The sectors and screens a viewer may open, in the menu's order. A sector with none is left out. */
@@ -62,6 +91,8 @@ function within(pathname: string, href: string): boolean {
  */
 export function keyFor(pathname: string): string | null {
   if (pathname === REFUSED_PATH) return null;
+  if (pathname === ALL_REPORTS_PATH) return "platform.reports";
+  for (const report of REPORTS) if (within(pathname, report.href)) return report.key;
   for (const sector of sectors) {
     for (const item of [...sector.opening, ...sector.workspaces]) {
       if (item.exact ? pathname === item.href : within(pathname, item.href)) return item.key;
@@ -74,7 +105,5 @@ export function keyFor(pathname: string): string | null {
 /** True when the viewer may open the screen at this address. */
 export function canOpen(grant: ScreenGrant, pathname: string): boolean {
   const key = keyFor(pathname);
-  if (key === null) return true;
-  const sectorId = key.split(".")[0];
-  return holds(grant, sectorId) || holds(grant, key);
+  return key === null || opensKey(grant, key);
 }

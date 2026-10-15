@@ -312,6 +312,7 @@ async function reportedComparisons(
             note: null,
           },
           calculated: kpiMetric(`${pair.label} (calculated)`, comparison.calculated),
+          reportedPeriod: kpi.period,
           reportedBasis: describeBasis(kpi.basis),
           calculatedBasis: describeBasis(comparison.calculated.basis),
           sameBasis: comparison.sameBasis,

@@ -117,6 +117,8 @@ export interface ReportedComparisonView {
   reported: MetricView;
   /** The calculated figure on the reported figure's basis, when there is one. */
   calculated: MetricView;
+  /** The period the reported figure states; null when the source does not state one. */
+  reportedPeriod: { start: string; end: string } | null;
   /** What the reported figure counts, in words; null when the source does not say. */
   reportedBasis: string | null;
   /** What the calculated figure counts, in words. */

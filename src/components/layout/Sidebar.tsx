@@ -9,7 +9,7 @@ export default function Sidebar({ navigation }: { navigation: Sector[] }) {
   const sector = sectorOf(usePathname(), navigation);
   if (sector === undefined || sector.id === "platform") return null;
   return (
-    <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-line bg-panel px-3 py-4 lg:block">
+    <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-line bg-panel px-3 py-4 lg:block print:hidden">
       <Menu navigation={navigation} />
     </aside>
   );

@@ -529,3 +529,631 @@ html[data-theme="light"] .gi-when-dark,
 html:not([data-theme="light"]) .gi-when-light {
   display: none;
 }
+
+/* ==========================================================
+   REPORTS (ADR 0019)
+
+   A report is paper in both themes: black on white, its own small
+   palette, so that what is on screen is what prints. On screen it is
+   one A4-wide sheet; printed (or saved as PDF from the browser) it is
+   A4 pages.
+
+   While the data is synthetic the label is on every printed page in
+   three places, so that no page can be printed or cropped without it:
+   1. the top margin of the page, with the report ID (`@page sample`);
+   2. the bottom margin of the page, with the page number;
+   3. a pattern of the words over the whole page, above the figures
+      (`.gr-watermark`, fixed, so repeated on every page). It is drawn
+      as SVG text, not as a background, so a browser that leaves out
+      background graphics still prints it, and a browser that does not
+      print page margins still prints it on every page.
+   The margins carry the report's ID as well (ReportDocument writes it
+   into the page rule). The cover also carries the label as a band and
+   in a box of its own.
+========================================================== */
+.gr-report {
+  --gr-ink: #11151f;
+  --gr-ink-2: #2b3240;
+  --gr-muted: #545c6c;
+  --gr-line: #d4d9e2;
+  --gr-line-strong: #a9b1c0;
+  --gr-well: #f3f5f8;
+  --gr-caution: #7a5000;
+  --gr-caution-line: #c98500;
+  --gr-caution-bg: #fff4d6;
+  --gr-alert: #a3142f;
+  --gr-alert-bg: #fdecef;
+  --gr-ok: #0a6d78;
+  max-width: 210mm;
+  margin: 0 auto;
+}
+.gr-sheet {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  color: var(--gr-ink);
+  color-scheme: light;
+  padding: 10mm 14mm 14mm;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  border-radius: 2px;
+}
+.gr-sheet.gr-sample {
+  page: sample;
+}
+@media (max-width: 640px) {
+  .gr-sheet {
+    padding: 12px 16px 20px;
+  }
+}
+
+/* The label as a band, and as a pattern over the page */
+.gr-band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  border: 1.5px solid var(--gr-caution-line);
+  background: var(--gr-caution-bg);
+  color: var(--gr-caution);
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.6875rem;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.gr-band strong {
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+.gr-watermark {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.gr-watermark-text {
+  fill: rgb(150 100 0 / 0.11);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  font-family: var(--font-sans), sans-serif;
+}
+
+/* The cover */
+.gr-cover {
+  break-after: page;
+}
+.gr-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #4331c9;
+}
+.gr-cover h1 {
+  margin-top: 0.25rem;
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.gr-lede {
+  margin-top: 0.4rem;
+  color: var(--gr-ink-2);
+  max-width: 42rem;
+}
+.gr-sample-box {
+  margin-top: 1rem;
+  border: 2px solid var(--gr-caution-line);
+  background: var(--gr-caution-bg);
+  color: #4a3200;
+  padding: 0.6rem 0.75rem;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.gr-sample-box p + p {
+  margin-top: 0.3rem;
+}
+.gr-sample-label {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--gr-caution);
+}
+.gr-identity {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem 1rem;
+  border-top: 1px solid var(--gr-line);
+  border-bottom: 1px solid var(--gr-line);
+  padding: 0.6rem 0;
+}
+.gr-identity dt,
+.gr-figure dt {
+  font-size: 0.6875rem;
+  color: var(--gr-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.gr-identity dd {
+  font-weight: 500;
+}
+.gr-identity-wide {
+  grid-column: 1 / -1;
+}
+.gr-cover-head {
+  margin-top: 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gr-ink-2);
+}
+.gr-contents {
+  margin-top: 0.4rem;
+  columns: 2 16rem;
+  list-style: none;
+  padding: 0;
+}
+.gr-contents a {
+  color: var(--gr-ink);
+  text-decoration: none;
+}
+.gr-contents li {
+  padding: 0.15rem 0;
+  break-inside: avoid;
+}
+
+/* Sections and blocks */
+.gr-section {
+  margin-top: 1.5rem;
+}
+.gr-new-page {
+  break-before: page;
+}
+.gr-section h2 {
+  font-size: 1.15rem;
+  font-weight: 650;
+  border-bottom: 2px solid var(--gr-ink);
+  padding-bottom: 0.2rem;
+  break-after: avoid;
+}
+.gr-number {
+  color: #4331c9;
+  margin-right: 0.25rem;
+}
+.gr-purpose {
+  margin-top: 0.3rem;
+  color: var(--gr-ink-2);
+  font-style: italic;
+}
+.gr-block {
+  margin-top: 0.9rem;
+}
+.gr-block h3,
+.gr-section > h3 {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  margin-top: 0.6rem;
+  break-after: avoid;
+}
+.gr-small {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: var(--gr-muted);
+}
+.gr-detail {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--gr-muted);
+}
+th > .gr-detail {
+  display: block;
+}
+.gr-mono,
+.gr-value {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.gr-break,
+th > .gr-detail.gr-mono {
+  word-break: break-all;
+}
+.gr-list {
+  margin-top: 0.3rem;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+ol.gr-list {
+  list-style: decimal;
+}
+.gr-list li + li {
+  margin-top: 0.2rem;
+}
+
+/* Figures */
+.gr-figures {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.5rem;
+}
+.gr-figure {
+  border: 1px solid var(--gr-line);
+  padding: 0.4rem 0.5rem;
+  break-inside: avoid;
+}
+.gr-figure .gr-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.gr-figure-meta,
+.gr-figure-note {
+  font-size: 0.625rem;
+  color: var(--gr-muted);
+}
+.gr-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+.gr-missing {
+  color: var(--gr-muted);
+  font-style: italic;
+}
+.gr-status {
+  font-size: 0.625rem;
+}
+.gr-status-ok {
+  color: var(--gr-ok);
+}
+.gr-status-calculated_with_estimates {
+  color: var(--gr-caution);
+}
+.gr-status-insufficient_data,
+.gr-status-not_computable {
+  color: var(--gr-alert);
+}
+.gr-status-not_available {
+  color: var(--gr-muted);
+}
+.gr-origin {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--gr-muted);
+  border: 1px solid var(--gr-line-strong);
+  border-radius: 2px;
+  padding: 0 2px;
+  line-height: 1.2;
+}
+
+/* Tables */
+.gr-table-frame {
+  margin-top: 0.4rem;
+  overflow-x: auto;
+}
+.gr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.gr-table thead {
+  display: table-header-group;
+}
+.gr-table tr {
+  break-inside: avoid;
+}
+.gr-table th,
+.gr-table td {
+  border-bottom: 1px solid var(--gr-line);
+  padding: 0.25rem 0.4rem;
+  vertical-align: top;
+}
+.gr-table thead th {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gr-muted);
+  border-bottom: 1.5px solid var(--gr-line-strong);
+  text-align: right;
+}
+.gr-table thead th:first-child,
+.gr-table tbody th {
+  text-align: left;
+}
+.gr-table tbody th {
+  font-weight: 500;
+  min-width: 7rem;
+}
+.gr-table td {
+  text-align: right;
+}
+.gr-table td.gr-text,
+.gr-table td.gr-basis,
+.gr-regulatory td,
+.gr-regulatory th {
+  text-align: left;
+  white-space: normal;
+}
+.gr-compact td,
+.gr-compact th {
+  padding: 0.2rem 0.35rem;
+}
+.gr-basis {
+  font-size: 0.6875rem;
+  color: var(--gr-muted);
+}
+.gr-coverage {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.gr-coverage-covered {
+  color: var(--gr-ok);
+}
+.gr-coverage-partly {
+  color: var(--gr-caution);
+}
+.gr-coverage-not_covered {
+  color: var(--gr-alert);
+}
+
+/* Statements, comparisons and the rule findings beside them */
+.gr-statement {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid var(--gr-line-strong);
+  background: var(--gr-well);
+  break-inside: avoid;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.gr-statement-caveat {
+  border-left-color: var(--gr-caution-line);
+  background: var(--gr-caution-bg);
+  color: #4a3200;
+}
+.gr-statement-unavailable {
+  margin-top: 1rem;
+  border-left-color: var(--gr-alert);
+  background: var(--gr-alert-bg);
+  color: #5a0a1a;
+  font-size: 0.875rem;
+}
+.gr-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gr-line);
+  break-inside: avoid;
+}
+@media (min-width: 720px), print {
+  .gr-comparison:has(.gr-finding) {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+}
+.gr-comparison-title {
+  font-weight: 600;
+}
+.gr-finding {
+  border: 1.5px solid var(--gr-caution-line);
+  background: var(--gr-caution-bg);
+  color: #4a3200;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.75rem;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.gr-finding-title {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gr-caution);
+}
+.gr-finding dl {
+  margin-top: 0.3rem;
+}
+.gr-finding dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.gr-finding dt {
+  color: #5f4300;
+}
+
+.gr-glossary {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.gr-glossary > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  break-inside: avoid;
+}
+.gr-glossary dt {
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .gr-glossary > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+.gr-end {
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gr-line);
+  font-size: 0.6875rem;
+  color: var(--gr-muted);
+}
+
+/* On screen only: back, the period, the CSV, print */
+.gr-toolbar {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  border-radius: var(--radius-panel);
+  padding: 0.6rem 0.75rem;
+  color: var(--color-ink-3);
+  font-size: var(--text-xs);
+}
+.gr-toolbar .gr-small {
+  color: var(--color-ink-4);
+}
+.gr-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.gr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.gr-link {
+  color: var(--color-link);
+}
+.gr-button {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-tile);
+  background: var(--color-brand-strong);
+  color: var(--color-on-brand);
+  padding: 0.35rem 0.75rem;
+  font-weight: 500;
+}
+.gr-button-quiet {
+  background: transparent;
+  color: var(--color-ink-2);
+  border: 1px solid var(--color-line-strong);
+}
+.gr-periods {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.gr-periods-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.gr-periods-label {
+  flex: none;
+  width: 3rem;
+  font-size: var(--text-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-5);
+}
+.gr-periods-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.gr-periods-list a {
+  min-width: 1.9rem;
+  text-align: center;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-mono), monospace;
+  font-size: var(--text-caption);
+  color: var(--color-ink-2);
+}
+.gr-periods-list a[aria-current="page"] {
+  background: var(--color-brand-strong);
+  border-color: var(--color-brand-strong);
+  color: var(--color-on-brand);
+}
+.gr-periods-list a.gr-period-unavailable {
+  border-style: dashed;
+  color: var(--color-ink-5);
+}
+.gr-period-note {
+  font-family: var(--font-sans), sans-serif;
+  font-size: var(--text-micro);
+}
+
+@page sample {
+  @top-left {
+    content: "SAMPLE: SYNTHETIC DATA";
+    font: 700 8pt sans-serif;
+    letter-spacing: 0.14em;
+    color: #7a5000;
+    vertical-align: bottom;
+    padding-bottom: 2mm;
+  }
+  @bottom-left {
+    content: "SAMPLE: SYNTHETIC DATA. Shows format and method, not real results.";
+    font: 700 7pt sans-serif;
+    color: #7a5000;
+  }
+}
+@page {
+  size: A4;
+  margin: 16mm 13mm 15mm;
+  @top-right {
+    font: 7.5pt monospace;
+    color: #545c6c;
+    vertical-align: bottom;
+    padding-bottom: 2mm;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font: 7.5pt sans-serif;
+    color: #545c6c;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  .gr-toolbar {
+    display: none !important;
+  }
+  /* On a report page the report carries its own label, period and as-of time. */
+  body:has(.gr-report) [aria-label="About the data on this screen"] {
+    display: none !important;
+  }
+  .gr-report {
+    max-width: none;
+  }
+  .gr-sheet {
+    overflow: visible;
+    padding: 0;
+    box-shadow: none;
+    font-size: 8.5pt;
+  }
+  .gr-watermark {
+    position: fixed;
+  }
+  .gr-table {
+    font-size: 7.5pt;
+  }
+  .gr-table-frame {
+    overflow: visible;
+  }
+  .gr-table thead th {
+    font-size: 6.5pt;
+  }
+}
+.gr-periods-list a.gr-period-unavailable[aria-current="page"] {
+  border-style: solid;
+  color: var(--color-on-brand);
+}

@@ -4,7 +4,6 @@ import { OPERATIONS, ROUTES } from "./routes";
 /* The menu, the one heading per page, and the one bar that says what data a screen shows. */
 
 const PLACEHOLDERS = [
-  "/dashboard/reports",
   "/dashboard/settings",
   "/dashboard/intelligence/ai",
   "/dashboard/intelligence/analytics",
@@ -27,12 +26,12 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   const menu = page.getByRole("navigation", { name: "Main" });
   const hrefs = () => menu.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
   const visited: string[] = [];
-  // Utility: Overview, GIS Map, AI Assistant marked planned, then its six workspaces. Nothing of another sector.
+  // Utility: Overview, GIS Map, AI Assistant marked planned, then its six workspaces and Reports. Nothing of another sector.
   await expect(menu).toContainText("Utility Intelligence");
-  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`]);
+  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, `${UTILITY}/reports`]);
   await expect(menu.getByRole("link")).toContainText(["Overview", "GIS Map", "AI AssistantPlanned"]);
   await expect(menu.locator("[data-planned]")).toHaveCount(1);
-  await expect(menu.locator("[data-workspaces]").getByRole("link")).toHaveCount(6);
+  await expect(menu.locator("[data-workspaces]").getByRole("link")).toHaveCount(7);
   visited.push(...(await hrefs()));
 
   // Choosing a sector opens its Overview and changes the menu to its screens: the same structure.
@@ -40,8 +39,8 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   await expect(page).toHaveURL(/\/dashboard\/minigrid$/);
   await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
   await expect(menu).toContainText("Mini-grid Intelligence");
-  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`]);
-  await expect(menu.getByRole("link")).toHaveText(["Overview", "GIS Map", "AI AssistantPlanned", "Sites"]);
+  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`, `${MINIGRID}/reports`]);
+  await expect(menu.getByRole("link")).toHaveText(["Overview", "GIS Map", "AI AssistantPlanned", "Sites", "Reports"]);
   visited.push(...(await hrefs()));
   // A screen below a workspace is still in its sector.
   await page.goto(`${MINIGRID}/sites/MG-DRY`);
@@ -192,7 +191,7 @@ test("on a phone the menu opens on request, the data bar stays in view and nothi
   await page.locator("[data-menu-button]").click();
   const drawer = page.locator("[data-menu]");
   await expect(drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link")).toHaveCount(5);
-  await expect(drawer.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(9);
+  await expect(drawer.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(10);
   // Nothing in the open menu is wider than the screen.
   expect(await drawer.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
   await drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link", { name: "Mini-grid" }).click();

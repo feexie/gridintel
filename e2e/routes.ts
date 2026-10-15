@@ -43,4 +43,10 @@ export const ROUTES = [
   // The Sites workspace and one site.
   "/dashboard/minigrid/sites",
   "/dashboard/minigrid/sites/MG-DRY",
+  // The reports: each sector's list, every report, and each built report for its month.
+  "/dashboard/utility/reports",
+  "/dashboard/minigrid/reports",
+  "/dashboard/reports",
+  "/dashboard/utility/reports/reliability/2026-09",
+  "/dashboard/minigrid/reports/compliance/2026-09",
 ];

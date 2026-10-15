@@ -3,8 +3,8 @@ import { describe, it } from "node:test";
 import { NextRequest } from "next/server.js";
 import { accessProxy } from "../proxy.ts";
 import type { ScreenGrant, ViewerContext } from "../services/spatial/viewer.ts";
-import { canOpen, homeFor, keyFor, navigationFor, REFUSED_PATH } from "./access.ts";
-import { sectors } from "./navigation.ts";
+import { canOpen, homeFor, keyFor, navigationFor, REFUSED_PATH, reportsFor } from "./access.ts";
+import { REPORTS, sectors } from "./navigation.ts";
 
 const EVERYTHING: ScreenGrant = { kind: "everything" };
 /** A viewer allowed only Utility > Revenue. */
@@ -29,6 +29,11 @@ const ROUTES = [
   "/dashboard/minigrid/ai",
   "/dashboard/minigrid/sites",
   "/dashboard/minigrid/sites/MG-DRY",
+  "/dashboard/utility/reports",
+  "/dashboard/utility/reports/reliability/2026-09",
+  "/dashboard/utility/reports/reliability/2026-09/data.csv",
+  "/dashboard/minigrid/reports",
+  "/dashboard/minigrid/reports/compliance/2026-09-14",
   "/dashboard/der",
   "/dashboard/planning",
   "/dashboard/reports",
@@ -46,7 +51,9 @@ describe("which screens a viewer may open", () => {
     assert.equal(keyFor("/dashboard/minigrid/sites/MG-DRY"), "minigrid.sites");
     assert.equal(keyFor("/dashboard/utility"), "utility.overview");
     assert.equal(keyFor("/dashboard/utility/no-such-screen"), "utility");
-    assert.equal(keyFor("/dashboard/reports"), "platform");
+    assert.equal(keyFor("/dashboard/reports"), "platform.reports");
+    assert.equal(keyFor("/dashboard/utility/reports/reliability/2026-09/data.csv"), "utility.reports.reliability");
+    assert.equal(keyFor("/dashboard/utility/reports"), "utility.reports");
     assert.equal(keyFor(REFUSED_PATH), null);
   });
 
@@ -75,12 +82,58 @@ describe("which screens a viewer may open", () => {
 
   it("opens a whole sector with the sector's key, and nothing with an empty list", () => {
     const minigrid: ScreenGrant = { kind: "listed", keys: ["minigrid"] };
-    assert.deepEqual(shape(navigationFor(minigrid)), [{ sector: "minigrid", home: "/dashboard/minigrid", items: ["Overview", "GIS Map", "AI Assistant", "Sites"] }]);
-    assert.deepEqual(ROUTES.filter((route) => canOpen(minigrid, route)), ["/dashboard/minigrid", "/dashboard/minigrid/map", "/dashboard/minigrid/ai", "/dashboard/minigrid/sites", "/dashboard/minigrid/sites/MG-DRY"]);
+    assert.deepEqual(shape(navigationFor(minigrid)), [{ sector: "minigrid", home: "/dashboard/minigrid", items: ["Overview", "GIS Map", "AI Assistant", "Sites", "Reports"] }]);
+    assert.deepEqual(ROUTES.filter((route) => canOpen(minigrid, route)), [
+      "/dashboard/minigrid",
+      "/dashboard/minigrid/map",
+      "/dashboard/minigrid/ai",
+      "/dashboard/minigrid/sites",
+      "/dashboard/minigrid/sites/MG-DRY",
+      "/dashboard/minigrid/reports",
+      "/dashboard/minigrid/reports/compliance/2026-09-14",
+      "/dashboard/reports",
+    ]);
     const none: ScreenGrant = { kind: "listed", keys: [] };
     assert.deepEqual(navigationFor(none), []);
     assert.equal(homeFor(navigationFor(none)), null);
     assert.equal(ROUTES.filter((route) => canOpen(none, route)).length, 0);
+  });
+
+  it("gives every report its own key below its sector's Reports screen", () => {
+    const keys = REPORTS.map((report) => report.key);
+    assert.equal(new Set(keys).size, keys.length);
+    for (const report of REPORTS) assert.equal(report.key, `${report.sector}.reports.${report.id}`);
+  });
+
+  it("shows a regulator given only the reliability report that report, under Utility > Reports, and refuses everything else", () => {
+    const regulator: ScreenGrant = { kind: "listed", keys: ["utility.reports.reliability"] };
+    assert.deepEqual(shape(navigationFor(regulator)), [{ sector: "utility", home: "/dashboard/utility/reports", items: ["Reports"] }]);
+    assert.deepEqual(reportsFor(regulator).map((report) => report.key), ["utility.reports.reliability"]);
+    assert.deepEqual(ROUTES.filter((route) => canOpen(regulator, route)), [
+      "/dashboard/utility/reports",
+      "/dashboard/utility/reports/reliability/2026-09",
+      "/dashboard/utility/reports/reliability/2026-09/data.csv",
+      "/dashboard/reports",
+    ]);
+    // Another report of the same sector stays closed to them.
+    assert.equal(canOpen(regulator, "/dashboard/utility/reports/operations"), false);
+  });
+
+  it("shows a mini-grid regulator or funder given only the compliance report that report and nothing of the utility's", () => {
+    const funder: ScreenGrant = { kind: "listed", keys: ["minigrid.reports.compliance"] };
+    assert.deepEqual(shape(navigationFor(funder)), [{ sector: "minigrid", home: "/dashboard/minigrid/reports", items: ["Reports"] }]);
+    assert.deepEqual(reportsFor(funder).map((report) => report.key), ["minigrid.reports.compliance"]);
+    assert.equal(canOpen(funder, "/dashboard/utility/reports/reliability/2026-09"), false);
+    assert.equal(canOpen(funder, "/dashboard/minigrid/sites"), false);
+  });
+
+  it("opens every report of a sector with its Reports key, and the list of all reports to anyone who may open one", () => {
+    const management: ScreenGrant = { kind: "listed", keys: ["utility.reports"] };
+    assert.deepEqual(reportsFor(management).map((report) => report.id), ["reliability", "operations", "daily-brief"]);
+    assert.equal(canOpen(management, "/dashboard/utility/reports/reliability/2026-09"), true);
+    assert.equal(canOpen(management, "/dashboard/minigrid/reports"), false);
+    assert.equal(canOpen(REVENUE_ONLY, "/dashboard/reports"), false);
+    assert.equal(canOpen(management, "/dashboard/reports"), true);
   });
 
   it("refuses at the proxy, with 403 and the refusal page, the routes a viewer may not open", () => {
