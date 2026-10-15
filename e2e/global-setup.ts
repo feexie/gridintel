@@ -1,5 +1,5 @@
 import type { FullConfig } from "@playwright/test";
-import { REQUEST_BASE, ROUTES } from "./routes";
+import { LOCAL, REQUEST_BASE, ROUTES } from "./routes";
 
 /* Before the tests: ask each server for every route once, so that no test pays for loading a
    route's code. On the ordinary build the network screens are files and are there from the
@@ -11,7 +11,7 @@ import { REQUEST_BASE, ROUTES } from "./routes";
 const READY_TIMEOUT_MS = 90_000;
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
-  for (const baseURL of [config.projects[0].use.baseURL as string, REQUEST_BASE]) {
+  for (const baseURL of LOCAL ? [config.projects[0].use.baseURL as string] : [config.projects[0].use.baseURL as string, REQUEST_BASE]) {
     const deadline = Date.now() + READY_TIMEOUT_MS;
     for (;;) {
       const ready = await fetch(`${baseURL}/api/ready`);

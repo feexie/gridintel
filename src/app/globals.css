@@ -197,6 +197,33 @@ body {
     min-height: 2.5rem;
   }
 }
+/* A table wider than its panel scrolls sideways inside its own frame, so the page never slides. Its
+   first column stays in place while the rest moves, and a shadow at the right edge says there is more. */
+.gi-table-frame {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to left, var(--color-panel) 1rem, transparent) right / 2rem 100% no-repeat local,
+    linear-gradient(to left, color-mix(in oklab, var(--color-ink) 14%, transparent), transparent) right / 0.75rem 100% no-repeat scroll;
+}
+.gi-table-frame > table > :is(thead, tbody) > tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-panel);
+}
+/* Folded on a phone behind "Show the table", open on a wider screen. Where a browser cannot open it
+   by width, it stays a fold that opens with one tap: nothing is lost. */
+@media (min-width: 640px) {
+  details.gi-wide-open::details-content {
+    content-visibility: visible;
+    display: block;
+    height: auto;
+  }
+  details.gi-wide-open > summary {
+    display: none;
+  }
+}
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;

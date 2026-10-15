@@ -45,14 +45,14 @@ test("asset risk is its own group above the money ranking, and is not ranked by 
   await expect(assetRisk).toContainText("Asset risk");
   await expect(assetRisk).toContainText("Not ranked by money");
   // Every transformer over its rating is listed, highest peak first: the two that are overloaded by design.
-  const risks = assetRisk.locator("[data-subject]");
+  const risks = assetRisk.locator("[data-attention]");
   await expect(risks).toHaveCount(2);
-  await expect(risks.nth(0)).toHaveAttribute("data-subject", "DT-OLD-2");
-  await expect(risks.nth(1)).toHaveAttribute("data-subject", "DT-GOV-3");
+  await expect(risks.nth(0)).toHaveAttribute("data-attention", "asset_risk:DT-OLD-2");
+  await expect(risks.nth(1)).toHaveAttribute("data-attention", "asset_risk:DT-GOV-3");
   await expect(risks.nth(0)).toContainText("Loaded above its rating");
   await expect(risks.nth(0)).toContainText("69 hours over rating");
   // A transformer's commercial gap is shown as context, and says whose total it is part of.
-  await expect(list.locator('[data-group="other"] [data-subject="DT-OLD-14"]')).toContainText(
+  await expect(list.locator('[data-group="other"] [data-attention="other:DT-OLD-14"]')).toContainText(
     "part of Old Town 11 kV feeder's revenue not realised; not ranked separately",
   );
 
@@ -65,13 +65,13 @@ test("asset risk is its own group above the money ranking, and is not ranked by 
 test("feeders are ranked by revenue not realised, each once with every rule it triggered", async ({ page }) => {
   await page.goto(EXECUTIVE);
   const list = panel(page, "Where to look first");
-  const money = list.locator('[data-group="money"] > ol > [data-subject]');
+  const money = list.locator('[data-group="money"] [data-attention]');
   // The cut-off: the top three, with the rest one click away.
   await expect(money).toHaveCount(3);
   await expect(list).toContainText("Top 3 of 4 feeders, ranked by estimated revenue not realised.");
-  await expect(money.nth(0)).toHaveAttribute("data-subject", "FD-GOV");
-  await expect(money.nth(1)).toHaveAttribute("data-subject", "FD-MKT");
-  await expect(money.nth(2)).toHaveAttribute("data-subject", "FD-OLD");
+  await expect(money.nth(0)).toHaveAttribute("data-attention", "money:FD-GOV");
+  await expect(money.nth(1)).toHaveAttribute("data-attention", "money:FD-MKT");
+  await expect(money.nth(2)).toHaveAttribute("data-attention", "money:FD-OLD");
   await expect(money.nth(0)).toContainText("revenue not realised, monthly estimate");
   await expect(money.nth(0)).toContainText("Largest revenue not realised among feeders");
   await expect(money.nth(2)).toContainText("Below its Band C minimum of 12 h");
@@ -80,7 +80,7 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   await expect(page).toHaveURL(/\/executive\/all$/);
   await expect(money).toHaveCount(4);
   // The worst ratios are on the smallest feeder, which money ranks last.
-  await expect(money.nth(3)).toHaveAttribute("data-subject", "FD-FRM");
+  await expect(money.nth(3)).toHaveAttribute("data-attention", "money:FD-FRM");
   await expect(money.nth(3)).toContainText("Highest ATC&C among feeders");
   await expect(money.nth(3)).toContainText("Lowest collection efficiency among feeders (cash basis)");
   await expect(money.nth(3)).toContainText("Below its Band D minimum of 8 h");
@@ -93,15 +93,15 @@ test("feeders are ranked by revenue not realised, each once with every rule it t
   await expect(money.nth(0)).not.toContainText("sub-transmission lines");
 
   // No transformer competes in the money ranking, and no subject is listed twice.
-  await expect(list.locator('[data-group="money"] [data-subject^="DT-"]')).toHaveCount(0);
-  const subjects = await list.locator("[data-subject]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-subject")));
+  await expect(list.locator('[data-group="money"] [data-attention*=":DT-"]')).toHaveCount(0);
+  const subjects = await list.locator("[data-attention]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-attention")?.split(":")[1]));
   expect(new Set(subjects).size).toBe(subjects.length);
 
   await expect(list).toContainText("Asset risk is its own group, shown first and never ranked by money");
   await expect(list).toContainText("Only feeders are ranked by money, because a transformer's commercial gap is already part of its feeder's total");
   await expect(list).toContainText("No weighting, no AI.");
 
-  await money.nth(0).getByRole("link", { name: "Government Avenue 11 kV feeder" }).click();
+  await money.nth(0).getByRole("link", { name: /Open Government Avenue 11 kV feeder/ }).click();
   await expect(page).toHaveURL(/\/operations\/feeders\/FD-GOV$/);
 });
 

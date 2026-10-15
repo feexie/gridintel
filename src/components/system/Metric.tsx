@@ -65,11 +65,12 @@ export function SourceAndMethod({ metric, sourcing }: { metric: MetricView; sour
       {metric.method ? (
         <p>
           <span className="text-ink-5">Method: </span>
-          {metric.method.name} <span className="font-mono text-ink-4">({metric.method.id} v{metric.method.version})</span>
+          {metric.method.name} <span className="break-all font-mono text-ink-4">({metric.method.id} v{metric.method.version})</span>
           {metric.method.disclaimer ? <span className="block text-ink-4">{metric.method.disclaimer}</span> : null}
         </p>
       ) : null}
       {metric.inputs.length > 0 ? (
+        <div className="overflow-x-auto">
         <table className="w-full border-collapse font-mono text-micro">
           <thead>
             <tr className="text-left text-ink-5">
@@ -95,6 +96,7 @@ export function SourceAndMethod({ metric, sourcing }: { metric: MetricView; sour
             ))}
           </tbody>
         </table>
+        </div>
       ) : null}
       {metric.estimatedInputs.length > 0 ? (
         <p>
@@ -139,8 +141,8 @@ export function MetricTile({
   children?: React.ReactNode;
 }) {
   return (
-    <div data-metric={metric.label} className="relative rounded-tile border border-line bg-well/40 px-3 py-2">
-      <div className="flex items-start justify-between gap-2">
+    <div data-metric={metric.label} className={`relative min-w-0 rounded-tile border border-line bg-well/40 px-3 py-2 ${emphasis ? "max-sm:col-span-2" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
         <p className="text-caption uppercase tracking-wide text-ink-4">{metric.label}</p>
         {/* A figure the platform has no source for has no origin to state. */}
         {metric.status === "not_available" ? null : <OriginTag origin={metric.origin} />}
@@ -152,11 +154,12 @@ export function MetricTile({
       </div>
       {metric.note ? <p className="mt-1.5 text-caption leading-snug text-ink-4">{metric.note}</p> : null}
       <details className="group mt-1.5">
-        <summary className="cursor-pointer list-none text-caption text-link/90 hover:text-link-hover">
+        <summary className="gi-tap flex cursor-pointer list-none items-center text-caption text-link/90 hover:text-link-hover">
           <span className="group-open:hidden">Source &amp; method ▸</span>
           <span className="hidden group-open:inline">Source &amp; method ▾</span>
         </summary>
-        <div className="absolute left-0 top-full z-30 mt-1 w-[26rem] max-w-[90vw] rounded-tile border border-line-strong bg-panel p-3 shadow-pop">
+        {/* Under the figure, at full width, on a phone; a box beside it on a wider screen. */}
+        <div className="mt-1.5 border-t border-line pt-2 sm:absolute sm:left-0 sm:top-full sm:z-30 sm:mt-1 sm:w-[26rem] sm:max-w-[90vw] sm:rounded-tile sm:border sm:border-line-strong sm:bg-panel sm:p-3 sm:shadow-pop">
           <SourceAndMethod metric={metric} sourcing={sourcing} />
         </div>
       </details>
@@ -194,13 +197,16 @@ export function Panel({
   title,
   aside,
   children,
+  id,
 }: {
   title: string;
   aside?: React.ReactNode;
   children: React.ReactNode;
+  /** The panel's anchor, for a screen's section links. */
+  id?: string;
 }) {
   return (
-    <section className="rounded-panel border border-line bg-panel shadow-panel">
+    <section id={id} className="min-w-0 scroll-mt-4 rounded-panel border border-line bg-panel shadow-panel">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
         <h2 className="text-xs font-semibold uppercase tracking-title text-ink-2">{title}</h2>
         {aside ? <div className="text-caption text-ink-4">{aside}</div> : null}

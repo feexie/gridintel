@@ -1,10 +1,11 @@
 import type { ScopeRef } from "@/domain";
 import type { OperationsRuntime } from "../operations/levels.ts";
-import type { RevenueGapPartView } from "../operations/views.ts";
+import type { RevenueGapPartView, RevenueGapRow } from "../operations/views.ts";
 import type { CustomerClassRow, FeederRevenueRow, RevenueWorkspaceView, ValuationView } from "./views.ts";
 import { feedersOfSubstation } from "../../analytics/index.ts";
 import { NO_CACHE } from "../analytics/cache.ts";
 import { loadRegistry, lossesBlock, revenueGapBlock } from "../operations/levels.ts";
+import { gapBars } from "./bars.ts";
 
 /* ==========================================================
    SERVICES — REVENUE WORKSPACE READ MODEL
@@ -92,13 +93,15 @@ async function build(runtime: OperationsRuntime): Promise<Workspace> {
   }
 
   const losses = await lossesBlock(runtime, portfolio);
+  const gapByFeeder: RevenueGapRow[] = feeders.map((feeder) => ({ kind: "feeder", id: feeder.id, name: feeder.name, commercial: feeder.commercialGap, collection: feeder.collectionGap, notRealised: feeder.notRealised }));
   return {
     organization: organization?.name ?? null,
     period: runtime.period,
     asOf: runtime.now,
     sourcing: losses.sourcing,
     gap: await revenueGapBlock(runtime, loaded, portfolio),
-    gapByFeeder: feeders.map((feeder) => ({ kind: "feeder", id: feeder.id, name: feeder.name, commercial: feeder.commercialGap, collection: feeder.collectionGap, notRealised: feeder.notRealised })),
+    gapByFeeder,
+    gapBars: gapBars(gapByFeeder),
     revenueBilled: losses.revenueBilled,
     revenueCollected: losses.revenueCollected,
     collectionEfficiency: losses.collectionEfficiency,

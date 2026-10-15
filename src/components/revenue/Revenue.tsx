@@ -54,7 +54,7 @@ export function Revenue({ view }: { view: RevenueWorkspaceView }) {
       <RevenueGapPanel gap={view.gap} below={{ title: "By feeder", rows: view.gapByFeeder }} valuation={view.valuation} />
 
       <Panel title="Collection by customer class" aside="Cash basis: received in the period against billed in the period">
-        <div className="grid gap-2 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           <MetricTile metric={view.revenueBilled} sourcing={view.sourcing} />
           <MetricTile metric={view.revenueCollected} sourcing={view.sourcing} />
           <MetricTile metric={view.collectionEfficiency} sourcing={view.sourcing} emphasis />

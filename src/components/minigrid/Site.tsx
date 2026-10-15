@@ -16,7 +16,7 @@ const SERIES = { renewable: "var(--color-series-collection)", generator: "var(--
 
 function Tiles({ metrics, sourcing, emphasise }: { metrics: MetricView[]; sourcing: SourcingView; emphasise?: string }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
       {metrics.map((metric) => (
         <MetricTile key={metric.label} metric={metric} sourcing={sourcing} emphasis={metric.label === emphasise} />
       ))}

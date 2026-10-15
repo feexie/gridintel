@@ -48,6 +48,8 @@ export interface AttentionItemView {
   figureNote: string | null;
   /** More figures behind the statement, one tap away. */
   more: MetricView[];
+  /** Further rules the same subject met, each with its own figure; shown under the statement. Absent on most lines. */
+  findings?: AttentionFindingView[];
   /** For a line about a report: each claim that differs, beside the calculation on its basis. */
   comparisons: ReportedComparisonView[];
   /** The rule, in words, so that a reader can see why this is listed and something else is not. */
@@ -55,6 +57,18 @@ export interface AttentionItemView {
   target: AttentionTarget;
   /** What the link says, e.g. "Open Farm Road 11 kV feeder". */
   targetLabel: string;
+}
+
+/** One rule a subject met, with the figure that met it. */
+export interface AttentionFindingView {
+  title: string;
+  figure: MetricView;
+  /** Set when the figure is a difference: it is written with its sign. */
+  signed: boolean;
+  /** Words that belong after the figure, e.g. "69 hours over rating". */
+  note: string | null;
+  /** A figure beside the finding that is not what it was found by, with what it is part of. */
+  context: { figure: MetricView; note: string } | null;
 }
 
 /** A workspace of the sector, with the question it answers and how much of the attention list it holds. */

@@ -1,5 +1,7 @@
 import type { AlarmsView, LossesView, MetricView, ReliabilityView, RevenueGapRow, RevenueGapView } from "../operations/views.ts";
 import type { AttentionSubject } from "./attention.ts";
+import type { BarView } from "../overview/bars.ts";
+import type { AttentionItemView } from "../overview/views.ts";
 
 /* ==========================================================
    SERVICES — EXECUTIVE VIEW MODEL
@@ -59,10 +61,14 @@ export interface ExecutiveView {
   whereToLook: WhereToLookView;
   /** How the lists are produced and ranked, shown with them. */
   whereToLookMethod: string;
+  /** The same subjects, in the same order, each as one finding (items.ts). */
+  lookFirst: { assetRisk: AttentionItemView[]; money: AttentionItemView[]; other: AttentionItemView[] };
   losses: LossesView | null;
   lossesNote: string | null;
   revenueGap: RevenueGapView;
   gapByFeeder: RevenueGapRow[];
+  /** `gapByFeeder` as bars: the commercial and the collection gap of each feeder, on one scale. */
+  gapBars: BarView[];
   reliability: ReliabilityView;
   bandCompliance: BandComplianceRow[];
   transformerLoading: TransformerLoadingRow[];

@@ -17,6 +17,8 @@ import type {
 } from "@/services/operations/views";
 import type { ValuationView } from "@/services/revenue/views";
 import { MetricCell, MetricTile, OriginTag, Panel, StatusBadge } from "./Metric";
+import type { BarView } from "@/services/overview/bars";
+import { Fold, WideOpen } from "./Fold";
 import { HeadRow, Row, SubHead, Table, Td, Th } from "./Table";
 import { WORKSPACE_HREF, formatMetric, formatMoney, formatNumber, formatPercent, formatRate, formatSigned, formatTime, fullListHref, levelHref } from "./format";
 
@@ -42,9 +44,7 @@ export function DecompositionBar({ losses }: { losses: LossesView }) {
   }
   return (
     <figure className="space-y-2">
-      <figcaption className="text-caption text-ink-4">
-        Share of energy input lost, by cause. The parts sum to ATC&amp;C; the remainder is energy billed and paid for.
-      </figcaption>
+      <figcaption className="text-caption text-ink-4">Share of energy input lost, by cause. The parts sum to ATC&amp;C; the rest is billed and paid for.</figcaption>
       <div className="flex h-4 w-full gap-[2px]" role="img" aria-label={`ATC&C ${formatPercent(losses.atcc.value)} of energy input`}>
         {parts.map((part) => (
           <div
@@ -144,7 +144,7 @@ export function Comparisons({ rows, note }: { rows: ReportedComparisonView[]; no
           Note: {note}
         </p>
       ) : null}
-      <Table>
+      <Table wide>
         <HeadRow>
             <Th>Figure</Th>
             <Th right>Reported</Th>
@@ -193,19 +193,21 @@ export function Comparisons({ rows, note }: { rows: ReportedComparisonView[]; no
           ))}
         </tbody>
       </Table>
-      <p className="mt-1 text-micro text-ink-5">
-        Source of reported figures: {rows[0].document ?? "not stated"}. A reported figure is compared only with the calculated figure that counts the same things. Reported
-        figures are shown as published and never replace calculated ones.
-      </p>
+      <Fold label="Source of the reported figures" name="comparison-source">
+        <p>
+          Source of reported figures: {rows[0].document ?? "not stated"}. A reported figure is compared only with the calculated figure that counts the same things. Reported
+          figures are shown as published and never replace calculated ones.
+        </p>
+      </Fold>
     </div>
   );
 }
 
-export function LossesPanel({ losses }: { losses: LossesView }) {
+export function LossesPanel({ losses, id }: { losses: LossesView; id?: string }) {
   return (
-    <Panel title="Energy account and ATC&C" aside={<StatusBadge status={losses.status} />}>
+    <Panel id={id} title="Energy account and ATC&C" aside={<StatusBadge status={losses.status} />}>
       {losses.scopeNote ? <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90">{losses.scopeNote}</p> : null}
-      <div className="grid gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <MetricTile metric={losses.atcc} sourcing={losses.sourcing} emphasis />
         <MetricTile metric={losses.parts.technical} sourcing={losses.sourcing} />
         <MetricTile metric={losses.parts.commercial} sourcing={losses.sourcing} />
@@ -213,8 +215,9 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
       </div>
       <DecompositionBar losses={losses} />
 
+      <WideOpen label="Show the energy account, cross-checks and billing" name="losses-detail">
       <div className="grid gap-3 xl:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <SubHead>Accounting chain</SubHead>
           <Table>
             <tbody>
@@ -300,8 +303,8 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
           ) : null}
         </div>
 
-        <div className="space-y-3">
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="min-w-0 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
             <MetricTile metric={losses.billingEfficiency} sourcing={losses.sourcing} />
             <MetricTile metric={losses.collectionEfficiency} sourcing={losses.sourcing}>
               <span className="border border-line-strong px-1.5 py-px text-micro uppercase tracking-wide text-ink-3">Cash basis</span>
@@ -335,7 +338,7 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
             {losses.accounts.billed} of {losses.accounts.inScope ?? "an unknown number of"} accounts were charged in the period.
           </p>
           {losses.byCustomerClass.length > 0 ? (
-            <Table name="customer-class">
+            <Table name="customer-class" wide>
               <HeadRow>
                   <Th>Customer class</Th>
                   <Th right>Accounts</Th>
@@ -360,115 +363,189 @@ export function LossesPanel({ losses }: { losses: LossesView }) {
           ) : null}
         </div>
       </div>
-      <Comparisons rows={losses.reported} note={losses.reportedNote} />
+      </WideOpen>
+      {losses.reported.length > 0 ? (
+        <WideOpen label={`Show reported against calculated (${losses.reported.length})`} name="losses-reported">
+          <Comparisons rows={losses.reported} note={losses.reportedNote} />
+        </WideOpen>
+      ) : null}
     </Panel>
   );
 }
 
 /* ---------------- Revenue gap ---------------- */
 
+/** Each section's revenue gap as a bar of its two parts, on the scale the read model gives. The figures are written beside each bar. */
+export function GapBars({ rows, bars }: { rows: RevenueGapRow[]; bars: BarView[] }) {
+  const barOf = new Map(bars.map((bar) => [bar.id, bar]));
+  return (
+    <figure className="space-y-2" data-gap-bars>
+      <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-ink-4">
+        <span>Revenue not realised, by section</span>
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-[2px]" style={{ background: SERIES.commercial }} /> Commercial gap
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-[2px]" style={{ background: SERIES.collection }} /> Collection gap
+        </span>
+      </figcaption>
+      <ul className="divide-y divide-line/60">
+        {rows.map((row) => {
+          const bar = barOf.get(row.id);
+          return (
+            <li key={row.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-1.5 sm:grid-cols-[12rem_minmax(0,1fr)_auto]" data-gap-bar={row.id}>
+              <Link href={levelHref(row.kind, row.id)} className="min-w-0 text-xs font-medium text-link hover:text-link-hover hover:underline">
+                {row.name}
+              </Link>
+              <span className="text-xs sm:order-last">
+                <MetricCell metric={row.notRealised} />
+              </span>
+              {bar?.parts ? (
+                <div className="col-span-2 flex h-3 gap-[2px] sm:col-span-1" role="img" aria-label={`${row.name}: commercial gap ${formatMetric(row.commercial)}, collection gap ${formatMetric(row.collection)}`}>
+                  {bar.parts.map((part) => (
+                    <div
+                      key={part.key}
+                      title={`${part.key === "commercial" ? "Commercial gap" : "Collection gap"}: ${formatMetric(part.key === "commercial" ? row.commercial : row.collection)}`}
+                      className="h-full first:rounded-l-[3px] last:rounded-r-[3px]"
+                      style={{ width: `${part.fraction * 100}%`, background: part.key === "commercial" ? SERIES.commercial : SERIES.collection }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="col-span-2 text-caption text-ink-4 sm:col-span-1">Not drawn: {bar?.reason ?? "no bar is given for this section"}.</p>
+              )}
+              <p className="col-span-2 flex flex-wrap gap-x-3 text-caption text-ink-4 sm:col-span-3 sm:pl-[12.75rem]">
+                <span>
+                  Commercial <MetricCell metric={row.commercial} />
+                </span>
+                <span>
+                  Collection <MetricCell metric={row.collection} />
+                </span>
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    </figure>
+  );
+}
+
 /**
  * The revenue gap of a scope: two separate parts, how the commercial part is valued, and the sections below.
  * Given a valuation listing, the valuation table shows what the listing holds (its sections, then the
- * residuals) and offers the other listing; without one it shows every part.
+ * residuals) and offers the other listing; without one it shows every part. Given bars, the sections
+ * below are drawn as bars, with their table one tap away on a phone.
  */
-export function RevenueGapPanel({ gap, below, valuation }: { gap: RevenueGapView; below: { title: string; rows: RevenueGapRow[] } | null; valuation?: ValuationView }) {
+export function RevenueGapPanel({
+  gap,
+  below,
+  valuation,
+  bars,
+  id,
+}: {
+  gap: RevenueGapView;
+  below: { title: string; rows: RevenueGapRow[] } | null;
+  valuation?: ValuationView;
+  bars?: BarView[];
+  id?: string;
+}) {
   const parts = valuation ? [...valuation.sections, ...valuation.residuals] : gap.parts;
+  const hasBelow = below !== null && below.rows.length > 0;
   return (
-    <Panel title="Revenue gap" aside={<span>Estimate of revenue not realised · monthly, not annualised</span>}>
-      <p className="border-l-2 border-caution-line/60 pl-2 text-xs leading-snug text-caution-ink/90">
-        {gap.definition} {gap.periodNote}
-      </p>
-      <div className="grid gap-2 md:grid-cols-3">
+    <Panel id={id} title="Revenue gap" aside={<span>Estimate of revenue not realised · monthly, not annualised</span>}>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <MetricTile metric={gap.notRealised} sourcing={gap.sourcing} emphasis />
         <MetricTile metric={gap.commercial} sourcing={gap.sourcing} />
         <MetricTile metric={gap.collection} sourcing={gap.sourcing}>
           <span className="border border-line-strong px-1.5 py-px text-micro uppercase tracking-wide text-ink-3">Cash basis</span>
         </MetricTile>
       </div>
-      <p className="text-caption leading-snug text-ink-3">
-        The commercial gap and the collection gap are shown separately and are never set against each other.
-        {gap.negativeNote ? <span className="text-caution-ink"> {gap.negativeNote}</span> : null}
-      </p>
+      {gap.negativeNote ? <p className="text-caption leading-snug text-caution-ink">{gap.negativeNote}</p> : null}
       {gap.caveat ? <p className="text-caption leading-snug text-caution-ink/90">† {gap.caveat} The rates below are therefore assumptions too.</p> : null}
       {gap.unknownDemandClassNote ? <p className="text-caption leading-snug text-caution-ink/90">! {gap.unknownDemandClassNote}</p> : null}
+      {bars && hasBelow ? <GapBars rows={below.rows} bars={bars} /> : null}
+      <Fold label="What the gap is" name="gap-definition">
+        <p>
+          {gap.definition} {gap.periodNote}
+        </p>
+        <p>The commercial gap and the collection gap are shown separately and are never set against each other.</p>
+        <p>Each loss is valued at the average rate billed to low-voltage, non-maximum-demand customers where it occurs. Customers supplied at 11 kV are in no rate.</p>
+      </Fold>
 
-      <div className="grid gap-3 xl:grid-cols-2">
-        {below && below.rows.length > 0 ? (
-          <div>
-            <SubHead>{below.title}</SubHead>
-            <Table name="gap-below">
+      <WideOpen label={hasBelow ? "Show the tables: by section, and how the gap is valued" : "Show how the gap is valued"} name="gap-tables">
+        <div className="grid gap-3 xl:grid-cols-2">
+          {hasBelow ? (
+            <div className="min-w-0">
+              <SubHead>{below.title}</SubHead>
+              <Table name="gap-below">
+                <HeadRow>
+                  <Th>Section</Th>
+                  <Th right>Commercial gap</Th>
+                  <Th right>Collection gap</Th>
+                  <Th right>Not realised</Th>
+                </HeadRow>
+                <tbody>
+                  {below.rows.map((row) => (
+                    <Row key={row.id} id={row.id}>
+                      <Td>
+                        <Link href={levelHref(row.kind, row.id)} className="text-link hover:underline">
+                          {row.name}
+                        </Link>
+                      </Td>
+                      <Td right>
+                        <MetricCell metric={row.commercial} />
+                      </Td>
+                      <Td right>
+                        <MetricCell metric={row.collection} />
+                      </Td>
+                      <Td right>
+                        <MetricCell metric={row.notRealised} />
+                      </Td>
+                    </Row>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          ) : null}
+          <div className="min-w-0" data-valuation={valuation ? (valuation.complete ? "all" : "top") : "every-part"}>
+            <SubHead>How the commercial gap is valued</SubHead>
+            {valuation && valuation.sectionsTotal > valuation.limit ? (
+              <p className="mb-1 text-caption leading-snug text-ink-3">
+                {valuation.complete
+                  ? `All ${valuation.sectionsTotal} sections, largest amount first, then the residuals above them.`
+                  : `The ${valuation.limit} largest of ${valuation.sectionsTotal} sections by amount, then the residuals above them. The rows shown do not add up to the commercial gap.`}{" "}
+                <Link href={valuation.complete ? WORKSPACE_HREF.revenue : fullListHref(WORKSPACE_HREF.revenue)} className="text-link hover:underline">
+                  {valuation.complete ? `Show the ${valuation.limit} largest` : `Show all ${valuation.sectionsTotal}`}
+                </Link>
+              </p>
+            ) : null}
+            <Table name="gap-valuation">
               <HeadRow>
-                <Th>Section</Th>
-                <Th right>Commercial gap</Th>
-                <Th right>Collection gap</Th>
-                <Th right>Not realised</Th>
+                <Th>Where the loss occurs</Th>
+                <Th right>Unbilled energy</Th>
+                <Th right>LV non-MD rate{gap.caveat ? " †" : ""}</Th>
+                <Th right>Amount</Th>
               </HeadRow>
               <tbody>
-                {below.rows.map((row) => (
-                  <Row key={row.id} id={row.id}>
+                {parts.map((part) => (
+                  <Row key={`${part.kind}:${part.scope.id}`} id={`${part.kind}:${part.scope.id}`}>
                     <Td>
-                      <Link href={levelHref(row.kind, row.id)} className="text-link hover:underline">
-                        {row.name}
-                      </Link>
+                      {part.scope.name}
+                      <span className="ml-1.5 text-micro text-ink-5">{part.kind === "residual" ? "residual above the sections below" : part.scope.id}</span>
                     </Td>
-                    <Td right>
-                      <MetricCell metric={row.commercial} />
-                    </Td>
-                    <Td right>
-                      <MetricCell metric={row.collection} />
-                    </Td>
-                    <Td right>
-                      <MetricCell metric={row.notRealised} />
-                    </Td>
+                    <Td figure>{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</Td>
+                    <Td figure>{part.ratePerKwh === null ? "—" : `${formatRate(part.ratePerKwh, gap.currency)}/kWh`}</Td>
+                    <Td figure>{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</Td>
                   </Row>
                 ))}
               </tbody>
             </Table>
           </div>
-        ) : null}
-        <div data-valuation={valuation ? (valuation.complete ? "all" : "top") : "every-part"}>
-          <SubHead>How the commercial gap is valued</SubHead>
-          {valuation && valuation.sectionsTotal > valuation.limit ? (
-            <p className="mb-1 text-caption leading-snug text-ink-3">
-              {valuation.complete
-                ? `All ${valuation.sectionsTotal} sections, largest amount first, then the residuals above them.`
-                : `The ${valuation.limit} largest of ${valuation.sectionsTotal} sections by amount, then the residuals above them. The rows shown do not add up to the commercial gap.`}{" "}
-              <Link href={valuation.complete ? WORKSPACE_HREF.revenue : fullListHref(WORKSPACE_HREF.revenue)} className="text-link hover:underline">
-                {valuation.complete ? `Show the ${valuation.limit} largest` : `Show all ${valuation.sectionsTotal}`}
-              </Link>
-            </p>
-          ) : null}
-          <Table name="gap-valuation">
-            <HeadRow>
-              <Th>Where the loss occurs</Th>
-              <Th right>Unbilled energy</Th>
-              <Th right>LV non-MD rate{gap.caveat ? " †" : ""}</Th>
-              <Th right>Amount</Th>
-            </HeadRow>
-            <tbody>
-              {parts.map((part) => (
-                <Row key={`${part.kind}:${part.scope.id}`} id={`${part.kind}:${part.scope.id}`}>
-                  <Td>
-                    {part.scope.name}
-                    <span className="ml-1.5 text-micro text-ink-5">{part.kind === "residual" ? "residual above the sections below" : part.scope.id}</span>
-                  </Td>
-                  <Td figure>{part.energyKwh === null ? "—" : `${formatNumber(part.energyKwh)} kWh`}</Td>
-                  <Td figure>{part.ratePerKwh === null ? "—" : `${formatRate(part.ratePerKwh, gap.currency)}/kWh`}</Td>
-                  <Td figure>{part.amount === null ? "—" : formatMoney(part.amount, gap.currency)}</Td>
-                </Row>
-              ))}
-            </tbody>
-          </Table>
-          <p className="mt-1 text-micro leading-snug text-ink-5">
-            Each loss is valued at the average rate billed to low-voltage, non-maximum-demand customers where it occurs. Customers supplied at 11 kV are in no rate.
-          </p>
         </div>
-      </div>
+      </WideOpen>
     </Panel>
   );
 }
-
 
 /* ---------------- Reliability ---------------- */
 
@@ -526,16 +603,16 @@ export function SupplyStrip({ supply }: { supply: SupplyView }) {
   );
 }
 
-export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliability: ReliabilityView; showBand: boolean; scopeId?: string }) {
+export function ReliabilityPanel({ reliability, showBand, scopeId, id }: { reliability: ReliabilityView; showBand: boolean; scopeId?: string; id?: string }) {
   return (
-    <Panel title="Reliability and hours of supply" aside={<span>Customers served: <MetricCell metric={reliability.customersServed} /></span>}>
+    <Panel id={id} title="Reliability and hours of supply" aside={<span>Customers served: <MetricCell metric={reliability.customersServed} /></span>}>
       {reliability.scopeNote ? <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90">{reliability.scopeNote}</p> : null}
       {reliability.provisional ? (
         <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90" data-provisional>
           {reliability.provisional} The figures are calculated, not estimated; they are not final until the restoration is recorded.
         </p>
       ) : null}
-      <div className="grid gap-2 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
         <MetricTile metric={reliability.saidi} sourcing={reliability.sourcing} emphasis />
         <MetricTile metric={reliability.saifi} sourcing={reliability.sourcing} />
         <MetricTile metric={reliability.caidi} sourcing={reliability.sourcing} />
@@ -552,9 +629,9 @@ export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliabili
       <RuleFindings findings={reliability.ruleFindings} scopeId={scopeId} />
 
       <div className="grid gap-3 xl:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <SubHead>Attribution of interruptions</SubHead>
-          <Table>
+          <Table name="attribution">
             <HeadRow>
                 <Th>Attributed to</Th>
                 <Th right>SAIDI</Th>
@@ -582,18 +659,24 @@ export function ReliabilityPanel({ reliability, showBand, scopeId }: { reliabili
               ))}
             </tbody>
           </Table>
-          <p className="mt-1 text-caption leading-snug text-ink-4">
-            The classes sum to the totals above. Nothing is apportioned.
-            {reliability.unattributable > 0 ? ` ${reliability.unattributable} exposure(s) recorded above this scope are not in any figure here.` : ""}
-            {reliability.excludedForData > 0 ? ` ${reliability.excludedForData} exposure(s) with missing times or customer counts were excluded.` : ""}
-            {reliability.momentary > 0 ? ` ${reliability.momentary} momentary exposure(s) are not counted.` : ""}
-          </p>
-          <div className="mt-3">
-            <Comparisons rows={reliability.reported} note={reliability.reportedNote} />
+          <div className="mt-1">
+            <Fold label="How the classes are counted" name="attribution-notes">
+              <p>
+                The classes sum to the totals above. Nothing is apportioned.
+                {reliability.unattributable > 0 ? ` ${reliability.unattributable} exposure(s) recorded above this scope are not in any figure here.` : ""}
+                {reliability.excludedForData > 0 ? ` ${reliability.excludedForData} exposure(s) with missing times or customer counts were excluded.` : ""}
+                {reliability.momentary > 0 ? ` ${reliability.momentary} momentary exposure(s) are not counted.` : ""}
+              </p>
+            </Fold>
           </div>
         </div>
         <SupplyStrip supply={reliability.supply} />
       </div>
+      {reliability.reported.length > 0 ? (
+        <WideOpen label={`Show reported against calculated (${reliability.reported.length})`} name="reliability-reported">
+          <Comparisons rows={reliability.reported} note={reliability.reportedNote} />
+        </WideOpen>
+      ) : null}
     </Panel>
   );
 }
@@ -604,7 +687,7 @@ export function LoadingPanel({ loading }: { loading: LoadingView }) {
   return (
     <Panel title="Loading" aside={loading.ratedKva === null ? "Rating not recorded" : `Rated ${formatNumber(loading.ratedKva)} kVA`}>
       {loading.caveat ? <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90">{loading.caveat}</p> : null}
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <MetricTile metric={{ ...loading.peak, note: null }} sourcing={loading.sourcing} emphasis>
           {loading.overloaded === null ? null : (
             <span className={`border px-1.5 py-px text-micro uppercase tracking-wide ${loading.overloaded ? "border-alert-line/60 text-alert" : "border-line-strong text-ink-3"}`}>
@@ -634,7 +717,7 @@ export function PowerTransformersPanel({ transformers }: { transformers: PowerTr
   if (transformers.length === 0) return null;
   return (
     <Panel title={`Power transformers (${transformers.length})`} aside="Loading from the substation's telemetry, against rating">
-      <Table name="power-transformers">
+      <Table name="power-transformers" wide>
         <HeadRow>
             <Th>Transformer</Th>
             <Th right>Rating</Th>
@@ -677,10 +760,12 @@ export function PowerTransformersPanel({ transformers }: { transformers: PowerTr
           ))}
         </tbody>
       </Table>
-      <p className="text-micro leading-snug text-ink-5">
-        Peak is the highest of the hourly readings in the period; a higher loading between readings would not be seen. A transformer is loaded by the feeders on its own bus
-        section only.
-      </p>
+      <Fold label="How loading is read" name="power-transformer-notes">
+        <p>
+          Peak is the highest of the hourly readings in the period; a higher loading between readings would not be seen. A transformer is loaded by the feeders on its own bus
+          section only.
+        </p>
+      </Fold>
     </Panel>
   );
 }
@@ -692,7 +777,7 @@ const FOOTNOTE_MARKS = ["†", "‡", "§", "¶", "‖", "#"];
 /** Long lists show this many rows until the reader asks for all of them. */
 export const ROW_LIMIT = 40;
 
-export function ChildrenTable({ table, showAll = true, allHref }: { table: ChildTable; showAll?: boolean; allHref?: string }) {
+export function ChildrenTable({ table, showAll = true, allHref, id }: { table: ChildTable; showAll?: boolean; allHref?: string; id?: string }) {
   const rows = showAll ? table.rows : table.rows.slice(0, ROW_LIMIT);
   // Every caveat on a figure in the table is printed under it, with a marker on the figure,
   // so that no caveat depends on hovering.
@@ -708,12 +793,12 @@ export function ChildrenTable({ table, showAll = true, allHref }: { table: Child
 
   return (
     <Panel
+      id={id}
       title={`${table.title} (${table.rows.length})`}
       aside={table.coverage === "complete" ? "Registry: complete list" : <span className="text-caution">Registry: {table.coverage.replace("_", " ")} — this is not the full list</span>}
     >
-      <div className="max-h-[32rem] overflow-auto">
-        <Table>
-          <HeadRow sticky>
+      <Table name="children" wide={table.columns.length > 3}>
+          <HeadRow>
               <Th>Name</Th>
               {table.columns.map((column) => (
                 <Th key={column.key} right className="pl-3">
@@ -739,7 +824,6 @@ export function ChildrenTable({ table, showAll = true, allHref }: { table: Child
             ))}
           </tbody>
         </Table>
-      </div>
       {rows.length < table.rows.length ? (
         <p className="text-xs text-ink-3">
           Showing the first {rows.length} of {table.rows.length}.{" "}
@@ -759,10 +843,12 @@ export function ChildrenTable({ table, showAll = true, allHref }: { table: Child
           ))}
         </ul>
       ) : null}
-      <p className="text-micro text-ink-5">
-        ● measured or fully calculated · ≈ estimated inputs · ! insufficient data · – not available. The tag after each figure is its origin (MEAS, REPO, CALC, ESTI, DERI). Open a row for
-        source and method.
-      </p>
+      <Fold label="What the marks mean" name="children-key">
+        <p>
+          ● measured or fully calculated · ≈ estimated inputs · ! insufficient data · – not available. The tag after each figure is its origin (MEAS, REPO, CALC, ESTI, DERI). Open a
+          row for source and method.
+        </p>
+      </Fold>
     </Panel>
   );
 }
@@ -887,13 +973,13 @@ function ConditionRow({ condition }: { condition: ConditionRowView }) {
  * headings and two origins; nothing is merged, and a derived condition is never called an alarm.
  * Where a source alarm and a condition agree, each row says so and stays in its own list.
  */
-export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
+export function AlarmsPanel({ alarms, id }: { alarms: AlarmsView; id?: string }) {
   const { recorded, derived } = alarms;
   const none = recorded.active.length + recorded.undated.length + recorded.clearedTotal === 0;
   return (
-    <Panel title="Alarms and derived conditions" aside={`As of ${formatTime(alarms.asOf)} · two separate lists, never merged`}>
+    <Panel id={id} title="Alarms and derived conditions" aside={`As of ${formatTime(alarms.asOf)} · two separate lists, never merged`}>
       <div className="grid gap-3 xl:grid-cols-2">
-        <div data-alarms="recorded">
+        <div className="min-w-0" data-alarms="recorded">
           <h3 className="flex flex-wrap items-center gap-2 text-caption font-semibold uppercase tracking-wide text-ink-2">
             Alarms recorded by source systems <OriginTag origin="measured" />
             {recorded.completeness === "not_available" ? <StatusBadge status="not_available" /> : null}
@@ -925,17 +1011,18 @@ export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
                 </>
               ) : null}
               {recorded.clearedTotal > 0 ? (
-                <>
-                  <h4 className="mt-2 text-micro uppercase tracking-wide text-ink-5">
-                    Raised in the period and cleared ({recorded.clearedTotal})
-                    {recorded.cleared.length < recorded.clearedTotal ? `, the ${recorded.cleared.length} most recent` : ""}
-                  </h4>
-                  <ul className="divide-y divide-line/70">
-                    {recorded.cleared.map((alarm) => (
-                      <AlarmRow key={alarm.id} alarm={alarm} />
-                    ))}
-                  </ul>
-                </>
+                <div className="mt-2">
+                  <Fold
+                    label={`Raised in the period and cleared (${recorded.clearedTotal})${recorded.cleared.length < recorded.clearedTotal ? `, the ${recorded.cleared.length} most recent` : ""}`}
+                    name="cleared-alarms"
+                  >
+                    <ul className="divide-y divide-line/70">
+                      {recorded.cleared.map((alarm) => (
+                        <AlarmRow key={alarm.id} alarm={alarm} />
+                      ))}
+                    </ul>
+                  </Fold>
+                </div>
               ) : null}
               {recorded.unplaced > 0 ? (
                 <p className="mt-1 text-caption text-caution-ink/90">
@@ -946,7 +1033,7 @@ export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
           )}
         </div>
 
-        <div data-alarms="derived">
+        <div className="min-w-0" data-alarms="derived">
           <h3 className="flex flex-wrap items-center gap-2 text-caption font-semibold uppercase tracking-wide text-ink-2">
             Conditions derived by GridIntel <OriginTag origin="calculated" />
           </h3>
@@ -971,22 +1058,26 @@ export function AlarmsPanel({ alarms }: { alarms: AlarmsView }) {
               ))}
             </ul>
           )}
-          <dl className="mt-2 space-y-0.5 text-micro leading-snug text-ink-5">
-            {derived.rules.map((rule) => (
-              <div key={rule.id}>
-                <dt className="inline font-semibold text-ink-4">Rule: {rule.name}. </dt>
-                <dd className="inline">
-                  {rule.statement} Matching kind of source alarm: {rule.alarmKindName}.
-                </dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-1 text-micro text-ink-5">
-            {derived.method.name} <span className="font-mono">({derived.method.id} v{derived.method.version})</span>. {derived.method.disclaimer}
-          </p>
+          <div className="mt-2">
+            <Fold label="The rules and the method" name="condition-rules">
+              <dl className="space-y-0.5">
+                {derived.rules.map((rule) => (
+                  <div key={rule.id}>
+                    <dt className="inline font-semibold text-ink-3">Rule: {rule.name}. </dt>
+                    <dd className="inline">
+                      {rule.statement} Matching kind of source alarm: {rule.alarmKindName}.
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p>
+                {derived.method.name} <span className="break-all font-mono">({derived.method.id} v{derived.method.version})</span>. {derived.method.disclaimer}
+              </p>
+              <p>Data sources: {alarms.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ") || "none"}</p>
+            </Fold>
+          </div>
         </div>
       </div>
-      <p className="text-micro text-ink-5">Data sources: {alarms.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ") || "none"}</p>
     </Panel>
   );
 }

@@ -8,6 +8,9 @@ export const REQUEST_BASE = `http://localhost:${REQUEST_PORT}`;
 /** The environment that selects the request-rendered build, for a server a test starts itself. */
 export const REQUEST_ENV = { ...process.env, GRIDINTEL_RENDER: "request" };
 
+/** Set by `npm run verify:local`: the ordinary build only, with no server started by a test (see scripts/e2e-local.mjs). */
+export const LOCAL = process.env.GRIDINTEL_E2E === "local";
+
 export const OPERATIONS = "/dashboard/utility/operations";
 
 export const ROUTES = [

@@ -1,3 +1,4 @@
+import type { BarView } from "../overview/bars.ts";
 import type { LossesView, MetricView, RevenueGapPartView, RevenueGapRow, RevenueGapView, SourcingView } from "../operations/views.ts";
 
 /* ==========================================================
@@ -50,6 +51,8 @@ export interface RevenueWorkspaceView {
   /** The portfolio's revenue gap, and each feeder's. */
   gap: RevenueGapView;
   gapByFeeder: RevenueGapRow[];
+  /** `gapByFeeder` as bars: the commercial and the collection gap of each feeder, on one scale. */
+  gapBars: BarView[];
   /** The valuation of the portfolio's commercial gap, section by section. */
   valuation: ValuationView;
   /** The portfolio's billing and collection. */

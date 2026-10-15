@@ -1,5 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-import { BUILT_PORT, REQUEST_PORT } from "./e2e/routes";
+import { BUILT_PORT, LOCAL, REQUEST_PORT } from "./e2e/routes";
 
 /* Browser tests for flows the unit tests cannot see: what a screen actually shows.
 
@@ -31,8 +31,9 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", testIgnore: /timing\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1500, height: 900 } } },
-    // Page timings are measured last and alone, so no other test is loading the servers.
-    { name: "timing", testMatch: /timing\.spec\.ts/, dependencies: ["chromium"] },
+    // Page timings are measured last and alone, so no other test is loading the servers. Not on
+    // `verify:local`, which serves one build only.
+    ...(LOCAL ? [] : [{ name: "timing", testMatch: /timing\.spec\.ts/, dependencies: ["chromium"] }]),
   ],
   webServer: [
     {
@@ -41,13 +42,18 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
     },
-    {
-      command: `npx next start -p ${REQUEST_PORT}`,
-      env: { GRIDINTEL_RENDER: "request" },
-      // Answers 200 only once the warm-up has finished.
-      url: `http://localhost:${REQUEST_PORT}/api/ready`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-    },
+    // The request build: not on `verify:local`, which builds and serves the ordinary one only.
+    ...(LOCAL
+      ? []
+      : [
+          {
+            command: `npx next start -p ${REQUEST_PORT}`,
+            env: { GRIDINTEL_RENDER: "request" },
+            // Answers 200 only once the warm-up has finished.
+            url: `http://localhost:${REQUEST_PORT}/api/ready`,
+            reuseExistingServer: !process.env.CI,
+            timeout: 120_000,
+          },
+        ]),
   ],
 });

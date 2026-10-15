@@ -24,11 +24,18 @@ export function Note({ children, tone = "plain" }: { children: ReactNode; tone?:
   return <p className={`text-caption leading-snug ${tone === "caution" ? "text-caution-ink/90" : "text-ink-4"}`}>{children}</p>;
 }
 
-export function Table({ children, name }: { children: ReactNode; name?: string }) {
+/**
+ * A table in its own frame: when it is wider than its panel it scrolls sideways inside the frame,
+ * with its first column held in place, and the page never slides. `wide` keeps a table of many
+ * columns at a readable width on a phone, where it scrolls, instead of crushing every column.
+ */
+export function Table({ children, name, wide = false }: { children: ReactNode; name?: string; wide?: boolean }) {
   return (
-    <table className="w-full border-collapse text-xs" data-table={name}>
-      {children}
-    </table>
+    <div className="gi-table-frame" data-table-frame={name ?? ""}>
+      <table className={`w-full border-collapse text-xs ${wide ? "min-w-[44rem]" : ""}`} data-table={name}>
+        {children}
+      </table>
+    </div>
   );
 }
 

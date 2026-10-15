@@ -7,6 +7,8 @@ import { NO_CACHE } from "../analytics/cache.ts";
 import { feedersOfSubstation, transformersOnFeeder } from "../../analytics/index.ts";
 import { alarmsBlock, attributedIndex, loadRegistry, loadingBlock, lossesBlock, reliabilityBlock, revenueGapBlock, timeZoneOf } from "../operations/levels.ts";
 import { comparisonNote } from "../operations/comparison.ts";
+import { gapBars } from "../revenue/bars.ts";
+import { lookFirstItem } from "./items.ts";
 import { ATTENTION_METHOD, MONEY_RANK_LIMIT, attention } from "./attention.ts";
 
 /* ==========================================================
@@ -48,7 +50,7 @@ export function whereToLookView(ranked: readonly AttentionSubject[], feeders: Fe
 }
 
 /** The whole view with the ranking uncut: computed once, whichever listing is asked for. */
-type Portfolio = Omit<ExecutiveView, "whereToLook"> & { ranked: AttentionSubject[] };
+type Portfolio = Omit<ExecutiveView, "whereToLook" | "lookFirst"> & { ranked: AttentionSubject[] };
 
 interface FeederFacts {
   id: string;
@@ -99,7 +101,16 @@ const stated = (rows: ReportedComparisonView[], name: string): ReportedCompariso
 export async function executiveView(runtime: OperationsRuntime, feeders: FeederListing = "top"): Promise<ExecutiveView> {
   const key = `view:executive-portfolio|${runtime.period.start}|${runtime.period.end}|${runtime.now}`;
   const { ranked, ...portfolio } = await (runtime.cache ?? NO_CACHE).get(key, () => portfolioView(runtime));
-  return { ...portfolio, whereToLook: whereToLookView(ranked, feeders) };
+  const whereToLook = whereToLookView(ranked, feeders);
+  return {
+    ...portfolio,
+    whereToLook,
+    lookFirst: {
+      assetRisk: portfolio.assetRisk.map((entry) => lookFirstItem(entry, whereToLook.moneyTotal)),
+      money: whereToLook.money.map((entry) => lookFirstItem(entry, whereToLook.moneyTotal)),
+      other: whereToLook.other.map((entry) => lookFirstItem(entry, whereToLook.moneyTotal)),
+    },
+  };
 }
 
 async function portfolioView(runtime: OperationsRuntime): Promise<Portfolio> {
@@ -215,6 +226,7 @@ async function portfolioView(runtime: OperationsRuntime): Promise<Portfolio> {
     lossesNote: null,
     revenueGap: await revenueGapBlock(runtime, loaded, portfolio),
     gapByFeeder,
+    gapBars: gapBars(gapByFeeder),
     reliability,
     bandCompliance,
     transformerLoading,

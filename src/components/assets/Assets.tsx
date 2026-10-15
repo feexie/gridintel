@@ -198,12 +198,12 @@ export function Assets({ view }: { view: AssetsWorkspaceView }) {
         </Panel>
       ))}
       <p className="text-micro text-ink-5">
-        Loading: {view.loadingMethod.name} <span className="font-mono">({view.loadingMethod.id} v{view.loadingMethod.version})</span>. Peak loading is the highest of the hourly readings in the
+        Loading: {view.loadingMethod.name} <span className="break-all font-mono">({view.loadingMethod.id} v{view.loadingMethod.version})</span>. Peak loading is the highest of the hourly readings in the
         period; a higher loading between readings would not be seen. Each name opens the asset in the Operations drill-down, where source and method are shown for every figure.
       </p>
 
       <Panel title="Monitoring and what is not held" aside="What the list above cannot see">
-        <div className="grid gap-2 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           <MetricTile metric={view.monitoring.devices}>
             <span className="text-caption text-ink-4">{formatNumber(view.monitoring.checked)} checked for check-ins</span>
           </MetricTile>

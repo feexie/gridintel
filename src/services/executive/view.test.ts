@@ -87,8 +87,8 @@ describe("executive read model", () => {
     assert.equal(all.whereToLook.complete, true);
     assert.equal(all.whereToLook.moneyTotal, 4);
     assert.deepEqual(all.whereToLook.other, view.whereToLook.other);
-    // Nothing but the listing differs between the two.
-    assert.deepEqual({ ...all, whereToLook: null }, { ...view, whereToLook: null });
+    // Nothing but the listing (and the same listing laid out as findings) differs between the two.
+    assert.deepEqual({ ...all, whereToLook: null, lookFirst: { ...all.lookFirst, money: null } }, { ...view, whereToLook: null, lookFirst: { ...view.lookFirst, money: null } });
   });
 
   it("says a ranking no longer than the cut-off is complete", () => {
@@ -211,5 +211,39 @@ describe("executive read model", () => {
     assert.deepEqual(sparse.assetRisk, []);
     assert.equal(sparse.reliability.saidi.value, null);
     assert.equal(sparse.reliability.saidi.status, "insufficient_data");
+  });
+});
+
+describe("where to look first, as findings", () => {
+  it("lays out every subject in the read model's order, each once, and adds no figure of its own", () => {
+    const items = [...view.lookFirst.assetRisk, ...view.lookFirst.money, ...view.lookFirst.other];
+    assert.deepEqual(
+      items.map((item) => item.id),
+      [...view.assetRisk.map((entry) => `asset_risk:${entry.subject.id}`), ...view.whereToLook.money.map((entry) => `money:${entry.subject.id}`), ...view.whereToLook.other.map((entry) => `other:${entry.subject.id}`)],
+    );
+    // Equipment at risk leads with the figure that put it there; the rest of its findings follow.
+    const [riverbank] = view.lookFirst.assetRisk;
+    assert.equal(riverbank.figure, view.assetRisk[0].findings[0].metric);
+    assert.equal(riverbank.figureNote, "69 hours over rating");
+    assert.equal(riverbank.tone, "alert");
+    // A ranked feeder leads with its money figure, and lists every rule it met with that rule's own figure.
+    const [first] = view.lookFirst.money;
+    assert.equal(first.figure, view.whereToLook.money[0].money);
+    assert.match(first.statement, /: 1 of 4 feeders by revenue not realised\.$/);
+    assert.deepEqual(
+      first.findings?.map((found) => found.figure),
+      view.whereToLook.money[0].findings.map((finding) => finding.metric),
+    );
+    // A figure beside a finding keeps what it is part of.
+    const other = view.lookFirst.other.find((item) => item.id === "other:DT-OLD-14");
+    assert.match(other?.findings?.[0].context?.note ?? "", /part of Old Town 11 kV feeder's revenue not realised; not ranked separately/);
+    for (const item of items) assert.deepEqual(item.target, { type: "level", kind: item.target.type === "level" ? item.target.kind : "", id: item.id.split(":")[1] });
+  });
+
+  it("gives the revenue gap by feeder as bars of its two parts on one scale", () => {
+    assert.equal(view.gapBars.length, view.gapByFeeder.length);
+    const longest = Math.max(...view.gapBars.map((bar) => (bar.parts ?? []).reduce((sum, part) => sum + part.fraction, 0)));
+    assert.ok(Math.abs(longest - 1) < 1e-9);
+    for (const bar of view.gapBars) assert.deepEqual(bar.parts?.map((part) => part.key) ?? ["commercial", "collection"], ["commercial", "collection"]);
   });
 });

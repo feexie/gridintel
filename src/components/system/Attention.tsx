@@ -84,6 +84,29 @@ export function AttentionItem({ item }: { item: AttentionItemView }) {
           {figure.status === "not_available" ? null : <OriginTag origin={figure.origin} />}
         </div>
       ) : null}
+      {/* Every further rule the subject met, each with the figure that met it. */}
+      {item.findings && item.findings.length > 0 ? (
+        <ul className="mt-1.5 space-y-1 border-t border-line/60 pt-1.5" data-findings>
+          {item.findings.map((found, i) => (
+            <li key={`${found.title}:${i}`} className="text-xs leading-snug" data-finding-line>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                <span className="text-ink-2">{found.title}</span>
+                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                  <span className="font-mono tabular-nums text-ink">{found.signed ? formatSigned(found.figure) : formatMetric(found.figure)}</span>
+                  {found.note ? <span className="text-caption text-ink-4">{found.note}</span> : null}
+                  <StatusBadge status={found.figure.status} />
+                  {found.figure.status === "not_available" ? null : <OriginTag origin={found.figure.origin} />}
+                </span>
+              </div>
+              {found.context ? (
+                <p className="text-caption text-ink-4">
+                  <span className="font-mono text-ink-2">{formatMetric(found.context.figure)}</span> {found.context.figure.label.toLowerCase()}, {found.context.note}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {/* A line about a report has no single figure: its first differing claim stands in its place. */}
       {figure === null && firstComparison ? (
         <ul className="mt-1.5">
@@ -114,8 +137,8 @@ export function AttentionItem({ item }: { item: AttentionItemView }) {
             ) : null}
             {item.more.length > 0 ? (
               <dl className="space-y-0.5">
-                {item.more.map((metric) => (
-                  <div key={metric.label} className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs" data-figure={metric.label}>
+                {item.more.map((metric, i) => (
+                  <div key={`${metric.label}:${i}`} className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs" data-figure={metric.label}>
                     <dt className="text-ink-3">{metric.label}</dt>
                     <dd>
                       <MetricCell metric={metric} />

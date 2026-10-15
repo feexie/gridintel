@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { OPERATIONS, REQUEST_ENV } from "./routes";
+import { LOCAL, OPERATIONS, REQUEST_ENV } from "./routes";
 
 /* What a visitor gets from a server that has only just started, on each build (ADR 0012).
    The other tests use servers that are already up, so each test here starts a server of its
@@ -35,6 +35,7 @@ async function firstAnswer(request: APIRequestContext, url: string): Promise<{ s
 }
 
 test("on request: a server that is still warming up answers at once with a preparing page, then with the screen", async ({ page, request }) => {
+  test.skip(LOCAL, "starts a server of its own; left to the full verify");
   test.setTimeout(120_000);
   const base = start(3211, REQUEST_ENV);
   const first = await firstAnswer(request, `${base}${FEEDER}`);
@@ -61,6 +62,7 @@ test("on request: a server that is still warming up answers at once with a prepa
 });
 
 test("built ahead: a server that has only just started answers with the screen itself, and never with a preparing page", async ({ request }) => {
+  test.skip(LOCAL, "starts a server of its own; left to the full verify");
   test.setTimeout(120_000);
   const base = start(3213, { ...process.env, GRIDINTEL_RENDER: "" });
 

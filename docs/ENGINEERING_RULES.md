@@ -135,12 +135,20 @@ docs.
   0012): `npm run build:request`, with every data screen rendered on
   request, and `npm run build`, with the network screens built ahead of
   time. The browser tests run against both.
-- Commit only after `npm run verify` passes, and commit every time it does,
-  so an interruption never loses more than one step. Push the branch as you
-  go.
-- The browser tests run against the builds `verify` has just made. Stop any
-  server left running on the test ports (3210 to 3213) first, or they will
-  test an old build.
+- `npm run verify:local` is the lighter check for a machine short of memory
+  (Founder, 2026-10-15): typecheck, unit tests, lint, then one build (the
+  ordinary one, `npm run build`) and its browser tests on one worker. It
+  leaves out the request build, the readiness tests that start servers of
+  their own, and the page-time budget.
+- Commit only after a check passes, and commit every time it does, so an
+  interruption never loses more than one step. Push the branch as you go.
+  On this laptop the commit after each step may rest on
+  `npm run verify:local`. The full `npm run verify` (both builds) stays the
+  rule: CI runs it on every push, and it must be green before the Founder
+  approves a checkpoint.
+- The browser tests run against the builds `verify` (or `verify:local`) has
+  just made. Stop any server left running on the test ports (3210 to 3213)
+  first, or they will test an old build.
 - New analytics and services come with tests. Deterministic logic is tested
   with fixed inputs and fixed times.
 - Temporary analysis scripts are removed after use. Do not modify production

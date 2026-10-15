@@ -50,7 +50,7 @@ function Frame({ view, home, lead, visual }: { view: SectorOverviewView; home: s
       </SectorBand>
 
       {view.headline.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-3" data-headline>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-headline>
           {view.headline.map((metric) => (
             <MetricTile key={metric.label} metric={metric} sourcing={view.sourcing} emphasis />
           ))}
