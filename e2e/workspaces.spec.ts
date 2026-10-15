@@ -106,7 +106,7 @@ test("Assets: the assets with something on them, each fact in its own column, an
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Assets");
 
   // Ten of the 55 assets are listed, in the order the rule states, and the rule is printed.
-  const attention = page.locator('[data-table="attention"] tbody tr');
+  const attention = page.locator('[data-list="attention"] > li');
   await expect(attention).toHaveCount(10);
   await expect(attention.nth(0)).toHaveAttribute("data-row", "DT-OLD-3");
   // Farm Road: the trip of the fault still open at the as-of time is standing on it.
@@ -116,7 +116,7 @@ test("Assets: the assets with something on them, each fact in its own column, an
   await expect(attention.nth(3)).toHaveAttribute("data-row", "DT-OLD-2");
   await expect(panel(page, "Assets with something on them")).toContainText("10 of 55 in-service assets");
   // Government Avenue 3, the designed daytime overload: above rating at 53 readings, derived, and no source alarm raised.
-  const government = page.locator('[data-table="attention"] [data-row="DT-GOV-3"]');
+  const government = page.locator('[data-list="attention"] [data-row="DT-GOV-3"]');
   for (const text of ["110.6%", "53 of 720", "Rule: Loaded above rating", "no source alarm was raised"]) await expect(government).toContainText(text);
   await expect(government.locator("[data-asset-alarm]")).toHaveCount(0);
   await expect(panel(page, "Assets with something on them")).toContainText("It is an ordering of facts, not a score.");
@@ -127,7 +127,7 @@ test("Assets: the assets with something on them, each fact in its own column, an
   await expect(attention.nth(0).locator("[data-asset-condition]")).toContainText("Rule: Monitor quiet, on its monitor");
   await expect(attention.nth(0).locator("[data-asset-condition]")).toContainText("holds at the as-of time · a source alarm agrees");
   // Riverbank: above rating at 69 of 720 readings, a derived condition no source alarm was raised for, and one interruption began there.
-  const riverbank = page.locator('[data-table="attention"] [data-row="DT-OLD-2"]');
+  const riverbank = page.locator('[data-list="attention"] [data-row="DT-OLD-2"]');
   for (const text of ["121.2%", "69 of 720", "Rule: Loaded above rating", "no source alarm was raised", "1 · 0.14 h SAIDI"]) await expect(riverbank).toContainText(text);
   await expect(riverbank.locator("[data-asset-alarm]")).toHaveCount(0);
   // The standing alarm on Hillcrest substation is not on any listed asset; the screen says where it is.
@@ -151,7 +151,7 @@ test("Assets: the assets with something on them, each fact in its own column, an
   await expect(page.locator('[data-not-held="Maintenance records"]')).toContainText("Not available. No source supplies work orders");
   await expect(tile(page, "Monitoring devices in the registry")).toContainText("50");
 
-  await page.locator('[data-table="attention"]').getByRole("link", { name: "Riverbank transformer" }).click();
+  await page.locator('[data-list="attention"]').getByRole("link", { name: "Riverbank transformer" }).click();
   await expect(page).toHaveURL(/\/operations\/transformers\/DT-OLD-2$/);
 });
 
