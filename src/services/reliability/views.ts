@@ -1,3 +1,4 @@
+import type { BarView } from "../overview/bars.ts";
 import type { AlarmSubjectView, MetricView, ReliabilityView, ReportedComparisonView, RuleFindingView, SourcingView, SupplyView } from "../operations/views.ts";
 
 /* ==========================================================
@@ -59,6 +60,8 @@ export interface ReliabilityWorkspaceView {
   portfolio: ReliabilityView;
   /** Every feeder, ranked by network-attributable SAIDI. */
   feeders: FeederReliabilityRow[];
+  /** Each feeder's network-attributable SAIDI as a bar, on one scale: what sets the rank. */
+  rankingBars: BarView[];
   byCause: BreakdownRowView[];
   byOriginPoint: BreakdownRowView[];
   /** The elements interruptions other than load shedding began at, most interruptions first. */

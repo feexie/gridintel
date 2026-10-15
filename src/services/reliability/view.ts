@@ -8,6 +8,7 @@ import { scopeReliability } from "../analytics/reliability.ts";
 import { alarmSubject, attributedIndex, loadRegistry, reliabilityBlock, timeZoneOf } from "../operations/levels.ts";
 import { comparisonNote } from "../operations/comparison.ts";
 import { sourcingView } from "../operations/metric.ts";
+import { scaleBars } from "../overview/bars.ts";
 
 /* ==========================================================
    SERVICES — RELIABILITY WORKSPACE READ MODEL
@@ -145,6 +146,7 @@ async function build(runtime: OperationsRuntime): Promise<ReliabilityWorkspaceVi
     sourcing: sourcingView(sourcing),
     portfolio: await reliabilityBlock(runtime, portfolio, timeZone),
     feeders: feeders.map((feeder, i) => ({ ...feeder, rank: i + 1 })),
+    rankingBars: scaleBars(feeders.map((feeder) => ({ id: feeder.id, parts: [{ key: "network", value: feeder.networkSaidi.value }] }))),
     byCause: breakdownRows(result.byCause, CAUSE_LABEL, unit),
     byOriginPoint: breakdownRows(result.byOriginPoint, ORIGIN_LABEL, unit, ORIGIN_SIDE),
     origins,

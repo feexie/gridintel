@@ -18,6 +18,7 @@ const REBUILT = [
   `${OPERATIONS}/transformers/DT-OLD-2/all`,
   `${OPERATIONS}/service-points/SP-OLD2-001`,
   `${OPERATIONS}/service-points/SP-MKT2-005`,
+  "/dashboard/utility/reliability",
 ];
 
 for (const route of REBUILT) {

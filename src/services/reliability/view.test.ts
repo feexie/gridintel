@@ -15,6 +15,16 @@ const sum = (values: (number | null)[]) => values.reduce<number>((total, value) 
 describe("reliability workspace", async () => {
   const view = await reliabilityWorkspaceView(runtime);
 
+  it("draws the ranking as one bar per feeder, the first full length, each in proportion to its network SAIDI", () => {
+    assert.deepEqual(view.rankingBars.map((bar) => bar.id), view.feeders.map((feeder) => feeder.id));
+    const [first, ...rest] = view.rankingBars;
+    assert.deepEqual(first.parts, [{ key: "network", fraction: 1 }]);
+    for (const bar of rest) {
+      const feeder = view.feeders.find((row) => row.id === bar.id);
+      assert.ok(close(bar.parts?.[0].fraction ?? null, (feeder?.networkSaidi.value as number) / (view.feeders[0].networkSaidi.value as number)));
+    }
+  });
+
   it("ranks every feeder by the SAIDI attributed to the network, not by its total", () => {
     assert.deepEqual(view.feeders.map((feeder) => [feeder.rank, feeder.id]), [[1, "FD-FRM"], [2, "FD-OLD"], [3, "FD-MKT"], [4, "FD-GOV"]]);
     const network = view.feeders.map((feeder) => feeder.networkSaidi.value as number);
