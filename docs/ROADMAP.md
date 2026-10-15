@@ -10,7 +10,9 @@ decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
 `phase-7b`). **Phase UI-A is accepted** (Founder, 2026-10-14, checked on a
 phone; merged to `main`, tag `phase-ui-a`). **Phase UI-B is accepted** (Founder, 2026-10-15, checked on
 a phone; merged to `main`, tag `phase-ui-b`). **The UI revamp is
-complete.**
+complete.** **Phase REPORTS-A is at its checkpoint** (2026-10-15):
+downloadable reports, the Reliability and the Mini-grid compliance
+reports, on branch `phase-reports-a`, not merged (ADR 0019).
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -2048,6 +2050,95 @@ Screenshots at desktop and phone width: `docs/screenshots/phase-ui-b`.
   2026-10-15: keep them there). They are findings about a report, not the
   one finding style.
 - Links inside pages are still not cut to the viewer's grant (Phase 8).
+
+## Phase REPORTS: downloadable reports (in progress; REPORTS-A at its checkpoint 2026-10-15)
+
+**Purpose (Founder, 2026-10-15).** Downloadable reports for the people who
+will use GridIntel: regulators checking DisCo reliability, DisCo managers,
+mini-grid operators, and mini-grid regulators and funders (REA/DARES-type
+programmes). The Founder will also attach sample reports to proposals and
+to a permit application's monitoring and reporting plan. Decisions: ADR
+0019. Taken after the UI revamp by the Founder's instruction of
+2026-10-15; DER and Planning keep their place after it.
+
+**Rules (non-negotiable).**
+
+- While the data is synthetic, every page carries "SAMPLE: SYNTHETIC DATA",
+  and the cover states that the report shows the format and methods
+  GridIntel would deliver, not real results. No page can be printed or
+  cropped without the label.
+- Every figure keeps its status, origin and method. Reported against
+  calculated only on the same basis. Missing is never zero. Nothing is
+  computed in a component; reports are built from the same services as the
+  screens.
+- A period the data does not cover is stated as not available, never
+  filled. The dataset covers September 2026 only: daily and monthly
+  reports work; annual is "not available for this period". The dataset is
+  not widened in this phase.
+- Each report carries a report ID, its generation time, its period, its
+  methodology versions and a fingerprint of the data used.
+
+**The five reports** (one report service, one layout; each a
+configuration): 1. Reliability and service standards (regulator);
+2. DisCo operations (management); 3. Daily operations brief (one page, any
+day); 4. Mini-grid site performance (operator); 5. Mini-grid compliance and
+results (regulator, funder).
+
+**Format.** A print-ready page per report (A4, page breaks, cover,
+contents, methodology appendix, glossary), saved as PDF from the browser
+on a desktop and on a phone; the figures as CSV with their status, origin
+and units. A server-side PDF library is a decision gate: proposed only
+(ADR 0019).
+
+### Phase REPORTS-A: the report service, two reports, CSV (at its checkpoint; branch `phase-reports-a`, not merged)
+
+| Built | Where |
+| --- | --- |
+| The report service: periods, the catalogue, the document, the CSV | `src/services/reports` |
+| Report identity: the data fingerprint of every record read; the report ID | `src/composition/fingerprint.ts`, `src/composition/reports.ts` |
+| One print layout: cover, contents, sections, method and reproduction, regulatory references, glossary and key; the label in the top and bottom margin of every printed page and as words across every page | `src/components/reports/ReportDocument.tsx`, `.gr-*` in `globals.css` |
+| The period: any day of September 2026 and the month; the year, and any period the data does not wholly cover, "not available for this period" | `period.ts`; addresses `/dashboard/{sector}/reports/{report}/{period}` |
+| **Reliability and service standards**: the DisCo's indices and their attribution; by substation; by feeder, ranked by network-attributable SAIDI; where interruptions began; service-band compliance by day; interruptions still open (provisional); reported against calculated, each attribution-rule finding beside its comparison (Hillcrest's feeders) | `reliability.ts` |
+| **Mini-grid compliance and results**: availability and hours of supply, interruptions; connections and consumption; generation; the tariff as an assumption; revenue and collection; each site's report against its records | `compliance.ts` |
+| The figures as CSV, every row with the sample label, report ID and period | `.../{period}/data.csv` |
+| A Reports entry in each sector, `/dashboard/reports` (was "Coming Soon"), a permission key per report, example roles | `navigation.ts`, `access.ts`, ADR 0019 |
+| The regulatory-format research: NERC Reporting Compliance Regulations 2009 Schedule 4A, the MYTO 2024 supplementary orders, NERC Mini-Grid Regulations 2023, the DARES Implementation Manual; which fields each report carries; what is needed from the Founder | `docs/reports/REGULATORY_FORMATS.md` |
+
+**Checks.** `npm run verify:local` before each commit. New: unit tests for
+periods, both reports against the screens' read models, the document, the
+CSV and the fingerprint; `e2e/reports.spec.ts` (the label and identity on
+the cover, the label rules in print, the findings beside their
+comparisons, a day, a year not available, the CSV, a phone). The full
+`npm run verify` runs in CI on every push.
+
+**Checkpoint material.** `docs/screenshots/phase-reports-a`: both reports
+printed to PDF by Chromium's print engine (the engine of Chrome's "Save as
+PDF"), for the month and for 14 September 2026, and screenshots at desktop
+and phone width. Made again with
+`SCREENSHOTS=docs/screenshots/phase-reports-a GRIDINTEL_E2E=local npx playwright test screenshots -g report`.
+
+**Decisions (engineering).** Recorded in ADR 0019: the report ID and the
+fingerprint; the label in the page margins and across the page rather than
+in a band that would cover rows; a reported figure compared only with a
+calculation for its own period; the regulatory references as coverage,
+never as conformity.
+
+**Known, and not done.**
+
+- XLSX is not built; CSV only. Proposed for REPORTS-B (a small writer of
+  our own, or a dependency, which is a decision gate).
+- A page built ahead of time has the build's time as its generation time;
+  its CSV has its own. Both carry the same report ID.
+- On a report page the data bar above the screen still names the
+  platform's month; the report states its own period, and the bar is not
+  printed.
+- Phone printing is the phone browser's own; it was checked in Chromium at
+  phone width, not on a physical phone.
+
+### Phase REPORTS-B: the other three reports (after the Founder's approval)
+
+DisCo operations, the daily operations brief, mini-grid site performance;
+XLSX.
 
 ## Phase 11: AI / MCP intelligence
 

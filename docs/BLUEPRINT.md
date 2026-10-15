@@ -4,6 +4,27 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase REPORTS-A checkpoint (2026-10-15; branch
+> `phase-reports-a`, not merged; ADR 0019).** Downloadable reports:
+>
+> - **`src/services/reports`**: one report service. Periods (`period.ts`,
+>   pure; a period the data does not wholly cover is not available), the
+>   catalogue of report definitions (`catalogue.ts`), one builder per
+>   report over the screens' read models (`reliability.ts`,
+>   `compliance.ts`), the document envelope (`document.ts`) and the CSV
+>   (`csv.ts`). The view model is `ReportDocumentView`.
+> - **`src/composition/reports.ts`** builds a report for its period on
+>   repositories wrapped by `fingerprint.ts`, which digests every result
+>   they return, and on a cache of its own; the finished document is kept
+>   in the process cache.
+> - **One layout**, `src/components/reports/ReportDocument.tsx`, printed
+>   by the browser as A4. Routes: `/dashboard/{sector}/reports`,
+>   `/…/{report}/{period}` and `/…/{period}/data.csv`
+>   (`src/app/dashboard/reportRoutes.tsx`).
+> - **Access**: a key per report below the sector's Reports screen
+>   (`REPORTS` in `constants/navigation.ts`; `constants/access.ts`).
+> - `ReportedComparisonView` carries `reportedPeriod`.
+
 > **State at the Phase UI-A checkpoint (2026-10-13; branch `phase-ui-a`,
 > a prototype, not merged).** Since Phase 10 (ADR 0017):
 >

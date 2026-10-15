@@ -40,6 +40,21 @@ const SHOTS: [string, string][] = [
   ["minigrid-site-granite-hill", "/dashboard/minigrid/sites/MG-GRN"],
   ["minigrid-site-palm-landing", "/dashboard/minigrid/sites/MG-PLM"],
   ["minigrid-site-tamarind-cross", "/dashboard/minigrid/sites/MG-TAM"],
+  ["reports-utility", "/dashboard/utility/reports"],
+  ["reports-minigrid", "/dashboard/minigrid/reports"],
+  ["report-reliability-month", "/dashboard/utility/reports/reliability/2026-09"],
+  ["report-reliability-day", "/dashboard/utility/reports/reliability/2026-09-14"],
+  ["report-reliability-year-not-available", "/dashboard/utility/reports/reliability/2026"],
+  ["report-compliance-month", "/dashboard/minigrid/reports/compliance/2026-09"],
+  ["report-compliance-day", "/dashboard/minigrid/reports/compliance/2026-09-14"],
+];
+
+/** Reports printed to PDF by the browser's own print, as "Save as PDF" does. */
+const PDFS: [string, string][] = [
+  ["report-reliability-2026-09", "/dashboard/utility/reports/reliability/2026-09"],
+  ["report-reliability-2026-09-14", "/dashboard/utility/reports/reliability/2026-09-14"],
+  ["report-compliance-2026-09", "/dashboard/minigrid/reports/compliance/2026-09"],
+  ["report-compliance-2026-09-14", "/dashboard/minigrid/reports/compliance/2026-09-14"],
 ];
 
 /** Screens also captured at the width of a phone: every screen but the page for an unknown address. */
@@ -61,6 +76,12 @@ test.describe("screenshots", () => {
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${target}/map-trace.png` });
   });
+  for (const [name, route] of PDFS) {
+    test(`${name}-pdf`, async ({ page }) => {
+      await page.goto(route);
+      await page.pdf({ path: `${target}/${name}.pdf`, preferCSSPageSize: true });
+    });
+  }
   for (const [name, route] of SHOTS.filter(([shot]) => PHONE.includes(shot))) {
     test(`${name}-phone`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
