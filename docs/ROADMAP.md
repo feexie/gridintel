@@ -3,13 +3,14 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-14. Status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-10-15. Status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
 `phase-7b`). **Phase UI-A is accepted** (Founder, 2026-10-14, checked on a
-phone; merged to `main`, tag `phase-ui-a`). **In progress: Phase UI-B**, the
-remaining screens rebuilt in direction C, on branch `phase-ui-b`.
+phone; merged to `main`, tag `phase-ui-a`). **Phase UI-B is at its
+checkpoint** (2026-10-15): the remaining screens rebuilt in direction C, on
+branch `phase-ui-b`, not merged.
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -1809,7 +1810,7 @@ phone.
   drawn, in place of "Nothing above it is held" and "Nothing further".
 - *Asset labels*: "PV inverter", "Battery inverter".
 
-## Phase UI: the UI revamp (in progress; UI-A accepted 2026-10-14, UI-B in progress)
+## Phase UI: the UI revamp (in progress; UI-A accepted 2026-10-14, UI-B at its checkpoint 2026-10-15)
 
 **Purpose (Founder, 2026-10-13).** Before GridIntel is shown to people: a
 modern, premium AI and data product on the surface, applied to a serious
@@ -1979,6 +1980,71 @@ sideways as a whole page. The proposal says what UI-B would do to each.
 - `/dashboard/intelligence/ai`,
   `/dashboard/reports` and `/dashboard/settings` are still bare "Coming
   Soon" pages, reachable only by address.
+
+### Phase UI-B: the remaining screens in direction C (at its checkpoint; branch `phase-ui-b`, not merged)
+
+The screens UI-A left as they were, rebuilt phone first in the Founder's order:
+Executive, Events / Alarms, Operations and its levels, Reliability, Revenue,
+Assets, Sites and the site screens. One commit per screen, each after
+`npm run verify:local` passed.
+
+| Screen | What changed |
+| --- | --- |
+| **Executive** | "Where to look first" in the one finding style: each subject once, with every rule it met and that rule's own figure, status and origin (`services/executive/items.ts`). The revenue gap by feeder as bars of its two parts. Section links. Band compliance and transformer loading folded on a phone |
+| **Events / Alarms** | Interruptions in progress first and largest, as cards; restoration not recorded beside them as a data-quality item. Source alarms standing and derived conditions that hold, each as cards in its own list, never merged. Where, and the two full lists, after |
+| **Operations and its levels** | "What needs attention here" first at every region, substation, feeder and transformer, by seven fixed rules in a fixed order (`services/operations/findings.ts`), each leading to its section of the same screen. Section links. The drill-down path scrolls on its own on a phone. A service point's connection details fit a phone |
+| **Reliability** | The feeder ranking as bars of network-attributable SAIDI, what sets the rank, with upstream, load shedding and total beside each. The reports' rule findings and reported against calculated next. The breakdowns and the tables folded on a phone |
+| **Revenue** | The gap by feeder as bars of its two parts. Collection efficiency first, then the portfolio's classes with government first. Each feeder's classes and the loss table folded on a phone; the loss split per feeder as bars |
+| **Assets** | The assets with something on them as cards in the finding style, each of the three facts (source alarm, derived condition, interruptions) in its own place with its own origin. Each class table in its own frame |
+| **Sites, and a site** | What stands out in the one finding style; its mark and word now come from the read model (`SiteFindingView.tone`), shared with the Mini-grid Overview. Site cards kept. A site's sections reached by links; notes folded; data gaps and the tariff caveat kept in view |
+
+**Shared by every screen (system components).**
+
+- *No page slides sideways at 390 px.* Every table sits in its own frame
+  (`system/Table.tsx`) and scrolls inside it, with its first column held
+  and a shadow at the right edge when there is more. Measured on every
+  rebuilt screen with every fold opened: nothing is wider than the screen.
+- *Less on first view, nothing removed.* Rules, notes, and source and
+  method fold one tap away (`system/Fold.tsx`). Secondary tables are folded
+  behind "Show the table" on a phone and open on a wider screen (CSS
+  `::details-content`; a browser without it keeps the one-tap fold).
+  Caveats about the data itself (incomplete records, assumed tariffs,
+  gaps in metering, estimates) stay in view.
+- *Source and method* opens under the figure at full width on a phone.
+- *Two tiles across* on a phone; a headline figure takes the full width.
+- *Bars are scaled in the services* (`services/overview/bars.ts`): a
+  component never divides one figure by another. A bar with a missing or
+  negative part is not drawn, and the screen says why.
+- The status key is one tap away on every screen, and the SYNTHETIC DATA
+  bar is on every screen.
+
+**Checks.** `npm run verify:local` before each commit (typecheck, unit
+tests, lint, the ordinary build and its browser tests). New: unit tests for
+the bar scales, the Executive's findings, the level findings and the
+ranking bars; `e2e/phone.spec.ts`, which opens every rebuilt screen at
+390 px with every fold open and checks that nothing slides, that every
+table frame fits, that the SYNTHETIC DATA bar is there, that a phone folds
+a table a wider screen shows, and that source and method opens under its
+figure. The full `npm run verify` (both builds) runs in CI on every push.
+Screenshots at desktop and phone width: `docs/screenshots/phase-ui-b`.
+
+**Decisions (engineering).**
+
+- `npm run verify:local` (Founder, 2026-10-15) for this laptop; the full
+  verify stays the rule in CI and at every checkpoint (ENGINEERING_RULES).
+- The child tables of a level (substations, feeders, transformers,
+  service points) stay tables in their own frame on a phone, with the name
+  held in place, rather than cards: the figures are compared down a column.
+- On Executive, the "other findings" group lists every rule a subject met,
+  each with its own figure, rather than leading with one: a transformer's
+  commercial gap is context, never a rank, and must keep its words.
+
+**Known, and not done.**
+
+- The reports' rule findings (Reliability, a level's reliability panel)
+  keep their own amber box; they are findings about a report, beside the
+  comparison they belong to.
+- Links inside pages are still not cut to the viewer's grant (Phase 8).
 
 ## Phase 11: AI / MCP intelligence
 
