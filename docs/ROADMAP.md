@@ -8,9 +8,9 @@ complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
 `phase-7b`). **Phase UI-A is accepted** (Founder, 2026-10-14, checked on a
-phone; merged to `main`, tag `phase-ui-a`). **Phase UI-B is at its
-checkpoint** (2026-10-15): the remaining screens rebuilt in direction C, on
-branch `phase-ui-b`, not merged.
+phone; merged to `main`, tag `phase-ui-a`). **Phase UI-B is accepted** (Founder, 2026-10-15, checked on
+a phone; merged to `main`, tag `phase-ui-b`). **The UI revamp is
+complete.**
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -1810,7 +1810,7 @@ phone.
   drawn, in place of "Nothing above it is held" and "Nothing further".
 - *Asset labels*: "PV inverter", "Battery inverter".
 
-## Phase UI: the UI revamp (in progress; UI-A accepted 2026-10-14, UI-B at its checkpoint 2026-10-15)
+## Phase UI: the UI revamp (complete; UI-A accepted 2026-10-14, UI-B accepted 2026-10-15; tags `phase-ui-a`, `phase-ui-b`)
 
 **Purpose (Founder, 2026-10-13).** Before GridIntel is shown to people: a
 modern, premium AI and data product on the surface, applied to a serious
@@ -1981,7 +1981,9 @@ sideways as a whole page. The proposal says what UI-B would do to each.
   `/dashboard/reports` and `/dashboard/settings` are still bare "Coming
   Soon" pages, reachable only by address.
 
-### Phase UI-B: the remaining screens in direction C (at its checkpoint; branch `phase-ui-b`, not merged)
+### Phase UI-B: the remaining screens in direction C (accepted and merged 2026-10-15; tag `phase-ui-b`)
+
+**Accepted** by the Founder on 2026-10-15, checked on a phone: "all fine".
 
 The screens UI-A left as they were, rebuilt phone first in the Founder's order:
 Executive, Events / Alarms, Operations and its levels, Reliability, Revenue,
@@ -2042,8 +2044,9 @@ Screenshots at desktop and phone width: `docs/screenshots/phase-ui-b`.
 **Known, and not done.**
 
 - The reports' rule findings (Reliability, a level's reliability panel)
-  keep their own amber box; they are findings about a report, beside the
-  comparison they belong to.
+  keep their own amber box, beside the comparison they explain (Founder,
+  2026-10-15: keep them there). They are findings about a report, not the
+  one finding style.
 - Links inside pages are still not cut to the viewer's grant (Phase 8).
 
 ## Phase 11: AI / MCP intelligence
