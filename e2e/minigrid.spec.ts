@@ -41,7 +41,7 @@ test("on a phone, a funder sees which site over-reports, which burns diesel inef
 
   // Every finding prints its rule, and nothing is wider than the screen.
   await expect(page.locator("[data-finding]")).toHaveCount(6);
-  for (const text of await page.locator("[data-finding] p:last-child").allTextContents()) expect(text).toMatch(/^Rule: /);
+  for (const text of await page.locator("[data-finding] [data-rule]").allTextContents()) expect(text).toMatch(/^Rule: /);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 

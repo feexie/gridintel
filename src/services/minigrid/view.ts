@@ -241,6 +241,7 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
   for (const { report, differing } of withVariances) {
     found.push({
       rule: "report_differs",
+      tone: "alert",
       title: "Report differs from the records",
       site: named(report),
       statement: `${report.site.name}'s report differs from its records on ${differing.length} of the ${report.comparisons.length} figures it states.`,
@@ -260,6 +261,7 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
     const least = burning[burning.length - 1];
     found.push({
       rule: "fuel_per_kwh",
+      tone: "watch",
       title: "Most fuel per kWh",
       site: named(worst.report),
       statement: `${worst.report.site.name}'s generator burns the most fuel for each kWh it makes, and ran the longest.`,
@@ -281,6 +283,7 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
     if (pv === null || pv.curtailedShare.value === null || pv.curtailedShare.value < HELD_BACK_SHARE) continue;
     found.push({
       rule: "pv_held_back",
+      tone: "watch",
       title: "PV held back for want of demand",
       site: named(report),
       statement: `${report.site.name} took less than half of the PV energy available to it. Its array is not underperforming: it is larger than its demand.`,
@@ -307,6 +310,7 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
     const postpaid = classes.reduce((total, one) => total + one.postpaidAccounts, 0);
     found.push({
       rule: "uncollected",
+      tone: "watch",
       title: "Most revenue left uncollected",
       site: named(report),
       statement: `${report.site.name} left the most revenue uncollected. All of it is owed by ${postpaid} postpaid ${postpaid === 1 ? "account" : "accounts"}; its prepaid accounts cannot owe.`,
@@ -327,6 +331,7 @@ function findings(reports: readonly SiteReport[], portfolioClasses: readonly Cla
     const [least] = classRows([billed[0]]);
     found.push({
       rule: "class_pays_least",
+      tone: "note",
       title: "Who pays least",
       site: null,
       statement: `Across the portfolio, ${least.label.toLowerCase()} paid the smallest share of what they were billed.`,

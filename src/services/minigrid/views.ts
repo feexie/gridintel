@@ -1,3 +1,4 @@
+import type { AttentionTone } from "../overview/views.ts";
 import type { MetricView, ReportedComparisonView, SourcingView } from "../operations/views.ts";
 
 /* ==========================================================
@@ -13,6 +14,11 @@ import type { MetricView, ReportedComparisonView, SourcingView } from "../operat
 export interface SiteFindingView {
   /** The rule's key, e.g. "report_differs". */
   rule: string;
+  /**
+   * How it is marked. A report that differs from the records is the finding a funder's check exists
+   * for ("alert"); a fact about how a site runs is "watch"; a fact about the portfolio as a whole is "note".
+   */
+  tone: AttentionTone;
   /** What kind of finding it is, in words: the rule's title. */
   title: string;
   /** The site it is about; null for a finding about the portfolio as a whole. */

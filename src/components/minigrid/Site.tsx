@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { MetricView, SourcingView } from "@/services/operations/views";
 import type { MinigridSiteView, SocDayView } from "@/services/minigrid/views";
-import { Legend, MetricCell, MetricTile, Panel } from "@/components/system/Metric";
+import { KeyFold, SectorBand } from "@/components/system/Brand";
+import { Fold, SectionNav, Sources, WideOpen } from "@/components/system/Fold";
+import { MetricCell, MetricTile, Panel } from "@/components/system/Metric";
 import { Comparisons } from "@/components/system/Panels";
-import { HeadRow, Note, PageHead, Row, SubHead, Table, Td, Th } from "@/components/system/Table";
+import { HeadRow, Note, Row, SubHead, Table, Td, Th } from "@/components/system/Table";
 import { formatDay, formatMoney, formatNumber, formatPercent, formatTime } from "@/components/system/format";
 import { MINIGRID_HOME } from "@/components/system/map/links";
 import { CLASS_NOTE, ClassTable, ReportStanding } from "./shared";
@@ -82,16 +84,16 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
   const notRecorded = energy.deliveredCoverage.connections - energy.deliveredCoverage.recorded;
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <p className="text-caption">
-          <Link href={MINIGRID_HOME} className="text-link hover:text-link-hover hover:underline">
+          <Link href={MINIGRID_HOME} className="gi-tap inline-flex items-center text-link hover:text-link-hover hover:underline">
             ◂ Sites
           </Link>
         </p>
-        <PageHead eyebrow="Mini-grid Intelligence · site" title={view.name}>
+        <SectorBand eyebrow="Mini-grid Intelligence · site" title={view.name}>
           <span className="font-mono">{view.id}</span> · {view.operator ?? "Operator not recorded"}
           {view.commissioned ? ` · commissioned ${formatDay(`${view.commissioned}T12:00:00Z`)}` : ""} · supplied by no substation: it generates its own energy.
-        </PageHead>
+        </SectorBand>
         <ul className="flex flex-wrap gap-x-4 gap-y-0.5 text-caption text-ink-3" data-assets>
           {view.assets.map((asset) => (
             <li key={asset.id}>
@@ -105,15 +107,26 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
             See the comparison ▾
           </a>
         </p>
-        <Legend />
+        <SectionNav
+          sections={[
+            { id: "energy", label: "Energy" },
+            ...(pv === null ? [] : [{ id: "pv", label: "PV" }]),
+            ...(storage === null ? [] : [{ id: "battery", label: "Battery" }]),
+            { id: "generator", label: "Generator" },
+            { id: "availability", label: "Availability" },
+            { id: "revenue", label: "Revenue" },
+            { id: "report", label: "Report" },
+            ...(map ? [{ id: "map", label: "Map" }] : []),
+          ]}
+        />
+        <KeyFold />
       </div>
 
-      <Panel title="Generation mix and energy flow" aside="From the site's own generation to its customers' meters">
+      <Panel id="energy" title="Generation mix and energy flow" aside="From the site's own generation to its customers' meters">
         <MixBar mix={energy.mix} />
         <Tiles metrics={[energy.renewableFraction, energy.siteLoss, energy.distributionLoss]} sourcing={sourcing} emphasise="Renewable fraction" />
         <SubHead>Energy flow for the month</SubHead>
-        <div className="overflow-x-auto">
-          <Table name="energy-flow">
+        <Table name="energy-flow">
             <tbody>
               {energy.flow.map((row) => (
                 <Row key={row.metric.label} id={row.metric.label}>
@@ -129,32 +142,40 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
               ))}
             </tbody>
           </Table>
-        </div>
         {notRecorded > 0 ? (
           <Note tone="caution">
             {energy.deliveredCoverage.recorded} of {energy.deliveredCoverage.connections} connections have a meter that recorded the whole month. The other {notRecorded} are not known and are not
             taken as zero, so energy delivered and the losses that rest on it are not available.
           </Note>
         ) : null}
-        <Note>Curtailed energy is not in this chain: metered generation is already net of it. It is shown under PV performance, as an estimate.</Note>
+        <Fold label="What the chain leaves out" name="flow-notes">
+          <p>Curtailed energy is not in this chain: metered generation is already net of it. It is shown under PV performance, as an estimate.</p>
+        </Fold>
       </Panel>
 
       {pv === null ? null : (
-        <Panel title="PV performance and curtailment" aside="Irradiance measured on site is the input">
+        <Panel id="pv" title="PV performance and curtailment" aside="Irradiance measured on site is the input">
           <Tiles metrics={[pv.performanceRatio, pv.performanceRatioBeforeCurtailment, pv.curtailedShare, ...pv.figures]} sourcing={sourcing} emphasise="Performance ratio" />
-          <Note>A low performance ratio with a normal one before curtailment is an array held back by low demand, not an array at fault.</Note>
+          <Fold label="How to read the ratio" name="pv-notes">
+            <p>A low performance ratio with a normal one before curtailment is an array held back by low demand, not an array at fault.</p>
+          </Fold>
         </Panel>
       )}
 
       {storage === null ? null : (
-        <Panel title="Battery: state of charge and cycles" aside={storage.nameplate}>
+        <Panel id="battery" title="Battery: state of charge and cycles" aside={storage.nameplate}>
           <SocChart days={storage.byDay} />
           <Tiles metrics={storage.figures} sourcing={sourcing} />
-          <Note>State of charge is as the battery&apos;s management system reports it. Only nameplate capacity is known, so the change in stored energy, and with it the storage loss, is an estimate.</Note>
+          <Fold label="Where state of charge comes from" name="battery-notes">
+            <p>
+              State of charge is as the battery&apos;s management system reports it. Only nameplate capacity is known, so the change in stored energy, and with it the storage loss, is
+              an estimate.
+            </p>
+          </Fold>
         </Panel>
       )}
 
-      <Panel title="Generator: hours and fuel" aside={generator?.nameplate ?? "No generator"}>
+      <Panel id="generator" title="Generator: hours and fuel" aside={generator?.nameplate ?? "No generator"}>
         {generator === null ? (
           <p className="text-xs text-ink-3" data-no-generator>
             This site has no generator. Everything it generated was solar.
@@ -164,7 +185,7 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
         )}
       </Panel>
 
-      <Panel title="Availability and interruptions" aside="Customer-weighted, from the site's interruption log">
+      <Panel id="availability" title="Availability and interruptions" aside="Customer-weighted, from the site's interruption log">
         <Tiles metrics={[...availability.figures, availability.withoutPlanned]} sourcing={sourcing} emphasise="Availability" />
         {availability.provisional ? <Note tone="caution">Provisional: an interruption still open at the end of the month is counted to the month&apos;s end.</Note> : null}
         {availability.excludedExposures > 0 ? <Note tone="caution">{availability.excludedExposures} interruption record(s) were left out for want of a time or a customer count.</Note> : null}
@@ -178,8 +199,8 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
         {availability.interruptions.length === 0 ? (
           <p className="text-xs text-ink-4">None recorded.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table name="interruptions">
+          <WideOpen name="interruptions">
+            <Table name="interruptions" wide>
               <HeadRow>
                 <Th>From</Th>
                 <Th right>Hours</Th>
@@ -202,18 +223,20 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
                 ))}
               </tbody>
             </Table>
-          </div>
+          </WideOpen>
         )}
       </Panel>
 
-      <Panel title="Revenue and collection" aside="Cash basis: received in the month against billed in the month">
+      <Panel id="revenue" title="Revenue and collection" aside="Cash basis: received in the month against billed in the month">
         <Tiles metrics={[commercial.collectionEfficiency, ...commercial.figures]} sourcing={sourcing} emphasise="Collection efficiency" />
         <SubHead>Collection by customer class</SubHead>
         <ClassTable rows={commercial.byClass} currency={commercial.currency} name="class-site" />
-        <Note>{CLASS_NOTE}</Note>
+        <Fold label="What the classes and “not collected” mean" name="class-notes">
+          <p>{CLASS_NOTE}</p>
+        </Fold>
         <SubHead>By tariff tier, as the operator names its tiers</SubHead>
-        <div className="overflow-x-auto">
-          <Table name="tiers">
+        <WideOpen name="tiers">
+          <Table name="tiers" wide>
             <HeadRow>
               <Th>Tier</Th>
               <Th right>Active / all accounts</Th>
@@ -235,7 +258,7 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
               ))}
             </tbody>
           </Table>
-        </div>
+        </WideOpen>
         {commercial.tariffCaveat ? <Note tone="caution">{commercial.tariffCaveat}</Note> : null}
       </Panel>
 
@@ -245,16 +268,18 @@ export function MinigridSite({ view, map }: { view: MinigridSiteView; map?: Reac
             Of the {view.report.claims} figures the report states: <ReportStanding report={view.report} />.
           </p>
           {view.comparisons.length === 0 ? <p className="text-xs text-ink-4">No reported figure is held for this site and month.</p> : (
-            <div className="overflow-x-auto">
-              <Comparisons rows={view.comparisons} note={view.comparisonNote} />
-            </div>
+            <Comparisons rows={view.comparisons} note={view.comparisonNote} />
           )}
         </Panel>
       </div>
 
-      {map}
+      {map ? (
+        <div id="map" className="scroll-mt-4">
+          {map}
+        </div>
+      ) : null}
 
-      <p className="text-micro text-ink-5">Data sources: {sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ") || "none"}</p>
+      <Sources sourcing={sourcing} />
     </div>
   );
 }

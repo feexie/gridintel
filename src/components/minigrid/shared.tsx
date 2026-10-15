@@ -42,8 +42,7 @@ export function ReportStanding({ report }: { report: ReportStandingView }) {
 /** Billing and collection by customer class, largest shortfall first, as the read model orders it. */
 export function ClassTable({ rows, currency, name }: { rows: ClassRowView[]; currency: string | null; name: string }) {
   return (
-    <div className="overflow-x-auto">
-      <Table name={name}>
+    <Table name={name} wide>
         <HeadRow>
           <Th>Customer class</Th>
           <Th right>Accounts</Th>
@@ -71,8 +70,7 @@ export function ClassTable({ rows, currency, name }: { rows: ClassRowView[]; cur
             </Row>
           ))}
         </tbody>
-      </Table>
-    </div>
+    </Table>
   );
 }
 

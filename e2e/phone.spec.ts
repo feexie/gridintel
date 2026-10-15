@@ -21,6 +21,13 @@ const REBUILT = [
   "/dashboard/utility/reliability",
   "/dashboard/utility/revenue",
   "/dashboard/utility/revenue/all",
+  "/dashboard/utility/assets",
+  "/dashboard/utility/assets/all",
+  "/dashboard/minigrid/sites",
+  "/dashboard/minigrid/sites/MG-DRY",
+  "/dashboard/minigrid/sites/MG-GRN",
+  "/dashboard/minigrid/sites/MG-PLM",
+  "/dashboard/minigrid/sites/MG-TAM",
 ];
 
 for (const route of REBUILT) {

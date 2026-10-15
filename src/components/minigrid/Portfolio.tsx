@@ -1,8 +1,11 @@
 import Link from "next/link";
 import type { MetricView } from "@/services/operations/views";
+import type { AttentionTone } from "@/services/overview/views";
 import type { MinigridPortfolioView, SiteCardView, SiteFindingView } from "@/services/minigrid/views";
-import { Legend, MetricCell, Panel } from "@/components/system/Metric";
-import { Note, PageHead } from "@/components/system/Table";
+import { KeyFold, SectorBand } from "@/components/system/Brand";
+import { Fold, Sources } from "@/components/system/Fold";
+import { MetricCell, Panel } from "@/components/system/Metric";
+import { Note } from "@/components/system/Table";
 import { formatMoney, formatPercent } from "@/components/system/format";
 import { siteHref } from "@/components/system/map/links";
 import { CLASS_NOTE, ClassTable, ReportStanding, VarianceLine } from "./shared";
@@ -10,29 +13,35 @@ import { CLASS_NOTE, ClassTable, ReportStanding, VarianceLine } from "./shared";
 /* The Mini-grid workspace: the sites side by side, and what stands out among them. Everything
    here is laid out from the read model; nothing is ranked, filtered or calculated. */
 
+/* The same marks, words and edges as every other finding (system/Attention.tsx). */
+const TONE: Record<AttentionTone, { mark: string; word: string; text: string; edge: string; ground: string }> = {
+  alert: { mark: "▲", word: "Act", text: "text-alert", edge: "border-l-alert-line", ground: "bg-alert-surface/60" },
+  watch: { mark: "◆", word: "Check", text: "text-caution", edge: "border-l-caution-line", ground: "bg-caution-surface/50" },
+  note: { mark: "●", word: "Note", text: "text-ink-3", edge: "border-l-line-bold", ground: "bg-well/40" },
+};
+
 function Finding({ found, currency }: { found: SiteFindingView; currency: string | null }) {
+  const tone = TONE[found.tone];
   return (
-    <li className="border border-caution-line/50 bg-caution-surface/30 px-3 py-2" data-finding={`${found.rule}:${found.site?.id ?? "portfolio"}`}>
-      <p className="text-micro font-semibold uppercase tracking-wide text-caution">▲ {found.title}</p>
-      <p className="mt-0.5 text-sm leading-snug text-ink">
-        {found.statement}{" "}
-        {found.site ? (
-          <Link href={siteHref(found.site.id)} className="whitespace-nowrap text-caption text-link hover:text-link-hover hover:underline">
-            Open {found.site.name} ▸
-          </Link>
-        ) : null}
+    <li className={`rounded-tile border border-line border-l-[3px] ${tone.edge} ${tone.ground} px-3 py-2.5`} data-finding={`${found.rule}:${found.site?.id ?? "portfolio"}`} data-tone={found.tone}>
+      <p className={`flex flex-wrap items-center gap-x-1.5 text-micro font-semibold uppercase tracking-wide ${tone.text}`}>
+        <span aria-hidden>{tone.mark}</span>
+        <span>{tone.word}</span>
+        <span className="text-ink-5">·</span>
+        <span>{found.title}</span>
       </p>
+      <p className="mt-1 text-sm leading-snug text-ink">{found.statement}</p>
       {found.comparisons.length > 0 ? (
-        <ul className="mt-1 space-y-0.5">
+        <ul className="mt-1.5 space-y-0.5">
           {found.comparisons.map((row) => (
             <VarianceLine key={row.label} row={row} />
           ))}
         </ul>
       ) : null}
       {found.figures.length > 0 ? (
-        <dl className="mt-1 grid gap-x-4 gap-y-0.5 text-xs sm:grid-cols-2">
+        <dl className="mt-1.5 grid gap-x-4 gap-y-0.5 text-xs sm:grid-cols-2">
           {found.figures.map((figure) => (
-            <div key={figure.label} className="flex items-baseline justify-between gap-2" data-figure={figure.label}>
+            <div key={figure.label} className="flex flex-wrap items-baseline justify-between gap-x-2" data-figure={figure.label}>
               <dt className="text-ink-3">{figure.label}</dt>
               <dd>
                 <MetricCell metric={figure} />
@@ -42,7 +51,7 @@ function Finding({ found, currency }: { found: SiteFindingView; currency: string
         </dl>
       ) : null}
       {found.classes.length > 0 ? (
-        <ul className="mt-1 space-y-0.5">
+        <ul className="mt-1.5 space-y-0.5">
           {found.classes.map((row) => (
             <li key={row.customerClass} className="text-xs leading-snug text-ink-2" data-owes={row.customerClass}>
               <span className="text-ink">{row.label}:</span> <span className="font-mono tabular-nums text-caution-ink">{formatMoney(row.notCollected, currency)}</span> not collected;
@@ -52,14 +61,23 @@ function Finding({ found, currency }: { found: SiteFindingView; currency: string
           ))}
         </ul>
       ) : null}
-      <p className="mt-1 text-micro text-ink-5">Rule: {found.ruleText}</p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        {found.site ? (
+          <Link href={siteHref(found.site.id)} className="gi-tap inline-flex items-center text-caption font-medium text-link hover:text-link-hover hover:underline">
+            Open {found.site.name} →
+          </Link>
+        ) : null}
+        <Fold label="Rule" name="finding-rule">
+          <p data-rule>Rule: {found.ruleText}</p>
+        </Fold>
+      </div>
     </li>
   );
 }
 
 function CardRow({ label, metric, absent }: { label: string; metric: MetricView | null; absent?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-2 border-b border-line/60 py-1" data-figure={label}>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-line/60 py-1" data-figure={label}>
       <dt className="text-xs text-ink-3">{label}</dt>
       <dd className="text-xs">{metric === null ? <span className="text-ink-5">{absent}</span> : <MetricCell metric={metric} />}</dd>
     </div>
@@ -68,7 +86,7 @@ function CardRow({ label, metric, absent }: { label: string; metric: MetricView 
 
 function SiteCard({ site }: { site: SiteCardView }) {
   return (
-    <section className="border border-line bg-panel" data-site={site.id}>
+    <section className="min-w-0 rounded-panel border border-line bg-panel shadow-panel" data-site={site.id}>
       <header className="border-b border-line px-3 py-2">
         <h2 className="text-sm font-semibold text-ink">
           <Link href={siteHref(site.id)} className="text-link hover:text-link-hover hover:underline">
@@ -106,12 +124,10 @@ function SiteCard({ site }: { site: SiteCardView }) {
 export function MinigridPortfolio({ view }: { view: MinigridPortfolioView }) {
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <PageHead eyebrow="Mini-grid Intelligence" title="Sites">
-          {view.operator ?? "Operator not recorded"} · which sites are underperforming and why, and whether their reports match the records.
-        </PageHead>
-        <Legend />
-      </div>
+      <SectorBand eyebrow="Mini-grid Intelligence" title="Sites">
+        {view.operator ?? "Operator not recorded"} · which sites are underperforming and why, and whether their reports match the records.
+      </SectorBand>
+      <KeyFold />
 
       {view.completeness !== "complete" ? (
         <Note tone="caution">
@@ -120,7 +136,7 @@ export function MinigridPortfolio({ view }: { view: MinigridPortfolioView }) {
       ) : null}
 
       {view.findings.length > 0 ? (
-        <Panel title="What stands out" aside="Found by fixed rules, printed with each">
+        <Panel title="What stands out" aside="Found by fixed rules. No AI.">
           <ul className="grid gap-2 xl:grid-cols-2">
             {view.findings.map((found) => (
               <Finding key={`${found.rule}:${found.site?.id ?? "portfolio"}`} found={found} currency={view.currency} />
@@ -143,12 +159,14 @@ export function MinigridPortfolio({ view }: { view: MinigridPortfolioView }) {
       {view.byClass.length > 0 ? (
         <Panel title="Collection by customer class, all sites" aside="Cash basis: received in the month against billed in the month">
           <ClassTable rows={view.byClass} currency={view.currency} name="class-portfolio" />
-          <Note>{CLASS_NOTE}</Note>
           {view.tariffCaveat ? <Note tone="caution">{view.tariffCaveat}</Note> : null}
+          <Fold label="What the classes and “not collected” mean" name="class-notes">
+            <p>{CLASS_NOTE}</p>
+          </Fold>
         </Panel>
       ) : null}
 
-      <p className="text-micro text-ink-5">Data sources: {view.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ") || "none"}</p>
+      <Sources sourcing={view.sourcing} />
     </div>
   );
 }

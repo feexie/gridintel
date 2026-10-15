@@ -42,8 +42,8 @@ const SHOTS: [string, string][] = [
   ["minigrid-site-tamarind-cross", "/dashboard/minigrid/sites/MG-TAM"],
 ];
 
-/** Screens also captured at the width of a phone. */
-const PHONE = ["platform-overview", "utility-overview", "utility-map", "utility-assistant-planned", "minigrid-overview", "minigrid-map", "executive", "feeder-farm-road", "events", "minigrid-portfolio", "minigrid-site-dry-river", "minigrid-site-granite-hill", "minigrid-site-palm-landing", "minigrid-site-tamarind-cross"];
+/** Screens also captured at the width of a phone: every screen but the page for an unknown address. */
+const PHONE = SHOTS.map(([name]) => name).filter((name) => name !== "not-found");
 
 test.describe("screenshots", () => {
   test.skip(!target, "set SCREENSHOTS to a folder to capture");

@@ -1,4 +1,4 @@
-import type { AttentionItemView, AttentionTone, MinigridOverviewView, WorkspaceLinkView } from "../overview/views.ts";
+import type { AttentionItemView, MinigridOverviewView, WorkspaceLinkView } from "../overview/views.ts";
 import type { MinigridPortfolioView } from "./views.ts";
 
 /* ==========================================================
@@ -14,16 +14,13 @@ export const MINIGRID_WORKSPACE_LINKS: WorkspaceLinkView[] = [
   { workspace: "minigrid.sites", label: "Sites", question: "Which sites are underperforming and why, and do their reports match the records?" },
 ];
 
-/** A report that differs from the records is the finding a funder's check exists for; the others are operating facts. */
-const TONE: Record<string, AttentionTone> = { report_differs: "alert", fuel_per_kwh: "watch", pv_held_back: "watch", uncollected: "watch", class_pays_least: "note" };
-
 export function minigridOverviewView(portfolio: MinigridPortfolioView): MinigridOverviewView {
   const attention: AttentionItemView[] = portfolio.findings.map((found) => {
     const [figure, ...more] = found.figures;
     return {
       id: `${found.rule}:${found.site?.id ?? "portfolio"}`,
       rule: found.rule,
-      tone: TONE[found.rule] ?? "note",
+      tone: found.tone,
       kind: found.title,
       statement: found.statement,
       figure: figure ?? null,
