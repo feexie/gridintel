@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
    screen; and what a phone folds is open on a wider screen, never removed. */
 
 /** The rebuilt screens, in the order they were rebuilt. */
-const REBUILT = ["/dashboard/utility/executive", "/dashboard/utility/executive/all"];
+const REBUILT = ["/dashboard/utility/executive", "/dashboard/utility/executive/all", "/dashboard/utility/events"];
 
 for (const route of REBUILT) {
   test(`at 390 px ${route} does not slide sideways, and its tables scroll inside their own frames`, async ({ page }) => {

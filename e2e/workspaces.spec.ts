@@ -162,7 +162,7 @@ test("Events / Alarms: what is wrong now in three separate lists, where, and who
   await expect(now).toContainText("As of 1 Oct 2026, 00:00 WAT · three separate lists, never merged");
 
   // Source alarms standing: four, most severe first, each with where it is and the accounts behind it.
-  const alarms = now.locator('[data-table="standing-alarms"] tbody tr');
+  const alarms = now.locator('[data-list="standing-alarms"] > li');
   await expect(now.locator('[data-now="alarms"]')).toContainText("Source alarms standing (4)");
   await expect(alarms).toHaveCount(4);
   for (const text of ["high", "FDR-EF-TRIP", "Farm Road 11 kV feeder", "30 Sep 2026, 23:20 WAT", "1,015"]) await expect(alarms.nth(0)).toContainText(text);
@@ -172,20 +172,20 @@ test("Events / Alarms: what is wrong now in three separate lists, where, and who
   await expect(now.locator('[data-now="alarms"]')).toContainText("1 more alarm(s) have no raise time in the source");
 
   // Derived conditions that hold: one, in its own list, and it names the source alarm that agrees.
-  const conditions = now.locator('[data-table="holding-conditions"] tbody tr');
+  const conditions = now.locator('[data-list="holding-conditions"] > li');
   await expect(conditions).toHaveCount(1);
   for (const text of ["Monitor quiet", "Monitor on South Gate transformer", "9.1 h", "Agrees: RTU-COMMS-FAIL"]) await expect(conditions.nth(0)).toContainText(text);
   await expect(now.locator('[data-now="conditions"]')).toContainText("2 more condition(s) were found in the period and do not hold at the as-of time");
 
   // Interruptions in progress: the outage its source calls open, as one row, with the customers of the parts still off.
   await expect(now.locator('[data-now="interruptions"]')).toContainText("Interruptions in progress (1)");
-  const inProgress = now.locator('[data-table="in-progress"] tbody tr');
+  const inProgress = now.locator('[data-list="in-progress"] > li');
   await expect(inProgress).toHaveCount(1);
   for (const text of ["Farm Road 11 kV feeder", "OUT-2026-09-30-FD-FRM-FAULT", "10 transformers", "Fault", "30 Sep 2026, 23:20 WAT", "No restoration time recorded", "Open", "1,015"]) {
     await expect(inProgress.nth(0)).toContainText(text);
   }
   // A record with no restoration time and no open status is a data-quality item, kept apart and not counted.
-  const gap = now.locator('[data-table="restoration-not-recorded"] tbody tr');
+  const gap = now.locator('[data-list="restoration-not-recorded"] > li');
   await expect(gap).toHaveCount(1);
   for (const text of ["SP-MKT2-001", "Market Road 11 kV feeder", "No restoration time recorded", "Not stated"]) await expect(gap.nth(0)).toContainText(text);
   await expect(now.locator('[data-now="restoration-not-recorded"]')).toContainText("A data-quality item.");
