@@ -5,7 +5,20 @@ import { expect, test } from "@playwright/test";
    screen; and what a phone folds is open on a wider screen, never removed. */
 
 /** The rebuilt screens, in the order they were rebuilt. */
-const REBUILT = ["/dashboard/utility/executive", "/dashboard/utility/executive/all", "/dashboard/utility/events"];
+const OPERATIONS = "/dashboard/utility/operations";
+const REBUILT = [
+  "/dashboard/utility/executive",
+  "/dashboard/utility/executive/all",
+  "/dashboard/utility/events",
+  OPERATIONS,
+  `${OPERATIONS}/regions/demo-region-northfield`,
+  `${OPERATIONS}/substations/SS-HIL`,
+  `${OPERATIONS}/feeders/FD-FRM`,
+  `${OPERATIONS}/transformers/DT-OLD-2`,
+  `${OPERATIONS}/transformers/DT-OLD-2/all`,
+  `${OPERATIONS}/service-points/SP-OLD2-001`,
+  `${OPERATIONS}/service-points/SP-MKT2-005`,
+];
 
 for (const route of REBUILT) {
   test(`at 390 px ${route} does not slide sideways, and its tables scroll inside their own frames`, async ({ page }) => {

@@ -1,3 +1,5 @@
+import type { AttentionItemView } from "../overview/views.ts";
+
 /* ==========================================================
    SERVICES — OPERATIONS VIEW MODELS
 
@@ -486,6 +488,8 @@ export interface AlarmsView {
 
 export interface NetworkLevelView {
   header: LevelHeader;
+  /** What needs attention at this level, by the fixed rules of findings.ts, each leading to its section. */
+  findings: AttentionItemView[];
   losses: LossesView | null;
   /** Why there is no losses block, when there is none. */
   lossesNote: string | null;

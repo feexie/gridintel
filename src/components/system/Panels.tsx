@@ -683,9 +683,9 @@ export function ReliabilityPanel({ reliability, showBand, scopeId, id }: { relia
 
 /* ---------------- Loading ---------------- */
 
-export function LoadingPanel({ loading }: { loading: LoadingView }) {
+export function LoadingPanel({ loading, id }: { loading: LoadingView; id?: string }) {
   return (
-    <Panel title="Loading" aside={loading.ratedKva === null ? "Rating not recorded" : `Rated ${formatNumber(loading.ratedKva)} kVA`}>
+    <Panel id={id} title="Loading" aside={loading.ratedKva === null ? "Rating not recorded" : `Rated ${formatNumber(loading.ratedKva)} kVA`}>
       {loading.caveat ? <p className="border-l-2 border-caution-line/60 pl-2 text-xs text-caution-ink/90">{loading.caveat}</p> : null}
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <MetricTile metric={{ ...loading.peak, note: null }} sourcing={loading.sourcing} emphasis>
@@ -713,10 +713,10 @@ export function LoadingPanel({ loading }: { loading: LoadingView }) {
 }
 
 /** A substation's power transformers: what each carries, and how heavily it was loaded. */
-export function PowerTransformersPanel({ transformers }: { transformers: PowerTransformerView[] }) {
+export function PowerTransformersPanel({ transformers, id }: { transformers: PowerTransformerView[]; id?: string }) {
   if (transformers.length === 0) return null;
   return (
-    <Panel title={`Power transformers (${transformers.length})`} aside="Loading from the substation's telemetry, against rating">
+    <Panel id={id} title={`Power transformers (${transformers.length})`} aside="Loading from the substation's telemetry, against rating">
       <Table name="power-transformers" wide>
         <HeadRow>
             <Th>Transformer</Th>

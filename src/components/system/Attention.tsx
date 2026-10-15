@@ -36,6 +36,7 @@ export function workspaceHref(workspace: WorkspaceKey): string {
 export function targetHref(target: AttentionTarget): string {
   if (target.type === "level") return levelHref(target.kind, target.id);
   if (target.type === "site") return siteHref(target.id);
+  if (target.type === "section") return `#${target.id}`;
   return workspaceHref(target.workspace);
 }
 

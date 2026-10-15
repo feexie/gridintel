@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LevelHeader, NetworkLevelView, OverviewView, ServicePointView } from "@/services/operations/views";
-import { Legend, MetricTile, OriginTag, Panel } from "@/components/system/Metric";
+import { AttentionList } from "@/components/system/Attention";
+import { KeyFold, SectorBand } from "@/components/system/Brand";
+import { SectionNav, Sources } from "@/components/system/Fold";
+import { MetricTile, OriginTag, Panel } from "@/components/system/Metric";
 import { AlarmsPanel, ChildrenTable, LoadingPanel, LossesPanel, PowerTransformersPanel, ReliabilityPanel, RevenueGapPanel } from "@/components/system/Panels";
 import { HeadRow, Row, Table, Td, Th } from "@/components/system/Table";
 import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, formatTime, fullListHref, levelHref } from "@/components/system/format";
@@ -9,75 +12,96 @@ import { LEVEL_NAME, OPERATIONS_HOME, formatMoney, formatNumber, formatPercent, 
 
 function LevelHead({ header }: { header: LevelHeader }) {
   return (
-    <header className="space-y-2">
-      <nav aria-label="Drill-down path" className="flex flex-wrap items-center gap-1 text-xs text-ink-4">
-        <Link href={OPERATIONS_HOME} className="hover:text-link-hover">
-          Operations
-        </Link>
-        {header.crumbs.map((crumb, i) => (
-          <span key={`${crumb.kind}:${crumb.id}`} className="flex items-center gap-1">
-            <span aria-hidden>›</span>
-            {i === header.crumbs.length - 1 ? (
-              <span className="text-ink">{crumb.label}</span>
-            ) : (
-              <Link href={levelHref(crumb.kind, crumb.id)} className="hover:text-link-hover">
-                {crumb.label}
-              </Link>
-            )}
-          </span>
-        ))}
+    <header className="space-y-3">
+      <nav aria-label="Drill-down path" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <ol className="flex w-max items-center gap-1 text-xs text-ink-4 sm:w-auto sm:flex-wrap">
+          <li>
+            <Link href={OPERATIONS_HOME} className="gi-tap inline-flex items-center hover:text-link-hover">
+              Operations
+            </Link>
+          </li>
+          {header.crumbs.map((crumb, i) => (
+            <li key={`${crumb.kind}:${crumb.id}`} className="flex items-center gap-1 whitespace-nowrap">
+              <span aria-hidden>›</span>
+              {i === header.crumbs.length - 1 ? (
+                <span className="text-ink" aria-current="page">
+                  {crumb.label}
+                </span>
+              ) : (
+                <Link href={levelHref(crumb.kind, crumb.id)} className="gi-tap inline-flex items-center hover:text-link-hover">
+                  {crumb.label}
+                </Link>
+              )}
+            </li>
+          ))}
+        </ol>
       </nav>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-micro font-semibold uppercase tracking-eyebrow text-link/80">
-            {LEVEL_NAME[header.kind]} · {header.id}
-          </p>
-          <h1 className="text-xl font-semibold text-ink">{header.title}</h1>
-          <p className="text-xs text-ink-4">{header.subtitle}</p>
-        </div>
-        {header.location ? (
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-caption text-ink-4">
-            <dt>Location</dt>
-            <dd className="font-mono text-ink-2">
-              {formatNumber(header.location.latitude, 4)}, {formatNumber(header.location.longitude, 4)}
-            </dd>
-          </dl>
-        ) : null}
-      </div>
-      <dl className="flex flex-wrap gap-x-5 gap-y-1 border-y border-line py-1.5 text-xs">
+      <SectorBand eyebrow={`${LEVEL_NAME[header.kind]} · ${header.id}`} title={header.title}>
+        {header.subtitle}
+      </SectorBand>
+      <dl className="flex flex-wrap gap-x-5 gap-y-1 text-xs" data-facts>
         {header.facts.map((fact) => (
           <div key={fact.label} className="flex gap-1.5">
             <dt className="text-ink-5">{fact.label}</dt>
             <dd className="text-ink">{fact.value}</dd>
           </div>
         ))}
+        {header.location ? (
+          <div className="flex gap-1.5">
+            <dt className="text-ink-5">Location</dt>
+            <dd className="font-mono text-ink-2">
+              {formatNumber(header.location.latitude, 4)}, {formatNumber(header.location.longitude, 4)}
+            </dd>
+          </div>
+        ) : null}
       </dl>
-      <Legend />
     </header>
   );
 }
 
+const childAnchor = (i: number) => `below-${i + 1}`;
+
 /** `map` is the shared map, focused on this level; the page supplies it. */
 export function NetworkLevel({ view, showAllRows = false, map }: { view: NetworkLevelView; showAllRows?: boolean; map?: ReactNode }) {
+  const sections = [
+    { id: "attention", label: "Needs attention" },
+    ...(map ? [{ id: "map", label: "Map" }] : []),
+    { id: "losses", label: "Losses" },
+    { id: "revenue", label: "Revenue gap" },
+    { id: "reliability", label: "Reliability" },
+    ...(view.loading ? [{ id: "loading", label: "Loading" }] : []),
+    ...(view.powerTransformers ? [{ id: "power-transformers", label: "Power transformers" }] : []),
+    ...view.children.map((table, i) => ({ id: childAnchor(i), label: table.title })),
+    { id: "alarms", label: "Alarms" },
+  ];
   return (
     <div className="space-y-4">
       <LevelHead header={view.header} />
-      {map}
+      <SectionNav sections={sections} />
+      <KeyFold />
+      <Panel id="attention" title="What needs attention here" aside="Listed by fixed rules, in a fixed order. No AI.">
+        <AttentionList items={view.findings} note={view.findings.length === 0 ? "None of the rules lists anything at this level for this period." : null} />
+      </Panel>
+      {map ? (
+        <div id="map" className="scroll-mt-4">
+          {map}
+        </div>
+      ) : null}
       {view.losses ? (
-        <LossesPanel losses={view.losses} />
+        <LossesPanel id="losses" losses={view.losses} />
       ) : (
-        <Panel title="Energy account and ATC&C">
+        <Panel id="losses" title="Energy account and ATC&C">
           <p className="text-xs text-ink-4">{view.lossesNote}</p>
         </Panel>
       )}
-      <RevenueGapPanel gap={view.revenueGap} below={view.revenueGapBelow} />
-      <ReliabilityPanel reliability={view.reliability} showBand={view.header.kind === "feeder"} scopeId={view.header.id} />
-      {view.loading ? <LoadingPanel loading={view.loading} /> : null}
-      {view.powerTransformers ? <PowerTransformersPanel transformers={view.powerTransformers} /> : null}
-      {view.children.map((table) => (
-        <ChildrenTable key={table.title} table={table} showAll={showAllRows} allHref={fullListHref(levelHref(view.header.kind, view.header.id))} />
+      <RevenueGapPanel id="revenue" gap={view.revenueGap} below={view.revenueGapBelow} />
+      <ReliabilityPanel id="reliability" reliability={view.reliability} showBand={view.header.kind === "feeder"} scopeId={view.header.id} />
+      {view.loading ? <LoadingPanel id="loading" loading={view.loading} /> : null}
+      {view.powerTransformers ? <PowerTransformersPanel id="power-transformers" transformers={view.powerTransformers} /> : null}
+      {view.children.map((table, i) => (
+        <ChildrenTable key={table.title} id={childAnchor(i)} table={table} showAll={showAllRows} allHref={fullListHref(levelHref(view.header.kind, view.header.id))} />
       ))}
-      <AlarmsPanel alarms={view.alarms} />
+      <AlarmsPanel id="alarms" alarms={view.alarms} />
     </div>
   );
 }
@@ -85,16 +109,10 @@ export function NetworkLevel({ view, showAllRows = false, map }: { view: Network
 export function Overview({ view }: { view: OverviewView }) {
   return (
     <div className="space-y-4">
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-micro font-semibold uppercase tracking-eyebrow text-link/80">Utility Intelligence</p>
-            <h1 className="text-xl font-semibold text-ink">Operations Center</h1>
-            <p className="text-xs text-ink-4">{view.organization ?? "Organization not recorded"} · drill from region to service point.</p>
-          </div>
-        </div>
-        <Legend />
-      </header>
+      <SectorBand eyebrow="Utility Intelligence" title="Operations Center">
+        {view.organization ?? "Organization not recorded"} · drill from region to service point.
+      </SectorBand>
+      <KeyFold />
       <ChildrenTable table={view.regions} />
       <AlarmsPanel alarms={view.alarms} />
     </div>
@@ -105,10 +123,11 @@ export function ServicePoint({ view, map }: { view: ServicePointView; map?: Reac
   return (
     <div className="space-y-4">
       <LevelHead header={view.header} />
+      <KeyFold />
       {map}
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Connection">
-          <dl className="grid grid-cols-[10rem_1fr] gap-y-1 text-xs">
+          <dl className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-xs sm:grid-cols-[10rem_minmax(0,1fr)]">
             <dt className="text-ink-5">Account</dt>
             <dd className="text-ink">{view.account ? `${view.account.id} (${view.account.accountNumber ?? "no account number"})` : "No account at this service point"}</dd>
             <dt className="text-ink-5">Category</dt>
@@ -156,7 +175,7 @@ export function ServicePoint({ view, map }: { view: ServicePointView; map?: Reac
         {view.charges.length === 0 ? (
           <p className="text-xs text-ink-4">No charge was raised on this account in the period.</p>
         ) : (
-          <Table name="charges">
+          <Table name="charges" wide>
             <HeadRow>
                 <Th>Raised</Th>
                 <Th>How billed</Th>
@@ -202,8 +221,8 @@ export function ServicePoint({ view, map }: { view: ServicePointView; map?: Reac
             </tbody>
           </Table>
         )}
-        <p className="text-micro text-ink-5">Data sources: {view.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ")}</p>
       </Panel>
+      <Sources sourcing={view.sourcing} />
     </div>
   );
 }

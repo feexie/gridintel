@@ -28,7 +28,12 @@ export type WorkspaceKey =
   | "minigrid.sites";
 
 /** Where a line leads: the screen that holds the figure's full source and method. */
-export type AttentionTarget = { type: "level"; kind: LevelKind; id: string } | { type: "site"; id: string } | { type: "workspace"; workspace: WorkspaceKey };
+export type AttentionTarget =
+  | { type: "level"; kind: LevelKind; id: string }
+  | { type: "site"; id: string }
+  | { type: "workspace"; workspace: WorkspaceKey }
+  /** A section of the same screen, by its anchor. */
+  | { type: "section"; id: string };
 
 export interface AttentionItemView {
   /** Stable within a screen: "<rule>:<subject>". */

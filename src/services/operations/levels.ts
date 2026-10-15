@@ -65,6 +65,7 @@ import { SourceTrail } from "../analytics/sourcing.ts";
 import { loadTopology } from "../analytics/topology.ts";
 import { comparisonCaveats, comparisonNote } from "./comparison.ts";
 import { figureMetric, inputMetric, inputView, kpiMetric, methodView, registryCount, sourcingView, unavailable } from "./metric.ts";
+import { withFindings } from "./findings.ts";
 
 /* ==========================================================
    SERVICES — OPERATIONS READ MODELS
@@ -1174,7 +1175,7 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
     );
   }
 
-  return {
+  return withFindings({
     header: header(runtime, loaded, "region", regionId, region.name, organization?.name ?? "Region", [
       { label: "Substations", value: String(substations.length) },
       { label: "Active accounts", value: count(activeAccountsUnder(loaded, scope)) },
@@ -1192,7 +1193,7 @@ export async function regionView(runtime: OperationsRuntime, regionId: string): 
     powerTransformers: null,
     children: [{ title: "Substations", coverage: loaded.coverage.substations, columns: SECTION_COLUMNS, rows }],
     alarms: await alarmsBlock(runtime, loaded, scope),
-  };
+  });
 }
 
 export async function substationView(runtime: OperationsRuntime, substationId: string): Promise<NetworkLevelView | null> {
@@ -1213,7 +1214,7 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
     );
   }
 
-  return {
+  return withFindings({
     header: header(
       runtime,
       loaded,
@@ -1272,7 +1273,7 @@ export async function substationView(runtime: OperationsRuntime, substationId: s
       },
     ],
     alarms: await alarmsBlock(runtime, loaded, scope),
-  };
+  });
 }
 
 export async function feederView(runtime: OperationsRuntime, feederId: string): Promise<NetworkLevelView | null> {
@@ -1305,7 +1306,7 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
     children.push(await servicePointTable(runtime, loaded, "Connections supplied directly at 11 kV", direct.map((sp) => sp.id)));
   }
 
-  return {
+  return withFindings({
     header: header(runtime, loaded, "feeder", feederId, feeder.name, `${feeder.nominalVoltageKv} kV feeder`, [
       { label: "NERC service band", value: feeder.serviceBand ? `Band ${feeder.serviceBand}` : "not recorded" },
       { label: "Fed from", value: source ? `${source.name}${source.busSection === undefined ? "" : `, bus section ${source.busSection}`}` : "not recorded" },
@@ -1325,7 +1326,7 @@ export async function feederView(runtime: OperationsRuntime, feederId: string): 
     powerTransformers: null,
     children,
     alarms: await alarmsBlock(runtime, loaded, scope),
-  };
+  });
 }
 
 /** What a customer meter recorded in the period, from whatever that kind of meter can report. */
@@ -1558,7 +1559,7 @@ export async function transformerView(runtime: OperationsRuntime, transformerId:
   const points = servicePointsOnTransformer(loaded.index, transformerId);
   const metered = points.filter((sp) => metersWithRole(loaded.index, "service_point", sp.id).length > 0).length;
 
-  return {
+  return withFindings({
     header: header(
       runtime,
       loaded,
@@ -1583,7 +1584,7 @@ export async function transformerView(runtime: OperationsRuntime, transformerId:
     powerTransformers: null,
     children: [await servicePointTable(runtime, loaded, "Service points", points.map((sp) => sp.id))],
     alarms: await alarmsBlock(runtime, loaded, scope),
-  };
+  });
 }
 
 export async function servicePointView(runtime: OperationsRuntime, servicePointId: string): Promise<ServicePointView | null> {
