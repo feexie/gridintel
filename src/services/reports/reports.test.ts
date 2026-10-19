@@ -44,7 +44,7 @@ function document(body: ReportBody, id: "reliability" | "compliance", key: strin
     period,
     periods: periodChoices(COVERAGE),
     sample: sampleNotice("A designed demonstration dataset."),
-    built: { body, reportId: reportIdOf(definition, period, "0123456789abcdef"), generatedAt: "2026-10-15T12:00:00.000Z", dataAsOf: period.end, dataFingerprint: "f".repeat(64), methods },
+    built: { body, reportId: reportIdOf(definition, period, "0123456789abcdef"), computedAt: "2026-10-15T12:00:00.000Z", dataAsOf: period.end, dataFingerprint: "f".repeat(64), methods },
     unavailable: null,
   });
 }

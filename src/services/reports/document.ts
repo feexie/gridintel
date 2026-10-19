@@ -14,7 +14,7 @@ import { REGULATORY_NOTE } from "./catalogue.ts";
    the sample label while the data is synthetic, the methods used,
    the regulatory references and the glossary.
 
-   Pure: the report ID, the generation time and the data fingerprint
+   Pure: the report ID, the time the figures were computed and the data fingerprint
    are given to it by the composition root, which made them.
 ========================================================== */
 
@@ -75,7 +75,7 @@ export interface DocumentInput {
   periods: PeriodChoices;
   sample: SampleNotice | null;
   /** The report's figures; null when the period is not available. */
-  built: { body: ReportBody; reportId: string; generatedAt: string; dataAsOf: string; dataFingerprint: string; methods: MethodView[] } | null;
+  built: { body: ReportBody; reportId: string; computedAt: string; dataAsOf: string; dataFingerprint: string; methods: MethodView[] } | null;
   /** Why the period is not available; null when it is. */
   unavailable: string | null;
 }
@@ -110,7 +110,7 @@ export function reportDocument(input: DocumentInput): ReportDocumentView {
         ? null
         : {
             reportId: built.reportId,
-            generatedAt: built.generatedAt,
+            computedAt: built.computedAt,
             dataAsOf: built.dataAsOf,
             period,
             definitionVersion: definition.version,

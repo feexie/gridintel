@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 /* Phase REPORTS-A (ADR 0019): the downloadable reports. While the data is synthetic every printed
    page carries the sample label; every figure keeps its status and origin on paper and in the CSV;
    a period the data does not cover says so and holds no figure; each report carries its ID,
-   generation time, period, methodologies and data fingerprint. */
+   the time its figures were computed, its period, methodologies and data fingerprint. */
 
 const RELIABILITY = "/dashboard/utility/reports/reliability";
 const COMPLIANCE = "/dashboard/minigrid/reports/compliance";
@@ -33,7 +33,9 @@ for (const [route, title, id] of [
     const identity = page.locator(".gr-identity");
     expect((await identity.locator("dt", { hasText: "Report ID" }).locator("+ dd").textContent())?.trim()).toMatch(id);
     await expect(identity.locator("dt", { hasText: "Data fingerprint (SHA-256)" }).locator("+ dd")).toHaveText(/^[0-9a-f]{64}$/);
-    await expect(identity).toContainText("Generated");
+    // The time the figures were computed (for a page built ahead of time, the build), never "generated" as if just now.
+    await expect(identity).toContainText(/Figures computed\d{1,2} \w{3} \d{4}, \d{2}:\d{2} WAT, from data as of 1 Oct 2026, 00:00 WAT/);
+    await expect(identity).not.toContainText("Generated");
     await expect(identity).toContainText("September 2026");
     // Every methodology is named with its version in the appendix.
     await expect(page.locator("#method")).toContainText(/gridintel\.[a-z_.]+/);
@@ -75,6 +77,25 @@ test("a day is a report of its own; a reported figure for the month is named and
   await expect(page.locator("#reported")).toContainText("No reported figure in the records is for 14 September 2026.");
   await expect(page.locator("#reported")).toContainText("They are not compared here");
   await expect(page.locator("#reported .gr-comparison")).toHaveCount(0);
+});
+
+test("on a report's page the data bar names the report's own period, never the platform's month", async ({ page }) => {
+  for (const [route, period, asOf] of [
+    [`${RELIABILITY}/2026-09-14`, "14 September 2026", "15 Sep 2026, 00:00 WAT"],
+    [`${COMPLIANCE}/2026-09-03`, "3 September 2026", "4 Sep 2026, 00:00 WAT"],
+    [`${RELIABILITY}/2026-09`, "September 2026", "1 Oct 2026, 00:00 WAT"],
+    [`${COMPLIANCE}/2026`, "2026", "Not available for this period"],
+  ] as const) {
+    await page.goto(route);
+    const bar = page.getByRole("note", { name: "About the data on this screen" });
+    await expect(bar, route).toContainText(LABEL.replace("SAMPLE: ", ""));
+    await expect(bar, route).toContainText(`Report period${period}`);
+    await expect(bar, route).toContainText(`Data as of${asOf}`);
+    await expect(bar, route).not.toContainText("Reporting period");
+  }
+  // The Reports screen itself is not a report: it keeps the platform's period.
+  await page.goto("/dashboard/utility/reports");
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("Reporting period1 Sep 2026 – 30 Sep 2026");
 });
 
 test("a year the data does not cover is not available: no figure, no ID, no CSV, and the reason", async ({ page }) => {

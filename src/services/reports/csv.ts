@@ -77,7 +77,7 @@ export function reportCsv(document: ReportDocumentView): string {
   }
   const identity = document.identity;
   if (identity !== null) {
-    about("Generated at", identity.generatedAt);
+    about("Figures computed at", identity.computedAt);
     about("Data as of", identity.dataAsOf);
     about("Definition version", identity.definitionVersion);
     about("Data fingerprint (SHA-256)", identity.dataFingerprint);

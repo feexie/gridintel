@@ -60,8 +60,9 @@ the data covers, and enough identity to reproduce it.
      repositories wrapped to digest what passes through them
      (`src/composition/fingerprint.ts`) and on a result cache of its own,
      so every record it used was read, and digested, for it.
-   - *Generation time*: the wall clock when the document was produced,
-     read in the composition root. It is not the data's clock.
+   - *Time the figures were computed*: the wall clock when the document
+     was produced, read in the composition root. It is not the data's
+     clock, and for a page built ahead of time it is the build's time.
    - *Period, data as-of time, definition version, and every methodology
      with its version*, on the cover and in the method appendix.
 6. **While the data is synthetic, no printed page is without the label.**
@@ -130,12 +131,17 @@ then.
 
 ## Consequences
 
-- A report built ahead of time (ADR 0012) has the build's time as its
-  generation time; the CSV is produced on request and has its own. The two
-  carry the same report ID, which is what ties them.
-- On a report page, the data bar above the screen still shows the
-  platform's reporting period (the month). The report states its own
-  period, and the bar is left out when it is printed.
+- A report built ahead of time (ADR 0012) has the build's time as the time
+  its figures were computed; the CSV is produced on request and has its
+  own. The two carry the same report ID, which is what ties them. So the
+  cover does not say "Generated", which a reader would take as the time
+  the page was printed; it says "Figures computed <time>, from data as of
+  <as-of>", and the CSV "Figures computed at" (REPORTS-A fix, 2026-10-19).
+- On a report page the data bar names the report's own period (a day or
+  the month) and its as-of time, or "not available for this period"; the
+  composition root gives the bar every report period by its key, and the
+  bar looks up the one in the address (REPORTS-A fix, 2026-10-19). The bar
+  is left out when the report is printed.
 - XLSX is not built. CSV opens in every spreadsheet. An XLSX file needs
   either a dependency (a decision gate) or a small writer of our own;
   proposed for REPORTS-B.

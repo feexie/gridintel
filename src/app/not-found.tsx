@@ -10,7 +10,7 @@ export default function NotFound() {
   const navigation = navigationFor(getViewer().screens);
   const home = homeFor(navigation);
   return (
-    <DashboardShell bar={<DataBar context={getDataContext()} />} navigation={navigation}>
+    <DashboardShell bar={<DataBar context={{ ...getDataContext(), reportPeriods: {} }} />} navigation={navigation}>
       <div className="border border-line bg-panel p-4 text-sm text-ink-3" data-not-found>
         <h1 className="font-semibold text-ink">Page not found</h1>
         <p className="mt-1 text-ink-4">There is no screen at this address.</p>

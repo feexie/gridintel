@@ -2075,7 +2075,7 @@ to a permit application's monitoring and reporting plan. Decisions: ADR
   filled. The dataset covers September 2026 only: daily and monthly
   reports work; annual is "not available for this period". The dataset is
   not widened in this phase.
-- Each report carries a report ID, its generation time, its period, its
+- Each report carries a report ID, the time its figures were computed, its period, its
   methodology versions and a fingerprint of the data used.
 
 **The five reports** (one report service, one layout; each a
@@ -2127,11 +2127,13 @@ never as conformity.
 
 - XLSX is not built; CSV only. Proposed for REPORTS-B (a small writer of
   our own, or a dependency, which is a decision gate).
-- A page built ahead of time has the build's time as its generation time;
-  its CSV has its own. Both carry the same report ID.
-- On a report page the data bar above the screen still names the
-  platform's month; the report states its own period, and the bar is not
-  printed.
+- A page built ahead of time has the build's time as the time its figures
+  were computed; its CSV has its own. Both carry the same report ID.
+  **Fixed (2026-10-19):** the cover says "Figures computed <time>, from
+  data as of <as-of>", not "Generated".
+- **Fixed (2026-10-19):** on a report page the data bar names the
+  report's own period (a day or the month) and its as-of time, or "not
+  available for this period". It is not printed.
 - Phone printing is the phone browser's own; it was checked in Chromium at
   phone width, not on a physical phone.
 

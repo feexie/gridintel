@@ -24,13 +24,20 @@ import { getClock, getDataNotice, getMinigridRuntime, getRuntime } from "./runti
      and digested rather than served from the screens' cache.
    The finished document is then kept in the process's cache, so a
    page, its PDF and its CSV are the same report with the same ID and
-   generation time.
+   computation time.
 
    A period the data does not wholly cover is answered with a
    document that says so and holds no figure. Nothing is read for it.
 ========================================================== */
 
 type BuiltReport = "reliability" | "compliance";
+
+/** A report period as the data bar names it. */
+export interface ReportBarPeriod {
+  label: string;
+  /** The end of the period; null when the data does not cover it. */
+  asOf: string | null;
+}
 
 const BUILDERS: Record<BuiltReport, { runtime: () => OperationsRuntime; build: (runtime: OperationsRuntime, offset: string) => Promise<ReportBody> }> = {
   reliability: { runtime: getRuntime, build: reliabilityReport },
@@ -79,7 +86,7 @@ async function build(id: BuiltReport, periodKey: string): Promise<ReportDocument
     period,
     periods,
     sample,
-    built: { body, reportId, generatedAt: new Date().toISOString(), dataAsOf: period.end, dataFingerprint, methods },
+    built: { body, reportId, computedAt: new Date().toISOString(), dataAsOf: period.end, dataFingerprint, methods },
     unavailable: null,
   });
 }
@@ -106,6 +113,19 @@ export const reports = {
   },
   /** The ids of the built reports of a sector. */
   built: (sector: "utility" | "minigrid"): ReportId[] => REPORTS.filter((item) => item.sector === sector && !item.planned).map((item) => item.id),
+  /**
+   * What the data bar says on each report's page, by period key: the report's own period and the
+   * instant its data is as of (the end of the period), or null where the period is not available.
+   */
+  barPeriods: (): Record<string, ReportBarPeriod> => {
+    const coverage = reportCoverage();
+    const out: Record<string, ReportBarPeriod> = {};
+    for (const key of reports.periodKeys()) {
+      const period = parsePeriod(key, coverage.offset)!;
+      out[key] = { label: period.label, asOf: availability(period, coverage).available ? period.end : null };
+    }
+    return out;
+  },
   coverage: reportCoverage,
   /** What the data covers, in words: "1 September 2026 to 30 September 2026". */
   coverageWords: (): string => coverageLabel(reportCoverage()),

@@ -86,8 +86,11 @@ export interface GlossaryEntry {
 export interface ReportIdentity {
   /** Stable for the same report, period, definition and data: "GI-REL-2026-09-1A2B3C4D". */
   reportId: string;
-  /** When this document was produced: the wall clock when it was built, not the data's clock. */
-  generatedAt: string;
+  /**
+   * When the figures were computed: the wall clock in the composition root, not the data's clock.
+   * A page built ahead of time (ADR 0012) has the build's time; it is not when the page was printed.
+   */
+  computedAt: string;
   /** The instant the data is as of: the end of the period. */
   dataAsOf: string;
   period: ReportPeriod;

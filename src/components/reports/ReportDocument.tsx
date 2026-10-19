@@ -370,13 +370,11 @@ export function ReportDocument({ view }: { view: ReportDocumentView }) {
                   <dt>Report ID</dt>
                   <dd className="gr-mono">{identity.reportId}</dd>
                 </div>
-                <div>
-                  <dt>Generated</dt>
-                  <dd>{formatTime(identity.generatedAt)}</dd>
-                </div>
-                <div>
-                  <dt>Data as of</dt>
-                  <dd>{formatTime(identity.dataAsOf)}</dd>
+                <div className="gr-identity-wide">
+                  <dt>Figures computed</dt>
+                  <dd>
+                    {formatTime(identity.computedAt)}, from data as of {formatTime(identity.dataAsOf)}
+                  </dd>
                 </div>
                 <div>
                   <dt>Definition</dt>
