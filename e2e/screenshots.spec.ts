@@ -2,7 +2,8 @@ import { test } from "@playwright/test";
 
 /* Not a test: captures screenshots for checkpoint reports.
    Run with: SCREENSHOTS=docs/screenshots/<phase> npx playwright test screenshots
-   One module's screens only: add -g <part of their names>, e.g. -g minigrid */
+   One module's screens only: add -g <part of their names>, e.g. -g minigrid
+   The folder is not committed (.gitignore): the files are attached to the phase's GitHub release. */
 
 const target = process.env.SCREENSHOTS;
 const OPERATIONS = "/dashboard/utility/operations";

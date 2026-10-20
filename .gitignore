@@ -45,3 +45,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# checkpoint screenshots and PDFs: attached to the phase's GitHub release, not committed
+/docs/screenshots/

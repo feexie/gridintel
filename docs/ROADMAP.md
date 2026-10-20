@@ -2161,10 +2161,12 @@ brief printed on the 14th and the 30th (table text at least 8.5pt, at most
 two pages, the appendices on pages of their own), its month not
 available, the XLSX download, phone width.
 
-**Checkpoint material.** `docs/screenshots/phase-reports-b`: all five
-reports printed to PDF by Chromium's print engine for September 2026 and
-for 14 September (and the brief for 30 September, its busiest day), and
-every report screen at desktop and phone width. Made again with
+**Checkpoint material.** Attached to the GitHub release `phase-reports-b`,
+not committed (Founder, 2026-10-20; `docs/screenshots/` is ignored): all
+five reports printed to PDF by Chromium's print engine for September 2026
+and for 14 September (and the brief for 30 September, its busiest day), and
+every report screen at desktop and phone width, made after the review fixes.
+Made again with
 `SCREENSHOTS=docs/screenshots/phase-reports-b GRIDINTEL_E2E=local npx playwright test screenshots -g report`.
 
 **Known, and not done.**
