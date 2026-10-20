@@ -13,7 +13,7 @@ import { periodWords } from "./period.ts";
 /* ==========================================================
    SERVICES — DAILY OPERATIONS BRIEF
 
-   One page for one day, for the control room and the DisCo's
+   For one day, two printed pages, for the control room and the DisCo's
    management: how the network served its customers that day, and
    what was wrong when the day closed. Built from the read models of
    the Reliability, Events / Alarms and Assets screens, for the day,

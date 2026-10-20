@@ -27,8 +27,8 @@ export interface ReportDefinition {
   periodKinds: PeriodKind[];
   /** Why another kind of period is not available, in words; null when every kind is offered. */
   periodRule: string | null;
-  /** Printed on one page: the cover runs into the sections, with no contents; the appendices follow on their own pages. */
-  onePage?: boolean;
+  /** Compact: the cover runs into the sections, with no contents; in print the sections are set close; the appendices start on pages of their own. */
+  compact?: boolean;
   glossary: GlossaryEntry[];
   regulatory: RegulatoryReference[];
 }
@@ -171,7 +171,7 @@ export const REPORT_DEFINITIONS: Record<ReportId, ReportDefinition> = {
     code: "DOB",
     version: "1",
     periodKinds: ["day"],
-    onePage: true,
+    compact: true,
     periodRule: "The daily operations brief is for one day. Choose a day; a month's operations are in the DisCo operations report.",
     glossary: [...RELIABILITY_TERMS.filter((entry) => ["SAIDI", "SAIFI", "Network-attributable", "Service band", "Provisional"].includes(entry.term)), ...EVENT_TERMS, ...COMMON],
     regulatory: [

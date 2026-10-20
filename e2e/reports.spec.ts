@@ -124,7 +124,7 @@ test("the DisCo operations report gives the loss account and the money for the m
   await expect(page.locator("#events td").filter({ hasText: /^Monitor quiet$/ })).toHaveCount(0);
 });
 
-test("the daily operations brief is one page for a day, and a month of it is not available", async ({ page }) => {
+test("the daily operations brief is for a day, starts on the first page with its appendices on pages of their own, and a month of it is not available", async ({ page }) => {
   await page.goto(DAILY);
   await expect(page).toHaveURL(new RegExp(`${DAILY}/2026-09-30$`));
   await page.goto(`${DAILY}/2026-09-14`);
@@ -136,16 +136,31 @@ test("the daily operations brief is one page for a day, and a month of it is not
   await expect(page.locator(".gr-periods-label")).toHaveText(["Day"]);
   // No monitor is found quiet on a day whose check-ins are not held, and it says so.
   await expect(page.locator("#alarms")).toContainText("Whether a monitor has gone quiet cannot be told");
-  // Printed, the brief is one page, on a quiet day and on the busiest (the 30th: the open fault, four
-  // alarms, a gap in the record); the appendices follow on pages of their own.
+  // Printed, on a quiet day and on the busiest (the 30th: the open fault, four alarms, a gap in the
+  // record): no text in a table is below 8.5pt; the brief starts on the first page, the cover running
+  // into the sections, and takes at most two; the appendices start on a page of their own
+  // (Founder, 2026-10-20: two pages on every day, never smaller type).
   for (const day of ["2026-09-14", "2026-09-30"]) {
     await page.goto(`${DAILY}/${day}`);
-    const pages = pageCount(await page.pdf({ preferCSSPageSize: true }));
+    await page.emulateMedia({ media: "print" });
+    const smallest = await page.locator(".gr-table").evaluateAll((tables) =>
+      Math.min(...tables.flatMap((table) => [table, ...table.querySelectorAll("*")]).filter((node) => node.textContent?.trim()).map((node) => parseFloat(getComputedStyle(node).fontSize) * 0.75)),
+    );
+    expect(smallest, `smallest table text (pt) for ${day}`).toBeGreaterThanOrEqual(8.5 - 0.01);
+    expect(await page.locator(".gr-cover").evaluate((node) => getComputedStyle(node).breakAfter), day).not.toBe("page");
+    expect(await page.locator(".gr-section").first().evaluate((node) => getComputedStyle(node).breakBefore), day).not.toBe("page");
+    await page.emulateMedia({ media: null });
+    // The first appendix cut to its heading takes exactly one page more than the brief: it starts
+    // on a page of its own, and no page holds both the brief and an appendix.
     await page.evaluate(() => {
-      for (const node of document.querySelectorAll(".gr-cover, .gr-section:not(#method):not(#regulatory):not(#glossary)")) node.remove();
+      document.querySelectorAll("#regulatory, #glossary").forEach((node) => node.remove());
+      for (const child of [...document.querySelector("#method")!.children]) if (child.tagName !== "H2") child.remove();
     });
-    const appendixPages = pageCount(await page.pdf({ preferCSSPageSize: true }));
-    expect(pages - appendixPages, `pages taken by the brief for ${day}`).toBe(1);
+    const withAppendix = pageCount(await page.pdf({ preferCSSPageSize: true }));
+    await page.evaluate(() => document.querySelector("#method")!.remove());
+    const brief = pageCount(await page.pdf({ preferCSSPageSize: true }));
+    expect(brief, `pages taken by the brief for ${day}`).toBeLessThanOrEqual(2);
+    expect(withAppendix, `the first appendix starts a page for ${day}`).toBe(brief + 1);
   }
 
   for (const route of [`${DAILY}/2026-09`, `${DAILY}/2026`]) {

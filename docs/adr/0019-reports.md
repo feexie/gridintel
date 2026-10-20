@@ -171,12 +171,21 @@ rules of REPORTS-A hold unchanged. Engineering decisions:
    "not available for a day" with this reason, and leave out the findings
    about money. The compliance report of REPORTS-A still gives a site's
    revenue and collection for a day: an open question for the Founder.
-3. **The daily brief is one page.** A definition may be printed on one
-   page (`onePage`): the cover runs into the sections with no contents,
-   and in print the lede and section purposes are left out and tables set
-   closer; the appendices follow on pages of their own. Every day of
-   September was printed and measured; the browser test prints the
-   quietest and the busiest day and checks each takes one page.
+3. **The daily brief is compact, and prints in two pages.** A definition
+   may be compact (`compact`): the cover runs into the sections with no
+   contents, and in print the lede and section purposes are left out and
+   the sections set close together; the appendices start on pages of their
+   own. The brief was first fitted to one page with its tables at 7.5pt and
+   their headings at 6.5pt. At review that type was judged too small (Founder,
+   2026-10-20): no text in a printed table is below 8.5pt, and the brief
+   prints in two pages on every day, quiet or busy. That is the rule, not an
+   exception for busy days. At 8.5pt every day of September was printed and
+   checked against the browser test's conditions: each takes two pages, the 30th (the open fault, four alarms, a
+   gap in the record) included, once the brief's table lines and cell padding
+   were set closer (spacing, never type size). The browser test prints the
+   14th and the 30th and checks that table text is at least 8.5pt, the
+   brief starts on page 1 and takes at most two pages, and the appendices
+   start on a page of their own.
 4. **A count from an incomplete record is not a count.** A brief's count
    of standing alarms or of interruptions in progress is "insufficient
    data" when the record is not complete, never a number that could read

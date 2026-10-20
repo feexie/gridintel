@@ -130,7 +130,7 @@ export function reportDocument(input: DocumentInput): ReportDocumentView {
     sourcing: built?.body.sourcing ?? null,
     regulatory: { note: REGULATORY_NOTE, references: definition.regulatory },
     glossary: definition.glossary,
-    onePage: definition.onePage === true,
+    compact: definition.compact === true,
     csvFileName: fileName(definition, period, input.sample, "csv"),
     xlsxFileName: fileName(definition, period, input.sample, "xlsx"),
   };

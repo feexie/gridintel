@@ -369,7 +369,7 @@ export function ReportDocument({ view }: { view: ReportDocumentView }) {
     <div className="gr-report">
       <Toolbar view={view} />
       <PageMargins view={view} />
-      <article className={`gr-sheet${view.sample ? " gr-sample" : ""}${view.onePage ? " gr-one-page" : ""}`} aria-label={view.header.title}>
+      <article className={`gr-sheet${view.sample ? " gr-sample" : ""}${view.compact ? " gr-compact-report" : ""}`} aria-label={view.header.title}>
         {view.sample ? <Watermark label={view.sample.label} /> : null}
         <SampleBand view={view} />
 
@@ -436,8 +436,8 @@ export function ReportDocument({ view }: { view: ReportDocumentView }) {
                   {note}
                 </p>
               ))}
-              {/* A one-page report has no contents: its sections follow on the same page. */}
-              {view.onePage ? null : <Contents view={view} appendixStart={appendixStart} />}
+              {/* A compact report has no contents: its sections follow the cover on the same page. */}
+              {view.compact ? null : <Contents view={view} appendixStart={appendixStart} />}
             </>
           )}
         </header>

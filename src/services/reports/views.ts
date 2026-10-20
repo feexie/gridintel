@@ -144,8 +144,8 @@ export interface ReportDocumentView {
   sourcing: SourcingView | null;
   regulatory: { note: string; references: RegulatoryReference[] };
   glossary: GlossaryEntry[];
-  /** Printed on one page: the cover runs into the sections, with no contents. */
-  onePage: boolean;
+  /** Compact: the cover runs into the sections, with no contents; the appendices start on pages of their own. */
+  compact: boolean;
   /** The file names the figures are downloaded as. */
   csvFileName: string;
   xlsxFileName: string;

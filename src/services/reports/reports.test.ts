@@ -221,7 +221,7 @@ describe("the daily operations brief", () => {
     assert.ok(table.notes.length <= 1);
   });
 
-  it("is offered for days only, and on one page", () => {
+  it("is offered for days only, and is compact", () => {
     const definition = REPORT_DEFINITIONS["daily-brief"];
     assert.deepEqual(definition.periodKinds, ["day"]);
     const view = reportDocument({
@@ -233,7 +233,7 @@ describe("the daily operations brief", () => {
       built: null,
       unavailable: "x",
     });
-    assert.equal(view.onePage, true);
+    assert.equal(view.compact, true);
     assert.deepEqual([view.periods.months, view.periods.years], [[], []]);
     assert.equal(view.periods.days.length, 30);
   });

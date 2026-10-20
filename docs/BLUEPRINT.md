@@ -11,7 +11,9 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > - Builders `operations.ts`, `daily.ts`, `sitePerformance.ts` beside
 >   `reliability.ts` and `compliance.ts`. A definition names the kinds of
 >   period it is made for (`periodKinds`; the daily brief is for days only)
->   and may be printed on one page (`onePage`).
+>   and may be compact (`compact`: the cover runs into the sections, no
+>   contents, the appendices on pages of their own; the daily brief prints
+>   in two pages, its table text at least 8.5pt).
 > - **XLSX** (`xlsx.ts`): the CSV's rows (`reportRows` in `csv.ts`) as an
 >   Office Open XML workbook in a stored ZIP written here; no dependency.
 >   Route `/…/{period}/data.xlsx`.

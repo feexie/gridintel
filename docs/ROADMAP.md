@@ -2081,8 +2081,8 @@ to a permit application's monitoring and reporting plan. Decisions: ADR
 
 **The five reports** (one report service, one layout; each a
 configuration): 1. Reliability and service standards (regulator);
-2. DisCo operations (management); 3. Daily operations brief (one page, any
-day); 4. Mini-grid site performance (operator); 5. Mini-grid compliance and
+2. DisCo operations (management); 3. Daily operations brief (any day, two
+printed pages); 4. Mini-grid site performance (operator); 5. Mini-grid compliance and
 results (regulator, funder).
 
 **Format.** A print-ready page per report (A4, page breaks, cover,
@@ -2143,7 +2143,7 @@ never as conformity.
 | Built | Where |
 | --- | --- |
 | **DisCo operations** (management): ATC&C and its parts with the energy account, losses by feeder and the DisCo's reported figures on their basis; revenue not realised; billing and collection by customer class; reliability and hours of supply; assets requiring attention; outages, alarms and derived conditions at the end of the period. For a day, the loss account and the money are "not available for a day", with the reason | `operations.ts` |
-| **Daily operations brief** (control room, management): one page for any day; hours of supply by feeder against its band, interruptions in progress and gaps in the record apart, source alarms standing and derived conditions holding at the day's end, assets loaded above rating. Days only; a month or a year is not available, with the reason | `daily.ts`; `onePage` in the layout |
+| **Daily operations brief** (control room, management): any day in two printed pages, table text at least 8.5pt; hours of supply by feeder against its band, interruptions in progress and gaps in the record apart, source alarms standing and derived conditions holding at the day's end, assets loaded above rating. Days only; a month or a year is not available, with the reason | `daily.ts`; `compact` in the layout |
 | **Mini-grid site performance** (operator): the sites side by side with the portfolio's findings, then each site: energy flow, PV, battery, generator, supply and interruptions, sales and collection by class. For a day, no sales or collection and no findings about money | `sitePerformance.ts` |
 | **XLSX for every report**, beside the CSV: the same rows, values as numbers, the label in every row and the printed header and footer | `xlsx.ts`; `/…/{period}/data.xlsx` |
 | A report names its kinds of period and its default period | `periodKinds` in `catalogue.ts` |
@@ -2154,10 +2154,11 @@ never as conformity.
 
 **Checks.** `npm run verify:local` before each commit. New: unit tests for
 the three reports against the screens' read models, the day rules, the
-one-page brief's sections, XLSX against the CSV (and a fixed CRC), the
+compact brief's sections, XLSX against the CSV (and a fixed CRC), the
 fingerprint's text against `canonicalJson`, the quiet-monitor window;
 browser tests for each report's cover and label, a day without money, the
-brief printed on one page on the 14th and the 30th, its month not
+brief printed on the 14th and the 30th (table text at least 8.5pt, at most
+two pages, the appendices on pages of their own), its month not
 available, the XLSX download, phone width.
 
 **Checkpoint material.** `docs/screenshots/phase-reports-b`: all five

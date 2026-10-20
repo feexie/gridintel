@@ -110,7 +110,7 @@ export const ALARM_COLUMNS = [
   { key: "accounts", label: "Accounts behind it" },
 ];
 
-/** The same alarms in four columns, for the one-page brief. */
+/** The same alarms in four columns, for the compact daily brief. */
 export const ALARM_COLUMNS_SHORT = [
   { key: "severityAndMessage", label: "Alarm" },
   { key: "raised", label: "Raised" },
