@@ -169,7 +169,9 @@ export function createInMemoryRepositories(dataset: DomainDataset): GridIntelRep
             return receivedMs >= fromMs && receivedMs <= asOfMs;
           }),
         );
-        return { records, completeness: dataset.completeness.heartbeats };
+        const held = dataset.heartbeatsHeld;
+        const outside = held !== undefined && (fromMs < queryInstant("held from", held.start) || asOfMs > queryInstant("held to", held.end));
+        return { records, completeness: outside && dataset.completeness.heartbeats === "complete" ? "partial" : dataset.completeness.heartbeats };
       },
     },
 

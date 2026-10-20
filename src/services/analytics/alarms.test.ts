@@ -165,4 +165,17 @@ describe("alarms and derived conditions for a scope", () => {
     // With no alarm record, no condition is said to have had no alarm raised.
     assert.ok(Object.values(result.derived.sourceAlarms).every((relation) => relation.status === "cannot_tell" && relation.reason === "alarm_record_incomplete"));
   });
+
+  it("tells a quiet monitor only where the check-ins are held for the whole look-back window", async () => {
+    // The demonstration holds check-ins for 30 September only. At the end of 14 September the 24 hours
+    // before are not in the record: no monitor is said to be quiet, and the record is partial.
+    const day = await scopeAlarms({ repos, scope: { kind: "organization", id: DEMO_ORGANIZATION_ID }, period: { start: "2026-09-14T00:00:00+01:00", end: "2026-09-15T00:00:00+01:00" }, asOf: "2026-09-15T00:00:00+01:00", context });
+    assert.equal(day.result.derived.heartbeatCompleteness, "partial");
+    assert.equal(day.result.derived.devicesChecked, 0);
+    assert.ok(!day.result.derived.conditions.some((condition) => condition.rule === "monitor_quiet"));
+    // At the end of the month the window is the last day, which is held: the one quiet monitor is found, as before.
+    const month = await at({ kind: "organization", id: DEMO_ORGANIZATION_ID });
+    assert.equal(month.result.derived.heartbeatCompleteness, "complete");
+    assert.deepEqual(month.result.derived.conditions.filter((condition) => condition.rule === "monitor_quiet").map((condition) => [condition.subject.id, condition.lastAt]), [["ED-DT-OLD-3", "2026-09-30T14:55:00+01:00"]]);
+  });
 });

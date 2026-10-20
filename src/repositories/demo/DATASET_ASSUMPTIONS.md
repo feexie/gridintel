@@ -461,6 +461,12 @@ exact here; a real study would not.
 - Four hourly readings of the DT-OLD-3 totalizer are marked `estimated`.
 - One transformer monitor (DT-OLD-3) stops sending heartbeats nine hours
   before the demo clock.
+- Heartbeats are held for the last day only (30 September). The dataset
+  says so (`heartbeatsHeld`): a query for check-ins that reaches before
+  30 September is answered as partial, so whether a monitor was quiet on
+  an earlier day cannot be told and is not said (Founder, 2026-10-19; the
+  record used to be declared complete for the whole month, which made every
+  monitor look quiet on any earlier day).
 
 ## Alarms
 

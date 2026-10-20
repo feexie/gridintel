@@ -4,7 +4,7 @@ import { createInMemoryRepositories } from "../memory/inMemoryRepositories.ts";
 import { DEMO_PARTS, demoDataset, demoDatasetIsBuilt } from "./buildDemoDataset.ts";
 import { buildDemoAreas } from "./areas.ts";
 import { buildDemoBilling } from "./billing.ts";
-import { SUPPLY_KEYS, buildDemoHeartbeats, connectionsOf } from "./energy.ts";
+import { DEMO_HEARTBEATS_HELD, SUPPLY_KEYS, buildDemoHeartbeats, connectionsOf } from "./energy.ts";
 import { CONNECTIONS } from "./network.ts";
 import { DEMO_DATA_SOURCES } from "./sources.ts";
 
@@ -107,7 +107,7 @@ export function createDemoRepositories(): GridIntelRepositories {
   const standingRecords = (): GridIntelRepositories =>
     built() ??
     (standing ??= createInMemoryRepositories(
-      partialDataset({ outages: DEMO_PARTS.outages(), alarms: DEMO_PARTS.alarms(), heartbeats: buildDemoHeartbeats(), areas: buildDemoAreas(), territories: [] }),
+      partialDataset({ outages: DEMO_PARTS.outages(), alarms: DEMO_PARTS.alarms(), heartbeats: buildDemoHeartbeats(), heartbeatsHeld: DEMO_HEARTBEATS_HELD, areas: buildDemoAreas(), territories: [] }),
     ));
 
   // One supply's customer records.

@@ -489,6 +489,12 @@ export function buildEnergyModel(supply: (supplyKey: string) => SupplyEnergy = b
   return { intervalEnergy, telemetry, heartbeats: buildDemoHeartbeats(), recordedKwh, registerReads, technicalLossKwh };
 }
 
+/**
+ * The window the demonstration's check-ins are held for: the last day. Before it the record holds
+ * nothing, so whether a monitor was quiet then cannot be told.
+ */
+export const DEMO_HEARTBEATS_HELD = { start: wat(at(QUIET_MONITOR.lastCheckIn.day, 0)), end: wat(PERIOD_END_MS) };
+
 /** Hourly check-ins over the last day. One transformer monitor went quiet nine hours before the demo clock. */
 export function buildDemoHeartbeats(): DeviceHeartbeat[] {
   const provenance = SCADA;

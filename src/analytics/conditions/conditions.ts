@@ -108,7 +108,7 @@ export function conditionRules(methodology: Methodology<ConditionParameters> = C
     monitor_quiet: {
       id: "monitor_quiet",
       name: "Monitor quiet",
-      statement: `The device's last check-in is more than ${methodology.parameters.quietAfterMinutes} minutes before the as-of time, or no check-in from it is held.`,
+      statement: `The device's last check-in is more than ${methodology.parameters.quietAfterMinutes} minutes before the as-of time, or no check-in from it is held in the ${methodology.parameters.lookBackHours} hours before it. Applied only where the record of check-ins is complete over those hours.`,
     },
   };
 }

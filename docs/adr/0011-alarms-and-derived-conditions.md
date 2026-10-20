@@ -191,3 +191,22 @@ substation RTU silent at the demo clock would also have to stop sending that
 substation's telemetry, which would make the loading of every feeder and
 power transformer there stale at the as-of time. That is a realistic and
 useful case, but it moves figures on four screens and was not asked for.
+
+## Amendment (2026-10-19): a quiet monitor is told only over a held window
+
+Found while building the daily reports (Phase REPORTS-B). The demonstration
+holds check-ins for 30 September only, yet declared the record complete for
+the whole month, so on any earlier day every monitor was found quiet. By the
+Founder's decision of 2026-10-19:
+
+- The quiet-monitor rule reads check-ins over a stated look-back window
+  before the as-of time (24 hours; conditions methodology 0.3.0) and is
+  applied only where the record of check-ins is complete over that window.
+  Otherwise no monitor is said to be quiet and the screen says it cannot be
+  told.
+- A dataset may state the window its heartbeat record covers
+  (`heartbeatsHeld`); a query reaching outside it is answered as partial.
+  The demonstration states 30 September.
+- At the end of the month nothing changes: the window is the last day,
+  which is held, and the one quiet monitor (DT-OLD-3) is found as before.
+

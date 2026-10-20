@@ -4,7 +4,7 @@ import type { CalculationContext, ClassifiedAlarm, ConditionRule, DerivedConditi
 import type { ServiceCache } from "./cache.ts";
 import type { LoadedAssetKind } from "./loading.ts";
 import type { Sourced } from "./sourcing.ts";
-import { alarmCorrespondence, classifyAlarms, conditionRules, loadingCondition, placeInScope, placeOfAsset, quietMonitorCondition, sortConditions } from "../../analytics/index.ts";
+import { CONDITIONS_REFERENCE, alarmCorrespondence, classifyAlarms, conditionRules, loadingCondition, placeInScope, placeOfAsset, quietMonitorCondition, sortConditions } from "../../analytics/index.ts";
 import { NO_CACHE, resultKey } from "./cache.ts";
 import { assetLoading } from "./loading.ts";
 import { SourceTrail } from "./sourcing.ts";
@@ -152,14 +152,19 @@ async function computeAlarms(params: AlarmParams): Promise<Sourced<ScopeAlarms>>
   };
 }
 
-/** Every device's check-ins over the period, fetched once and shared by every scope. */
+/**
+ * Every device's check-ins over the rule's look-back window before the as-of time, fetched once and
+ * shared by every scope. The completeness returned is the record's over that window: a quiet
+ * monitor can be told only where it is complete.
+ */
 function allHeartbeats(params: AlarmParams) {
-  const { repos, period, asOf, cache } = params;
-  return (cache ?? NO_CACHE).get(`heartbeats|${period.start}|${asOf}`, async () => {
+  const { repos, asOf, cache } = params;
+  const from = new Date(Date.parse(asOf) - CONDITIONS_REFERENCE.parameters.lookBackHours * 3_600_000).toISOString();
+  return (cache ?? NO_CACHE).get(`heartbeats|${from}|${asOf}`, async () => {
     const { snapshot } = await loadTopology(repos.registry, asOf, cache);
     const listed = await repos.observations.listHeartbeats({
       devices: snapshot.edgeDevices.map((device) => ({ kind: "edge_device" as const, id: device.id })),
-      from: period.start,
+      from,
       asOf,
     });
     const byDevice = new Map<string, typeof listed.records>();

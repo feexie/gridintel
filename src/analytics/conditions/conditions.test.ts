@@ -154,7 +154,7 @@ describe("derived condition: monitor quiet", () => {
   });
 
   it("takes its threshold from the methodology", () => {
-    const strict = { ...CONDITIONS_REFERENCE, parameters: { quietAfterMinutes: 2 } };
+    const strict = { ...CONDITIONS_REFERENCE, parameters: { ...CONDITIONS_REFERENCE.parameters, quietAfterMinutes: 2 } };
     assert.notEqual(quietMonitorCondition({ device, heartbeats: [beat("2026-01-01T23:55:00Z")], asOf: AS_OF, methodology: strict, context: CONTEXT }), null);
   });
 });
@@ -164,7 +164,7 @@ describe("derived conditions: rules and order", () => {
     const rules = conditionRules();
     assert.match(rules.loading_above_rating.statement, /above 100% of rating at one or more telemetry readings in the period/);
     assert.match(rules.monitor_quiet.statement, /more than 120 minutes before the as-of time/);
-    assert.match(conditionRules({ ...CONDITIONS_REFERENCE, parameters: { quietAfterMinutes: 30 } }).monitor_quiet.statement, /more than 30 minutes/);
+    assert.match(conditionRules({ ...CONDITIONS_REFERENCE, parameters: { ...CONDITIONS_REFERENCE.parameters, quietAfterMinutes: 30 } }).monitor_quiet.statement, /more than 30 minutes/);
     assert.match(CONDITIONS_REFERENCE.disclaimer, /not an alarm recorded by a source system/);
   });
 

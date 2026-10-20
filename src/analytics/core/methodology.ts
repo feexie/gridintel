@@ -203,12 +203,18 @@ export function statedRuleMethodology(ref: MethodologyRef): { name: string; disc
 export interface ConditionParameters {
   /** A monitoring device is quiet when its last check-in is older than this at the as-of time. */
   quietAfterMinutes: number;
+  /**
+   * How far before the as-of time check-ins are read. The rule can be applied only where the
+   * record of check-ins is complete over this window; a device with no check-in in it is quiet.
+   */
+  lookBackHours: number;
 }
 
 export const CONDITIONS_REFERENCE: Methodology<ConditionParameters> = {
   id: "gridintel.conditions.reference",
   // 0.2.0: each rule names the kind of source alarm it corresponds to, and a condition says whether one was raised.
-  version: "0.2.0",
+  // 0.3.0: check-ins are read over a stated window before the as-of time, and the rule is applied only where the record is complete over it.
+  version: "0.3.0",
   name: "GridIntel reference derived conditions",
   description:
     "Conditions GridIntel derives from telemetry under fixed rules: an asset loaded above its rating at a reading in the " +
@@ -219,7 +225,7 @@ export const CONDITIONS_REFERENCE: Methodology<ConditionParameters> = {
   status: "draft",
   disclaimer: "GridIntel derived condition, calculated from telemetry. It is not an alarm recorded by a source system.",
   // Two missed check-ins of a device that reports hourly.
-  parameters: { quietAfterMinutes: 120 },
+  parameters: { quietAfterMinutes: 120, lookBackHours: 24 },
 };
 
 /* ==========================================================

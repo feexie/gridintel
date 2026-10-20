@@ -5,7 +5,7 @@ import type { SupplyEnergy } from "./energy.ts";
 import { buildDemoAlarms } from "./alarms.ts";
 import { buildDemoAreas } from "./areas.ts";
 import { buildDemoBilling } from "./billing.ts";
-import { buildEnergyModel, buildSupplyEnergy } from "./energy.ts";
+import { DEMO_HEARTBEATS_HELD, buildEnergyModel, buildSupplyEnergy } from "./energy.ts";
 import { buildDemoRegistry } from "./network.ts";
 import { buildDemoOutages } from "./outages.ts";
 import { buildDemoReportedKpis } from "./reported.ts";
@@ -82,6 +82,7 @@ export function buildDemoDataset(parts: DemoParts = createDemoParts()): DomainDa
     intervalEnergy: energy.intervalEnergy,
     telemetry: energy.telemetry,
     heartbeats: energy.heartbeats,
+    heartbeatsHeld: DEMO_HEARTBEATS_HELD,
     outages: parts.outages(),
     alarms: parts.alarms(),
     reportedKpis: buildDemoReportedKpis(energy.technicalLossKwh),

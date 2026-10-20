@@ -5,6 +5,7 @@ import type {
   DataSource,
   DeviceHeartbeat,
   IntervalEnergy,
+  IsoTimestamp,
   Outage,
   Payment,
   ReportedKpi,
@@ -27,6 +28,12 @@ export interface DomainDataset {
   intervalEnergy: readonly IntervalEnergy[];
   telemetry: readonly TelemetryPoint[];
   heartbeats: readonly DeviceHeartbeat[];
+  /**
+   * The window the heartbeat record covers, when it covers less than every time. A query that
+   * reaches outside it is answered as partial, whatever `completeness.heartbeats` says: a missing
+   * check-in there may only be a missing record.
+   */
+  heartbeatsHeld?: { start: IsoTimestamp; end: IsoTimestamp };
   outages: readonly Outage[];
   /** Alarms as source systems recorded them. Derived conditions are never held here. */
   alarms: readonly Alarm[];
