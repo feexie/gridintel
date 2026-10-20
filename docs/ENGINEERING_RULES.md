@@ -129,6 +129,8 @@ docs.
 - Work only on the phase approved in `docs/ROADMAP.md`.
 - Work each phase or sub-phase on its own branch (`phase-6a`, `phase-6b`).
   Merge to `main` only at the checkpoint, after the Founder approves it.
+  Once merged and tagged, delete the branch locally and on `origin`: the
+  tag carries the phase's name (Founder, 2026-10-20).
 - `npm run verify` runs the five checks in order and stops at the first
   failure: `npm run typecheck`, `npm test`, `npm run lint`, the build and
   the browser tests (`npm run test:e2e`). The build is made twice (ADR

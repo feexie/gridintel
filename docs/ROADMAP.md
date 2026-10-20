@@ -11,9 +11,10 @@ decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
 phone; merged to `main`, tag `phase-ui-a`). **Phase UI-B is accepted** (Founder, 2026-10-15, checked on
 a phone; merged to `main`, tag `phase-ui-b`). **The UI revamp is
 complete.** **Phase REPORTS-A is merged** (by the Founder's instruction of
-2026-10-19; tag `phase-reports-a`). **Phase REPORTS-B is at its
-checkpoint** (2026-10-20): the other three reports and XLSX, on branch
-`phase-reports-b`, not merged (ADR 0019 and its amendment).
+2026-10-19; tag `phase-reports-a`). **Phase REPORTS-B is accepted**
+(Founder, 2026-10-20, with fixes; merged to `main`, tag `phase-reports-b`):
+the other three reports and XLSX (ADR 0019 and its amendment). **The
+REPORTS phase is complete.**
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -2052,7 +2053,7 @@ Screenshots at desktop and phone width: `docs/screenshots/phase-ui-b`.
   one finding style.
 - Links inside pages are still not cut to the viewer's grant (Phase 8).
 
-## Phase REPORTS: downloadable reports (in progress; REPORTS-A merged 2026-10-19; REPORTS-B at its checkpoint 2026-10-20)
+## Phase REPORTS: downloadable reports (complete; REPORTS-A merged 2026-10-19; REPORTS-B merged 2026-10-20)
 
 **Purpose (Founder, 2026-10-15).** Downloadable reports for the people who
 will use GridIntel: regulators checking DisCo reliability, DisCo managers,
@@ -2138,7 +2139,14 @@ never as conformity.
 - Phone printing is the phone browser's own; it was checked in Chromium at
   phone width, not on a physical phone.
 
-### Phase REPORTS-B: the other three reports and XLSX (at its checkpoint 2026-10-20; branch `phase-reports-b`, not merged)
+### Phase REPORTS-B: the other three reports and XLSX (accepted by the Founder 2026-10-20, with fixes; merged to `main`, tag `phase-reports-b`)
+
+**Review fixes (Founder, 2026-10-20).** The compliance report gives no
+energy sold, billing or collection for a day, with the site performance
+report's reason; the daily brief prints in two pages on every day, no
+printed table text below 8.5pt (ADR 0019 amendment, item 3); checkpoint
+material is attached to the phase's GitHub release, not committed; a phase's
+branch is deleted once merged, and its tag carries the name.
 
 | Built | Where |
 | --- | --- |
@@ -2171,12 +2179,15 @@ Made again with
 
 **Known, and not done.**
 
-- The compliance report (REPORTS-A) still gives a site's revenue and
-  collection for a day; the new reports do not. For the Founder.
 - A report's CSV and XLSX are built on first request in each server
-  process (about 7 s for the operations month); the pages are built ahead
-  of time.
-- The state regulators' own reporting templates have not been read.
+  process (about 7 s for the operations month locally); the pages are built
+  ahead of time. The first request on a fresh Vercel deployment has not been
+  timed: previews are behind Vercel login, and the Founder will turn the
+  protection off or time it. No `maxDuration` is set in the code, so the
+  project's default applies.
+- The state regulators' own reporting templates have not been read; the
+  reports keep "not checked against a template" (Founder, 2026-10-20: no
+  action).
 - Phone printing was checked in Chromium at phone width, not on a phone.
 
 ## Phase 11: AI / MCP intelligence
