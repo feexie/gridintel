@@ -275,6 +275,8 @@ function Section({ section }: { section: ReportSection }) {
 }
 
 function PeriodLinks({ view, choices, label }: { view: ReportDocumentView; choices: PeriodChoice[]; label: string }) {
+  // A kind of period the report is not made for is not offered.
+  if (choices.length === 0) return null;
   return (
     <div className="gr-periods-group">
       <span className="gr-periods-label">{label}</span>
@@ -308,9 +310,14 @@ function Toolbar({ view }: { view: ReportDocumentView }) {
         </Link>
         <div className="gr-actions">
           {view.unavailable === null ? (
-            <a href={csv} download={view.csvFileName} className="gr-button gr-button-quiet">
-              Download figures (CSV)
-            </a>
+            <>
+              <a href={csv} download={view.csvFileName} className="gr-button gr-button-quiet">
+                Download figures (CSV)
+              </a>
+              <a href={`${hrefOf(view, view.period.key)}/data.xlsx`} download={view.xlsxFileName} className="gr-button gr-button-quiet">
+                Download figures (XLSX)
+              </a>
+            </>
           ) : null}
           <PrintButton />
         </div>

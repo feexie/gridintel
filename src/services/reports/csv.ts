@@ -2,7 +2,7 @@ import type { MetricView } from "../operations/views.ts";
 import type { ReportCell, ReportDocumentView } from "./views.ts";
 
 /* ==========================================================
-   SERVICES — A REPORT'S FIGURES AS CSV
+   SERVICES — A REPORT'S FIGURES AS ROWS, AND AS CSV
 
    Every figure in the report, one row each, with its status, origin,
    unit and method, and the report's identity on every row, so that a
@@ -12,25 +12,28 @@ import type { ReportCell, ReportDocumentView } from "./views.ts";
    Values are written as the services hold them: unrounded, a ratio
    as a fraction, hours as hours. A missing value is an empty cell
    with its status; it is never written as 0.
+
+   The rows are made once (`reportRows`) and written as CSV here and
+   as XLSX in xlsx.ts, so the two files hold the same figures.
 ========================================================== */
 
-const HEADER = ["sample_label", "report_id", "period", "section", "table", "row", "column", "value", "unit", "currency", "status", "origin", "method_id", "method_version", "note"];
+export const HEADER = ["sample_label", "report_id", "period", "section", "table", "row", "column", "value", "unit", "currency", "status", "origin", "method_id", "method_version", "note"];
+
+/** A row of the figures: words, and in the value column a number where the report holds one. */
+export type ReportRow = (string | number)[];
 
 type Context = { sample: string; reportId: string; period: string };
 
-function escape(value: string): string {
+function escape(field: string | number): string {
+  const value = String(field);
   // A cell a spreadsheet would read as a formula is written as text.
   const safe = /^[=+@\t\r]/.test(value) || (/^-/.test(value) && Number.isNaN(Number(value))) ? `'${value}` : value;
   return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
-function line(fields: string[]): string {
-  return fields.map(escape).join(",");
-}
-
-function metricRow(ctx: Context, section: string, table: string, row: string, column: string, metric: MetricView): string {
+function metricRow(ctx: Context, section: string, table: string, row: string, column: string, metric: MetricView): ReportRow {
   const note = [...new Set([metric.note, ...metric.warnings])].filter((one): one is string => one !== null && one !== "").join(" ");
-  return line([
+  return [
     ctx.sample,
     ctx.reportId,
     ctx.period,
@@ -38,7 +41,7 @@ function metricRow(ctx: Context, section: string, table: string, row: string, co
     table,
     row,
     column,
-    metric.value === null ? "" : String(metric.value),
+    metric.value === null ? "" : metric.value,
     metric.unit,
     metric.currency ?? "",
     metric.status,
@@ -46,22 +49,23 @@ function metricRow(ctx: Context, section: string, table: string, row: string, co
     metric.method?.id ?? "",
     metric.method?.version ?? "",
     note,
-  ]);
+  ];
 }
 
-function textRow(ctx: Context, section: string, table: string, row: string, column: string, value: string, unit = "text"): string {
-  return line([ctx.sample, ctx.reportId, ctx.period, section, table, row, column, value, unit, "", "", "", "", "", ""]);
+function textRow(ctx: Context, section: string, table: string, row: string, column: string, value: string | number, unit = "text"): ReportRow {
+  return [ctx.sample, ctx.reportId, ctx.period, section, table, row, column, value, unit, "", "", "", "", "", ""];
 }
 
-function cellRow(ctx: Context, section: string, table: string, row: string, column: string, cell: ReportCell): string {
+function cellRow(ctx: Context, section: string, table: string, row: string, column: string, cell: ReportCell): ReportRow {
   if (cell.kind === "figure") return metricRow(ctx, section, table, row, column, cell.metric);
   if (cell.kind === "time") return textRow(ctx, section, table, row, column, cell.iso ?? cell.missing ?? "", "time");
   return textRow(ctx, section, table, row, column, cell.text);
 }
 
-export function reportCsv(document: ReportDocumentView): string {
+/** Every row of the figures, the header first. */
+export function reportRows(document: ReportDocumentView): ReportRow[] {
   const ctx: Context = { sample: document.sample?.label ?? "", reportId: document.identity?.reportId ?? "", period: document.period.key };
-  const rows: string[] = [line(HEADER)];
+  const rows: ReportRow[] = [HEADER];
   const about = (row: string, value: string) => rows.push(textRow(ctx, "Report", "Identity", row, "", value));
   about("Title", document.header.title);
   about("For", document.header.audience);
@@ -72,8 +76,8 @@ export function reportCsv(document: ReportDocumentView): string {
     about("Dataset", document.sample.dataset);
   }
   if (document.unavailable !== null) {
-    rows.push(line([ctx.sample, ctx.reportId, ctx.period, "Report", "Identity", "Period", "availability", "", "", "", "not_available", "", "", "", document.unavailable]));
-    return rows.join("\r\n") + "\r\n";
+    rows.push([ctx.sample, ctx.reportId, ctx.period, "Report", "Identity", "Period", "availability", "", "", "", "not_available", "", "", "", document.unavailable]);
+    return rows;
   }
   const identity = document.identity;
   if (identity !== null) {
@@ -112,7 +116,7 @@ export function reportCsv(document: ReportDocumentView): string {
           rows.push(textRow(ctx, name, block.title, label, "Reported basis", row.reportedBasis ?? "Not stated"));
           rows.push(textRow(ctx, name, block.title, label, "Calculated basis", row.calculatedBasis ?? "Not stated"));
           rows.push(textRow(ctx, name, block.title, label, "Comparable", row.comparable ? "yes" : `no: ${row.reasons.join(" ")}`));
-          if (row.comparable && row.variance !== null) rows.push(textRow(ctx, name, block.title, label, "Variance (calculated − reported)", String(row.variance), row.varianceUnit));
+          if (row.comparable && row.variance !== null) rows.push(textRow(ctx, name, block.title, label, "Variance (calculated − reported)", row.variance, row.varianceUnit));
           if (row.document !== null) rows.push(textRow(ctx, name, block.title, label, "Document", row.document));
           if (row.ruleFinding !== null) {
             const finding = row.ruleFinding;
@@ -127,5 +131,9 @@ export function reportCsv(document: ReportDocumentView): string {
     }
   }
   for (const source of document.sourcing?.sources ?? []) about("Source", `${source.name} (${source.kind})${source.attribution ? `; ${source.attribution}` : ""}`);
-  return rows.join("\r\n") + "\r\n";
+  return rows;
+}
+
+export function reportCsv(document: ReportDocumentView): string {
+  return reportRows(document).map((fields) => fields.map(escape).join(",")).join("\r\n") + "\r\n";
 }

@@ -15,23 +15,23 @@ export interface ReportsIndexProps {
   title: string;
   eyebrow: string;
   reports: ReportItem[];
-  /** The period a report opens on, e.g. "2026-09". */
-  defaultPeriod: string;
+  /** The period each report opens on, by report id, e.g. "2026-09". */
+  defaultPeriods: Record<string, string>;
   /** What the data covers, in words. */
   coverage: string;
   /** Set while the data is synthetic. */
   sample: string | null;
 }
 
-export function ReportsIndex({ title, eyebrow, reports, defaultPeriod, coverage, sample }: ReportsIndexProps) {
+export function ReportsIndex({ title, eyebrow, reports, defaultPeriods, coverage, sample }: ReportsIndexProps) {
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <SectorBand eyebrow={eyebrow} title={title}>
-        Print-ready reports built from the same services as the screens, with every figure&apos;s status, origin and method, and the figures as CSV.
+        Print-ready reports built from the same services as the screens, with every figure&apos;s status, origin and method, and the figures as CSV and XLSX.
       </SectorBand>
       <div className="rounded-tile border border-line bg-panel p-3 text-xs text-ink-3">
         <p>
-          The data covers <strong className="text-ink-2">{coverage}</strong>. A report can be had for any day in it and for the month; a year, or any period the data
+          The data covers <strong className="text-ink-2">{coverage}</strong>. A report can be had for any day in it and, except the daily brief, for the month; a year, or any period the data
           does not wholly cover, is not available and is never filled.
         </p>
         {sample ? (
@@ -56,7 +56,7 @@ export function ReportsIndex({ title, eyebrow, reports, defaultPeriod, coverage,
                 {report.planned ? (
                   <p className="text-caption text-ink-5">Not built yet.</p>
                 ) : (
-                  <Link href={`${report.href}/${defaultPeriod}`} className="inline-flex rounded-tile bg-brand-strong px-3 py-1.5 text-xs font-medium text-on-brand hover:opacity-90">
+                  <Link href={`${report.href}/${defaultPeriods[report.id]}`} className="inline-flex rounded-tile bg-brand-strong px-3 py-1.5 text-xs font-medium text-on-brand hover:opacity-90">
                     Open the report
                   </Link>
                 )}

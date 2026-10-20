@@ -7,8 +7,10 @@ import { createMemoryCache } from "../services/analytics/cache.ts";
 import { REPORT_DEFINITIONS } from "../services/reports/catalogue.ts";
 import { complianceReport } from "../services/reports/compliance.ts";
 import { reportCsv } from "../services/reports/csv.ts";
+import { operationsReport } from "../services/reports/operations.ts";
+import { reportXlsx } from "../services/reports/xlsx.ts";
 import { SAMPLE_LABEL, identitySeed, methodsUsed, reportDocument, reportIdOf, sampleNotice } from "../services/reports/document.ts";
-import { availability, coverageLabel, defaultPeriodKey, parsePeriod, periodChoices, type ReportCoverage } from "../services/reports/period.ts";
+import { availability, coverageLabel, defaultPeriodKey, parsePeriod, periodChoices, type PeriodKind, type ReportCoverage } from "../services/reports/period.ts";
 import { reliabilityReport } from "../services/reports/reliability.ts";
 import { recordingRepositories, sha256 } from "./fingerprint.ts";
 import { getClock, getDataNotice, getMinigridRuntime, getRuntime } from "./runtime.ts";
@@ -30,7 +32,7 @@ import { getClock, getDataNotice, getMinigridRuntime, getRuntime } from "./runti
    document that says so and holds no figure. Nothing is read for it.
 ========================================================== */
 
-type BuiltReport = "reliability" | "compliance";
+type BuiltReport = "reliability" | "compliance" | "operations";
 
 /** A report period as the data bar names it. */
 export interface ReportBarPeriod {
@@ -39,9 +41,10 @@ export interface ReportBarPeriod {
   asOf: string | null;
 }
 
-const BUILDERS: Record<BuiltReport, { runtime: () => OperationsRuntime; build: (runtime: OperationsRuntime, offset: string) => Promise<ReportBody> }> = {
+const BUILDERS: Record<BuiltReport, { runtime: () => OperationsRuntime; build: (runtime: OperationsRuntime, offset: string, kind: PeriodKind) => Promise<ReportBody> }> = {
   reliability: { runtime: getRuntime, build: reliabilityReport },
   compliance: { runtime: getMinigridRuntime, build: complianceReport },
+  operations: { runtime: getRuntime, build: operationsReport },
 };
 
 function isBuilt(id: string): id is BuiltReport {
@@ -69,14 +72,15 @@ async function build(id: BuiltReport, periodKey: string): Promise<ReportDocument
   const notice = getDataNotice();
   const sample = notice === null ? null : sampleNotice(notice.summary);
   const periods = periodChoices(coverage);
-  const covered = availability(period, coverage);
+  // A kind of period the report is not made for (a month of the daily brief) is not available, with the report's own reason.
+  const covered = definition.periodKinds.includes(period.kind) ? availability(period, coverage) : { available: false as const, reason: `Not available for this period. ${definition.periodRule}` };
   if (!covered.available) return reportDocument({ item, definition, period, periods, sample, built: null, unavailable: covered.reason });
 
   const base = BUILDERS[id].runtime();
   const recording = recordingRepositories(base.repos);
   // "Now" for the report is the end of its period: a day's report is as of that day's end.
   const runtime: OperationsRuntime = { ...base, repos: recording.repos, period: { start: period.start, end: period.end }, now: period.end, cache: createMemoryCache() };
-  const body = await BUILDERS[id].build(runtime, coverage.offset);
+  const body = await BUILDERS[id].build(runtime, coverage.offset, period.kind);
   const methods = methodsUsed(body);
   const dataFingerprint = recording.fingerprint();
   const reportId = reportIdOf(definition, period, sha256(identitySeed(definition, period, methods, dataFingerprint)));
@@ -104,8 +108,19 @@ export const reports = {
     const view = await document(id, periodKey);
     return view === null ? null : { fileName: view.csvFileName, body: reportCsv(view) };
   },
-  /** The period a report opens on. */
-  defaultPeriod: (): string => defaultPeriodKey(getClock().reportingPeriod.start),
+  /** The figures as an XLSX workbook; null where `document` is null. */
+  xlsx: async (id: string, periodKey: string): Promise<{ fileName: string; body: Uint8Array } | null> => {
+    const view = await document(id, periodKey);
+    return view === null || view.unavailable !== null ? null : { fileName: view.xlsxFileName, body: reportXlsx(view) };
+  },
+  /** The period a report opens on: the month, or for a report made for days only, the last day the data covers. */
+  defaultPeriod: (id?: string): string => {
+    const definition = id === undefined ? undefined : REPORT_DEFINITIONS[id as BuiltReport];
+    if (definition !== undefined && !definition.periodKinds.includes("month")) return periodChoices(reportCoverage()).days.at(-1)?.period.key ?? defaultPeriodKey(getClock().reportingPeriod.start);
+    return defaultPeriodKey(getClock().reportingPeriod.start);
+  },
+  /** The period each report opens on, by report. */
+  defaultPeriods: (): Record<string, string> => Object.fromEntries(REPORTS.map((item) => [item.id, reports.defaultPeriod(item.id)])),
   /** Every period a report can be asked for, for building its pages ahead of time: those covered and those that are not. */
   periodKeys: (): string[] => {
     const choices = periodChoices(reportCoverage());

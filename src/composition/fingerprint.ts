@@ -37,6 +37,41 @@ export function sha256(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }
 
+/**
+ * The canonical JSON of an object or array, made once per object and kept: a report reads the
+ * same records many times (once for every scope), and each is written once. Keyed by the object
+ * itself, so it lasts only as long as the records do.
+ */
+export type CanonicalMemo = WeakMap<object, string>;
+
+/** Exactly `canonicalJson(value)`, with every object and array written once per memo. */
+export function canonicalText(value: unknown, memo: CanonicalMemo = new WeakMap()): string | undefined {
+  // undefined when JSON leaves the value out (undefined, a function, a symbol), as JSON.stringify does.
+  const write = (item: unknown): string | undefined => {
+    if (item !== null && typeof item === "object" && typeof (item as { toJSON?: unknown }).toJSON === "function") item = (item as { toJSON: () => unknown }).toJSON();
+    if (item === undefined || typeof item === "function" || typeof item === "symbol") return undefined;
+    if (item === null || typeof item !== "object") return JSON.stringify(item) ?? "null";
+    const known = memo.get(item);
+    if (known !== undefined) return known;
+    let text: string;
+    if (item instanceof Map) text = write([...item.entries()])!;
+    else if (item instanceof Set) text = write([...item.values()])!;
+    else if (Array.isArray(item)) text = `[${item.map((child) => write(child) ?? "null").join(",")}]`;
+    else {
+      const record = item as Record<string, unknown>;
+      const fields: string[] = [];
+      for (const key of Object.keys(record).sort()) {
+        const child = write(record[key]);
+        if (child !== undefined) fields.push(`${JSON.stringify(key)}:${child}`);
+      }
+      text = `{${fields.join(",")}}`;
+    }
+    memo.set(item, text);
+    return text;
+  };
+  return write(value);
+}
+
 export interface RecordingRepositories {
   repos: GridIntelRepositories;
   /** The fingerprint of everything returned so far. */
@@ -47,8 +82,15 @@ export interface RecordingRepositories {
 
 export function recordingRepositories(repos: GridIntelRepositories): RecordingRepositories {
   const digests = new Set<string>();
-  const record = (value: unknown) => {
-    digests.add(sha256(canonicalJson(value) ?? "undefined"));
+  const memo: CanonicalMemo = new WeakMap();
+  // The repositories answer the same query with the same records while a report is built, so a
+  // query asked again is not digested again: its result is already in the set.
+  const asked = new Set<string>();
+  const record = (query: string) => (value: unknown) => {
+    if (!asked.has(query)) {
+      asked.add(query);
+      digests.add(sha256(canonicalText(value, memo) ?? "undefined"));
+    }
     return value;
   };
   const wrapped = Object.fromEntries(
@@ -61,7 +103,8 @@ export function recordingRepositories(repos: GridIntelRepositories): RecordingRe
             ? fn
             : (...args: unknown[]) => {
                 const result = (fn as (...a: unknown[]) => unknown).apply(port, args);
-                return result instanceof Promise ? result.then(record) : record(result);
+                const digest = record(`${name}.${method}${canonicalText(args, memo)}`);
+                return result instanceof Promise ? result.then(digest) : digest(result);
               },
         ]),
       ),

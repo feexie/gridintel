@@ -80,8 +80,14 @@ export interface DocumentInput {
   unavailable: string | null;
 }
 
-function csvFileName(definition: ReportDefinition, period: ReportPeriod, sample: SampleNotice | null): string {
-  return `gridintel-${definition.id}-${period.key}${sample === null ? "" : "-SAMPLE-SYNTHETIC"}.csv`;
+function fileName(definition: ReportDefinition, period: ReportPeriod, sample: SampleNotice | null, extension: "csv" | "xlsx"): string {
+  return `gridintel-${definition.id}-${period.key}${sample === null ? "" : "-SAMPLE-SYNTHETIC"}.${extension}`;
+}
+
+/** The periods a report offers: only the kinds it is made for. */
+export function offeredPeriods(periods: PeriodChoices, definition: ReportDefinition): PeriodChoices {
+  const kinds = definition.periodKinds;
+  return { ...periods, days: kinds.includes("day") ? periods.days : [], months: kinds.includes("month") ? periods.months : [], years: kinds.includes("year") ? periods.years : [] };
 }
 
 export function reportDocument(input: DocumentInput): ReportDocumentView {
@@ -102,7 +108,7 @@ export function reportDocument(input: DocumentInput): ReportDocumentView {
       organization: built?.body.organization ?? null,
     },
     sample: input.sample,
-    periods: input.periods,
+    periods: offeredPeriods(input.periods, definition),
     period,
     unavailable: input.unavailable,
     identity:
@@ -124,6 +130,7 @@ export function reportDocument(input: DocumentInput): ReportDocumentView {
     sourcing: built?.body.sourcing ?? null,
     regulatory: { note: REGULATORY_NOTE, references: definition.regulatory },
     glossary: definition.glossary,
-    csvFileName: csvFileName(definition, period, input.sample),
+    csvFileName: fileName(definition, period, input.sample, "csv"),
+    xlsxFileName: fileName(definition, period, input.sample, "xlsx"),
   };
 }

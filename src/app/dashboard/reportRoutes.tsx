@@ -16,6 +16,7 @@ import { aheadOfTime, preparing } from "./utility/screen";
      /dashboard/{sector}/reports/{report}              opens on the default period
      /dashboard/{sector}/reports/{report}/{period}     the report, ready to print
      /dashboard/{sector}/reports/{report}/{period}/data.csv   its figures
+     /dashboard/{sector}/reports/{report}/{period}/data.xlsx  its figures as a workbook
    Which of them a viewer may open is decided by the proxy, from the
    viewer's grant (constants/access.ts).
 ========================================================== */
@@ -25,12 +26,12 @@ type ReportParams = { params: Promise<{ report: string; period: string }> };
 
 export function reportsIndex(sector: Sector, title: string, eyebrow: string) {
   return function ReportsIndexPage() {
-    return <ReportsIndex title={title} eyebrow={eyebrow} reports={reportsFor(getViewer().screens, sector)} defaultPeriod={reports.defaultPeriod()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
+    return <ReportsIndex title={title} eyebrow={eyebrow} reports={reportsFor(getViewer().screens, sector)} defaultPeriods={reports.defaultPeriods()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
   };
 }
 
 export function allReportsIndex() {
-  return <ReportsIndex title="All reports" eyebrow="Platform" reports={reportsFor(getViewer().screens)} defaultPeriod={reports.defaultPeriod()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
+  return <ReportsIndex title="All reports" eyebrow="Platform" reports={reportsFor(getViewer().screens)} defaultPeriods={reports.defaultPeriods()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
 }
 
 /** A report's address without a period opens on the default period. */
@@ -38,7 +39,7 @@ export function reportRedirect(sector: Sector) {
   return async function ReportRedirect({ params }: { params: Promise<{ report: string }> }) {
     const { report } = await params;
     if (!reports.built(sector).includes(report as never)) notFound();
-    redirect(`/dashboard/${sector}/reports/${report}/${reports.defaultPeriod()}`);
+    redirect(`/dashboard/${sector}/reports/${report}/${reports.defaultPeriod(report)}`);
   };
 }
 
@@ -74,6 +75,21 @@ export function reportCsvRoute(sector: Sector) {
       headers: {
         "content-type": "text/csv; charset=utf-8",
         "content-disposition": `attachment; filename="${csv.fileName}"`,
+        "cache-control": "no-store",
+      },
+    });
+  };
+}
+
+export function reportXlsxRoute(sector: Sector) {
+  return async function GET(_request: Request, { params }: ReportParams): Promise<Response> {
+    const { report, period } = await params;
+    const xlsx = reports.built(sector).includes(report as never) ? await reports.xlsx(report, period) : null;
+    if (xlsx === null) return new Response("No such report or period.\n", { status: 404, headers: { "content-type": "text/plain; charset=utf-8" } });
+    return new Response(xlsx.body.slice().buffer, {
+      headers: {
+        "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "content-disposition": `attachment; filename="${xlsx.fileName}"`,
         "cache-control": "no-store",
       },
     });

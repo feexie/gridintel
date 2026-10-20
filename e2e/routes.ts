@@ -49,4 +49,5 @@ export const ROUTES = [
   "/dashboard/reports",
   "/dashboard/utility/reports/reliability/2026-09",
   "/dashboard/minigrid/reports/compliance/2026-09",
+  "/dashboard/utility/reports/operations/2026-09",
 ];

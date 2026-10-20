@@ -144,6 +144,7 @@ export interface ReportDocumentView {
   sourcing: SourcingView | null;
   regulatory: { note: string; references: RegulatoryReference[] };
   glossary: GlossaryEntry[];
-  /** The file name the CSV is downloaded as. */
+  /** The file names the figures are downloaded as. */
   csvFileName: string;
+  xlsxFileName: string;
 }

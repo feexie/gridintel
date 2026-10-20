@@ -7,12 +7,14 @@ import { expect, test } from "@playwright/test";
 
 const RELIABILITY = "/dashboard/utility/reports/reliability";
 const COMPLIANCE = "/dashboard/minigrid/reports/compliance";
+const OPERATIONS = "/dashboard/utility/reports/operations";
 const LABEL = "SAMPLE: SYNTHETIC DATA";
 
 test("a sector's Reports screen lists its reports, and a report opens on the month", async ({ page }) => {
   await page.goto("/dashboard/utility/reports");
   await expect(page.locator("[data-report]")).toHaveCount(3);
-  await expect(page.locator('[data-report="operations"]')).toContainText("Not built yet.");
+  await expect(page.locator('[data-report="daily-brief"]')).toContainText("Not built yet.");
+  await expect(page.locator('[data-report="operations"]').getByRole("link", { name: "Open the report" })).toHaveAttribute("href", `${OPERATIONS}/2026-09`);
   await page.locator('[data-report="reliability"]').getByRole("link", { name: "Open the report" }).click();
   await expect(page).toHaveURL(new RegExp(`${RELIABILITY}/2026-09$`));
   // A report's address without a period leads to the month.
@@ -23,6 +25,7 @@ test("a sector's Reports screen lists its reports, and a report opens on the mon
 for (const [route, title, id] of [
   [`${RELIABILITY}/2026-09`, "Reliability and service standards", /^GI-REL-2026-09-[0-9A-F]{8}$/],
   [`${COMPLIANCE}/2026-09`, "Mini-grid compliance and results", /^GI-MGC-2026-09-[0-9A-F]{8}$/],
+  [`${OPERATIONS}/2026-09`, "DisCo operations", /^GI-OPS-2026-09-[0-9A-F]{8}$/],
 ] as const) {
   test(`${title}: the cover says it is a sample and identifies the report; the label is over every page`, async ({ page }) => {
     await page.goto(route);
@@ -98,6 +101,37 @@ test("on a report's page the data bar names the report's own period, never the p
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("Reporting period1 Sep 2026 – 30 Sep 2026");
 });
 
+test("the DisCo operations report gives the loss account and the money for the month, and says on a day that they are not available", async ({ page }) => {
+  await page.goto(`${OPERATIONS}/2026-09`);
+  await expect(page.locator("#losses .gr-figure").first()).toContainText("ATC&C");
+  await expect(page.locator("#losses")).toContainText("The energy account");
+  await expect(page.locator("#collection")).toContainText("By customer class");
+  await page.goto(`${OPERATIONS}/2026-09-14`);
+  for (const id of ["#losses", "#revenue-gap", "#collection"]) {
+    await expect(page.locator(id), id).toContainText("Not available for a day.");
+    await expect(page.locator(`${id} .gr-figure`), id).toHaveCount(0);
+  }
+  // Reliability, assets and events are given for the day.
+  await expect(page.locator("#reliability .gr-figure").first()).toContainText("SAIDI");
+  // No monitor is said to be quiet on a day whose check-ins are not held.
+  await expect(page.locator("#events")).toContainText("Whether a monitor has gone quiet cannot be told");
+  await expect(page.locator("#events td").filter({ hasText: /^Monitor quiet$/ })).toHaveCount(0);
+});
+
+test("the figures download as XLSX beside the CSV, with the label in the file name", async ({ page, request }) => {
+  await page.goto(`${OPERATIONS}/2026-09`);
+  await expect(page.getByRole("link", { name: "Download figures (XLSX)" })).toHaveAttribute("href", `${OPERATIONS}/2026-09/data.xlsx`);
+  const response = await request.get(`${OPERATIONS}/2026-09/data.xlsx`);
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  expect(response.headers()["content-disposition"]).toContain("gridintel-operations-2026-09-SAMPLE-SYNTHETIC.xlsx");
+  const body = await response.body();
+  expect([...body.subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04]);
+  expect(body.toString("latin1")).toContain("SAMPLE: SYNTHETIC DATA");
+  // A period that is not available has no workbook.
+  expect((await request.get(`${OPERATIONS}/2026/data.xlsx`)).status()).toBe(404);
+});
+
 test("a year the data does not cover is not available: no figure, no ID, no CSV, and the reason", async ({ page }) => {
   for (const route of [`${RELIABILITY}/2026`, `${COMPLIANCE}/2026`]) {
     await page.goto(route);
@@ -107,6 +141,7 @@ test("a year the data does not cover is not available: no figure, no ID, no CSV,
     await expect(page.locator(".gr-figure"), route).toHaveCount(0);
     await expect(page.locator(".gr-identity"), route).not.toContainText("Report ID");
     await expect(page.getByRole("link", { name: "Download figures (CSV)" }), route).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Download figures (XLSX)" }), route).toHaveCount(0);
     // Still labelled.
     await expect(page.locator("[data-sample-box]"), route).toContainText(LABEL);
   }
@@ -135,7 +170,7 @@ test("the CSV carries every figure with its status, origin and unit, and the sam
 
 test("on a phone a report does not slide sideways, and its print button is in reach", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const route of [`${RELIABILITY}/2026-09`, `${COMPLIANCE}/2026-09`, `${COMPLIANCE}/2026-09-14`, `${RELIABILITY}/2026`]) {
+  for (const route of [`${RELIABILITY}/2026-09`, `${COMPLIANCE}/2026-09`, `${COMPLIANCE}/2026-09-14`, `${RELIABILITY}/2026`, `${OPERATIONS}/2026-09`, `${OPERATIONS}/2026-09-14`]) {
     await page.goto(route);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
     const wide = await page.evaluate(() =>

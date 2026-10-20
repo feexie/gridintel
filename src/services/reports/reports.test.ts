@@ -13,6 +13,10 @@ import { reportCsv } from "./csv.ts";
 import { identitySeed, methodsUsed, reportDocument, reportIdOf, sampleNotice } from "./document.ts";
 import { parsePeriod, periodChoices } from "./period.ts";
 import { reliabilityReport } from "./reliability.ts";
+import { MONEY_NOT_FOR_A_DAY, operationsReport } from "./operations.ts";
+import { crc32, reportXlsx } from "./xlsx.ts";
+import { executiveView } from "../executive/view.ts";
+import { revenueWorkspaceView } from "../revenue/view.ts";
 
 /* The reports are built from the read models of the screens, for the report's period, on the
    synthetic demonstration dataset at a fixed clock. */
@@ -31,10 +35,12 @@ const month = await reliabilityReport(runtime(utility, "2026-09"), OFFSET);
 const day = await reliabilityReport(runtime(utility, "2026-09-14"), OFFSET);
 const sites = await complianceReport(runtime(minigrid, "2026-09"), OFFSET);
 const siteDay = await complianceReport(runtime(minigrid, "2026-09-14"), OFFSET);
+const operations = await operationsReport(runtime(utility, "2026-09"), OFFSET, "month");
+const operationsDay = await operationsReport(runtime(utility, "2026-09-14"), OFFSET, "day");
 
 const section = (body: ReportBody, id: string) => body.sections.find((one) => one.id === id)!;
 
-function document(body: ReportBody, id: "reliability" | "compliance", key: string) {
+function document(body: ReportBody, id: "reliability" | "compliance" | "operations", key: string) {
   const definition = REPORT_DEFINITIONS[id];
   const period = parsePeriod(key, OFFSET)!;
   const methods = methodsUsed(body);
@@ -119,6 +125,41 @@ describe("the mini-grid compliance report", () => {
   });
 });
 
+describe("the DisCo operations report", () => {
+  it("gives the same loss, money and reliability figures as the Executive and Revenue screens, for the same month", async () => {
+    const executive = await executiveView(runtime(utility, "2026-09"), "all");
+    const revenue = await revenueWorkspaceView(runtime(utility, "2026-09"), "all");
+    assert.deepEqual(operations.summary.slice(0, 3), [executive.losses!.atcc, revenue.gap.notRealised, revenue.collectionEfficiency]);
+    assert.deepEqual(
+      operations.sections.map((one) => one.id),
+      ["losses", "revenue-gap", "collection", "reliability", "assets", "events"],
+    );
+    assert.equal(operations.sourcing.synthetic, true);
+  });
+
+  it("compares the DisCo's reported loss figures for the month only on their basis", () => {
+    const block = section(operations, "losses").blocks.find((one) => one.kind === "comparisons");
+    assert.ok(block?.kind === "comparisons" && block.rows.length === 4);
+  });
+
+  it("gives no loss account and no money for a day, and says why in their place", () => {
+    for (const id of ["losses", "revenue-gap", "collection"]) {
+      const blocks = section(operationsDay, id).blocks;
+      assert.equal(blocks.length, 1);
+      assert.ok(blocks[0].kind === "statement" && blocks[0].tone === "unavailable" && blocks[0].text === MONEY_NOT_FOR_A_DAY);
+    }
+    assert.ok(operationsDay.summary.every((metric) => !/ATC&C|Collection efficiency|not realised/i.test(metric.label)));
+  });
+
+  it("says no monitor was quiet on a day whose check-ins are not held, rather than finding every monitor quiet", () => {
+    const conditions = section(operationsDay, "events").blocks.find((one) => one.kind === "table" && one.title === "Derived conditions");
+    assert.ok(conditions?.kind === "table");
+    if (conditions?.kind !== "table") return;
+    assert.ok(conditions.rows.every((row) => row.cells.rule.kind === "text" && row.cells.rule.text !== "Monitor quiet"));
+    assert.ok(conditions.notes.some((note) => note.startsWith("Whether a monitor has gone quiet cannot be told")));
+  });
+});
+
 describe("the report document and its CSV", () => {
   it("names every methodology once, with its version", () => {
     const methods = methodsUsed(month);
@@ -164,6 +205,21 @@ describe("the report document and its CSV", () => {
     const csv = reportCsv(view).trim().split("\r\n");
     assert.ok(csv.at(-1)!.includes(",not_available,"));
     assert.ok(csv.slice(1).every((row) => row.startsWith("SAMPLE: SYNTHETIC DATA,,2026,")));
+  });
+
+  it("writes the same rows as an XLSX workbook, a value as a number, with the label in every row", () => {
+    const view = document(operations, "operations", "2026-09");
+    const bytes = reportXlsx(view);
+    assert.deepEqual([...bytes.slice(0, 4)], [0x50, 0x4b, 0x03, 0x04]);
+    // The same document gives the same bytes: no clock in the archive.
+    assert.deepEqual(reportXlsx(view), bytes);
+    const text = new TextDecoder().decode(bytes);
+    const rows = text.match(/<row r="\d+">/g)!.length;
+    assert.equal(rows, reportCsv(view).trim().split("\r\n").length);
+    assert.ok(text.includes("&amp;L&amp;BSAMPLE: SYNTHETIC DATA"));
+    assert.ok(/<c r="H\d+"><v>0\.3\d+<\/v><\/c>/.test(text), "a value is written as a number");
+    assert.equal(view.xlsxFileName, "gridintel-operations-2026-09-SAMPLE-SYNTHETIC.xlsx");
+    assert.equal(crc32(new TextEncoder().encode("123456789")), 0xcbf43926);
   });
 
   it("writes a cell a spreadsheet would read as a formula as text", () => {

@@ -4,7 +4,7 @@ import type { GridIntelRepositories } from "../repositories/ports/index.ts";
 import { DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
 import { createMemoryCache } from "../services/analytics/cache.ts";
 import { reliabilityWorkspaceView } from "../services/reliability/view.ts";
-import { canonicalJson, recordingRepositories } from "./fingerprint.ts";
+import { canonicalJson, canonicalText, recordingRepositories } from "./fingerprint.ts";
 
 /* The data fingerprint of a report (ADR 0019): the same records give the same fingerprint, in
    whatever order they are read; a changed record gives another; nothing passing is changed. */
@@ -16,6 +16,16 @@ async function fingerprintOf(repos: GridIntelRepositories): Promise<string> {
 }
 
 describe("the data fingerprint", () => {
+  it("writes a value exactly as its canonical JSON, each object once however often it is read", async () => {
+    const odd = { b: [1, undefined, () => 0, null, Number.NaN, -0, "é\u2028\"q"], a: new Map([["k", new Set([2, 1])]]), d: new Date("2026-09-01T00:00:00Z"), u: undefined, n: { z: true, y: { x: [] } } };
+    const memo = new WeakMap<object, string>();
+    for (const value of [odd, [], {}, null, 0, "text", undefined, odd]) assert.equal(canonicalText(value, memo), canonicalJson(value));
+    const repos = createDemoRepositories();
+    const heartbeats = await repos.observations.listHeartbeats({ devices: [{ kind: "edge_device", id: "ED-DT-OLD-3" }], from: DEMO_PERIOD.start, asOf: DEMO_PERIOD.end });
+    assert.equal(canonicalText(heartbeats, memo), canonicalJson(heartbeats));
+    assert.equal(canonicalText({ again: heartbeats.records }, memo), canonicalJson({ again: heartbeats.records }));
+  });
+
   it("writes an object the same whatever the order of its keys", () => {
     assert.equal(canonicalJson({ b: 1, a: { d: [2, { y: 1, x: 2 }], c: null } }), canonicalJson({ a: { c: null, d: [2, { x: 2, y: 1 }] }, b: 1 }));
     assert.equal(canonicalJson(new Map([["k", 1]])), '[["k",1]]');
