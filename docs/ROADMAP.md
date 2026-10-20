@@ -289,7 +289,7 @@ after the cache is warm, milliseconds (from the browser timing test):
 | Transformer, Riverbank (first 40 rows / all 135) | 89 / 215 |
 | Service point | 25 |
 
-Screenshots: `docs/screenshots/phase6b`.
+Screenshots: the GitHub release `phase-6b` (moved out of git 2026-10-20).
 
 The Executive page is now rendered on demand rather than prerendered, because
 it reads `?feeders=all`; its figures still come from the cache. Without the
@@ -469,7 +469,7 @@ branch in the same four runs, which is noise; an earlier, quieter pair gave
 in-memory adapter now looks telemetry up by source instead of scanning it.
 
 **Acceptance, as met.** Typecheck, 336 unit tests, lint, build and 26
-browser tests are green. Screenshots: `docs/screenshots/phase6c1`.
+browser tests are green. Screenshots: the GitHub release `phase-6c-1` (moved out of git 2026-10-20).
 
 **For the Founder's review.**
 
@@ -640,7 +640,7 @@ The warm-up takes about 6 s on an idle machine, about half a second of it
 the pauses that let requests through. The warmed server holds about 375 MB.
 
 **Acceptance, as met.** `npm run verify` green: typecheck, 404 unit tests,
-lint, build and 37 browser tests. Screenshots: `docs/screenshots/phase6c2`.
+lint, build and 37 browser tests. Screenshots: the GitHub release `phase-6c-2` (moved out of git 2026-10-20).
 
 **Decisions the engineer made, for the Founder to confirm or change.** The
 Founder's answers of 2026-10-05 are under Phase 6c-3 below: all confirmed
@@ -916,7 +916,7 @@ machine was also running the browser tests' second server.
 
 **Acceptance, as met.** `npm run verify` green: typecheck, 443 unit tests,
 lint, build and 41 browser tests. Screenshots:
-`docs/screenshots/phase6c3`.
+the GitHub release `phase-6c-3` (moved out of git 2026-10-20).
 
 #### Phase 6 close-out (approved and merged to `main` on 2026-10-09, tag `phase-6`)
 
@@ -1098,7 +1098,7 @@ step by step it passes.
 
 **Acceptance, as met.** Typecheck clean; 452 unit tests; lint clean; both
 builds; 43 browser tests against both builds. Screenshots:
-`docs/screenshots/phase6close`.
+the GitHub release `phase-6` (moved out of git 2026-10-20).
 
 **The workspaces.**
 
@@ -1362,7 +1362,7 @@ built with the application on the demonstration.
 
 `npm run verify`: typecheck clean; 551 unit tests; lint clean; both
 builds; 54 browser tests against both builds. Screenshots at desktop and
-phone width: `docs/screenshots/phase7b`.
+phone width: the GitHub release `phase-7b` (moved out of git 2026-10-20).
 
 **Found and fixed on the way.** The first embedded map on a service-point
 screen asked for its feeder's and substation's figures, which generates the
@@ -1950,7 +1950,7 @@ planned pages, the overviews, the phone frame, the theme, each sector's
 map, the redirects). Every route is inside the 500 ms budget on both
 builds; the five new screens take 9 to 24 ms built ahead and 37 to 87 ms on
 request (median of five). Screenshots at desktop and phone width:
-`docs/screenshots/phase-ui-a` (`prototype`, and `directions` for the three
+the GitHub release `phase-ui-a` (moved out of git 2026-10-20; files prefixed `prototype-`, and `directions-` for the three
 directions).
 
 **Accepted (Founder, 2026-10-14, checked on a phone).**
@@ -2032,7 +2032,7 @@ ranking bars; `e2e/phone.spec.ts`, which opens every rebuilt screen at
 table frame fits, that the SYNTHETIC DATA bar is there, that a phone folds
 a table a wider screen shows, and that source and method opens under its
 figure. The full `npm run verify` (both builds) runs in CI on every push.
-Screenshots at desktop and phone width: `docs/screenshots/phase-ui-b`.
+Screenshots at desktop and phone width: the GitHub release `phase-ui-b` (moved out of git 2026-10-20).
 
 **Decisions (engineering).**
 
@@ -2113,7 +2113,7 @@ the cover, the label rules in print, the findings beside their
 comparisons, a day, a year not available, the CSV, a phone). The full
 `npm run verify` runs in CI on every push.
 
-**Checkpoint material.** `docs/screenshots/phase-reports-a`: both reports
+**Checkpoint material.** The GitHub release `phase-reports-a` (moved out of git 2026-10-20): both reports
 printed to PDF by Chromium's print engine (the engine of Chrome's "Save as
 PDF"), for the month and for 14 September 2026, and screenshots at desktop
 and phone width. Made again with

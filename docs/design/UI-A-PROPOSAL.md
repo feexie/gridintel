@@ -4,7 +4,7 @@ Date: 2026-10-13. Branch `phase-ui-a`. Nothing here is merged to `main`.
 This is a proposal with a prototype. **The Founder chooses one of the three
 visual directions before anything else is rebuilt.**
 
-Screenshots: `docs/screenshots/phase-ui-a`. The prototype is the branch
+Screenshots: the GitHub release `phase-ui-a` (moved out of git 2026-10-20; a file from a subfolder is named with its prefix, e.g. `directions-<direction>-<screen>-<width>.png`). The prototype is the branch
 itself; the two directions that were not built are shown by laying a
 stylesheet over the same screens (`docs/design/directions`).
 
@@ -176,7 +176,7 @@ Nothing below is built. It is what UI-B would do, in the chosen direction.
 Each is shown on the Platform Overview and on Executive (a data screen that
 has not been rebuilt, so it shows what a direction does to the densest
 screen as it stands), at desktop and phone width. Files:
-`docs/screenshots/phase-ui-a/directions/<direction>-<screen>-<width>.png`.
+`directions-<direction>-<screen>-<width>.png` in the release `phase-ui-a`.
 
 All three keep IBM Plex, the same layout, the same status colours, and data
 areas with no blur, glow or movement.

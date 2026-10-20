@@ -158,8 +158,9 @@ docs.
 - Checkpoint material (screenshots, printed PDFs) is not committed
   (Founder, 2026-10-20): it is made into `docs/screenshots/<phase>`, which
   git ignores, and attached to the GitHub release of the phase's tag
-  (`gh release create <tag> --notes ... <files>`). Folders committed before
-  this rule stay where they are.
+  (`gh release create <tag> --notes ... <files>`). The folders committed
+  before this rule were moved to their tags' releases the same day, except
+  `phase5`, which has no tag.
 - At the end of a phase update `docs/ROADMAP.md`, and `docs/BLUEPRINT.md` if
   the architecture changed.
 - This is Next.js 16: read the relevant guide in `node_modules/next/dist/docs/`
