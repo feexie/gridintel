@@ -335,6 +335,33 @@ function Toolbar({ view }: { view: ReportDocumentView }) {
 const STATUSES: DisplayStatus[] = ["ok", "calculated_with_estimates", "insufficient_data", "not_computable", "not_available"];
 const ORIGINS: DisplayOrigin[] = ["measured", "reported", "calculated", "estimated", "derived"];
 
+/** The contents of the cover: the sections, then the appendices. */
+function Contents({ view, appendixStart }: { view: ReportDocumentView; appendixStart: number }) {
+  return (
+    <>
+      <h2 className="gr-cover-head">Contents</h2>
+      <ol className="gr-contents">
+        {view.sections.map((section) => (
+          <li key={section.id}>
+            <a href={`#${section.id}`}>
+              {section.number}. {section.title}
+            </a>
+          </li>
+        ))}
+        <li>
+          <a href="#method">{appendixStart}. Method, sources and how to reproduce this report</a>
+        </li>
+        <li>
+          <a href="#regulatory">{appendixStart + 1}. Regulatory references</a>
+        </li>
+        <li>
+          <a href="#glossary">{appendixStart + 2}. Glossary and key</a>
+        </li>
+      </ol>
+    </>
+  );
+}
+
 export function ReportDocument({ view }: { view: ReportDocumentView }) {
   const identity = view.identity;
   const appendixStart = view.sections.length + 1;
@@ -342,7 +369,7 @@ export function ReportDocument({ view }: { view: ReportDocumentView }) {
     <div className="gr-report">
       <Toolbar view={view} />
       <PageMargins view={view} />
-      <article className={`gr-sheet${view.sample ? " gr-sample" : ""}`} aria-label={view.header.title}>
+      <article className={`gr-sheet${view.sample ? " gr-sample" : ""}${view.onePage ? " gr-one-page" : ""}`} aria-label={view.header.title}>
         {view.sample ? <Watermark label={view.sample.label} /> : null}
         <SampleBand view={view} />
 
@@ -409,25 +436,8 @@ export function ReportDocument({ view }: { view: ReportDocumentView }) {
                   {note}
                 </p>
               ))}
-              <h2 className="gr-cover-head">Contents</h2>
-              <ol className="gr-contents">
-                {view.sections.map((section) => (
-                  <li key={section.id}>
-                    <a href={`#${section.id}`}>
-                      {section.number}. {section.title}
-                    </a>
-                  </li>
-                ))}
-                <li>
-                  <a href="#method">{appendixStart}. Method, sources and how to reproduce this report</a>
-                </li>
-                <li>
-                  <a href="#regulatory">{appendixStart + 1}. Regulatory references</a>
-                </li>
-                <li>
-                  <a href="#glossary">{appendixStart + 2}. Glossary and key</a>
-                </li>
-              </ol>
+              {/* A one-page report has no contents: its sections follow on the same page. */}
+              {view.onePage ? null : <Contents view={view} appendixStart={appendixStart} />}
             </>
           )}
         </header>

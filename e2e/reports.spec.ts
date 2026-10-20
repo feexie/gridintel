@@ -8,12 +8,16 @@ import { expect, test } from "@playwright/test";
 const RELIABILITY = "/dashboard/utility/reports/reliability";
 const COMPLIANCE = "/dashboard/minigrid/reports/compliance";
 const OPERATIONS = "/dashboard/utility/reports/operations";
+const DAILY = "/dashboard/utility/reports/daily-brief";
 const LABEL = "SAMPLE: SYNTHETIC DATA";
+
+/** The number of pages of a PDF, from its page tree. */
+const pageCount = (pdf: Buffer) => Math.max(...[...pdf.toString("latin1").matchAll(/\/Count (\d+)/g)].map((match) => Number(match[1])));
 
 test("a sector's Reports screen lists its reports, and a report opens on the month", async ({ page }) => {
   await page.goto("/dashboard/utility/reports");
   await expect(page.locator("[data-report]")).toHaveCount(3);
-  await expect(page.locator('[data-report="daily-brief"]')).toContainText("Not built yet.");
+  await expect(page.locator('[data-report="daily-brief"]').getByRole("link", { name: "Open the report" })).toHaveAttribute("href", `${DAILY}/2026-09-30`);
   await expect(page.locator('[data-report="operations"]').getByRole("link", { name: "Open the report" })).toHaveAttribute("href", `${OPERATIONS}/2026-09`);
   await page.locator('[data-report="reliability"]').getByRole("link", { name: "Open the report" }).click();
   await expect(page).toHaveURL(new RegExp(`${RELIABILITY}/2026-09$`));
@@ -118,6 +122,38 @@ test("the DisCo operations report gives the loss account and the money for the m
   await expect(page.locator("#events td").filter({ hasText: /^Monitor quiet$/ })).toHaveCount(0);
 });
 
+test("the daily operations brief is one page for a day, and a month of it is not available", async ({ page }) => {
+  await page.goto(DAILY);
+  await expect(page).toHaveURL(new RegExp(`${DAILY}/2026-09-30$`));
+  await page.goto(`${DAILY}/2026-09-14`);
+  expect((await page.locator(".gr-identity dt", { hasText: "Report ID" }).locator("+ dd").textContent())?.trim()).toMatch(/^GI-DOB-2026-09-14-[0-9A-F]{8}$/);
+  await expect(page.locator("[data-sample-band]")).toContainText(LABEL);
+  await expect(page.locator(".gr-contents")).toHaveCount(0);
+  await expect(page.locator(".gr-section").first()).toContainText("Supply on the day");
+  // Only days are offered.
+  await expect(page.locator(".gr-periods-label")).toHaveText(["Day"]);
+  // No monitor is found quiet on a day whose check-ins are not held, and it says so.
+  await expect(page.locator("#alarms")).toContainText("Whether a monitor has gone quiet cannot be told");
+  // Printed, the brief is one page; the appendices follow on pages of their own.
+  await page.emulateMedia({ media: "print" });
+  const pdf = await page.pdf({ preferCSSPageSize: true });
+  const pages = pageCount(pdf);
+  await page.goto(`${DAILY}/2026-09-14`);
+  const withoutBrief = await page.evaluate(() => {
+    for (const node of document.querySelectorAll(".gr-cover, .gr-section:not(#method):not(#regulatory):not(#glossary)")) node.remove();
+    return true;
+  });
+  expect(withoutBrief).toBe(true);
+  const appendixPages = pageCount(await page.pdf({ preferCSSPageSize: true }));
+  expect(pages - appendixPages, "pages taken by the brief itself").toBe(1);
+
+  for (const route of [`${DAILY}/2026-09`, `${DAILY}/2026`]) {
+    await page.goto(route);
+    await expect(page.getByRole("status"), route).toContainText("The daily operations brief is for one day.");
+    await expect(page.locator(".gr-figure"), route).toHaveCount(0);
+  }
+});
+
 test("the figures download as XLSX beside the CSV, with the label in the file name", async ({ page, request }) => {
   await page.goto(`${OPERATIONS}/2026-09`);
   await expect(page.getByRole("link", { name: "Download figures (XLSX)" })).toHaveAttribute("href", `${OPERATIONS}/2026-09/data.xlsx`);
@@ -170,7 +206,7 @@ test("the CSV carries every figure with its status, origin and unit, and the sam
 
 test("on a phone a report does not slide sideways, and its print button is in reach", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const route of [`${RELIABILITY}/2026-09`, `${COMPLIANCE}/2026-09`, `${COMPLIANCE}/2026-09-14`, `${RELIABILITY}/2026`, `${OPERATIONS}/2026-09`, `${OPERATIONS}/2026-09-14`]) {
+  for (const route of [`${RELIABILITY}/2026-09`, `${COMPLIANCE}/2026-09`, `${COMPLIANCE}/2026-09-14`, `${RELIABILITY}/2026`, `${OPERATIONS}/2026-09`, `${OPERATIONS}/2026-09-14`, `${DAILY}/2026-09-30`]) {
     await page.goto(route);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
     const wide = await page.evaluate(() =>

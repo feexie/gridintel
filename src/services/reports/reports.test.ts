@@ -15,6 +15,7 @@ import { parsePeriod, periodChoices } from "./period.ts";
 import { reliabilityReport } from "./reliability.ts";
 import { MONEY_NOT_FOR_A_DAY, operationsReport } from "./operations.ts";
 import { crc32, reportXlsx } from "./xlsx.ts";
+import { dailyBrief } from "./daily.ts";
 import { executiveView } from "../executive/view.ts";
 import { revenueWorkspaceView } from "../revenue/view.ts";
 
@@ -37,6 +38,8 @@ const sites = await complianceReport(runtime(minigrid, "2026-09"), OFFSET);
 const siteDay = await complianceReport(runtime(minigrid, "2026-09-14"), OFFSET);
 const operations = await operationsReport(runtime(utility, "2026-09"), OFFSET, "month");
 const operationsDay = await operationsReport(runtime(utility, "2026-09-14"), OFFSET, "day");
+const brief = await dailyBrief(runtime(utility, "2026-09-14"), OFFSET);
+const briefLastDay = await dailyBrief(runtime(utility, "2026-09-30"), OFFSET);
 
 const section = (body: ReportBody, id: string) => body.sections.find((one) => one.id === id)!;
 
@@ -157,6 +160,49 @@ describe("the DisCo operations report", () => {
     if (conditions?.kind !== "table") return;
     assert.ok(conditions.rows.every((row) => row.cells.rule.kind === "text" && row.cells.rule.text !== "Monitor quiet"));
     assert.ok(conditions.notes.some((note) => note.startsWith("Whether a monitor has gone quiet cannot be told")));
+  });
+});
+
+describe("the daily operations brief", () => {
+  it("has four sections for the day, and the day's indices on the cover", async () => {
+    assert.deepEqual(brief.sections.map((one) => one.id), ["supply", "interruptions", "alarms", "loading"]);
+    const screen = await reliabilityWorkspaceView(runtime(utility, "2026-09-14"));
+    assert.deepEqual(brief.summary.slice(0, 2), [screen.portfolio.saidi, screen.portfolio.saifi]);
+    assert.ok(brief.sections.every((one) => !one.newPage));
+  });
+
+  it("lists what was still wrong when the last day closed: the open fault and the standing alarms", () => {
+    const interruptions = section(briefLastDay, "interruptions").blocks.find((one) => one.kind === "table");
+    assert.ok(interruptions?.kind === "table" && interruptions.rows.length === 2);
+    const alarms = section(briefLastDay, "alarms").blocks[0];
+    assert.ok(alarms.kind === "table" && alarms.rows.length === 4);
+    const standing = briefLastDay.summary.find((metric) => metric.label === "Source alarms standing at the end of the day")!;
+    assert.equal(standing.value, 4);
+  });
+
+  it("says the methodology's note once, not once for every feeder", () => {
+    const table = section(brief, "supply").blocks.find((one) => one.kind === "table");
+    assert.ok(table?.kind === "table");
+    if (table?.kind !== "table") return;
+    assert.equal(new Set(table.notes).size, table.notes.length);
+    assert.ok(table.notes.length <= 1);
+  });
+
+  it("is offered for days only, and on one page", () => {
+    const definition = REPORT_DEFINITIONS["daily-brief"];
+    assert.deepEqual(definition.periodKinds, ["day"]);
+    const view = reportDocument({
+      item: REPORTS.find((item) => item.id === "daily-brief")!,
+      definition,
+      period: parsePeriod("2026-09-14", OFFSET)!,
+      periods: periodChoices(COVERAGE),
+      sample: sampleNotice("A designed demonstration dataset."),
+      built: null,
+      unavailable: "x",
+    });
+    assert.equal(view.onePage, true);
+    assert.deepEqual([view.periods.months, view.periods.years], [[], []]);
+    assert.equal(view.periods.days.length, 30);
   });
 });
 

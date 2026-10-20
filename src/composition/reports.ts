@@ -7,6 +7,7 @@ import { createMemoryCache } from "../services/analytics/cache.ts";
 import { REPORT_DEFINITIONS } from "../services/reports/catalogue.ts";
 import { complianceReport } from "../services/reports/compliance.ts";
 import { reportCsv } from "../services/reports/csv.ts";
+import { dailyBrief } from "../services/reports/daily.ts";
 import { operationsReport } from "../services/reports/operations.ts";
 import { reportXlsx } from "../services/reports/xlsx.ts";
 import { SAMPLE_LABEL, identitySeed, methodsUsed, reportDocument, reportIdOf, sampleNotice } from "../services/reports/document.ts";
@@ -32,7 +33,7 @@ import { getClock, getDataNotice, getMinigridRuntime, getRuntime } from "./runti
    document that says so and holds no figure. Nothing is read for it.
 ========================================================== */
 
-type BuiltReport = "reliability" | "compliance" | "operations";
+type BuiltReport = "reliability" | "compliance" | "operations" | "daily-brief";
 
 /** A report period as the data bar names it. */
 export interface ReportBarPeriod {
@@ -45,6 +46,7 @@ const BUILDERS: Record<BuiltReport, { runtime: () => OperationsRuntime; build: (
   reliability: { runtime: getRuntime, build: reliabilityReport },
   compliance: { runtime: getMinigridRuntime, build: complianceReport },
   operations: { runtime: getRuntime, build: operationsReport },
+  "daily-brief": { runtime: getRuntime, build: dailyBrief },
 };
 
 function isBuilt(id: string): id is BuiltReport {

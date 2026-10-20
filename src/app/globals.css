@@ -626,6 +626,17 @@ html:not([data-theme="light"]) .gi-when-light {
 .gr-cover {
   break-after: page;
 }
+/* A one-page report (the daily brief): the cover runs into the sections, which are set close
+   together so that the brief is one page; the appendices still start on pages of their own. */
+.gr-one-page .gr-cover {
+  break-after: auto;
+}
+.gr-one-page .gr-cover h1 {
+  font-size: 1.35rem;
+}
+.gr-one-page .gr-section {
+  margin-top: 0.9rem;
+}
 .gr-eyebrow {
   font-size: 0.6875rem;
   font-weight: 600;
