@@ -169,6 +169,19 @@ test("the site performance report sets the sites side by side, then each site; o
   await expect(page.locator("#site-mg-grn h3", { hasText: "Sales and collection" })).toHaveCount(0);
 });
 
+test("the compliance report gives revenue and collection for the month, and says on a day that they are not available", async ({ page }) => {
+  await page.goto(`${COMPLIANCE}/2026-09`);
+  await expect(page.locator("#revenue")).toContainText("Revenue and collection, by site");
+  await expect(page.locator("#tariffs")).toContainText("Billing by tariff tier, by site");
+  await expect(page.locator("#connections")).toContainText("Energy sold per connection");
+  await page.goto(`${COMPLIANCE}/2026-09-14`);
+  for (const id of ["#revenue", "#tariffs"]) await expect(page.locator(id), id).toContainText("Not available for a day.");
+  await expect(page.locator("#revenue .gr-figure, #revenue .gr-value")).toHaveCount(0);
+  await expect(page.locator("#tariffs")).toContainText("The tariff is an assumption");
+  await expect(page.locator("#tariffs")).not.toContainText("Billing by tariff tier, by site");
+  await expect(page.locator("#connections")).not.toContainText("Energy sold per connection");
+});
+
 test("the figures download as XLSX beside the CSV, with the label in the file name", async ({ page, request }) => {
   await page.goto(`${OPERATIONS}/2026-09`);
   await expect(page.getByRole("link", { name: "Download figures (XLSX)" })).toHaveAttribute("href", `${OPERATIONS}/2026-09/data.xlsx`);

@@ -36,8 +36,8 @@ function runtime(repos: OperationsRuntime["repos"], key: string): OperationsRunt
 
 const month = await reliabilityReport(runtime(utility, "2026-09"), OFFSET);
 const day = await reliabilityReport(runtime(utility, "2026-09-14"), OFFSET);
-const sites = await complianceReport(runtime(minigrid, "2026-09"), OFFSET);
-const siteDay = await complianceReport(runtime(minigrid, "2026-09-14"), OFFSET);
+const sites = await complianceReport(runtime(minigrid, "2026-09"), OFFSET, "month");
+const siteDay = await complianceReport(runtime(minigrid, "2026-09-14"), OFFSET, "day");
 const operations = await operationsReport(runtime(utility, "2026-09"), OFFSET, "month");
 const operationsDay = await operationsReport(runtime(utility, "2026-09-14"), OFFSET, "day");
 const brief = await dailyBrief(runtime(utility, "2026-09-14"), OFFSET);
@@ -125,6 +125,33 @@ describe("the mini-grid compliance report", () => {
     const blocks = section(siteDay, "reports").blocks.filter((block) => block.kind === "comparisons");
     assert.equal(blocks.length, 4);
     for (const block of blocks) assert.ok(block.kind === "comparisons" && block.rows.length === 0 && block.empty!.endsWith("states figures for 14 September 2026."));
+  });
+
+  it("gives revenue, collection and billing by tier for the month", () => {
+    const revenue = section(sites, "revenue").blocks;
+    assert.ok(revenue.length === 1 && revenue[0].kind === "table" && revenue[0].rows.length === 4);
+    assert.ok(section(sites, "tariffs").blocks.some((block) => block.kind === "table" && block.title === "Billing by tariff tier, by site"));
+    const connections = section(sites, "connections").blocks[0];
+    assert.ok(connections.kind === "table" && connections.columns.some((column) => column.key === "sold"));
+  });
+
+  it("gives no energy sold, billing or collection for a day, with the reason the site performance report gives", () => {
+    const revenue = section(siteDay, "revenue").blocks;
+    assert.equal(revenue.length, 1);
+    assert.ok(revenue[0].kind === "statement" && revenue[0].tone === "unavailable" && revenue[0].text === COMMERCIAL_NOT_FOR_A_DAY);
+    const tariffs = section(siteDay, "tariffs").blocks;
+    // The tariff is still stated as an assumption; the billing by tier is not given.
+    assert.ok(tariffs[0].kind === "statement" && tariffs[0].tone === "caveat");
+    assert.ok(tariffs.every((block) => block.kind !== "table"));
+    assert.ok(tariffs.some((block) => block.kind === "statement" && block.text === COMMERCIAL_NOT_FOR_A_DAY));
+    const connections = section(siteDay, "connections").blocks[0];
+    assert.ok(connections.kind === "table" && connections.columns.every((column) => column.key !== "sold"));
+    assert.ok(connections.kind === "table" && connections.rows.every((row) => !("sold" in row.cells)));
+    // No money anywhere in the day's report: no figure in a currency, and none of revenue or collection.
+    const labels = [...JSON.stringify(siteDay.sections).matchAll(/"metric":\{"label":"([^"]*)","value":[^,]*,"unit":"([^"]*)"/g)];
+    assert.ok(labels.length > 0);
+    for (const [, label, unit] of labels) assert.ok(unit !== "currency" && !/revenue|collection|energy sold/i.test(label), label);
+    assert.ok(siteDay.summaryNotes[0].startsWith("Energy sold, billing and collection are not given for a day: "));
   });
 
   it("reads none of the utility's records", () => {

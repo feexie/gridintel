@@ -6,6 +6,7 @@ import { minigridPortfolioView, minigridSiteIds, minigridSiteView } from "../min
 import { mergeSourcing, registryCount } from "../operations/metric.ts";
 import { calculated, counted, figure, text, time } from "./cells.ts";
 import { periodWords } from "./period.ts";
+import { COMMERCIAL_NOT_FOR_A_DAY } from "./sitePerformance.ts";
 
 /* ==========================================================
    SERVICES — MINI-GRID COMPLIANCE AND RESULTS REPORT
@@ -16,6 +17,9 @@ import { periodWords } from "./period.ts";
    Built from the read models of the Sites screens for the report's
    period: the same figures, the same words. Nothing is calculated
    here.
+
+   Energy sold, billing and collection are given for a month and not
+   for a day, for the reason the site performance report gives.
 
    The mini-grid operator's records only: nothing of the utility's is
    read (ADR 0015).
@@ -35,12 +39,14 @@ function siteFigure(site: MinigridSiteView, label: string) {
   );
 }
 
-export async function complianceReport(runtime: OperationsRuntime, offset: string): Promise<ReportBody> {
+export async function complianceReport(runtime: OperationsRuntime, offset: string, periodKind: "day" | "month" | "year"): Promise<ReportBody> {
   const portfolio = await minigridPortfolioView(runtime);
   const ids = await minigridSiteIds(runtime);
   const sites = (await Promise.all(ids.map((id) => minigridSiteView(runtime, id)))).filter((site): site is MinigridSiteView => site !== null).sort(byName);
   const cards = new Map(portfolio.sites.map((card) => [card.id, card]));
   const period = periodWords(runtime.period, offset);
+  const forMonth = periodKind !== "day";
+  const notForADay: ReportBlock = { kind: "statement", tone: "unavailable", title: null, text: COMMERCIAL_NOT_FOR_A_DAY };
   const completeness =
     portfolio.completeness === "complete" ? null : "The list of sites is not complete: a site may exist that is not in this report.";
 
@@ -127,7 +133,7 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
       cells: {
         connections: figure(registryCount(`Connections in the register, ${site.name}`, coverage.connections)),
         active: siteFigure(site, "Active connections"),
-        sold: siteFigure(site, "Energy sold per connection"),
+        ...(forMonth ? { sold: siteFigure(site, "Energy sold per connection") } : {}),
         consumed: siteFigure(site, "Consumption per connection"),
         metered: text(`${coverage.recorded} of ${coverage.connections} recorded for the whole period; ${coverage.unmetered} unmetered; ${coverage.incomplete} incomplete`),
       },
@@ -137,17 +143,19 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
     id: "connections",
     number: 2,
     title: "Connections and consumption",
-    purpose: "How many customers each site connects, how many bought or used energy, and how much.",
+    purpose: forMonth ? "How many customers each site connects, how many bought or used energy, and how much." : "How many customers each site connects, how many used energy, and how much.",
     newPage: false,
     blocks: [
       {
         kind: "table",
         title: "Connections, by site",
-        caption: "Connections in the register, and those with an active account. Per-connection figures are over active connections. Consumption is from customer meters; energy sold is energy billed.",
+        caption: forMonth
+          ? "Connections in the register, and those with an active account. Per-connection figures are over active connections. Consumption is from customer meters; energy sold is energy billed."
+          : "Connections in the register, and those with an active account. Consumption per connection is over active connections, from customer meters. Energy sold is energy billed, and is not given for a day.",
         columns: [
           { key: "connections", label: "Connections" },
           { key: "active", label: "Active" },
-          { key: "sold", label: "Energy sold per connection" },
+          ...(forMonth ? [{ key: "sold", label: "Energy sold per connection" }] : []),
           { key: "consumed", label: "Consumption per connection" },
           { key: "metered", label: "Customer meters" },
         ],
@@ -203,7 +211,7 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
     id: "tariffs",
     number: 4,
     title: "Tariffs: an assumption",
-    purpose: "What customers were charged, and on what basis that is known.",
+    purpose: forMonth ? "What customers were charged, and on what basis that is known." : "On what basis the tariffs are known. What customers were charged is given for a month.",
     newPage: true,
     blocks: [
       {
@@ -212,9 +220,9 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
         title: "The tariff is an assumption",
         text:
           `${portfolio.tariffCaveat ?? "The tariffs are as the operator's billing records apply them."} The records hold no tariff of their own: each tier's rate is an assumption used to price its bills, ` +
-          "and it is not a published or approved rate. Each tier's billed revenue and energy sold are shown below; no rate is worked out from them here.",
+          `and it is not a published or approved rate.${forMonth ? " Each tier's billed revenue and energy sold are shown below; no rate is worked out from them here." : ""}`,
       },
-      {
+      forMonth ? {
         kind: "table",
         title: "Billing by tariff tier, by site",
         caption: "As billed in the period. Energy sold to a prepaid account is energy purchased, not energy used.",
@@ -241,7 +249,7 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
         ),
         empty: `No bill is recorded at any site for ${period}.`,
         notes: [],
-      },
+      } : notForADay,
     ],
   };
 
@@ -252,7 +260,7 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
     title: "Revenue and collection",
     purpose: "What each site billed and what it collected.",
     newPage: false,
-    blocks: [
+    blocks: forMonth ? [
       {
         kind: "table",
         title: "Revenue and collection, by site",
@@ -277,7 +285,7 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
         empty: "The register holds no site.",
         notes: [],
       },
-    ],
+    ] : [notForADay],
   };
 
   /* 6. Each site's report against its records */
@@ -336,6 +344,7 @@ export async function complianceReport(runtime: OperationsRuntime, offset: strin
       }),
     ],
     summaryNotes: [
+      ...(forMonth ? [] : [`Energy sold, billing and collection are not given for a day: ${COMMERCIAL_NOT_FOR_A_DAY.replace(/^Not available for a day\. /, "")}`]),
       ...(portfolio.tariffCaveat === null ? [] : [`Tariffs: ${portfolio.tariffCaveat}`]),
       ...differs.map((site) => `${site.name}: the site's report differs from its records on ${site.report.differ} of ${site.report.claims} figure(s); see section 6.`),
       ...(provisional.length === 0 ? [] : [`Provisional for ${provisional.join(", ")}: an interruption was still open at the end of the period.`]),
