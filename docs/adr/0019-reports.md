@@ -151,3 +151,51 @@ then.
 - Adding a report is: a definition in `catalogue.ts`, a builder over
   existing read models, an entry in `REPORTS` (navigation), and its
   builder in `composition/reports.ts`.
+
+## Amendment (2026-10-20): Phase REPORTS-B
+
+The other three reports, by the Founder's instruction of 2026-10-19. The
+rules of REPORTS-A hold unchanged. Engineering decisions:
+
+1. **A report names the kinds of period it is made for** (`periodKinds`).
+   The daily operations brief is for a day; its month and year are pages
+   that say "not available for this period" with the report's own reason,
+   and only days are offered. It opens on the last day the data covers.
+2. **No loss account and no money for a day.** A loss account, collection
+   efficiency and revenue per connection compare energy delivered, billed
+   and paid over one span; bills for a month's supply are not issued on the
+   day the energy is delivered, and payments arrive on days of their own.
+   The read models would give a day's ratios (a day's collection
+   efficiency of 148%, an ATC&C of 45% with its technical part missing);
+   the DisCo operations and site performance reports give, in their place,
+   "not available for a day" with this reason, and leave out the findings
+   about money. The compliance report of REPORTS-A still gives a site's
+   revenue and collection for a day: an open question for the Founder.
+3. **The daily brief is one page.** A definition may be printed on one
+   page (`onePage`): the cover runs into the sections with no contents,
+   and in print the lede and section purposes are left out and tables set
+   closer; the appendices follow on pages of their own. Every day of
+   September was printed and measured; the browser test prints the
+   quietest and the busiest day and checks each takes one page.
+4. **A count from an incomplete record is not a count.** A brief's count
+   of standing alarms or of interruptions in progress is "insufficient
+   data" when the record is not complete, never a number that could read
+   as none.
+5. **XLSX is written here, without a dependency.** The CSV's rows, one
+   sheet, values as numbers, the header frozen and filtered, the sample
+   label in every row, in the printed header and footer and in the file's
+   title. The archive is stored, not compressed, and carries no clock: the
+   same document gives the same bytes. A dependency would have been a
+   decision gate; it was not needed.
+6. **The fingerprint was made faster, not changed.** The DisCo operations
+   report reads about 880 results (the same billing records once for every
+   scope); digesting each took 63 s for the month. Each object's canonical
+   JSON is now written once and a query asked again is not digested again:
+   the same digests (tested against `canonicalJson`), in about 7 s.
+7. **The quiet-monitor rule** was found to call every monitor quiet on any
+   day before 30 September (the demonstration's check-ins are held for the
+   last day only, but were declared complete for the month). Fixed by the
+   Founder's decision of 2026-10-19: ADR 0011, amendment.
+
+Keys and roles are as recorded above (decision 9); no new key.
+

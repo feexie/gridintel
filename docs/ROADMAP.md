@@ -3,16 +3,17 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-15. Status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-10-20. Status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
 `phase-7b`). **Phase UI-A is accepted** (Founder, 2026-10-14, checked on a
 phone; merged to `main`, tag `phase-ui-a`). **Phase UI-B is accepted** (Founder, 2026-10-15, checked on
 a phone; merged to `main`, tag `phase-ui-b`). **The UI revamp is
-complete.** **Phase REPORTS-A is at its checkpoint** (2026-10-15):
-downloadable reports, the Reliability and the Mini-grid compliance
-reports, on branch `phase-reports-a`, not merged (ADR 0019).
+complete.** **Phase REPORTS-A is merged** (by the Founder's instruction of
+2026-10-19; tag `phase-reports-a`). **Phase REPORTS-B is at its
+checkpoint** (2026-10-20): the other three reports and XLSX, on branch
+`phase-reports-b`, not merged (ADR 0019 and its amendment).
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -2051,7 +2052,7 @@ Screenshots at desktop and phone width: `docs/screenshots/phase-ui-b`.
   one finding style.
 - Links inside pages are still not cut to the viewer's grant (Phase 8).
 
-## Phase REPORTS: downloadable reports (in progress; REPORTS-A at its checkpoint 2026-10-15)
+## Phase REPORTS: downloadable reports (in progress; REPORTS-A merged 2026-10-19; REPORTS-B at its checkpoint 2026-10-20)
 
 **Purpose (Founder, 2026-10-15).** Downloadable reports for the people who
 will use GridIntel: regulators checking DisCo reliability, DisCo managers,
@@ -2090,7 +2091,7 @@ on a desktop and on a phone; the figures as CSV with their status, origin
 and units. A server-side PDF library is a decision gate: proposed only
 (ADR 0019).
 
-### Phase REPORTS-A: the report service, two reports, CSV (at its checkpoint; branch `phase-reports-a`, not merged)
+### Phase REPORTS-A: the report service, two reports, CSV (merged to `main` 2026-10-19, tag `phase-reports-a`)
 
 | Built | Where |
 | --- | --- |
@@ -2125,8 +2126,8 @@ never as conformity.
 
 **Known, and not done.**
 
-- XLSX is not built; CSV only. Proposed for REPORTS-B (a small writer of
-  our own, or a dependency, which is a decision gate).
+- XLSX is not built; CSV only. **Built in REPORTS-B** (a writer of our
+  own; no dependency).
 - A page built ahead of time has the build's time as the time its figures
   were computed; its CSV has its own. Both carry the same report ID.
   **Fixed (2026-10-19):** the cover says "Figures computed <time>, from
@@ -2137,10 +2138,43 @@ never as conformity.
 - Phone printing is the phone browser's own; it was checked in Chromium at
   phone width, not on a physical phone.
 
-### Phase REPORTS-B: the other three reports (after the Founder's approval)
+### Phase REPORTS-B: the other three reports and XLSX (at its checkpoint 2026-10-20; branch `phase-reports-b`, not merged)
 
-DisCo operations, the daily operations brief, mini-grid site performance;
-XLSX.
+| Built | Where |
+| --- | --- |
+| **DisCo operations** (management): ATC&C and its parts with the energy account, losses by feeder and the DisCo's reported figures on their basis; revenue not realised; billing and collection by customer class; reliability and hours of supply; assets requiring attention; outages, alarms and derived conditions at the end of the period. For a day, the loss account and the money are "not available for a day", with the reason | `operations.ts` |
+| **Daily operations brief** (control room, management): one page for any day; hours of supply by feeder against its band, interruptions in progress and gaps in the record apart, source alarms standing and derived conditions holding at the day's end, assets loaded above rating. Days only; a month or a year is not available, with the reason | `daily.ts`; `onePage` in the layout |
+| **Mini-grid site performance** (operator): the sites side by side with the portfolio's findings, then each site: energy flow, PV, battery, generator, supply and interruptions, sales and collection by class. For a day, no sales or collection and no findings about money | `sitePerformance.ts` |
+| **XLSX for every report**, beside the CSV: the same rows, values as numbers, the label in every row and the printed header and footer | `xlsx.ts`; `/…/{period}/data.xlsx` |
+| A report names its kinds of period and its default period | `periodKinds` in `catalogue.ts` |
+| The data bar names a report page's own period; the cover says "Figures computed …, from data as of …" (REPORTS-A fixes) | `DataBar.tsx`, `ReportDocument.tsx` |
+| The quiet-monitor rule told only over a held window of check-ins (Founder, 2026-10-19) | ADR 0011 amendment; conditions methodology 0.3.0 |
+| The data fingerprint computed faster with the same digests (the operations month: 63 s to 7 s) | `fingerprint.ts` |
+| State electricity regulators: the 15 states NERC lists, and two orders since, from NERC's own pages | `docs/reports/REGULATORY_FORMATS.md`, section 3 |
+
+**Checks.** `npm run verify:local` before each commit. New: unit tests for
+the three reports against the screens' read models, the day rules, the
+one-page brief's sections, XLSX against the CSV (and a fixed CRC), the
+fingerprint's text against `canonicalJson`, the quiet-monitor window;
+browser tests for each report's cover and label, a day without money, the
+brief printed on one page on the 14th and the 30th, its month not
+available, the XLSX download, phone width.
+
+**Checkpoint material.** `docs/screenshots/phase-reports-b`: all five
+reports printed to PDF by Chromium's print engine for September 2026 and
+for 14 September (and the brief for 30 September, its busiest day), and
+every report screen at desktop and phone width. Made again with
+`SCREENSHOTS=docs/screenshots/phase-reports-b GRIDINTEL_E2E=local npx playwright test screenshots -g report`.
+
+**Known, and not done.**
+
+- The compliance report (REPORTS-A) still gives a site's revenue and
+  collection for a day; the new reports do not. For the Founder.
+- A report's CSV and XLSX are built on first request in each server
+  process (about 7 s for the operations month); the pages are built ahead
+  of time.
+- The state regulators' own reporting templates have not been read.
+- Phone printing was checked in Chromium at phone width, not on a phone.
 
 ## Phase 11: AI / MCP intelligence
 

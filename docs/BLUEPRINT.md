@@ -4,8 +4,28 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
-> **State at the Phase REPORTS-A checkpoint (2026-10-15; branch
-> `phase-reports-a`, not merged; ADR 0019).** Downloadable reports:
+> **State at the Phase REPORTS-B checkpoint (2026-10-20; branch
+> `phase-reports-b`, not merged; ADR 0019 and its REPORTS-B amendment).**
+> All five reports are built, each a configuration of the one service:
+>
+> - Builders `operations.ts`, `daily.ts`, `sitePerformance.ts` beside
+>   `reliability.ts` and `compliance.ts`. A definition names the kinds of
+>   period it is made for (`periodKinds`; the daily brief is for days only)
+>   and may be printed on one page (`onePage`).
+> - **XLSX** (`xlsx.ts`): the CSV's rows (`reportRows` in `csv.ts`) as an
+>   Office Open XML workbook in a stored ZIP written here; no dependency.
+>   Route `/…/{period}/data.xlsx`.
+> - The data fingerprint is unchanged in what it digests; it is computed
+>   with each object's canonical JSON written once and a repeated query
+>   digested once (`canonicalText` in `fingerprint.ts`).
+> - The quiet-monitor rule reads check-ins over a stated window before the
+>   as-of time; a dataset may state the window its heartbeat record covers
+>   (`heartbeatsHeld`; ADR 0011 amendment).
+> - The data bar names a report page's own period (`reportPeriods` in
+>   `DataContext`, from `reports.barPeriods()`).
+
+> **State at the Phase REPORTS-A checkpoint (2026-10-15; merged to `main`
+> 2026-10-19, tag `phase-reports-a`; ADR 0019).** Downloadable reports:
 >
 > - **`src/services/reports`**: one report service. Periods (`period.ts`,
 >   pure; a period the data does not wholly cover is not available), the
