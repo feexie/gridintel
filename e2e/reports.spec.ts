@@ -69,6 +69,35 @@ for (const [route, title, id] of [
   });
 }
 
+test("no printed text in any report is below 8.5pt, in its pages or in their margins", async ({ page }) => {
+  // Founder, 2026-10-20: spacing may be set closer; type is never made smaller. The daily brief's
+  // month is the page that says it is not available, printed all the same.
+  for (const base of [RELIABILITY, COMPLIANCE, OPERATIONS, DAILY, PERFORMANCE]) {
+    for (const period of ["2026-09", "2026-09-14"]) {
+      await page.goto(`${base}/${period}`);
+      await page.emulateMedia({ media: "print" });
+      const small = await page.evaluate(() =>
+        [...document.querySelectorAll(".gr-report *")]
+          .filter((node) => !node.closest(".gr-watermark, .gr-toolbar") && node.checkVisibility())
+          .filter((node) => [...node.childNodes].some((child) => child.nodeType === Node.TEXT_NODE && child.textContent!.trim()))
+          .map((node) => ({ text: node.textContent!.trim().slice(0, 40), pt: parseFloat(getComputedStyle(node).fontSize) * 0.75 }))
+          .filter((one) => one.pt < 8.5 - 0.01),
+      );
+      expect(small, `${base}/${period}`).toEqual([]);
+      await page.emulateMedia({ media: null });
+    }
+  }
+  // The page margins: the label, the report ID and the page number.
+  const margins = await page.evaluate(() =>
+    [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .filter((rule): rule is CSSPageRule => rule instanceof CSSPageRule)
+      .flatMap((rule) => [...rule.cssText.matchAll(/font:[^;]*?([\d.]+)pt/g)].map((match) => Number(match[1]))),
+  );
+  expect(margins.length).toBeGreaterThanOrEqual(4);
+  for (const pt of margins) expect(pt).toBeGreaterThanOrEqual(8.5);
+});
+
 test("the reliability report keeps each attribution-rule finding beside the comparison it explains", async ({ page }) => {
   await page.goto(`${RELIABILITY}/2026-09`);
   const reported = page.locator("#reported");

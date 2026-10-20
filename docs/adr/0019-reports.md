@@ -186,6 +186,17 @@ rules of REPORTS-A hold unchanged. Engineering decisions:
    14th and the 30th and checks that table text is at least 8.5pt, the
    brief starts on page 1 and takes at most two pages, and the appendices
    start on a page of their own.
+
+   The same afternoon the rule was made general (Founder, 2026-10-20): no
+   printed text in any report is below 8.5pt, in tables, headings, notes,
+   captions and the page margins alike. Spacing may be set closer; type is
+   never made smaller. What is set smaller on screen is set at 8.5pt in
+   print. Pages, September and 14 September, before and after: reliability
+   13 and 9, then 15 and 9; compliance 14 and 9, then 15 and 9; DisCo
+   operations 13 and 8, unchanged; the daily brief 4 for the 14th
+   (two of them appendices), unchanged; site performance 18 and 13, then
+   22 and 17. A browser test prints every report for both periods and finds
+   no text below 8.5pt, and reads the page-margin rules.
 4. **A count from an incomplete record is not a count.** A brief's count
    of standing alarms or of interruptions in progress is "insufficient
    data" when the record is not complete, never a number that could read
