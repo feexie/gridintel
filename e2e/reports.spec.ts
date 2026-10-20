@@ -9,6 +9,7 @@ const RELIABILITY = "/dashboard/utility/reports/reliability";
 const COMPLIANCE = "/dashboard/minigrid/reports/compliance";
 const OPERATIONS = "/dashboard/utility/reports/operations";
 const DAILY = "/dashboard/utility/reports/daily-brief";
+const PERFORMANCE = "/dashboard/minigrid/reports/site-performance";
 const LABEL = "SAMPLE: SYNTHETIC DATA";
 
 /** The number of pages of a PDF, from its page tree. */
@@ -30,6 +31,7 @@ for (const [route, title, id] of [
   [`${RELIABILITY}/2026-09`, "Reliability and service standards", /^GI-REL-2026-09-[0-9A-F]{8}$/],
   [`${COMPLIANCE}/2026-09`, "Mini-grid compliance and results", /^GI-MGC-2026-09-[0-9A-F]{8}$/],
   [`${OPERATIONS}/2026-09`, "DisCo operations", /^GI-OPS-2026-09-[0-9A-F]{8}$/],
+  [`${PERFORMANCE}/2026-09`, "Mini-grid site performance", /^GI-MSP-2026-09-[0-9A-F]{8}$/],
 ] as const) {
   test(`${title}: the cover says it is a sample and identifies the report; the label is over every page`, async ({ page }) => {
     await page.goto(route);
@@ -154,6 +156,20 @@ test("the daily operations brief is one page for a day, and a month of it is not
   }
 });
 
+test("the site performance report sets the sites side by side, then each site; on a day it gives no sales or collection", async ({ page }) => {
+  await page.goto("/dashboard/minigrid/reports");
+  await expect(page.locator("[data-report]")).toHaveCount(2);
+  await expect(page.getByText("Not built yet.")).toHaveCount(0);
+  await page.locator('[data-report="site-performance"]').getByRole("link", { name: "Open the report" }).click();
+  await expect(page).toHaveURL(new RegExp(`${PERFORMANCE}/2026-09$`));
+  await expect(page.locator(".gr-section h2")).toContainText(["The sites side by side", "Dry River", "Granite Hill", "Palm Landing", "Tamarind Cross"]);
+  await expect(page.locator("#site-mg-grn")).toContainText("Granite Hill has no generator in the register.");
+  await expect(page.locator("#site-mg-grn")).toContainText("Sales and collection");
+  await page.goto(`${PERFORMANCE}/2026-09-14`);
+  await expect(page.locator("#site-mg-grn")).toContainText("Not available for a day.");
+  await expect(page.locator("#site-mg-grn h3", { hasText: "Sales and collection" })).toHaveCount(0);
+});
+
 test("the figures download as XLSX beside the CSV, with the label in the file name", async ({ page, request }) => {
   await page.goto(`${OPERATIONS}/2026-09`);
   await expect(page.getByRole("link", { name: "Download figures (XLSX)" })).toHaveAttribute("href", `${OPERATIONS}/2026-09/data.xlsx`);
@@ -206,7 +222,7 @@ test("the CSV carries every figure with its status, origin and unit, and the sam
 
 test("on a phone a report does not slide sideways, and its print button is in reach", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const route of [`${RELIABILITY}/2026-09`, `${COMPLIANCE}/2026-09`, `${COMPLIANCE}/2026-09-14`, `${RELIABILITY}/2026`, `${OPERATIONS}/2026-09`, `${OPERATIONS}/2026-09-14`, `${DAILY}/2026-09-30`]) {
+  for (const route of [`${RELIABILITY}/2026-09`, `${COMPLIANCE}/2026-09`, `${COMPLIANCE}/2026-09-14`, `${RELIABILITY}/2026`, `${OPERATIONS}/2026-09`, `${OPERATIONS}/2026-09-14`, `${DAILY}/2026-09-30`, `${PERFORMANCE}/2026-09`]) {
     await page.goto(route);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
     const wide = await page.evaluate(() =>

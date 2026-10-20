@@ -47,6 +47,13 @@ const SHOTS: [string, string][] = [
   ["report-reliability-year-not-available", "/dashboard/utility/reports/reliability/2026"],
   ["report-compliance-month", "/dashboard/minigrid/reports/compliance/2026-09"],
   ["report-compliance-day", "/dashboard/minigrid/reports/compliance/2026-09-14"],
+  ["report-operations-month", "/dashboard/utility/reports/operations/2026-09"],
+  ["report-operations-day", "/dashboard/utility/reports/operations/2026-09-14"],
+  ["report-daily-brief-day", "/dashboard/utility/reports/daily-brief/2026-09-14"],
+  ["report-daily-brief-last-day", "/dashboard/utility/reports/daily-brief/2026-09-30"],
+  ["report-daily-brief-month-not-available", "/dashboard/utility/reports/daily-brief/2026-09"],
+  ["report-site-performance-month", "/dashboard/minigrid/reports/site-performance/2026-09"],
+  ["report-site-performance-day", "/dashboard/minigrid/reports/site-performance/2026-09-14"],
 ];
 
 /** Reports printed to PDF by the browser's own print, as "Save as PDF" does. */
@@ -55,6 +62,12 @@ const PDFS: [string, string][] = [
   ["report-reliability-2026-09-14", "/dashboard/utility/reports/reliability/2026-09-14"],
   ["report-compliance-2026-09", "/dashboard/minigrid/reports/compliance/2026-09"],
   ["report-compliance-2026-09-14", "/dashboard/minigrid/reports/compliance/2026-09-14"],
+  ["report-operations-2026-09", "/dashboard/utility/reports/operations/2026-09"],
+  ["report-operations-2026-09-14", "/dashboard/utility/reports/operations/2026-09-14"],
+  ["report-daily-brief-2026-09-14", "/dashboard/utility/reports/daily-brief/2026-09-14"],
+  ["report-daily-brief-2026-09-30", "/dashboard/utility/reports/daily-brief/2026-09-30"],
+  ["report-site-performance-2026-09", "/dashboard/minigrid/reports/site-performance/2026-09"],
+  ["report-site-performance-2026-09-14", "/dashboard/minigrid/reports/site-performance/2026-09-14"],
 ];
 
 /** Screens also captured at the width of a phone: every screen but the page for an unknown address. */

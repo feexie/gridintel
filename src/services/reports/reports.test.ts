@@ -16,6 +16,8 @@ import { reliabilityReport } from "./reliability.ts";
 import { MONEY_NOT_FOR_A_DAY, operationsReport } from "./operations.ts";
 import { crc32, reportXlsx } from "./xlsx.ts";
 import { dailyBrief } from "./daily.ts";
+import { COMMERCIAL_NOT_FOR_A_DAY, sitePerformanceReport } from "./sitePerformance.ts";
+import { minigridSiteView } from "../minigrid/view.ts";
 import { executiveView } from "../executive/view.ts";
 import { revenueWorkspaceView } from "../revenue/view.ts";
 
@@ -40,6 +42,8 @@ const operations = await operationsReport(runtime(utility, "2026-09"), OFFSET, "
 const operationsDay = await operationsReport(runtime(utility, "2026-09-14"), OFFSET, "day");
 const brief = await dailyBrief(runtime(utility, "2026-09-14"), OFFSET);
 const briefLastDay = await dailyBrief(runtime(utility, "2026-09-30"), OFFSET);
+const performance = await sitePerformanceReport(runtime(minigrid, "2026-09"), OFFSET, "month");
+const performanceDay = await sitePerformanceReport(runtime(minigrid, "2026-09-14"), OFFSET, "day");
 
 const section = (body: ReportBody, id: string) => body.sections.find((one) => one.id === id)!;
 
@@ -203,6 +207,36 @@ describe("the daily operations brief", () => {
     assert.equal(view.onePage, true);
     assert.deepEqual([view.periods.months, view.periods.years], [[], []]);
     assert.equal(view.periods.days.length, 30);
+  });
+});
+
+describe("the mini-grid site performance report", () => {
+  it("has the sites side by side, then a section for each site, with the Sites screen's figures", async () => {
+    assert.deepEqual(performance.sections.map((one) => one.title), ["The sites side by side", "Dry River", "Granite Hill", "Palm Landing", "Tamarind Cross"]);
+    const screen = (await minigridSiteView(runtime(minigrid, "2026-09"), "MG-GRN"))!;
+    const granite = performance.sections.find((one) => one.title === "Granite Hill")!;
+    const pv = granite.blocks.find((one) => one.kind === "figures" && one.title === "Solar PV");
+    assert.ok(pv?.kind === "figures");
+    if (pv?.kind !== "figures") return;
+    assert.equal(pv.metrics[0].value, screen.pv!.performanceRatio.value);
+    assert.equal(pv.metrics[0].label, "Performance ratio, Granite Hill");
+    // A site without a generator says so; it is not given a zero.
+    assert.ok(granite.blocks.some((one) => one.kind === "statement" && one.text === "Granite Hill has no generator in the register."));
+  });
+
+  it("gives no sales or collection for a day, and leaves out the findings about money", () => {
+    for (const site of performanceDay.sections.slice(1)) {
+      const money = site.blocks.filter((one) => one.kind === "statement" && one.tone === "unavailable");
+      assert.equal(money.length, 1);
+      assert.ok(money[0].kind === "statement" && money[0].text === COMMERCIAL_NOT_FOR_A_DAY);
+      assert.ok(site.blocks.every((one) => one.kind !== "figures" || one.title !== "Sales and collection"));
+    }
+    const statements = performanceDay.sections[0].blocks.filter((one) => one.kind === "statement").map((one) => (one.kind === "statement" ? one.title ?? "" : ""));
+    assert.ok(statements.every((title) => !/uncollected|pays least/i.test(title)));
+  });
+
+  it("reads none of the utility's records", () => {
+    assert.ok(performance.sourcing.sources.every((source) => !/distribution company|Savanna/i.test(source.name)));
   });
 });
 

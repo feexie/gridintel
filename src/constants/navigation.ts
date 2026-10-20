@@ -102,7 +102,7 @@ export const REPORTS: ReportItem[] = [
   report("utility", "reliability", "Reliability and service standards", "Regulator; the DisCo's network planning", "SAIDI, SAIFI and CAIDI by feeder and substation, attribution by where interruptions began, service-band compliance by day, and the DisCo's reported figures against the calculation on their basis."),
   report("utility", "operations", "DisCo operations", "DisCo management", "ATC&C and its parts, revenue not realised, collection by customer class, reliability and hours of supply, assets requiring attention, outages and alarms."),
   report("utility", "daily-brief", "Daily operations brief", "Control room; DisCo management", "One page for any day: hours of supply by feeder, interruptions in progress, standing alarms and derived conditions at the day's end, and assets loaded above rating."),
-  report("minigrid", "site-performance", "Mini-grid site performance", "Mini-grid operator", "Each site and the portfolio: energy, plant, availability and revenue.", true),
+  report("minigrid", "site-performance", "Mini-grid site performance", "Mini-grid operator", "The sites side by side, then each site: energy flow, PV, battery and generator, supply and interruptions, sales and collection."),
   report("minigrid", "compliance", "Mini-grid compliance and results", "Mini-grid regulator; programme funder", "Availability and hours of supply, connections, the tariff as an assumption, and each site's report against its records."),
 ];
 
