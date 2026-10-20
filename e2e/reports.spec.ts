@@ -136,18 +136,17 @@ test("the daily operations brief is one page for a day, and a month of it is not
   await expect(page.locator(".gr-periods-label")).toHaveText(["Day"]);
   // No monitor is found quiet on a day whose check-ins are not held, and it says so.
   await expect(page.locator("#alarms")).toContainText("Whether a monitor has gone quiet cannot be told");
-  // Printed, the brief is one page; the appendices follow on pages of their own.
-  await page.emulateMedia({ media: "print" });
-  const pdf = await page.pdf({ preferCSSPageSize: true });
-  const pages = pageCount(pdf);
-  await page.goto(`${DAILY}/2026-09-14`);
-  const withoutBrief = await page.evaluate(() => {
-    for (const node of document.querySelectorAll(".gr-cover, .gr-section:not(#method):not(#regulatory):not(#glossary)")) node.remove();
-    return true;
-  });
-  expect(withoutBrief).toBe(true);
-  const appendixPages = pageCount(await page.pdf({ preferCSSPageSize: true }));
-  expect(pages - appendixPages, "pages taken by the brief itself").toBe(1);
+  // Printed, the brief is one page, on a quiet day and on the busiest (the 30th: the open fault, four
+  // alarms, a gap in the record); the appendices follow on pages of their own.
+  for (const day of ["2026-09-14", "2026-09-30"]) {
+    await page.goto(`${DAILY}/${day}`);
+    const pages = pageCount(await page.pdf({ preferCSSPageSize: true }));
+    await page.evaluate(() => {
+      for (const node of document.querySelectorAll(".gr-cover, .gr-section:not(#method):not(#regulatory):not(#glossary)")) node.remove();
+    });
+    const appendixPages = pageCount(await page.pdf({ preferCSSPageSize: true }));
+    expect(pages - appendixPages, `pages taken by the brief for ${day}`).toBe(1);
+  }
 
   for (const route of [`${DAILY}/2026-09`, `${DAILY}/2026`]) {
     await page.goto(route);

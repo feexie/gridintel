@@ -637,6 +637,40 @@ html:not([data-theme="light"]) .gi-when-light {
 .gr-one-page .gr-section {
   margin-top: 0.9rem;
 }
+@media print {
+  .gr-one-page .gr-lede,
+  .gr-one-page .gr-section > .gr-purpose {
+    display: none;
+  }
+  .gr-one-page .gr-identity {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.2rem 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .gr-one-page .gr-identity .gr-identity-wide {
+    grid-column: span 2;
+  }
+  .gr-one-page .gr-table {
+    font-size: 0.625rem;
+  }
+  .gr-one-page .gr-section h2 {
+    font-size: 1rem;
+  }
+  .gr-one-page h3 {
+    margin-top: 0.5rem;
+  }
+  .gr-one-page .gr-table th,
+  .gr-one-page .gr-table td {
+    padding: 0.15rem 0.3rem;
+  }
+  .gr-one-page .gr-figures {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+  }
+  .gr-one-page .gr-figure {
+    padding: 0.25rem 0.4rem;
+  }
+}
 .gr-eyebrow {
   font-size: 0.6875rem;
   font-weight: 600;

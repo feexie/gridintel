@@ -93,6 +93,8 @@ export function alarmRows(rows: { alarm: AlarmRowView; accountsBehind: MetricVie
     cells: {
       severity: text(alarm.severity),
       message: text(`${alarm.message} (${alarm.code})`),
+      // The severity and the alarm in one cell, for a page that must be short (the daily brief).
+      severityAndMessage: text(`${alarm.severity}: ${alarm.message} (${alarm.code})`),
       raised: time(alarm.raisedAt),
       acknowledged: time(alarm.acknowledgedAt, "Not acknowledged"),
       accounts: figure(accountsBehind),
@@ -103,6 +105,14 @@ export function alarmRows(rows: { alarm: AlarmRowView; accountsBehind: MetricVie
 export const ALARM_COLUMNS = [
   { key: "severity", label: "Severity" },
   { key: "message", label: "Alarm" },
+  { key: "raised", label: "Raised" },
+  { key: "acknowledged", label: "Acknowledged" },
+  { key: "accounts", label: "Accounts behind it" },
+];
+
+/** The same alarms in four columns, for the one-page brief. */
+export const ALARM_COLUMNS_SHORT = [
+  { key: "severityAndMessage", label: "Alarm" },
   { key: "raised", label: "Raised" },
   { key: "acknowledged", label: "Acknowledged" },
   { key: "accounts", label: "Accounts behind it" },

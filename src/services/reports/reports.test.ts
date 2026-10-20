@@ -176,8 +176,10 @@ describe("the daily operations brief", () => {
   });
 
   it("lists what was still wrong when the last day closed: the open fault and the standing alarms", () => {
-    const interruptions = section(briefLastDay, "interruptions").blocks.find((one) => one.kind === "table");
-    assert.ok(interruptions?.kind === "table" && interruptions.rows.length === 2);
+    // The open fault is in progress; an outage with no restoration recorded is a gap in the record, listed apart.
+    const [inProgress, notRecorded] = section(briefLastDay, "interruptions").blocks.filter((one) => one.kind === "table");
+    assert.ok(inProgress?.kind === "table" && inProgress.title === "In progress" && inProgress.rows.length === 1);
+    assert.ok(notRecorded?.kind === "table" && notRecorded.title === "Restoration not recorded" && notRecorded.rows.length === 1);
     const alarms = section(briefLastDay, "alarms").blocks[0];
     assert.ok(alarms.kind === "table" && alarms.rows.length === 4);
     const standing = briefLastDay.summary.find((metric) => metric.label === "Source alarms standing at the end of the day")!;

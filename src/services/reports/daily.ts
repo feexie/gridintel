@@ -7,7 +7,7 @@ import { attributedIndex } from "../operations/levels.ts";
 import { mergeSourcing } from "../operations/metric.ts";
 import { reliabilityWorkspaceView } from "../reliability/view.ts";
 import { calculated, counted, figure, relabel, text } from "./cells.ts";
-import { ALARM_COLUMNS, INTERRUPTION_COLUMNS, SOURCE_ALARM_WORDS, alarmRows, interruptionRows } from "./operations.ts";
+import { ALARM_COLUMNS_SHORT, INTERRUPTION_COLUMNS, SOURCE_ALARM_WORDS, alarmRows, interruptionRows } from "./operations.ts";
 import { periodWords } from "./period.ts";
 
 /* ==========================================================
@@ -46,7 +46,7 @@ export async function dailyBrief(runtime: OperationsRuntime, offset: string): Pr
     purpose: "How long each feeder's customers had supply, against the hours its band commits to.",
     newPage: false,
     blocks: [
-      ...(portfolio.provisional === null ? [] : [{ kind: "statement", tone: "caveat", title: null, text: portfolio.provisional } satisfies ReportBlock]),
+      // A provisional figure is said on the cover, beside the indices it touches.
       {
         kind: "table",
         title: "Hours of supply, by feeder",
@@ -93,10 +93,24 @@ export async function dailyBrief(runtime: OperationsRuntime, offset: string): Pr
         title: "In progress",
         caption: null,
         columns: INTERRUPTION_COLUMNS,
-        rows: interruptionRows([...now.interruptions.inProgress, ...now.interruptions.restorationNotRecorded]),
+        rows: interruptionRows(now.interruptions.inProgress),
         empty: now.interruptions.completeness === "complete" ? `None: every interruption in the outage log had been restored by the end of ${day}.` : "None is in the outage log, which is not complete.",
-        notes: now.interruptions.restorationNotRecorded.length > 0 ? ["An outage with no restoration time whose source does not say it is open is a gap in the record, not a finding that supply is still off; it is listed with its restoration as not recorded."] : [],
+        notes: [],
       },
+      // A gap in the record is not an interruption in progress: it is a list of its own, shown only when there is one.
+      ...(now.interruptions.restorationNotRecorded.length === 0
+        ? []
+        : [
+            {
+              kind: "table",
+              title: "Restoration not recorded",
+              caption: "No restoration time, and the source does not say the outage is open: a gap in the record, not a finding that supply is still off.",
+              columns: INTERRUPTION_COLUMNS,
+              rows: interruptionRows(now.interruptions.restorationNotRecorded),
+              empty: null,
+              notes: [],
+            } satisfies ReportBlock,
+          ]),
     ],
   };
 
@@ -112,7 +126,7 @@ export async function dailyBrief(runtime: OperationsRuntime, offset: string): Pr
         kind: "table",
         title: "Source alarms standing",
         caption: null,
-        columns: ALARM_COLUMNS,
+        columns: ALARM_COLUMNS_SHORT,
         rows: alarmRows(now.alarms),
         empty: events.alarms.recorded.completeness === "complete" ? "None was standing at the end of the day." : "None is in the alarm record, which is not complete.",
         notes: [
