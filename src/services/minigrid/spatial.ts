@@ -74,16 +74,17 @@ async function keyFigures(runtime: SiteRuntime, shown: readonly SpatialEntity[])
 
 /**
  * The Mini-grid module. `sites` gives the runtime its sites are read through; it is asked on each
- * use, so the module holds no adapter. Without it the module has no source connected.
+ * use, so the module holds no adapter, and the composition root may check who is asking before it
+ * answers. Without it the module has no source connected.
  */
-export function minigridSpatialModule(sites?: () => SiteRuntime): SpatialModule {
+export function minigridSpatialModule(sites?: () => SiteRuntime | Promise<SiteRuntime>): SpatialModule {
   return {
     id: "minigrid",
     title: "Mini-grid Intelligence",
-    entities: async () => (sites === undefined ? { entities: [], completeness: "not_available", sourcing: { sources: [], synthetic: false, unknownSources: [] } } : entities(sites())),
+    entities: async () => (sites === undefined ? { entities: [], completeness: "not_available", sourcing: { sources: [], synthetic: false, unknownSources: [] } } : entities(await sites())),
     async trace(_runtime, ref) {
       if (sites === undefined || ref.kind !== MINIGRID_SITE_KIND) return null;
-      const runtime = sites();
+      const runtime = await sites();
       const { index, coverage } = await loadSites(runtime.repos.sites, runtime.now, runtime.cache);
       if (!index.siteById.has(ref.id)) return null;
       const active = siteCustomers(index, ref.id).filter((customer) => customer.accountStatus === "active").length;
@@ -108,7 +109,7 @@ export function minigridSpatialModule(sites?: () => SiteRuntime): SpatialModule 
         entityKinds: [MINIGRID_SITE_KIND],
         legend: [],
         onByDefault: false,
-        ...(sites === undefined ? {} : { details: (_runtime, shown) => keyFigures(sites(), shown) }),
+        ...(sites === undefined ? {} : { details: async (_runtime, shown) => keyFigures(await sites(), shown) }),
       },
     ],
   };

@@ -133,23 +133,26 @@ docs.
   tag carries the phase's name (Founder, 2026-10-20).
 - `npm run verify` runs the five checks in order and stops at the first
   failure: `npm run typecheck`, `npm test`, `npm run lint`, the build and
-  the browser tests (`npm run test:e2e`). The build is made twice (ADR
-  0012): `npm run build:request`, with every data screen rendered on
-  request, and `npm run build`, with the network screens built ahead of
-  time. The browser tests run against both.
+  the browser tests (`npm run test:e2e`). The build is made three times:
+  `npm run build:request`, with every data screen rendered on request, and
+  `npm run build`, with the network screens built ahead of time (ADR 0012),
+  and `npm run build:tenant`, a tenant deployment with the in-memory
+  identity adapter (ADR 0020). The browser tests run against all three; the
+  tenant's are `npm run test:e2e:tenant`.
 - `npm run verify:local` is the lighter check for a machine short of memory
   (Founder, 2026-10-15): typecheck, unit tests, lint, then one build (the
-  ordinary one, `npm run build`) and its browser tests on one worker. It
-  leaves out the request build, the readiness tests that start servers of
-  their own, and the page-time budget.
+  ordinary one, `npm run build`) and its browser tests on one worker, then
+  the tenant build and its browser tests (Phase 8A), one server at a time.
+  It leaves out the request build, the readiness tests that start servers
+  of their own, and the page-time budget.
 - Commit only after a check passes, and commit every time it does, so an
   interruption never loses more than one step. Push the branch as you go.
   On this laptop the commit after each step may rest on
-  `npm run verify:local`. The full `npm run verify` (both builds) stays the
+  `npm run verify:local`. The full `npm run verify` (all three builds) stays the
   rule: CI runs it on every push, and it must be green before the Founder
   approves a checkpoint.
 - The browser tests run against the builds `verify` (or `verify:local`) has
-  just made. Stop any server left running on the test ports (3210 to 3213)
+  just made. Stop any server left running on the test ports (3210 to 3214)
   first, or they will test an old build.
 - New analytics and services come with tests. Deterministic logic is tested
   with fixed inputs and fixed times.

@@ -30,7 +30,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", testIgnore: /timing\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1500, height: 900 } } },
+    { name: "chromium", testIgnore: [/timing\.spec\.ts/, /[\\/]tenant[\\/]/], use: { ...devices["Desktop Chrome"], viewport: { width: 1500, height: 900 } } },
     // Page timings are measured last and alone, so no other test is loading the servers. Not on
     // `verify:local`, which serves one build only.
     ...(LOCAL ? [] : [{ name: "timing", testMatch: /timing\.spec\.ts/, dependencies: ["chromium"] }]),

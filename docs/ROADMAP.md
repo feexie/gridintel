@@ -14,7 +14,9 @@ complete.** **Phase REPORTS-A is merged** (by the Founder's instruction of
 2026-10-19; tag `phase-reports-a`). **Phase REPORTS-B is accepted**
 (Founder, 2026-10-20, with fixes; merged to `main`, tag `phase-reports-b`):
 the other three reports and XLSX (ADR 0019 and its amendment). **The
-REPORTS phase is complete.**
+REPORTS phase is complete.** **Phase 8 comes before DER** (Founder, 2026-10-20): **Phase 8A is
+at its checkpoint** (2026-10-21; branch `phase-8a`): login and separate
+organizations, on synthetic data only (ADR 0020).
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
 before GridIntel is shown to people. After it the next modules are **DER
@@ -1446,7 +1448,59 @@ it. The ways that remain, should it ever matter, are those of ADR 0012:
 build the 6,448 service-point screens ahead of time, or keep an instance
 warm, which is a paid Vercel feature.
 
-## Phase 8: API and backend boundary
+## Phase 8: Login, separate organizations, the API boundary (approved 2026-10-20, ahead of DER; 8A at its checkpoint)
+
+**Why now (Founder, 2026-10-20).** A pilot asks an organization for three to
+six months of its records, and GridIntel had no login and nothing on the
+server that kept organizations apart. **Overriding rule (Founder,
+2026-10-21): lowest cost.** Nothing paid until a real partner signs; every
+paid item is a decision gate with its monthly cost in USD and NGN.
+
+**Sub-phases.** 8A: login and separate organizations, on synthetic data
+only. 8B: the API with validated contracts, grants on every API route, and
+the audit log (kept for the life of a pilot; read by the organization's
+administrator for their own organization and by the platform owner). 8C:
+where pilot data lives, the pilot import, the public demonstration kept
+apart. Then G9 (below).
+
+### Phase 8A: login and separate organizations (at its checkpoint 2026-10-21; branch `phase-8a`, not merged)
+
+| Built | Where |
+| --- | --- |
+| Two deployments from one codebase: the public demonstration (no login, no secret) and a tenant deployment; an unsafe configuration serves nothing | `composition/mode.ts`; ADR 0020 |
+| Identity behind a port, with a Supabase adapter and an in-memory one for the tests | `repositories/ports/identity.ts`, `repositories/supabase`, `repositories/memory/identity.ts` |
+| Invited people only; a password and a TOTP code at every sign-in; invitations used once, within a day, and not emailed (the link is shown to the administrator) | `app/login`, `app/auth`, People screen |
+| The DisCo and the mini-grid operator of the demonstration as two organizations; a member's grant cut to their organization's sectors | `composition/identityFixture.ts`, `constants/access.ts` (`grantFor`), the migration |
+| Organizations kept apart on the server: the proxy's quick check, the gate on every read of a sector's records, and row-level security beneath | `proxy.ts`, `composition/runtime.ts` (`gate`), `supabase/migrations/0001_identity.sql` |
+| Links cut to the grant: the ways in, a line's link, the Platform Overview's sectors | `services/overview/links.ts` |
+| An organization's administrator invites, changes what a member may open, and removes them | `/dashboard/settings/people` |
+| A tenant build, tested in the browser on every run | `npm run build:tenant`, `npm run test:e2e:tenant` |
+
+**Hosting (Founder, 2026-10-21).** Supabase free plan, region Paris
+(`eu-west-3`): Supabase has no region in Africa, and Paris is the closest
+to Lagos. Vercel Hobby: the existing project stays the public
+demonstration, with no Supabase setting; a second Hobby project serves the
+tenant deployment. Secrets in Vercel environment variables and GitHub
+Actions secrets only.
+
+**Free-tier workaround.** A free Supabase project is paused after a week
+without database activity. `.github/workflows/keep-awake.yml` writes one
+row a day. It is a workaround for the free plan and can be deleted on a
+paid one.
+
+**Precondition of G9: backups.** The free plan has no automatic backups,
+which is acceptable for synthetic data only. Supabase Pro, or an
+equivalent with backups, comes before any real record.
+
+**Not done in 8A.** `/api/areas` stays open (public reference geography,
+no records); API routes get keys of their own in 8B. A changed grant
+reaches the proxy's copy within the hour; every data read checks the
+membership at once.
+
+**G9: the first real record.** Not before the 8C checkpoint, the Founder's
+approval, legal sign-off, and backups (above).
+
+### Phase 8B and 8C (planned)
 
 **Goal.** Services reachable over HTTP with validated contracts.
 **Includes.** Route handlers, runtime schemas (Zod, already installed), error

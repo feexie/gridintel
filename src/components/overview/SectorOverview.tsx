@@ -15,12 +15,14 @@ function WaysIn({ view, home }: { view: SectorOverviewView; home: string }) {
   return (
     <Panel title="Go to">
       <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" data-ways-in>
-        <li>
-          <Link href={`${home}/map`} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
-            <span className="text-sm font-semibold text-link">GIS Map</span>
-            <span className="mt-0.5 block text-caption leading-snug text-ink-4">This sector on the map, with what is wrong on it now.</span>
-          </Link>
-        </li>
+        {view.waysIn?.map === false ? null : (
+          <li>
+            <Link href={`${home}/map`} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
+              <span className="text-sm font-semibold text-link">GIS Map</span>
+              <span className="mt-0.5 block text-caption leading-snug text-ink-4">This sector on the map, with what is wrong on it now.</span>
+            </Link>
+          </li>
+        )}
         {view.workspaces.map((link) => (
           <li key={link.workspace}>
             <Link href={workspaceHref(link.workspace)} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
@@ -29,14 +31,16 @@ function WaysIn({ view, home }: { view: SectorOverviewView; home: string }) {
             </Link>
           </li>
         ))}
-        <li>
-          <Link href={`${home}/ai`} className="gi-tap block rounded-tile border border-dashed border-line-strong px-3 py-2 hover:border-brand">
-            <span className="flex items-center gap-2 text-sm font-semibold text-ink-3">
-              AI Assistant <PlannedTag />
-            </span>
-            <span className="mt-0.5 block text-caption leading-snug text-ink-4">Not built yet. What it will answer, and how.</span>
-          </Link>
-        </li>
+        {view.waysIn?.assistant === false ? null : (
+          <li>
+            <Link href={`${home}/ai`} className="gi-tap block rounded-tile border border-dashed border-line-strong px-3 py-2 hover:border-brand">
+              <span className="flex items-center gap-2 text-sm font-semibold text-ink-3">
+                AI Assistant <PlannedTag />
+              </span>
+              <span className="mt-0.5 block text-caption leading-snug text-ink-4">Not built yet. What it will answer, and how.</span>
+            </Link>
+          </li>
+        )}
       </ul>
     </Panel>
   );

@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import { NextRequest } from "next/server.js";
 import { accessProxy } from "../proxy.ts";
 import type { ScreenGrant, ViewerContext } from "../services/spatial/viewer.ts";
-import { canOpen, homeFor, keyFor, navigationFor, REFUSED_PATH, reportsFor } from "./access.ts";
+import { admitsRead, canOpen, grantFor, holdsSector, homeFor, keyFor, navigationFor, REFUSED_PATH, reportsFor } from "./access.ts";
+import { departmentOf, departmentsFor } from "./departments.ts";
+import { PEOPLE_KEY, PEOPLE_PATH } from "./navigation.ts";
 import { REPORTS, sectors } from "./navigation.ts";
 
 const EVERYTHING: ScreenGrant = { kind: "everything" };
@@ -146,5 +148,56 @@ describe("which screens a viewer may open", () => {
       assert.equal(refused.status, 403, route);
       assert.equal(refused.headers.get("x-middleware-rewrite"), `http://localhost${REFUSED_PATH}`, route);
     }
+  });
+});
+
+describe("a member's grant (Phase 8A, ADR 0020)", () => {
+  it("holds every screen of the organization's sectors and the platform's when the membership lists none", () => {
+    const grant = grantFor(["utility"], null, false);
+    assert.deepEqual(grant, { kind: "listed", keys: ["platform", "utility"] });
+    assert.equal(canOpen(grant, "/dashboard/utility/revenue"), true);
+    assert.equal(canOpen(grant, "/dashboard/minigrid/sites"), false);
+    assert.equal(holdsSector(grant, "utility"), true);
+    assert.equal(holdsSector(grant, "minigrid"), false);
+  });
+
+  it("drops a key of a sector the organization does not hold, whatever the membership says", () => {
+    const grant = grantFor(["minigrid"], ["minigrid.sites", "utility", "utility.revenue", "platform.reports"], false);
+    assert.deepEqual(grant, { kind: "listed", keys: ["minigrid.sites", "platform.reports"] });
+    assert.equal(holdsSector(grant, "utility"), false);
+    for (const path of ["/dashboard/utility", "/dashboard/utility/revenue", "/dashboard/utility/reports/operations/2026-09/data.csv"]) assert.equal(canOpen(grant, path), false, path);
+  });
+
+  it("gives the people screen to an administrator only, and no membership can list it for itself", () => {
+    const member = grantFor(["utility"], ["utility.revenue", PEOPLE_KEY], false);
+    assert.equal(canOpen(member, PEOPLE_PATH), false);
+    const administrator = grantFor(["utility"], ["utility.revenue"], true);
+    assert.equal(keyFor(PEOPLE_PATH), PEOPLE_KEY);
+    assert.equal(canOpen(administrator, PEOPLE_PATH), true);
+  });
+
+  it("offers an administrator the departments of their organization's sectors, and names a membership's", () => {
+    assert.deepEqual(departmentsFor(["minigrid"]).map((one) => one.sector), ["minigrid", "minigrid"]);
+    assert.equal(departmentOf(["utility"], ["utility.revenue", "utility.overview", "utility.map"])?.label, "Revenue department");
+    assert.equal(departmentOf(["utility"], null)?.label, "Every screen");
+    assert.equal(departmentOf(["utility"], ["utility.revenue"]), null);
+  });
+});
+
+describe("the data layer's check (Phase 8A)", () => {
+  it("reads a sector's records only for a grant that holds the sector and opens the address asked for", () => {
+    const disco = grantFor(["utility"], null, false);
+    const revenue = grantFor(["utility"], ["utility.overview", "utility.map", "utility.revenue"], false);
+    const operator = grantFor(["minigrid"], null, true);
+    assert.equal(admitsRead(disco, "utility", "/dashboard/utility/executive"), true);
+    assert.equal(admitsRead(disco, "minigrid", "/dashboard/minigrid/sites"), false);
+    // Asked from a screen of its own the grant opens, the other organization's records are still not read.
+    assert.equal(admitsRead(operator, "utility", "/dashboard/minigrid"), false);
+    assert.equal(admitsRead(revenue, "utility", "/dashboard/utility/revenue"), true);
+    assert.equal(admitsRead(revenue, "utility", "/dashboard/utility/executive"), false);
+    // The utility's Overview reads other workspaces' records to put itself together.
+    assert.equal(admitsRead(revenue, "utility", "/dashboard/utility"), true);
+    assert.equal(admitsRead(disco, "utility", null), false);
+    assert.equal(admitsRead({ kind: "everything" }, "minigrid", "/dashboard/minigrid"), true);
   });
 });

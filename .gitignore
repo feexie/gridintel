@@ -18,6 +18,7 @@
 # next.js
 /.next/
 /.next-request/
+/.next-tenant/
 /out/
 
 # production

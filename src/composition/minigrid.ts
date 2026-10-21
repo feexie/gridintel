@@ -13,19 +13,19 @@ import { getMinigridRuntime } from "./runtime.ts";
 
 export const minigrid = {
   /** The Mini-grid workspace: the sites side by side, and what stands out. */
-  portfolioView: () => minigridPortfolioView(getMinigridRuntime()),
+  portfolioView: async () => minigridPortfolioView(await getMinigridRuntime()),
   /** One site in full; null for a site that is not in the register. */
-  siteView: (siteId: string) => minigridSiteView(getMinigridRuntime(), siteId),
+  siteView: async (siteId: string) => minigridSiteView(await getMinigridRuntime(), siteId),
   /** Every site's id, for building the site screens ahead of time. */
-  siteIds: () => minigridSiteIds(getMinigridRuntime()),
+  siteIds: async () => minigridSiteIds(await getMinigridRuntime()),
   /** Every site with its performance for the reporting period. */
-  portfolio: () => {
-    const runtime = getMinigridRuntime();
+  portfolio: async () => {
+    const runtime = await getMinigridRuntime();
     return sitePortfolio({ repos: runtime.repos, period: runtime.period, context: { computedAt: runtime.now }, cache: runtime.cache });
   },
   /** One site's performance for the reporting period; null for a site that is not in the register. */
-  site: (siteId: string) => {
-    const runtime = getMinigridRuntime();
+  site: async (siteId: string) => {
+    const runtime = await getMinigridRuntime();
     return sitePerformance({ repos: runtime.repos, siteId, period: runtime.period, context: { computedAt: runtime.now }, cache: runtime.cache });
   },
 };

@@ -43,7 +43,7 @@ export interface ReportBarPeriod {
   asOf: string | null;
 }
 
-const BUILDERS: Record<BuiltReport, { runtime: () => OperationsRuntime; build: (runtime: OperationsRuntime, offset: string, kind: PeriodKind) => Promise<ReportBody> }> = {
+const BUILDERS: Record<BuiltReport, { runtime: () => Promise<OperationsRuntime>; build: (runtime: OperationsRuntime, offset: string, kind: PeriodKind) => Promise<ReportBody> }> = {
   reliability: { runtime: getRuntime, build: reliabilityReport },
   compliance: { runtime: getMinigridRuntime, build: complianceReport },
   operations: { runtime: getRuntime, build: operationsReport },
@@ -80,7 +80,7 @@ async function build(id: BuiltReport, periodKey: string): Promise<ReportDocument
   const covered = definition.periodKinds.includes(period.kind) ? availability(period, coverage) : { available: false as const, reason: `Not available for this period. ${definition.periodRule}` };
   if (!covered.available) return reportDocument({ item, definition, period, periods, sample, built: null, unavailable: covered.reason });
 
-  const base = BUILDERS[id].runtime();
+  const base = await BUILDERS[id].runtime();
   const recording = recordingRepositories(base.repos);
   // "Now" for the report is the end of its period: a day's report is as of that day's end.
   const runtime: OperationsRuntime = { ...base, repos: recording.repos, period: { start: period.start, end: period.end }, now: period.end, cache: createMemoryCache() };
@@ -100,9 +100,9 @@ async function build(id: BuiltReport, periodKey: string): Promise<ReportDocument
 }
 
 /** One report for one period, built once while the cache is valid. null for an unknown report or an address that names no period. */
-function document(id: string, periodKey: string): Promise<ReportDocumentView | null> {
-  if (!isBuilt(id)) return Promise.resolve(null);
-  return BUILDERS[id].runtime().cache!.get(`report:${id}|${periodKey}`, () => build(id, periodKey));
+async function document(id: string, periodKey: string): Promise<ReportDocumentView | null> {
+  if (!isBuilt(id)) return null;
+  return (await BUILDERS[id].runtime()).cache!.get(`report:${id}|${periodKey}`, () => build(id, periodKey));
 }
 
 export const reports = {

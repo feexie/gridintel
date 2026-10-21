@@ -26,11 +26,14 @@ const PROMISES = [
 ];
 
 const TO_JOIN = [
-  { title: "DER Intelligence", href: DER_HOME, text: "Solar, storage, inverters and generators as fleets: performance, aggregation and dispatch." },
-  { title: "Planning", href: PLANNING_HOME, text: "Load growth, capacity, scenarios and investment priorities, from the same records." },
+  { id: "der", title: "DER Intelligence", href: DER_HOME, text: "Solar, storage, inverters and generators as fleets: performance, aggregation and dispatch." },
+  { id: "planning", title: "Planning", href: PLANNING_HOME, text: "Load growth, capacity, scenarios and investment priorities, from the same records." },
 ];
 
-function Hero() {
+/** True when the viewer may enter the sector; every sector is open when the read model names none. */
+const entered = (view: PlatformOverviewView, sector: string) => view.openSectors === undefined || view.openSectors.includes(sector);
+
+function Hero({ view }: { view: PlatformOverviewView }) {
   return (
     <section className="gi-hero rounded-panel px-5 py-7 sm:px-8 sm:py-10" data-hero>
       <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
@@ -41,12 +44,16 @@ function Hero() {
             GridIntel turns the records a utility or a mini-grid operator already holds into answers: what is failing, what it costs, and whether reported figures match the records.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Link href={UTILITY_HOME} className="gi-tap inline-flex items-center rounded-tile bg-white px-4 py-2 text-sm font-semibold text-[#2a1c8a] hover:bg-white/90">
-              Utility Intelligence →
-            </Link>
-            <Link href={MINIGRID_HOME} className="gi-tap inline-flex items-center rounded-tile border border-white/40 px-4 py-2 text-sm font-semibold text-white hover:border-white">
-              Mini-grid Intelligence →
-            </Link>
+            {entered(view, "utility") ? (
+              <Link href={UTILITY_HOME} className="gi-tap inline-flex items-center rounded-tile bg-white px-4 py-2 text-sm font-semibold text-[#2a1c8a] hover:bg-white/90">
+                Utility Intelligence →
+              </Link>
+            ) : null}
+            {entered(view, "minigrid") ? (
+              <Link href={MINIGRID_HOME} className="gi-tap inline-flex items-center rounded-tile border border-white/40 px-4 py-2 text-sm font-semibold text-white hover:border-white">
+                Mini-grid Intelligence →
+              </Link>
+            ) : null}
           </div>
         </div>
         <EnergySystemArt className="mx-auto hidden w-full max-w-md sm:block" />
@@ -66,10 +73,12 @@ function Sector({ sector }: { sector: PlatformSectorView }) {
       </header>
       <div className="space-y-3 p-3">
         <AttentionList items={sector.findings} note={sector.findings.length === 0 ? "This sector's Overview lists nothing for the period." : null} />
-        <Link href={home} className="gi-tap inline-flex items-center text-sm font-semibold text-link hover:text-link-hover hover:underline" data-open-sector>
-          {/* A count the read model gives; the words say what it counts. */}
-          Open the {sector.title} overview{sector.findingsMore > 0 ? ` · ${sector.findingsMore} more` : ""} →
-        </Link>
+        {sector.overviewOpen === false ? null : (
+          <Link href={home} className="gi-tap inline-flex items-center text-sm font-semibold text-link hover:text-link-hover hover:underline" data-open-sector>
+            {/* A count the read model gives; the words say what it counts. */}
+            Open the {sector.title} overview{sector.findingsMore > 0 ? ` · ${sector.findingsMore} more` : ""} →
+          </Link>
+        )}
       </div>
     </section>
   );
@@ -78,7 +87,7 @@ function Sector({ sector }: { sector: PlatformSectorView }) {
 export function PlatformOverview({ view, map }: { view: PlatformOverviewView; map: ReactNode }) {
   return (
     <div className="space-y-6" data-overview="platform">
-      <Hero />
+      <Hero view={view} />
 
       <ul className="grid gap-3 sm:grid-cols-3" data-promises>
         {PROMISES.map((promise) => (
@@ -108,7 +117,9 @@ export function PlatformOverview({ view, map }: { view: PlatformOverviewView; ma
             <span className="group-open:hidden">How these lines were chosen ▸</span>
             <span className="hidden group-open:inline">How these lines were chosen ▾</span>
           </summary>
-          <p className="mt-1 max-w-3xl leading-snug">{view.selectionRule} The two sectors are two organizations with their own records: they are shown side by side and never added together.</p>
+          <p className="mt-1 max-w-3xl leading-snug">{view.selectionRule}
+            {view.sectors.length > 1 ? " The two sectors are two organizations with their own records: they are shown side by side and never added together." : ""}
+          </p>
         </details>
       </section>
 
@@ -119,9 +130,13 @@ export function PlatformOverview({ view, map }: { view: PlatformOverviewView; ma
           {TO_JOIN.map((sector) => (
             <li key={sector.title} className="rounded-tile border border-dashed border-line-strong px-3 py-2">
               <p className="flex items-center gap-2 text-sm font-semibold text-ink-3">
-                <Link href={sector.href} className="hover:text-ink hover:underline">
-                  {sector.title}
-                </Link>{" "}
+                {entered(view, sector.id) ? (
+                  <Link href={sector.href} className="hover:text-ink hover:underline">
+                    {sector.title}
+                  </Link>
+                ) : (
+                  sector.title
+                )}{" "}
                 <PlannedTag />
               </p>
               <p className="mt-0.5 text-caption leading-snug text-ink-4">{sector.text}</p>

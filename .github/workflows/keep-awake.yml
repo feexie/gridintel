@@ -1,0 +1,37 @@
+name: Keep the Supabase project awake
+
+# FREE-TIER WORKAROUND (Phase 8A, ADR 0020). A Supabase project on the free plan is paused after
+# a week without database activity. Once a day this job writes one row (public.heartbeat) through
+# the database function gridintel_heartbeat(), which only the secret key may call. A paid plan is
+# never paused, and this job can then be deleted.
+#
+# Secrets (Settings > Secrets and variables > Actions): SUPABASE_URL and SUPABASE_SECRET_KEY.
+# Until both are set the job says so and stops without failing.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Write the heartbeat
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::SUPABASE_URL or SUPABASE_SECRET_KEY is not set; nothing to keep awake."
+            exit 0
+          fi
+          status=$(curl -sS -o response.txt -w "%{http_code}" -X POST "$SUPABASE_URL/rest/v1/rpc/gridintel_heartbeat" \
+            -H "apikey: $SUPABASE_SECRET_KEY" -H "Content-Type: application/json" -d '{}')
+          echo "HTTP $status"
+          cat response.txt; echo
+          test "$status" = "200"

@@ -4,6 +4,12 @@ import type { NextConfig } from "next";
    on request (see `datasetIsFixed` in src/composition/runtime.ts). That build goes to a folder
    of its own, so that it and the ordinary build can exist side by side and both be tested. */
 const onRequest = process.env.GRIDINTEL_RENDER === "request";
+/* A tenant deployment (GRIDINTEL_MODE=tenant, ADR 0020) renders every screen for the person who
+   asks, and must never serve a page rendered ahead of time for the public viewer: not a data
+   screen, and not a page whose frame was drawn for that viewer. Whether this build was made as a
+   tenant deployment is written into it, and composition/mode.ts refuses to start a tenant
+   deployment on any other build. */
+const tenant = process.env.GRIDINTEL_MODE === "tenant";
 
 /* A longer list used to be asked for with a query string. It is now a path of its own, which
    can be built ahead of time; the old addresses lead to the new ones. */
@@ -15,7 +21,9 @@ const fullList = (source: string, key: string) => ({
 });
 
 const nextConfig: NextConfig = {
-  distDir: onRequest ? ".next-request" : ".next",
+  // GRIDINTEL_DIST_DIR is set by scripts/next-as-tenant.mjs, so that the tests' tenant build lies beside the other two.
+  distDir: process.env.GRIDINTEL_DIST_DIR ?? (onRequest ? ".next-request" : ".next"),
+  env: { GRIDINTEL_BUILT_AS_TENANT: String(tenant) },
   async redirects() {
     return [
       fullList("/dashboard/utility/executive", "feeders"),

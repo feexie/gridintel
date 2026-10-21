@@ -300,3 +300,14 @@ test("the public demonstration may open every screen, and the page a refused rou
   await expect(page.locator("[data-refused] [data-metric], [data-refused] [data-figure]")).toHaveCount(0);
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
 });
+
+test("the public demonstration has no accounts: no sign-in, no people screen, no one signed in (ADR 0020)", async ({ page, request }) => {
+  for (const route of ["/login", "/login/verify", "/login/enrol", "/dashboard/settings/people"]) {
+    expect((await request.get(route)).status(), route).toBe(404);
+  }
+  expect((await request.get("/auth/confirm?token_hash=x&type=invite")).status()).toBe(404);
+  expect((await request.post("/auth/signout")).status()).toBe(404);
+  await page.goto("/dashboard");
+  await expect(page.locator("[data-account]")).toHaveCount(0);
+  await expect(page.locator("[data-sector]")).toHaveCount(2);
+});

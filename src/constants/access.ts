@@ -1,5 +1,5 @@
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
-import { ALL_REPORTS_PATH, PLATFORM_HOME, REPORTS, sectors, type NavigationItem, type ReportItem, type Sector } from "./navigation.ts";
+import { ALL_REPORTS_PATH, PEOPLE_KEY, PEOPLE_PATH, PLATFORM_HOME, REPORTS, sectors, type NavigationItem, type ReportItem, type Sector } from "./navigation.ts";
 
 /* ==========================================================
    WHICH SCREENS A VIEWER MAY OPEN (ADR 0018)
@@ -92,6 +92,7 @@ function within(pathname: string, href: string): boolean {
 export function keyFor(pathname: string): string | null {
   if (pathname === REFUSED_PATH) return null;
   if (pathname === ALL_REPORTS_PATH) return "platform.reports";
+  if (within(pathname, PEOPLE_PATH)) return PEOPLE_KEY;
   for (const report of REPORTS) if (within(pathname, report.href)) return report.key;
   for (const sector of sectors) {
     for (const item of [...sector.opening, ...sector.workspaces]) {
@@ -106,4 +107,44 @@ export function keyFor(pathname: string): string | null {
 export function canOpen(grant: ScreenGrant, pathname: string): boolean {
   const key = keyFor(pathname);
   return key === null || opensKey(grant, key);
+}
+
+/** True when the grant opens the screen with this permission key (a workspace, a sector's map). */
+export function opensScreen(grant: ScreenGrant, key: string): boolean {
+  return opensKey(grant, key);
+}
+
+/* ==========================================================
+   A MEMBER'S GRANT (Phase 8A, ADR 0020)
+
+   A person signed in for an organization holds the keys their
+   membership lists, cut to that organization's sectors and the
+   platform's own screens; a membership that lists none holds every
+   screen of them. A key of a sector the organization does not hold
+   is dropped, whatever the membership says, so a grant can never
+   reach another organization's records. An administrator also holds
+   the people screen.
+========================================================== */
+
+export function grantFor(organizationSectors: readonly string[], screens: readonly string[] | null, administrator: boolean): ScreenGrant {
+  const ours = (key: string) => {
+    const head = key.split(".")[0];
+    return (head === "platform" && key !== PEOPLE_KEY) || organizationSectors.includes(head);
+  };
+  const keys = screens === null ? ["platform", ...organizationSectors] : screens.filter(ours);
+  return { kind: "listed", keys: administrator ? [...keys, PEOPLE_KEY] : keys };
+}
+
+/** True when the grant reaches any screen of the sector: the sector's records may then be read. */
+export function holdsSector(grant: ScreenGrant, sector: string): boolean {
+  return grant.kind === "everything" || grant.keys.some((key) => key === sector || key.startsWith(`${sector}.`));
+}
+
+/**
+ * The data layer's check (composition/runtime.ts, `gate`): a sector's records may be read for a
+ * request when the grant holds the sector and opens the address asked for. A request whose
+ * address is not known reads nothing.
+ */
+export function admitsRead(grant: ScreenGrant, sector: string, path: string | null): boolean {
+  return holdsSector(grant, sector) && path !== null && canOpen(grant, path);
 }

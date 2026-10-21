@@ -6,8 +6,8 @@ import { getDataContext, getViewer } from "@/composition/runtime";
 
 /* An address that leads nowhere. It is shown inside the same frame as every other screen, so
    that the bar saying what data the application holds is on this one too. */
-export default function NotFound() {
-  const navigation = navigationFor(getViewer().screens);
+export default async function NotFound() {
+  const navigation = navigationFor((await getViewer()).screens);
   const home = homeFor(navigation);
   return (
     <DashboardShell bar={<DataBar context={{ ...getDataContext(), reportPeriods: {} }} />} navigation={navigation}>

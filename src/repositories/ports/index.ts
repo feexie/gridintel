@@ -25,6 +25,7 @@ export type * from "./billing.ts";
 export type * from "./sources.ts";
 export type * from "./spatial.ts";
 export type * from "./sites.ts";
+export type * from "./identity.ts";
 
 export interface GridIntelRepositories {
   registry: RegistryRepository;

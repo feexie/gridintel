@@ -93,6 +93,11 @@ export type ReportItem = {
 /** Where every report the viewer may open is listed, across sectors. */
 export const ALL_REPORTS_PATH = "/dashboard/reports";
 
+/** Where an organization's administrator manages who may sign in and what each person may open (Phase 8A). */
+export const PEOPLE_PATH = "/dashboard/settings/people";
+/** The key of that screen: held by an organization's administrators only. */
+export const PEOPLE_KEY = "platform.people";
+
 const report = (sector: ReportItem["sector"], id: ReportId, label: string, audience: string, description: string, planned = false): ReportItem => {
   const home = sector === "utility" ? UTILITY_HOME : MINIGRID_HOME;
   return { key: `${sector}.reports.${id}`, id, sector, label, audience, href: `${home}/reports/${id}`, description, ...(planned ? { planned } : {}) };
