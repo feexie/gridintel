@@ -5,6 +5,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "utility",
     title: "Utility Intelligence",
     image: "/images/platform/utility.jpg",
+    imageModern: "/images/platform/utility.webp",
     href: "/dashboard/utility",
     description:
       "Executive dashboards, operations management, asset intelligence, reliability analytics, outage management, revenue operations, and AI-assisted utility decision support.",

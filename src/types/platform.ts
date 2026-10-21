@@ -3,6 +3,8 @@ export interface PlatformCapability {
   title: string;
   description: string;
   image: string;
+  /** The same image in a modern format (WebP); `image` is its fallback. */
+  imageModern?: string;
   href: string;
 }
 

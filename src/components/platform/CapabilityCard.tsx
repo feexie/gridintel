@@ -14,15 +14,28 @@ export default function CapabilityCard({
     <Link href={capability.href}>
       <article className="group h-full overflow-hidden rounded-3xl border border-white/5 bg-white/[0.03] transition duration-300 hover:border-cyan-400/40 hover:bg-white/[0.05]">
         <div className="relative h-52 w-full">
-          <Image
-            src={capability.image}
-            alt={capability.title}
-            fill
-            sizes="(max-width:768px) 100vw,
-                   (max-width:1280px) 50vw,
-                   25vw"
-            className="object-cover transition duration-500 group-hover:scale-105"
-          />
+          {capability.imageModern ? (
+            // A WebP for browsers that read it, the JPEG for those that do not.
+            <picture>
+              <source srcSet={capability.imageModern} type="image/webp" />
+              <img
+                src={capability.image}
+                alt={capability.title}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+            </picture>
+          ) : (
+            <Image
+              src={capability.image}
+              alt={capability.title}
+              fill
+              sizes="(max-width:768px) 100vw,
+                     (max-width:1280px) 50vw,
+                     25vw"
+              className="object-cover transition duration-500 group-hover:scale-105"
+            />
+          )}
         </div>
 
         <div className="space-y-4 p-6">

@@ -69,7 +69,7 @@ the SYNTHETIC DATA label; typecheck, tests, lint, build and CI green.
 
 **Operations routes.** `/dashboard/utility/operations`, then
 `/regions/[id]`, `/substations/[id]`, `/feeders/[id]`, `/transformers/[id]`
-and `/service-points/[id]`. Screenshots: `docs/screenshots/phase5`.
+and `/service-points/[id]`. Screenshots: the GitHub release `phase-5` (the phase tagged at `935afbd` and its screenshots moved out of git, 2026-10-21).
 
 **What the dataset contains.** 1 region, 1 substation, 1 power transformer,
 2 feeders (NERC Band A and Band C), 6 distribution transformers, 432
@@ -2181,10 +2181,9 @@ Made again with
 
 - A report's CSV and XLSX are built on first request in each server
   process (about 7 s for the operations month locally); the pages are built
-  ahead of time. The first request on a fresh Vercel deployment has not been
-  timed: previews are behind Vercel login, and the Founder will turn the
-  protection off or time it. No `maxDuration` is set in the code, so the
-  project's default applies.
+  ahead of time. Closed (Founder, 2026-10-21): a Vercel Hobby function runs
+  up to 300 s, so 7 s is within limits. Each such build is paid for from
+  Hobby's monthly CPU allowance, which every report download draws on.
 - The state regulators' own reporting templates have not been read; the
   reports keep "not checked against a template" (Founder, 2026-10-20: no
   action).
