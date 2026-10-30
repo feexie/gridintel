@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { meteringPace, runMeteringFund, sizeCharge, type MeteringFundInputs } from "./meteringFund.ts";
+import { meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type MeteringFundInputs } from "./meteringFund.ts";
 
 /** A fund with no cost of capital, no gain, no reserve and no growth: each meter costs N60,000, all in naira. */
 const PLAIN: MeteringFundInputs = {
@@ -122,6 +122,15 @@ describe("the metering fund", () => {
   it("lowers the charge by the DisCo's share of the collection gain", () => {
     const withGain = { ...PLAIN, averageBillNaira: 10_000, collectionGainShare: 0.15, gainToFundShare: 0.5 };
     close(sizeCharge(withGain)!, 1_000 - 750);
+  });
+
+  it("says how much each meter is left short when the charge is held below what repays it", () => {
+    // At N600 instead of N1,000, each N60,000 meter recovers N36,000 in 60 months and is N24,000 short.
+    const short = shortfallAtCharge(PLAIN, 600)!;
+    close(short.perMeter, 24_000);
+    close(short.total, 24_000 * 600_000, 1e-2);
+    close(shortfallAtCharge(PLAIN, 1_000)!.total, 0, 1e-3);
+    assert.equal(shortfallAtCharge({ ...PLAIN, meteredShare: 1 }, 600), null);
   });
 
   it("charges nothing and installs nothing when every customer is already metered", () => {

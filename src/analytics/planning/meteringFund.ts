@@ -234,6 +234,44 @@ export function sizeCharge(inputs: MeteringFundInputs, shock: PriceShock = NO_SH
   return Math.max(0, charge);
 }
 
+export interface CapShortfall {
+  /** The charge the cap allows, in naira a month. */
+  charge: number;
+  /** The most any meter the fund installs is left short at its installation, in naira of that month. */
+  perMeter: number;
+  /** All the fund's meters together, each in naira of its installation month: the public money that would keep the charge at the cap. */
+  total: number;
+}
+
+/**
+ * What a charge held at the cap leaves unpaid: for each meter the fund installs, its installed cost
+ * less the value at installation of what it recovers in its 60 months at that charge. Null when the
+ * fund installs no meter.
+ */
+export function shortfallAtCharge(inputs: MeteringFundInputs, charge: number, shock: PriceShock = NO_SHOCK, methodology = METERING_FUND_REFERENCE): CapShortfall | null {
+  const { rolloutMonths, horizonMonths, repaymentMonths } = methodology.parameters;
+  const path = pricePath(inputs, shock, horizonMonths);
+  const { perMonth } = fundMetersPerMonth(inputs, rolloutMonths);
+  if (perMonth <= 0) return null;
+  let perMeter = 0;
+  let total = 0;
+  for (let installed = 1; installed <= rolloutMonths; installed++) {
+    const cost = costPerMeter(inputs, path, installed);
+    let owed = 1;
+    let recovered = 0;
+    for (let k = 1; k <= repaymentMonths; k++) {
+      const month = installed + k;
+      owed *= growth(inputs, path, month);
+      const chargeNow = charge * (inputs.chargeIndexed ? path.tariff[month] : 1) * payingShare(inputs);
+      recovered += (chargeNow + gainPerCustomer(inputs, path, month) - (cost * inputs.reserveRatePerYear) / 12) / owed;
+    }
+    const short = Math.max(0, cost - recovered);
+    perMeter = Math.max(perMeter, short);
+    total += short * perMonth;
+  }
+  return { charge, perMeter, total };
+}
+
 /** Runs the fund month by month with a given charge (by default, the one sized for these inputs and no shock). */
 export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = NO_SHOCK, charge?: number | null, methodology = METERING_FUND_REFERENCE): FundRun {
   const { rolloutMonths, horizonMonths, repaymentMonths } = methodology.parameters;
