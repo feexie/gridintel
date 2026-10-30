@@ -91,7 +91,8 @@ before the Nigeria case is built.
 | Investor / DFI capital | 100% in USD at 8% a year | Concessional DFI; assumption to verify (Founder, 30 Oct) |
 | Naira-funding toggle | Capital in naira at 22% a year | Assumption to verify (Founder, 30 Oct) |
 | Charge cap | 5% of the monthly bill | Assumption |
-| Monthly bill by band, A to E | **Placeholders**, shown on screen as "to be replaced with sourced figures" | The Founder supplies sourced values before recording |
+| Monthly bill by band, A to E | Allowed residential tariff × assumed consumption | Tariffs: NERC's September 2026 orders [N3] (reported per DisCo; an average of the 11 for the national and brief cases). Consumption per band: assumption, user-set (A 200, B 150, C 100, D 75, E 50 kWh a month) |
+| Inflation passed into tariffs | 0% | NERC's September 2026 orders keep Band A frozen since July 2024 and Bands B to E since December 2022. User-set. The "charge indexed to the tariff" mitigation helps only above 0% |
 | Share of customers in each band, A to E | **Placeholders**, shown the same way | The Founder supplies sourced values before recording |
 | Collection gain from metering | 15% of the metered customer's billed revenue | Assumption |
 | Share of the collection gain paid to the fund | 50% | Assumption |
@@ -142,6 +143,14 @@ methodology and on screen:
   band. The charge is the same for every customer.
 
 ### 3.4 Headline
+
+When the charge breaks the cap, a second line says what holding it at the cap
+would take: each meter's shortfall (installed cost less what the capped
+charge and the collection gain repay in 60 months, at the fund's cost of
+capital) and the public money that would close it for all the fund's
+meters. The screen's data bar says "PUBLISHED FIGURES AND ASSUMPTIONS"
+rather than "SYNTHETIC DATA": the Metering Fund holds no synthetic record.
+
 
 "Every customer metered by year 5 with no upfront payment. Charge: N[x] a
 month, [y]% of a typical Band [z] bill."
@@ -249,3 +258,11 @@ Supplied by the Founder, 30 October 2026; cited on screen with their dates.
 | S4 | The Guardian (Nigeria), https://guardian.ng/?p=2393191 | 2024 | Eko DisCo MAP vendor price ranges (reference only) |
 | S5 | ThisDay, https://www.thisdaylive.com/2026/10/15/nerc-metering-rate-now-63-1-4-7m-customers-still-without-devices/ | 15 Oct 2026 | MAP's 120-month refund and 10-day installation, as reported citing NERC (comparison only) |
 | B15 | GEH Brief 15, "Meter every customer", and its references | — | Test scenario; December 2025 metering (6.97m of 12.16m, 57.27%); DisCo losses Q4 2025; estimated-billing complaints 2020; mini-grid meter cost |
+| N1 | NERC, Second Quarter 2026 Report, https://nerc.gov.ng/wp-content/uploads/2026/09/2026_Q2_Report.pdf | 29 Sep 2026 | **Primary.** Table 15 (p. 56): each DisCo's active and metered customers at 30 June 2026 (12,589,486; 7,743,839; 61.51%). Appendix IX (p. 76): meters installed per DisCo, 2026 Q1 (426,985, revised) and Q2 (350,270) |
+| N2 | NERC, First Quarter 2026 Report, https://nerc.gov.ng/wp-content/uploads/2026/07/2026_Q1-Report.pdf | 2 Jul 2026 | **Primary.** Table 18 (p. 58): each DisCo's active and metered customers at 31 March 2026 (12,386,848; 7,324,079); used for customer growth |
+| N3 | NERC, September 2026 MYTO supplementary orders, one per DisCo, e.g. https://nerc.gov.ng/wp-content/uploads/2026/09/AEDC_HOLDCO_YSS_September_2026_088.pdf | 2 Sep 2026 (effective 1 Sep 2026) | **Primary.** Table 3 (p. 7): allowed residential (non-MD) tariffs per band, for the states NERC still regulates. Band A N209.50 everywhere; YEDC lists no Band E. Lifeline (R1) is up to 50 kWh a month (AEDC Appendix 1, p. 10) |
+
+NERC's metering factsheet of 14 October 2026 was not found on nerc.gov.ng
+(30 October 2026). Its August 2026 figures are shown beside the case as
+reported in [S5] (63.1%; 8.05m metered of 12.75m; 4,704,224 unmetered;
+141,746 newly metered in August), not used in the calculation.
