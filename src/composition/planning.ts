@@ -1,4 +1,5 @@
 import { nercPublishedFigures } from "../repositories/published/nerc.ts";
+import { allocationView } from "../services/planning/allocation.ts";
 import { meteringFundView } from "../services/planning/metering.ts";
 
 /* ==========================================================
@@ -14,4 +15,5 @@ const published = nercPublishedFigures();
 
 export const planning = {
   meteringFund: (query: Record<string, string | string[] | undefined>) => meteringFundView(published, query),
+  allocation: (query: Record<string, string | string[] | undefined>) => allocationView(published, query),
 };

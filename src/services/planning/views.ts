@@ -174,3 +174,45 @@ export interface MeteringFundView {
   methodology: { id: string; version: string; disclaimer: string };
   sourcing: { synthetic: false; sources: { id: string; name: string; kind: string; dated?: string }[] };
 }
+
+export interface AllocationRowView {
+  id: string;
+  name: string;
+  customers: string;
+  metered: string;
+  unmetered: string;
+  gapShare: string;
+  meteringRate: string;
+  installsQ1: string;
+  installsQ2: string;
+  monthsTo100: string;
+  collection: string;
+  atcc: string;
+  need: string;
+  needMissing: string[];
+  risk: string;
+  riskMissing: string[];
+  proRata: string;
+  publicMeters: string;
+  privateMeters: string;
+  recommended: string;
+  /** Recommended less pro-rata, signed. */
+  change: string;
+  pilot: boolean;
+}
+
+/** DisCo allocation (M3): where the first meters and the first private capital go. */
+export interface AllocationView {
+  headline: string;
+  headlineHow: string;
+  firstMillion: string;
+  scoresHow: string;
+  splitHow: string;
+  rows: AllocationRowView[];
+  pilot: { disco: string; sentence: string; figures: ShownFigure[]; note: string };
+  rule: string;
+  inputs: { key: string; label: string; value: number; defaultValue: number; min: number; max: number; step: number; unit: string; basis: string }[];
+  discos: { id: string; label: string; current: boolean }[];
+  citations: CitationView[];
+  methodology: { id: string; version: string; disclaimer: string };
+}

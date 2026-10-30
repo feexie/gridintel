@@ -30,7 +30,7 @@ export interface DataContext {
 export function DataBar({ context }: { context: DataContext }) {
   const pathname = usePathname() ?? "";
   // The Metering Fund shows published figures and assumptions, not the synthetic dataset.
-  const published = pathname === PUBLISHED_FIGURES_NOTICE.path;
+  const published = PUBLISHED_FIGURES_NOTICE.paths.includes(pathname);
   const notice = published ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary } : context.notice;
   const [open, setOpen] = useState(false);
   const key = REPORT_ADDRESS.exec(pathname)?.[1];

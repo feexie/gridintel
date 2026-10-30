@@ -87,3 +87,22 @@ test("presentation mode hides the navigation and keeps the finding", async ({ pa
   await page.getByRole("link", { name: "Leave presentation mode" }).click();
   await expect(page.locator("[data-sidebar]")).toBeVisible();
 });
+
+test("DisCo allocation: the largest gap first, the two scores, the first million against pro-rata, and a pilot", async ({ page }) => {
+  await page.goto(FUND);
+  await page.locator("[data-metering-tabs]").getByRole("link", { name: /DisCo allocation/ }).click();
+  await expect(page).toHaveURL(/\/metering\/allocation$/);
+  const main = page.getByRole("main");
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText("Ibadan holds 22.2% of Nigeria's unmetered customers; at the current pace it reaches 100% in 52 months.");
+  await expect(main.locator("[data-discos] [data-disco]")).toHaveCount(11);
+  await expect(main.locator('[data-disco="enugu"]')).toContainText("Never at this pace");
+  await expect(main.locator("[data-first-million]")).toContainText("The first million meters");
+  await expect(main.locator("[data-rule]")).toContainText("Poor residential customers are never last in the queue");
+  await expect(main.locator("[data-pilot]")).toContainText("installed by NEMSA-certified local installers");
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("PUBLISHED FIGURES AND ASSUMPTIONS");
+  await main.locator("[data-allocation-form] select").selectOption("kano");
+  await main.locator("[data-allocation-form]").getByRole("button", { name: "Recalculate" }).click();
+  await expect(page).toHaveURL(/pilotDisco=kano/);
+  await expect(main.locator("[data-pilot]")).toContainText("Pilot: Kano DisCo");
+});

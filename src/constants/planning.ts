@@ -41,12 +41,23 @@ export const plannerOf = (id: string): Planner | undefined => PLANNERS.find((pla
 /** How the Platform Overview describes the sector while only Metering is built. */
 export const PLANNING_STATUS = "Metering is built. The other planners are planned.";
 
-/** What the bar above the Metering Fund says about its data: it holds no synthetic record. */
+export type MeteringScreenId = "allocation" | "dt" | "fund" | "monitoring" | "about";
+
+/** The Metering planner's screens, in the order of the story: Plan, Fund, Monitor. */
+export const METERING_SCREENS: { id: MeteringScreenId; step: string; label: string; href: string; planned: boolean }[] = [
+  { id: "allocation", step: "Plan", label: "DisCo allocation", href: `${PLANNING_HOME}/metering/allocation`, planned: false },
+  { id: "dt", step: "Plan", label: "DT sequencing", href: `${PLANNING_HOME}/metering/dt`, planned: true },
+  { id: "fund", step: "Fund", label: "Metering Fund", href: `${PLANNING_HOME}/metering`, planned: false },
+  { id: "monitoring", step: "Monitor", label: "Monitoring", href: `${PLANNING_HOME}/metering/monitoring`, planned: true },
+  { id: "about", step: "", label: "About this build", href: `${PLANNING_HOME}/about-this-build`, planned: true },
+];
+
+/** What the bar above the Metering Fund and the DisCo allocation says about their data: they hold no synthetic record. */
 export const PUBLISHED_FIGURES_NOTICE = {
-  path: `${PLANNING_HOME}/metering`,
+  paths: [`${PLANNING_HOME}/metering`, `${PLANNING_HOME}/metering/allocation`],
   label: "PUBLISHED FIGURES AND ASSUMPTIONS",
   summary:
-    "No synthetic records on this screen. The Nigeria case uses NERC's published figures, cited where they are shown; the brief case is GEH Brief 15's test scenario. Every other input is an assumption, labelled.",
+    "No synthetic records on this screen. NERC's published figures are cited where they are shown; the brief case is GEH Brief 15's test scenario. Every other input is an assumption, labelled.",
   context: [
     { term: "NERC figures as of", value: "30 Jun 2026" },
     { term: "Latest reported", value: "Aug 2026" },

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Panel } from "@/components/system/Metric";
 import type { FigureOrigin, InvestmentView, InvestorView, MeteringFundView, ShownFigure, StructureView } from "@/services/planning/views";
 import { BalanceChart, CashFlowChart, StackedBars } from "./FundCharts";
+import { MeteringTabs } from "./MeteringTabs";
 
 /* The Metering Fund screen (docs/geh/DESIGN.md, section 3). One finding at the top with its figure
    and how it is calculated; then the gap, the shocks, the charts, the bands, the years, the rules,
@@ -46,6 +47,7 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
   const presentHref = `?${new URLSearchParams({ ...query, present: present ? "0" : "1" })}`;
   return (
     <div className={`space-y-4 ${present ? "mx-auto max-w-6xl" : ""}`} data-metering-fund data-case={view.caseId}>
+      {present ? null : <MeteringTabs current="fund" />}
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-3" data-positioning>
         <span className="font-semibold uppercase tracking-eyebrow text-brand">Plan → Fund → Monitor</span>
         <span className="max-w-4xl">{view.positioning}</span>
