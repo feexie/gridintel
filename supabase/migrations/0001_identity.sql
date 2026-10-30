@@ -81,6 +81,24 @@ create policy "a person marks their own invitation accepted" on public.membershi
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()) and accepted = true);
 
+-- What scripts/pilot-check.ts reads to confirm this file ran: for each of GridIntel's tables,
+-- whether row-level security is on and how many policies it has. It reads the catalogue and
+-- nothing else, and only the secret key may call it.
+create or replace function public.gridintel_setup_report() returns jsonb
+  language sql stable security definer set search_path = ''
+  as $$
+    select coalesce(jsonb_object_agg(c.relname, jsonb_build_object(
+      'rls', c.relrowsecurity,
+      'policies', (select count(*) from pg_catalog.pg_policies p where p.schemaname = 'public' and p.tablename = c.relname)
+    )), '{}'::jsonb)
+    from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r' and c.relname in ('organizations', 'memberships', 'heartbeat')
+  $$;
+
+revoke all on function public.gridintel_setup_report() from public, anon, authenticated;
+grant execute on function public.gridintel_setup_report() to service_role;
+
 -- The two synthetic organizations of the demonstration dataset, as tenants (Phase 8A).
 insert into public.organizations (id, name, kind, sectors, synthetic) values
   ('demo-disco', 'Savanna Electricity Distribution (synthetic)', 'distribution_utility', array['utility'], true),

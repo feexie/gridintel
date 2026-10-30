@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { people } from "@/composition/identity";
@@ -40,6 +41,8 @@ export async function invite(_previous: InviteState, form: FormData): Promise<In
   try {
     const { tokenHash } = await people.invite(email, roleOf(form.get("role")), departmentKeys(form.get("department")));
     const link = `${await origin()}/auth/confirm?${new URLSearchParams({ token_hash: tokenHash, type: "invite" })}`;
+    // The list of members shows the person invited, as invited and not yet signed in.
+    revalidatePath(PEOPLE_PATH);
     return { link, email, error: null };
   } catch (error) {
     return { link: null, email: null, error: error instanceof Error ? error.message : "The invitation could not be made." };

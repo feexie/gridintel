@@ -1475,6 +1475,13 @@ apart. Then G9 (below).
 | Links cut to the grant: the ways in, a line's link, the Platform Overview's sectors | `services/overview/links.ts` |
 | An organization's administrator invites, changes what a member may open, and removes them | `/dashboard/settings/people` |
 | A tenant build, tested in the browser on every run | `npm run build:tenant`, `npm run test:e2e:tenant` |
+| Setting up Supabase and the tenant Vercel project, and a read-only check of the setup | `docs/PILOT_SETUP.md`, `scripts/pilot-check.ts` |
+
+**The Founder's 8A review (2026-10-21).** The design is accepted. The merge
+waits until the Founder has signed in on the real Supabase project.
+Invitation links are passed on by hand for now, and the People screen
+says: "Send this privately. It works once and expires in a day." The
+third build stays in `verify`, `verify:local` and CI.
 
 **Hosting (Founder, 2026-10-21).** Supabase free plan, region Paris
 (`eu-west-3`): Supabase has no region in Africa, and Paris is the closest

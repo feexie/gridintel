@@ -161,6 +161,8 @@ test("an administrator invites someone: the link works once, and the person open
   await page.locator("[data-invite]").getByRole("button", { name: "Invite" }).click();
   const link = (await page.locator("[data-invite-link] code").textContent())!.trim();
   expect(link).toMatch(/\/auth\/confirm\?token_hash=[0-9a-f]{64}&type=invite$/);
+  await expect(page.locator("[data-invite-advice]")).toHaveText("Send this privately. It works once and expires in a day.");
+  await expect(page.locator('[data-member="invited@disco.test"]')).toContainText("invited, not yet signed in");
 
   const invited = await (await browser.newContext()).newPage();
   await invited.goto(link);

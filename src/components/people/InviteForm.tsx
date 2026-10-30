@@ -48,9 +48,10 @@ export function InviteForm({ action, departments }: { action: (state: InviteResu
       ) : null}
       {state.link ? (
         <div className="rounded-tile border border-line bg-app px-3 py-2 text-sm" data-invite-link>
-          <p className="text-ink-2">
-            Send this link to {state.email} yourself. It works once, for a day; GridIntel has not sent it.
+          <p className="font-medium text-ink" data-invite-advice>
+            Send this privately. It works once and expires in a day.
           </p>
+          <p className="text-ink-2">For {state.email}. GridIntel has not sent it.</p>
           <code className="mt-1 block break-all font-mono text-caption text-ink">{state.link}</code>
         </div>
       ) : null}
