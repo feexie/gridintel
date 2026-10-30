@@ -163,6 +163,8 @@ export interface FundRun {
   repaidByMonth: number[];
   /** All public top-up paid in. */
   totalTopUp: number;
+  /** The fund's own net cash each month (inflows less new meters and the reserve), months 0 to 120. */
+  netCashByMonth: number[];
 }
 
 interface Path {
@@ -217,6 +219,11 @@ function fundMetersPerMonth(inputs: MeteringFundInputs, rollout: number): { perM
   const needed = customersAtEnd - inputs.customers * inputs.meteredShare;
   const publicTotal = publicMeters.reduce((sum, meters) => sum + meters, 0);
   return { perMonth: Math.max(0, (needed - publicTotal) / rollout), publicMeters, customersAtEnd };
+}
+
+/** The installed cost of one meter in month 1, with no shock, in naira. */
+export function installedCostAtStart(inputs: MeteringFundInputs): number {
+  return costPerMeter(inputs, pricePath(inputs, NO_SHOCK, 1), 1);
 }
 
 /**
@@ -322,6 +329,7 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
   const pool = { inflow: 0, outflow: 0 };
   const owedByMonth = [0];
   const drawnByMonth = [0];
+  const netCashByMonth = [0];
   const repaidByMonth = [0];
   let totalTopUp = 0;
   const years: FundYear[] = [];
@@ -351,6 +359,7 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     const repaid = Math.max(0, Math.min(inflow - need, grown));
     owed = grown + need - inflow;
     drawnByMonth.push(drawn);
+    netCashByMonth.push(inflow - need);
     repaidByMonth.push(repaid);
     totalTopUp += topUp;
 
@@ -389,7 +398,8 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
 
   const lastInstalled = fundInstalled.reduce((last, meters, month) => (meters > 0 ? month : last), 0);
   const peakOwed = Math.max(...owedByMonth);
-  const repaidMonth = owedByMonth.findIndex((value, month) => month > 0 && month >= lastInstalled && value <= 0);
+  // Owed within a naira counts as repaid: what is left is rounding.
+  const repaidMonth = owedByMonth.findIndex((value, month) => month > 0 && month >= lastInstalled && value <= 1);
   return {
     methodology: methodologyRef(methodology),
     charge: startCharge,
@@ -408,6 +418,7 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     drawnByMonth,
     repaidByMonth,
     totalTopUp,
+    netCashByMonth,
   };
 }
 
@@ -525,4 +536,50 @@ function annualIrr(flows: number[]): number | null {
     else low = middle;
   }
   return (low + high) / 2;
+}
+
+/* ==========================================================
+   INITIAL INVESTMENT AGAINST BREAK-EVEN
+
+   From investors' side: what they have in at most, and when; the
+   month the fund's own monthly cash turns positive for good
+   (break-even); the month it has repaid them with the cost of capital
+   (fully repaid); and the month their cash back first equals their
+   cash in (payback).
+========================================================== */
+
+export interface InvestmentProfile {
+  /** The most investors have in at once, in naira. */
+  peakInvestment: number;
+  peakMonth: number;
+  /** The first month from which the fund's own net cash is never negative again; null if not by month 120. */
+  breakEvenMonth: number | null;
+  /** The month the fund owes investors nothing, cost of capital included; null if not by month 120. */
+  fullyRepaidMonth: number | null;
+  paybackMonth: number | null;
+  irr: number | null;
+  /** Investors' cash back less cash in, added up month by month, months 0 to 120. */
+  cumulativeByMonth: number[];
+}
+
+export function investmentProfile(run: FundRun, outcome: InvestorOutcome): InvestmentProfile {
+  let cumulative = 0;
+  const cumulativeByMonth = run.drawnByMonth.map((drawn, month) => (cumulative += run.repaidByMonth[month] - drawn));
+  const last = cumulativeByMonth.length - 1;
+  cumulativeByMonth[last] += outcome.absorbedByFirstLoss + outcome.absorbedByReserve;
+  const lowest = Math.min(...cumulativeByMonth);
+  let breakEvenMonth: number | null = null;
+  for (let month = run.netCashByMonth.length - 1; month >= 1; month--) {
+    if (run.netCashByMonth[month] < 0) break;
+    breakEvenMonth = month;
+  }
+  return {
+    peakInvestment: -lowest,
+    peakMonth: cumulativeByMonth.indexOf(lowest),
+    breakEvenMonth: breakEvenMonth === null || breakEvenMonth > last ? null : breakEvenMonth,
+    fullyRepaidMonth: run.repaidMonth,
+    paybackMonth: outcome.paybackMonth,
+    irr: outcome.irr,
+    cumulativeByMonth,
+  };
 }

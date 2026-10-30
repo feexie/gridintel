@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Panel } from "@/components/system/Metric";
-import type { FigureOrigin, InvestorView, MeteringFundView, ShownFigure, StructureView } from "@/services/planning/views";
-import { BalanceChart, StackedBars } from "./FundCharts";
+import type { FigureOrigin, InvestmentView, InvestorView, MeteringFundView, ShownFigure, StructureView } from "@/services/planning/views";
+import { BalanceChart, CashFlowChart, StackedBars } from "./FundCharts";
 
 /* The Metering Fund screen (docs/geh/DESIGN.md, section 3). One finding at the top with its figure
    and how it is calculated; then the gap, the shocks, the charts, the bands, the years, the rules,
@@ -112,6 +112,14 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
       ) : null}
 
       {view.structure ? <Structure structure={view.structure} /> : null}
+
+      <Panel title="Initial investment against break-even" aside="Modelled">
+        <div className="grid gap-6 xl:grid-cols-2" data-investment>
+          <Investment investment={view.investment.fundAlone} />
+          {view.investment.structure ? <Investment investment={view.investment.structure} /> : null}
+        </div>
+        <How>{view.investment.how}</How>
+      </Panel>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="The metering gap">
@@ -435,6 +443,9 @@ function Structure({ structure }: { structure: StructureView }) {
               </li>
             ))}
           </ul>
+          <p className="text-sm font-semibold text-ink" data-inflation-line>
+            {structure.inflationLine}
+          </p>
         </Panel>
         <Panel title="Customer receipt" aside="Illustrative">
           <div className="mx-auto max-w-xs rounded-tile border border-dashed border-line-bold bg-app px-4 py-3 font-mono text-sm text-ink-2" data-receipt>
@@ -464,5 +475,21 @@ function Structure({ structure }: { structure: StructureView }) {
         </ul>
       </Panel>
     </section>
+  );
+}
+
+function Investment({ investment }: { investment: InvestmentView }) {
+  return (
+    <div className="space-y-3" data-investment-case={investment.label}>
+      <p className="text-base font-semibold text-ink">{investment.label}</p>
+      <Figures figures={investment.figures} />
+      <CashFlowChart
+        title={`${investment.label}: investors' cash back less cash in, month by month`}
+        values={investment.cumulative}
+        peakMonth={investment.peakMonth}
+        breakEvenMonth={investment.breakEvenMonth}
+        paybackMonth={investment.paybackMonth}
+      />
+    </div>
   );
 }

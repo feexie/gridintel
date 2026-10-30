@@ -65,7 +65,8 @@ describe("the GridIntel structure beside the fund alone", () => {
     const view = await meteringFundView(published, { case: "nigeria" });
     const structure = view.structure!;
     assert.equal(structure.fundAlone, "Fund alone: ₦1,286 a month, 4.9x the cap.");
-    assert.match(structure.structure, /^GridIntel structure: within the cap for every band; public top-up ₦[\d.]+ billion, \d+% of the ₦700bn already raised for PMI; survives 2 of 4 shocks\. It fails inflation/);
+    assert.match(structure.structure, /^GridIntel structure: within the cap for every band; public money ₦650\.2 billion, 93% of the ₦700bn already raised for PMI; survives 2 of 4 shocks\. It fails inflation/);
+    assert.equal(structure.inflationLine, "Survives inflation if tariffs follow at least 20% of it; all three shocks at 55%. Today's assumption: 0%.");
     assert.equal(structure.survived, "2 of 4");
     assert.equal(structure.tone, "warning");
     assert.equal(structure.investor.base.repaid, true);
@@ -74,6 +75,16 @@ describe("the GridIntel structure beside the fund alone", () => {
     assert.equal(structure.figures.find((one) => one.key === "pmiFunding")?.origin, "reported");
     assert.deepEqual(structure.bandCharges.at(-1), { band: "Lifeline (R1)", charge: "₦0, exempt" });
     assert.ok(structure.protection.some((one) => one.requirement && one.title === "Regulatory recognition of the charge"));
+  });
+
+  it("sets initial investment against break-even for the fund alone and the structure", async () => {
+    const view = await meteringFundView(published, { case: "nigeria" });
+    const figure = (investment: typeof view.investment.fundAlone, key: string) => investment.figures.find((one) => one.key === key)?.value;
+    assert.equal(figure(view.investment.fundAlone, "peak"), "₦342.8 billion in month 50 (Aug 2030)");
+    assert.equal(figure(view.investment.fundAlone, "breakEven"), "Month 51 (Sep 2030)");
+    assert.equal(figure(view.investment.fundAlone, "repaid"), "Month 120 (Jun 2036)");
+    assert.equal(figure(view.investment.structure!, "repaid"), "Month 64 (Oct 2031)");
+    assert.equal(view.investment.structure!.cumulative.length, 121);
   });
 
   it("shows NERC's exchange rate beside the assumption", async () => {

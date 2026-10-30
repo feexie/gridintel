@@ -1,8 +1,8 @@
 import type { BandTariff, Citation, DiscoId, PublishedInstallations } from "@/domain";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
-import { investorOutcome, METERING_FUND_REFERENCE, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type FundRun, type InvestorOutcome, type MeteringFundInputs, type PriceShock } from "../../analytics/planning/meteringFund.ts";
+import { investmentProfile, investorOutcome, METERING_FUND_REFERENCE, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type FundRun, type InvestmentProfile, type InvestorOutcome, type MeteringFundInputs, type PriceShock } from "../../analytics/planning/meteringFund.ts";
 import { ASSUMPTIONS, BANDS, MITIGATIONS, readAssumptions, type Assumptions, type AssumptionUnit, type CaseId } from "./assumptions.ts";
-import type { BandView, CitationView, FigureOrigin, InvestorView, MeteringFundView, ShownFigure, StressRowView, StructureView, YearRowView } from "./views.ts";
+import type { BandView, CitationView, FigureOrigin, InvestmentView, InvestorView, MeteringFundView, ShownFigure, StressRowView, StructureView, YearRowView } from "./views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: THE METERING FUND
@@ -288,7 +288,14 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
   const combined = stressRuns[stressRuns.length - 1].run;
   const programmes = await repository.programmes();
   const pmi = programmes.find((one) => one.id === "pmi") ?? null;
-  const structure = structureOf({ inputs, values, pct, bandRows, typical, shocks, charge, typicalCap, pmi, citations });
+  const built = structureOf({ inputs, values, pct, bandRows, typical, shocks, charge, typicalCap, pmi, citations, startMonth: facts.startMonth });
+  const structure = built?.view ?? null;
+  const fundAloneProfile = investmentProfile(base, investorOutcome(base, { firstLossShare: 0, reserveAccount: 0 }));
+  const investment = {
+    fundAlone: investmentView("Fund alone", fundAloneProfile, facts.startMonth),
+    structure: built === null ? null : investmentView("GridIntel structure", built.profile, facts.startMonth),
+    how: "How this is calculated: investors put money in when the fund's own inflows do not cover its new meters and reserve, and are paid back from what is left over. Peak capital is the most they have in at once. Break-even is the month from which the fund's own monthly cash is never negative again. Fully repaid is the month it owes them nothing, cost of capital included. Payback is the month their cash back first equals their cash in. Modelled.",
+  };
 
   /* The headline, and what holding the charge at the cap would take. */
   const headline = headlineOf(charge, typical, typicalBill, typicalCap, cap, base);
@@ -447,6 +454,7 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
       },
     },
     structure,
+    investment,
     positioning: "GridIntel is the trusted layer between public metering programmes, private investors and DisCos. It plans where meters go, funds them through a protected structure, and monitors that the money is working. Poor residential customers are never left out.",
     miniGrids: "The same model applies to mini-grids: the meter charge is a share of each customer's token purchase, under the same cap.",
     pmiRule: "Charges collected on PMI meters do not repay investors: those meters were paid for with public money. They go to the maintenance and replacement reserve and to the pool that covers exempt and vulnerable customers.",
@@ -570,9 +578,10 @@ interface StructureContext {
   typicalCap: number | null;
   pmi: { fundingNaira: number | null; citationIds: string[] } | null;
   citations: Map<string, Citation>;
+  startMonth: { year: number; month: number } | null;
 }
 
-function structureOf(context: StructureContext): StructureView | null {
+function structureOf(context: StructureContext): { view: StructureView; profile: InvestmentProfile } | null {
   const { inputs, values, pct, bandRows, typical, shocks, charge, typicalCap, pmi, citations } = context;
   const billed = bandRows.filter((row) => row.bill !== null && row.share > 0);
   const shareTotal = sum(billed.map((row) => row.share));
@@ -605,17 +614,34 @@ function structureOf(context: StructureContext): StructureView | null {
   const withinCap = billShare <= cap;
   const pmiFunding = pmi?.fundingNaira ?? null;
   const pmiSource = pmi === null ? "" : pmi.citationIds.map((id) => citations.get(id)?.title).filter(Boolean).join("; ");
-  const ofPmi = pmiFunding === null ? "" : `, ${formatShare(short.total / pmiFunding, 0)} of the ₦${whole.format(pmiFunding / 1e9)}bn already raised for PMI`;
+  const pmiMetersValue = sum(base.years.map((year) => year.publicMetersValue));
+  const allPublic = short.total + baseOutcome.firstLoss + buffers.reserveAccount + pmiMetersValue;
+  const ofPmi = pmiFunding === null ? "" : `, ${formatShare(allPublic / pmiFunding, 0)} of the ₦${whole.format(pmiFunding / 1e9)}bn already raised for PMI`;
+
+  /* The lowest pass-through of inflation into tariffs, in steps of 5%, at which investors are repaid in full. */
+  const passThroughNeeded = (key: string): number | null => {
+    const shock = shocks.find((one) => one.key === key)!.shock;
+    for (let percent = 0; percent <= 100; percent += 5) {
+      const trial = { ...withTopUp, tariffPassThrough: percent / 100 };
+      if (investorOutcome(runMeteringFund(trial, shock, averageCharge), buffers).repaidInFull) return percent;
+    }
+    return null;
+  };
+  const inflationAt = passThroughNeeded("inflation");
+  const allAt = passThroughNeeded("combined");
+  const inflationLine =
+    inflationAt === null && allAt === null
+      ? "Investors are not repaid in full under inflation, or under all three shocks, even if tariffs follow all of it."
+      : `Survives inflation ${inflationAt === null ? "at no pass-through up to 100%" : `if tariffs follow at least ${inflationAt}% of it`}; all three shocks ${allAt === null ? "at no pass-through up to 100%" : `at ${allAt}%`}. Today's assumption: ${values.passThrough}%.`;
   const failed = shockOutcomes.filter((one) => !one.outcome.repaidInFull);
   const capWords = withinCap ? "within the cap for every band" : `above the ${formatShare(cap, 0)} cap: the charge is ${formatShare(billShare, 1)} of every bill`;
   const structureSentence =
-    `GridIntel structure: ${capWords}; public top-up ${formatNaira(short.total)}${ofPmi}; survives ${survived} of ${shocks.length} shocks.` +
+    `GridIntel structure: ${capWords}; public money ${formatNaira(allPublic)}${ofPmi}; survives ${survived} of ${shocks.length} shocks.` +
     (failed.length === 0 ? "" : ` It fails ${failed.map((one) => `${one.label.toLowerCase()} (investors lose ${formatNaira(one.outcome.investorLoss)} after the first-loss layer and the reserve)`).join(", ")}.`);
   const ratio = charge / typicalCap;
 
   const typicalCharge = billShare * typical.bill;
-  const pmiMetersValue = sum(base.years.map((year) => year.publicMetersValue));
-  return {
+  const view: StructureView = {
     fundAlone: `Fund alone: ₦${whole.format(charge)} a month, ${ratio.toFixed(1)}x the cap.`,
     structure: structureSentence,
     tone: withinCap && failed.length === 0 && baseOutcome.repaidInFull ? "ok" : "warning",
@@ -626,7 +652,7 @@ function structureOf(context: StructureContext): StructureView | null {
       { key: "capital", label: "Investors' capital put in", value: formatNaira(baseOutcome.capital), origin: "calculated", basis: `In naira, at ${values.guaranteedRate}% a year with a local-currency guarantee (assumption)` },
       { key: "firstLoss", label: "First-loss layer", value: formatNaira(baseOutcome.firstLoss), origin: "calculated", basis: `${values.firstLoss}% of investors' capital, from public or DFI money (assumption)` },
       { key: "reserveAccount", label: "Reserve account", value: formatNaira(buffers.reserveAccount), origin: "calculated", basis: `${values.reserveMonths} months of repayments at full rollout, held from the start (assumption)` },
-      { key: "publicTotal", label: "All public money in the structure", value: formatNaira(short.total + baseOutcome.firstLoss + buffers.reserveAccount), origin: "calculated", basis: "Top-up, first-loss layer and reserve account together" },
+      { key: "publicTotal", label: "All public money in the structure", value: formatNaira(allPublic), origin: "calculated", basis: "Top-up, first-loss layer, reserve account and the PMI meters in the plan, at cost, together" },
       ...(pmiMetersValue > 0 ? [{ key: "pmiMeters", label: "PMI meters in the plan, at cost", value: formatNaira(pmiMetersValue), origin: "calculated" as const, basis: "Also paid from PMI's money, on top of the top-up" }] : []),
     ],
     how: `How this is calculated: every customer pays ${values.billShare}% of their own bill; Lifeline customers pay nothing. For each meter, what that charge and the DisCo's share of the collection gain repay in 60 months is set against its installed cost at the duty-shock rate; public money tops up the difference at installation. Local assembly (${values.localShare}%) and naira funding apply. Investors are repaid from the rest; a loss falls first on the first-loss layer, then the reserve account.`,
@@ -638,6 +664,7 @@ function structureOf(context: StructureContext): StructureView | null {
       outcome: one.outcome.loss <= 1 ? "Investors repaid in full; no loss" : one.outcome.repaidInFull ? `Loss of ${formatNaira(one.outcome.loss)} taken by the first-loss layer and the reserve; investors repaid in full` : `Investors lose ${formatNaira(one.outcome.investorLoss)} after the buffers`,
     })),
     investor: { base: investorView("Base case", baseOutcome), stressed: investorView(`${stressed.label}`, stressed.outcome) },
+    inflationLine,
     protection: [
       { title: "Split at source", text: "The meter charge is split at the token vending point into a trustee escrow account. It never passes through the DisCo's books.", requirement: false },
       { title: "Meters owned by the fund", text: "The meters belong to the fund vehicle, not the DisCo, so they stay security for investors.", requirement: false },
@@ -655,6 +682,25 @@ function structureOf(context: StructureContext): StructureView | null {
       ...bandRows.map((row) => ({ band: row.band, charge: row.bill === null ? "Not available" : `₦${whole.format(billShare * row.bill)}` })),
       { band: "Lifeline (R1)", charge: "₦0, exempt" },
     ],
+  };
+  return { view, profile: investmentProfile(base, baseOutcome) };
+}
+
+function investmentView(label: string, profile: InvestmentProfile, start: { year: number; month: number } | null): InvestmentView {
+  const when = (month: number | null) => (month === null ? "Not by month 120" : `Month ${month}${start ? ` (${monthName(start, month)})` : ""}`);
+  return {
+    label,
+    figures: [
+      { key: "peak", label: "Peak capital in", value: `${formatNaira(profile.peakInvestment)} in ${when(profile.peakMonth).replace("Month", "month")}`, origin: "calculated", basis: "The most investors have in at once" },
+      { key: "breakEven", label: "Break-even", value: when(profile.breakEvenMonth), origin: "calculated", basis: "From this month the fund's own monthly cash is never negative again" },
+      { key: "repaid", label: "Investors fully repaid", value: when(profile.fullyRepaidMonth), origin: "calculated", basis: "The fund owes them nothing, cost of capital included" },
+      { key: "irr", label: "Investors' return (IRR)", value: profile.irr === null ? "Not available" : `${(profile.irr * 100).toFixed(1)}% a year`, origin: "calculated", basis: "On their naira cash in and out. Modelled" },
+      { key: "payback", label: "Payback", value: when(profile.paybackMonth), origin: "calculated", basis: "Their cash back first equals their cash in. Modelled" },
+    ],
+    cumulative: profile.cumulativeByMonth.map((value) => value / 1e9),
+    peakMonth: profile.peakMonth,
+    breakEvenMonth: profile.breakEvenMonth,
+    paybackMonth: profile.paybackMonth,
   };
 }
 

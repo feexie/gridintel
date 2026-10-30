@@ -101,6 +101,17 @@ export interface InvestorView {
   payback: string;
 }
 
+/** Initial investment against break-even, for one way of funding the meters. */
+export interface InvestmentView {
+  label: string;
+  figures: ShownFigure[];
+  /** Investors' cash back less cash in, added up month by month, in naira billion, months 0 to 120. */
+  cumulative: number[];
+  peakMonth: number;
+  breakEvenMonth: number | null;
+  paybackMonth: number | null;
+}
+
 export interface StructureView {
   /** The two results side by side: the fund alone, and the GridIntel structure. */
   fundAlone: string;
@@ -112,6 +123,8 @@ export interface StructureView {
   survived: string;
   shocks: { key: string; label: string; survives: boolean; outcome: string }[];
   investor: { base: InvestorView; stressed: InvestorView };
+  /** The lowest share of inflation passed into tariffs at which investors are repaid in full, under inflation and under all three shocks. */
+  inflationLine: string;
   protection: { title: string; text: string; requirement: boolean }[];
   receipt: { band: string; charge: string; monthsLeft: string; note: string };
   /** The charge in naira for each band under the structure, A to E, and Lifeline. */
@@ -146,6 +159,8 @@ export interface MeteringFundView {
     sources: { title: string; unit: string; years: string[]; series: ChartSeries[] };
   };
   structure: StructureView | null;
+  /** Initial investment against break-even: the fund alone, and the GridIntel structure. */
+  investment: { fundAlone: InvestmentView; structure: InvestmentView | null; how: string };
   positioning: string;
   miniGrids: string;
   pmiRule: string;

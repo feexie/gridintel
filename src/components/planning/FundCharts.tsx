@@ -19,9 +19,9 @@ function ticks(min: number, max: number, count = 5): number[] {
   const raw = (high - low) / (count - 1) || 1;
   const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
   const step = [1, 2, 2.5, 5, 10].map((one) => one * magnitude).find((one) => one >= raw) ?? raw;
-  const start = Math.floor(low / step) * step;
-  const result: number[] = [];
-  for (let value = start; value <= high + step * 0.5; value += step) result.push(Number(value.toFixed(6)));
+  // From the step at or below the lowest value up to the first step at or above the highest.
+  const result: number[] = [Number((Math.floor(low / step) * step).toFixed(6))];
+  while (result[result.length - 1] < high - 1e-9) result.push(Number((result[result.length - 1] + step).toFixed(6)));
   return result;
 }
 
@@ -118,6 +118,42 @@ export function StackedBars({ title, unit, years, series, id }: { title: string;
         })}
       </svg>
       <Legend items={shown.map((one) => ({ label: one.label, className: STACK_COLOURS[series.indexOf(one) % STACK_COLOURS.length] }))} />
+    </figure>
+  );
+}
+
+/** Investors' cumulative cash over the months, with the peak, break-even and payback marked. */
+export function CashFlowChart({ title, values, peakMonth, breakEvenMonth, paybackMonth }: { title: string; values: number[]; peakMonth: number; breakEvenMonth: number | null; paybackMonth: number | null }) {
+  const months = values.length - 1;
+  const yTicks = ticks(Math.min(...values), Math.max(...values));
+  const low = yTicks[0];
+  const high = yTicks[yTicks.length - 1];
+  const scaleY = (value: number) => PAD.top + PLOT_H - ((value - low) / (high - low || 1)) * PLOT_H;
+  const scaleX = (month: number) => PAD.left + (month / months) * PLOT_W;
+  const path = values.map((value, month) => `${month === 0 ? "M" : "L"}${scaleX(month).toFixed(1)},${scaleY(value).toFixed(1)}`).join(" ");
+  const xLabels = Array.from({ length: Math.floor(months / 24) + 1 }, (_, index) => ({ x: scaleX(index * 24), label: index === 0 ? "Month 0" : `${index * 24}` }));
+  const marker = (month: number | null, label: string, className: string, row: number) =>
+    month === null ? null : (
+      <g key={label} className={className}>
+        <line x1={scaleX(month)} x2={scaleX(month)} y1={PAD.top} y2={PAD.top + PLOT_H} stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
+        <text x={scaleX(month) + 4} y={PAD.top + 14 + row * 15} fill="currentColor" fontSize="12">
+          {label}, month {month}
+        </text>
+      </g>
+    );
+  return (
+    <figure className="max-w-3xl space-y-2" data-chart="cash-flow">
+      <figcaption className="text-sm font-semibold text-ink">{title}</figcaption>
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-auto w-full" role="img" aria-label={`${title}, in ₦ billion`}>
+        <Axes yTicks={yTicks} scaleY={scaleY} unit="₦ billion" xLabels={xLabels} />
+        <path d={path} fill="none" strokeWidth="3" className="text-brand" stroke="currentColor" />
+        <circle cx={scaleX(peakMonth)} cy={scaleY(values[peakMonth])} r="5" className="text-alert-line" fill="currentColor" />
+        <text x={scaleX(peakMonth) + 8} y={scaleY(values[peakMonth]) - 6} className="text-alert" fill="currentColor" fontSize="12">
+          Peak capital, month {peakMonth}
+        </text>
+        {marker(breakEvenMonth, "Break-even", "text-ok", 0)}
+        {marker(paybackMonth, "Payback", "text-caution", 1)}
+      </svg>
     </figure>
   );
 }

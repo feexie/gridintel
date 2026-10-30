@@ -39,7 +39,13 @@ test("the GridIntel structure stands beside the fund alone, with investors, prot
   const main = page.getByRole("main");
   await expect(main.locator("[data-positioning]")).toContainText("Plan → Fund → Monitor");
   await expect(main.locator("[data-fund-alone]")).toHaveText("Fund alone: ₦1,286 a month, 4.9x the cap.");
-  await expect(main.locator("[data-structure-sentence]")).toContainText("GridIntel structure: within the cap for every band; public top-up");
+  await expect(main.locator("[data-structure-sentence]")).toContainText("GridIntel structure: within the cap for every band; public money");
+  await expect(main.locator("[data-inflation-line]")).toHaveText(/^Survives inflation if tariffs follow at least \d+% of it; all three shocks at \d+%\./);
+  // Initial investment against break-even, for both, each with its chart.
+  await expect(main.locator("[data-investment-case]")).toHaveCount(2);
+  await expect(main.locator('[data-investment] [data-chart="cash-flow"]')).toHaveCount(2);
+  await expect(main.locator('[data-investment-case="Fund alone"]')).toContainText("Peak capital in");
+  await expect(main.locator('[data-investment-case="GridIntel structure"]')).toContainText("Break-even");
   await expect(main.locator("[data-structure-sentence]")).toContainText("of the ₦700bn already raised for PMI; survives 2 of 4 shocks.");
   await expect(main.locator("[data-receipt]")).toContainText("Meter charge paid:");
   await expect(main.locator("[data-protection] li")).toHaveCount(5);

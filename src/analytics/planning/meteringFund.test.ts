@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { investorOutcome, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type MeteringFundInputs } from "./meteringFund.ts";
+import { investmentProfile, investorOutcome, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type MeteringFundInputs } from "./meteringFund.ts";
 
 /** A fund with no cost of capital, no gain, no reserve and no growth: each meter costs N60,000, all in naira. */
 const PLAIN: MeteringFundInputs = {
@@ -170,6 +170,20 @@ describe("the structure around the fund", () => {
     assert.ok(outcome.irr! < 0);
     const covered = investorOutcome(run, { firstLossShare: 0.5, reserveAccount: 2e9 });
     assert.equal(covered.repaidInFull, true);
+  });
+});
+
+describe("initial investment against break-even", () => {
+  it("has investors' most money in at the end of the rollout, the fund's cash positive from month 61, and payback by month 120", () => {
+    const run = runMeteringFund(PLAIN);
+    const profile = investmentProfile(run, investorOutcome(run, { firstLossShare: 0, reserveAccount: 0 }));
+    // 10,000 meters a month at N60,000, repaid at N1,000 a month each from the month after installation.
+    close(profile.peakInvestment, Math.max(...run.owedByMonth), 1e-3);
+    assert.ok(profile.peakMonth >= 30 && profile.peakMonth <= 60);
+    assert.equal(profile.breakEvenMonth, 61);
+    assert.equal(profile.fullyRepaidMonth, 120);
+    assert.equal(profile.paybackMonth, 120);
+    close(profile.cumulativeByMonth[120], 0, 1e-3);
   });
 });
 
