@@ -122,8 +122,28 @@ the gap is not spread across it; the view says the figure is unavailable.
 | Scenario | Installs per month | Status |
 | --- | --- | --- |
 | Current pace | From the NERC figures, as above | Calculated from reported figures |
-| Current pace + Presidential Metering Initiative | Current pace plus the initiative's 750,000 meters from 2027 | **Assumption**, shown with its source. The source, and whether 750,000 is a total or a yearly figure and how it is phased and shared between DisCos, are recorded from that source before the scenario is shown |
+| Current pace + Presidential Metering Initiative (PMI) | Current pace plus 750,000 meters in 2027; later years user-set, default 0 | Reported facts and stated assumptions, below |
 | User-set pace | Set by the user | Assumption |
+
+**The PMI scenario.** Facts as reported (each shown with its source and
+date; reported in the press, not taken from a NERC or government document):
+
+- The programme totals about 3.8 million meters, funded with N700bn via
+  FAAC in 2024, and is implemented by PMI-Smart Grid Development Limited.
+  Source [S1].
+- Per NERC's metering factsheet as reported there, distribution starts in
+  2027 with 750,000 meters. Sources [S1], [S2].
+
+Phasing beyond 2027 and the split between DisCos are not published
+consistently, so the scenario rests on three assumptions, each stated on
+the screen:
+
+- The 750,000 meters of 2027 are installed evenly over its 12 months
+  (62,500 a month).
+- They are shared across DisCos in proportion to each DisCo's unmetered
+  customers at the start of 2027.
+- PMI meters in 2028 and later are set by the user; the default is 0. The
+  remainder of the reported 3.8 million is not assumed to arrive.
 
 **Estimated billing**
 
@@ -139,16 +159,41 @@ the gap is not spread across it; the view says the figure is unavailable.
 
 | Route | Who pays the meter | How |
 | --- | --- | --- |
-| MAP (Meter Asset Provider) | The customer, upfront | Refunded as energy credits over 120 months |
+| MAP (Meter Asset Provider) | The customer, upfront | Refunded as energy credits over 120 months (as reported [S5]) |
 | MAF / DISREP | No charge to the customer | Funded by the programme |
 
 - The cost per meter under each route, per year and in total, by scenario.
-- Unit prices (single-phase, three-phase) are user assumptions, each with a
-  source to verify (for example the NERC MAP regulations and orders for the
-  MAP price). None is presented as a current market price.
-- The route terms above (the upfront payment and the 120-month refund) are
-  recorded with their regulatory source and date; until verified they are
-  labelled as assumptions.
+- **There is no single regulated MAP price.** MAP meter prices were
+  deregulated by NERC Order NERC/2024/040, effective 1 May 2024 (as
+  summarised in [S3]).
+- Unit prices are user assumptions. The defaults are the midpoints of the
+  ranges below, and the range is shown beside each default:
+
+  | Meter | Range (VAT inclusive) | Default (midpoint) |
+  | --- | --- | --- |
+  | Single-phase | N122,000 to N168,000 | N145,000 |
+  | Three-phase | N207,000 to N258,000 | N232,500 |
+
+  Label on the screen: "Eko DisCo published MAP vendor prices, 2024; for
+  reference, not current market price." Source [S4]. No price is presented
+  as a current market price.
+- The 120-month energy-credit refund and the rule that a MAP meter is
+  installed within 10 days are labelled "as reported" [S5], not as the
+  text of the regulation.
 - Affordability: the upfront MAP payment and the monthly energy credit per
   customer, from the user's prices, shown beside each other. No household
   income figure is assumed.
+
+**Sources for 2.5** (supplied by the Founder, 30 October 2026; to be cited
+on the screen with their dates)
+
+| Ref | Source | Date | Used for |
+| --- | --- | --- | --- |
+| S1 | AllAfrica / Vanguard, https://allafrica.com/stories/202610220636.html | 22 Oct 2026 | PMI total, funding, implementer; 750,000 meters in 2027 (citing NERC's factsheet) |
+| S2 | Nigeria Startup Act, https://www.nigeriastartupact.ng/fg-pmi-trainees-to-install-750000-meters-in-2027-see-details/ | not recorded | 750,000 meters in 2027 |
+| S3 | Mondaq summary, https://www.mondaq.com/nigeria/oil-gas-electricity/1488638/ | not recorded | NERC/2024/040: MAP prices deregulated from 1 May 2024 |
+| S4 | The Guardian (Nigeria), https://guardian.ng/?p=2393191 | 2024 | Eko DisCo MAP vendor price ranges |
+| S5 | ThisDay, https://www.thisdaylive.com/2026/10/15/nerc-metering-rate-now-63-1-4-7m-customers-still-without-devices/ | 15 Oct 2026 | 120-month refund, 10-day installation, as reported citing NERC |
+
+Each source also goes in `DISCLOSURE-DRAFT.md` under "Datasets" when the
+view uses it.
