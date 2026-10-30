@@ -6,7 +6,7 @@ export default function FounderStory() {
     <section className="space-y-8">
       <SectionHeader
         title="The Story Behind GridIntel"
-        description="GridIntel was founded to modernize electricity operations through edge intelligence, cloud analytics, and AI-powered decision support."
+        description="GridIntel was founded to modernize electricity operations through edge intelligence, cloud analytics, and decision support built on the utility's own records."
       />
 
       <div className="grid gap-8 items-center lg:grid-cols-[320px_1fr]">
@@ -34,10 +34,10 @@ export default function FounderStory() {
           </p>
 
           <p>
-            Our mission is to empower utilities, governments, developers,
-            and investors with actionable intelligence that improves
-            reliability, reduces losses, accelerates electrification,
-            and enables data-driven decision making.
+            We help utilities, regulators and mini-grid operators see what
+            their records actually show, so they can improve reliability,
+            reduce losses, connect more customers sooner, and base their
+            decisions on the figures.
           </p>
         </div>
       </div>

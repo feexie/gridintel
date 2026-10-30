@@ -24,7 +24,7 @@ export const architecture: ArchitectureStep[] = [
     id: 4,
     title: "Decision Support",
     description:
-      "Executives and operators access actionable insights through role-based dashboards.",
+      "Executives and operators see reliability, loss and revenue figures traced to their records, on screens set by their role.",
     image: "/images/platform/utility.jpg",
   },
 ];
