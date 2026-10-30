@@ -4,8 +4,10 @@ Design text only. Nothing here is built at tag `geh-baseline`. Today
 `/dashboard/planning` is a "planned" page that holds no data and no figure.
 
 Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026,
-18:00 WAT. **Only the Metering planner is built in the sprint.** Every other
-item below is labelled **Planned** and shows no figure.
+18:00 WAT. **Only the Metering planner is built in the sprint:** the DT
+planner on the synthetic network (2.1 to 2.3) and the national / DisCo view
+on NERC's published figures (2.5). Every other item below is labelled
+**Planned** and shows no figure.
 
 ## 1. Structure of the Planning section
 
@@ -73,5 +75,80 @@ assumptions and are shown as assumptions, never as measured values.
 
 ### 2.4 Not in the sprint
 
-The other seven planners, optimisation beyond a ranked rollout, real DisCo
-data, and any external price or tariff feed.
+The other seven planners, optimisation beyond a ranked rollout, a DisCo's
+own operational records (the DT planner stays on the synthetic network),
+and any live price or tariff feed.
+
+### 2.5 National / DisCo view (real public data)
+
+The DT planner (2.1 to 2.3) runs on the synthetic network. This view does
+not: it runs on **NERC's published metering figures**, per DisCo and
+nationally. Every figure carries its source (the NERC publication, with
+its title and address) and its date (the period it covers and the date it
+was published). Figures are entered as reported (`ReportedKpi`), never as
+measured, and the view is labelled as public reported data, apart from the
+synthetic screens. A figure NERC does not publish for a period is shown as
+missing, never as 0.
+
+**Inputs, per DisCo and per period**
+
+| Input | Origin |
+| --- | --- |
+| Active customers | NERC, reported |
+| Metered customers | NERC, reported |
+| Meters installed that month | NERC, reported |
+| Metering rate | NERC, reported; shown beside the rate calculated from the two counts above, as separate figures |
+
+Unmetered customers = active customers − metered customers (calculated).
+Customer growth per month = the change in active customers between
+consecutive periods (calculated). Where a period is missing, growth over
+the gap is not spread across it; the view says the figure is unavailable.
+
+**Calculation** (a versioned methodology in `src/analytics`, deterministic)
+
+- Net backlog change per month = customer growth − meters installed.
+- Months to meter everyone = unmetered ÷ (meters installed − customer
+  growth).
+- If meters installed ≤ customer growth, the gap never closes. The view
+  says so in words ("At this pace the metering gap does not close") and
+  shows no number of months.
+- Required pace: meters to install per month to meter everyone within 60
+  months = unmetered ÷ 60 + customer growth.
+- The pace and growth used are stated with the periods they were taken
+  from (for example the average of the latest N months, N shown).
+
+**Scenarios**
+
+| Scenario | Installs per month | Status |
+| --- | --- | --- |
+| Current pace | From the NERC figures, as above | Calculated from reported figures |
+| Current pace + Presidential Metering Initiative | Current pace plus the initiative's 750,000 meters from 2027 | **Assumption**, shown with its source. The source, and whether 750,000 is a total or a yearly figure and how it is phased and shared between DisCos, are recorded from that source before the scenario is shown |
+| User-set pace | Set by the user | Assumption |
+
+**Estimated billing**
+
+- Assumption, stated on the screen: every unmetered customer receives an
+  estimated bill each month, so each meter installed removes 12 estimated
+  bills a year once in place (counted from the month after installation).
+- Reported: estimated bills a year, by scenario and by year. The figure is
+  labelled modelled, from this assumption, not a count of bills issued.
+  Estimated bills to metered customers (missed readings) are not included,
+  and the view says so.
+
+**Who pays and affordability**
+
+| Route | Who pays the meter | How |
+| --- | --- | --- |
+| MAP (Meter Asset Provider) | The customer, upfront | Refunded as energy credits over 120 months |
+| MAF / DISREP | No charge to the customer | Funded by the programme |
+
+- The cost per meter under each route, per year and in total, by scenario.
+- Unit prices (single-phase, three-phase) are user assumptions, each with a
+  source to verify (for example the NERC MAP regulations and orders for the
+  MAP price). None is presented as a current market price.
+- The route terms above (the upfront payment and the 120-month refund) are
+  recorded with their regulatory source and date; until verified they are
+  labelled as assumptions.
+- Affordability: the upfront MAP payment and the monthly energy credit per
+  customer, from the user's prices, shown beside each other. No household
+  income figure is assumed.
