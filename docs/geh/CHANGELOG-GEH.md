@@ -18,3 +18,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Fri 22:11 | `abe38c1` | Fund screen: Plan, Fund, Monitor; fund alone against the structure; investors; protection; receipt; band charges |
 | Fri 22:35 | `9eaf9b2` | Initial investment against break-even (both cases, with chart); all public money in the structure headline; inflation pass-through needed |
 | Fri 22:36 | `d17a041` | M3 data and method: DisCo collection efficiency and ATC&C (NERC Q2 Tables 7, 8); need and repayment-risk scores; tranche split against pro-rata; 4 tests |
+| Fri 22:47 | `0d3f131` | M3 DisCo allocation screen: largest gap headline, 11 DisCos with need and risk scores, first million against pro-rata, pilot card, screen tabs |
