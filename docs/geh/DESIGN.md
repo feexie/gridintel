@@ -8,6 +8,20 @@ WAT. Feature freeze Sunday 01:00 WAT. Baseline: tag `geh-baseline`, commit
 `839c5d9`. At the baseline `/dashboard/planning` is a "planned" page with no
 data and no figure.
 
+## 0. Positioning (Founder, 30 October 2026, after M2)
+
+GridIntel is the trusted layer between public metering programmes, private
+investors and DisCos. It **plans** where meters go, **funds** them through a
+protected structure, and **monitors** that the money is working:
+Plan → Fund → Monitor. Poor residential customers are never left out.
+
+M2's finding is the story. The customer alone cannot carry the meter: the
+charge that repays a meter in five years is about five times a 5% cap,
+because Bands B to E tariffs have been frozen since December 2022. The public
+money needed to hold the charge at the cap (about N408.6bn for Nigeria) is
+less than the N700bn already raised for PMI [S1]. No single payer closes the
+gap; the right split does.
+
 ## 1. The concept: pay-as-you-meter, funded by the meters themselves
 
 1. **No upfront payment.** A Metering Fund buys and installs the meters. It
@@ -54,14 +68,20 @@ price. The fund replaces the upfront payment; it does not use MAP's terms.
 A planned page states its purpose in one line and that it is not built. It
 holds no figure.
 
-The Metering planner has four screens (exact addresses fixed in M1):
+The Metering planner's screens (revised after M2, Founder, 30 October 2026):
 
-| Screen | Milestone | Question it answers |
-| --- | --- | --- |
-| Metering Fund | M2 | Can every customer be metered in five years with no upfront payment, what is the monthly charge, and does the fund survive shocks? |
-| Where the first meters go | M3 | Which DTs to meter first so early meters fund later ones? |
-| Who pays, and is it fair | M4 | What the charge is as a share of the bill by band, who is exempt, and what public money covers them |
-| About this build | M4 | What existed at `geh-baseline` and what was built in the sprint |
+| Screen | Step | Milestone | Question it answers |
+| --- | --- | --- | --- |
+| Metering Fund (fund alone, and the GridIntel structure) | Fund | M2, M2 additions | Can every customer be metered in five years with no upfront payment; what does the customer pay; who tops up; does it survive shocks; are investors protected? |
+| DisCo allocation | Plan | M3 | Where should public meters and private capital go first, DisCo by DisCo, on NERC's figures? |
+| DT sequencing | Plan | M4 | Inside one DisCo, which DTs first, so early meters fund later ones? (synthetic network) |
+| Monitoring | Monitor | M4 | Is the money working: plan against actual, quarter by quarter? (synthetic, labelled) |
+| About this build | | M4 | What existed at `geh-baseline` and what was built in the sprint |
+
+Equity is not a separate screen: the charge as a share of the bill by band,
+the lifeline exemption and the public money that covers it are on the fund
+and allocation screens. The same model applies to mini-grids (one line on
+screen); there is no separate mini-grid case.
 
 ## 3. The Metering Fund model (M2)
 
@@ -177,30 +197,95 @@ tariff.
 
 Plain titles, axes with units, nothing that needs hovering.
 
-## 4. Where the first meters go: DT planner (M3, synthetic network)
+### 3.7 M2 additions: the GridIntel structure
+
+A one-click preset beside the "fund alone" result. Every part is labelled
+and editable:
+
+- **Charge as the same percentage of each customer's bill** (default 5%),
+  not the same naira amount: one rule for everyone, so higher bands pay more
+  naira. Lifeline customers (R1, up to 50 kWh a month, NERC order [N3]) are
+  exempt; their share of customers is an assumption.
+- **Public top-up** from PMI, DISREP and MAF covering what the charge and
+  the collection gain leave unpaid on each meter, paid at installation.
+- **Local assembly on; naira-denominated funding with a local-currency
+  guarantee** (InfraCredit-type; the guaranteed rate is an assumption);
+  **duty-shock reserve on.**
+- **First-loss layer:** public or DFI money absorbs the first losses
+  (default 10% of capital, user-set).
+- **Reserve account:** about 6 months of repayments (user-set).
+
+Headline pair: "Fund alone: N1,286 a month, 5x the cap." against
+"GridIntel structure: within the cap for every band; public top-up N[x]bn,
+[y]% of the N700bn already raised for PMI; survives [n] of 4 shocks." If the
+structure still fails a shock or breaks the cap, the screen says so plainly
+and by how much. No assumption is tuned to make it pass.
+
+### 3.8 Investor protection
+
+Text and figures from the model:
+
+- **Split at source:** the meter charge is split at the token vending point
+  into a trustee escrow account and never passes through the DisCo's books.
+- **Meters owned by the fund vehicle.**
+- **First-loss layer** and **reserve account**, as above.
+- **Regulatory recognition of the charge** is stated as a requirement, not a
+  fact.
+- Investor outcome, base and stressed: repaid or not, loss absorbed by the
+  first-loss layer and the reserve, IRR and payback (modelled, labelled).
+
+### 3.9 Customer receipt (illustrative)
+
+A small mock-up of a token receipt: "Meter charge paid: N[x]. [n] months
+left." Figures from the model, labelled illustrative.
+
+### 3.10 Exchange rate reference
+
+NERC's N1,369/$ (September 2026 orders, Table 1 [N3]) is shown beside the
+N1,334 assumption.
+
+## 4. DisCo allocation (M3, real data)
+
+From NERC's Q2 2026 report [N1] (Table 15, Appendix IX), with Q1 [N2]:
+
+- For each of the 11 DisCos: customers, metered, unmetered, share of the
+  national gap, metering rate, install pace (2026 Q1 and Q2), months to 100%
+  at the current pace. Collection efficiency and losses from the Q2 report
+  where published; missing shown as missing.
+- Two scores side by side, weights visible and editable:
+  - **Need:** share of the gap, metering rate, low-band or residential share.
+  - **Repayment risk:** collection efficiency, losses.
+- **Recommended split:** public meters weighted to need; private capital
+  weighted to low repayment risk at first, widening as the track record
+  builds. Compared with today's pro-rata split.
+- Headline: "[DisCo] holds [x]% of Nigeria's unmetered customers; at the
+  current pace it reaches 100% in [n] months."
+- Answers Brief 15's starter question 3: where should the first million
+  meters go?
+- **Pilot card:** one DisCo (user-set), two feeders, 20,000 meters over 12
+  months, installed by NEMSA-certified local installers. Figures from the
+  model; labelled a proposal.
+- The rule on screen: poor residential customers are never last in the
+  queue.
+
+## 5. DT sequencing inside one DisCo (M4, synthetic network)
 
 - Every DT ranked by revenue recovered per naira spent, from unmetered
-  customers, estimated-billing exposure and losses on the DT. The weights
-  are shown. Each row shows its inputs and which are missing; a DT with no
-  boundary meter has its loss shown as "not available", never 0.
+  customers, estimated-billing exposure and losses on the DT. Weights shown;
+  each row shows its inputs and which are missing; a DT with no boundary
+  meter has its loss "not available", never 0.
 - The revolving effect: cumulative recovered revenue against cumulative
   CAPEX, ranked order against a fixed random order, same budget.
-- A year-by-year rollout that can feed the Metering Fund: the user can use
-  the DT plan's cash flows in place of the fund model's averages.
-- Every figure is marked synthetic: it comes from the demonstration network.
+- Every figure is marked synthetic.
 
-## 5. Who pays, and is it fair: equity view (M4)
+## 6. Monitoring (M4, synthetic, labelled)
 
-- The charge as a share of the bill by band (A to E).
-- Vulnerable and lifeline customers exempt, and the public money needed to
-  cover them.
-- The fairness rule stated on screen: every customer metered under the
-  scheme, on a free (PMI) meter or a fund meter, pays the same charge under
-  the same cap. Customers metered before year 1 pay nothing. Charges on PMI
-  meters go to the reserve and the exempt-customer pool, not to investors.
-- A mini-grid case: the same charge rule, lower consumption, user inputs.
+Plan against actual per DisCo per quarter: meters installed, supply to
+metered customers, consumption, charge collected into escrow, investor
+repaid to date. One line: tranches are released against verified installs
+(results-based). Every figure is synthetic and labelled so.
 
-## 6. About this build (M4)
+## 6a. About this build (M4)
 
 `/dashboard/planning/about-this-build`: what existed at `geh-baseline` and
 what was built in the sprint (from `CHANGELOG-GEH.md`, with times), and a
