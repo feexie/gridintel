@@ -16,3 +16,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Fri 21:56 | `4d9152a` | Design revised after M2: Plan, Fund, Monitor; GridIntel structure; investor protection; DisCo allocation as M3 |
 | Fri 22:11 | `a7a3ffe` | GridIntel structure in the method and service: charge as a share of each bill, Lifeline exempt, public top-up, first-loss layer, reserve account, investor outcome; PMI as a reported record |
 | Fri 22:11 | `abe38c1` | Fund screen: Plan, Fund, Monitor; fund alone against the structure; investors; protection; receipt; band charges |
+| Fri 22:35 | `9eaf9b2` | Initial investment against break-even (both cases, with chart); all public money in the structure headline; inflation pass-through needed |
