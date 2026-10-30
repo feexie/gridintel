@@ -89,6 +89,35 @@ export interface ChartSeries {
   values: number[];
 }
 
+export interface InvestorView {
+  label: string;
+  repaid: boolean;
+  /** What the fund still owes at month 120, before the buffers. */
+  loss: string;
+  absorbedByFirstLoss: string;
+  absorbedByReserve: string;
+  investorLoss: string;
+  irr: string;
+  payback: string;
+}
+
+export interface StructureView {
+  /** The two results side by side: the fund alone, and the GridIntel structure. */
+  fundAlone: string;
+  structure: string;
+  tone: "ok" | "warning";
+  figures: ShownFigure[];
+  how: string;
+  /** How many of the four shocks investors come through repaid in full, e.g. "3 of 4". */
+  survived: string;
+  shocks: { key: string; label: string; survives: boolean; outcome: string }[];
+  investor: { base: InvestorView; stressed: InvestorView };
+  protection: { title: string; text: string; requirement: boolean }[];
+  receipt: { band: string; charge: string; monthsLeft: string; note: string };
+  /** The charge in naira for each band under the structure, A to E, and Lifeline. */
+  bandCharges: { band: string; charge: string }[];
+}
+
 export interface MeteringFundView {
   caseId: CaseId;
   cases: { id: CaseId; label: string; href: string; current: boolean }[];
@@ -116,6 +145,9 @@ export interface MeteringFundView {
     meters: { title: string; unit: string; years: string[]; fund: ChartSeries; public: ChartSeries };
     sources: { title: string; unit: string; years: string[]; series: ChartSeries[] };
   };
+  structure: StructureView | null;
+  positioning: string;
+  miniGrids: string;
   pmiRule: string;
   fairnessRule: string;
   modelOrigin: string;

@@ -60,6 +60,30 @@ describe("the Metering Fund screen", () => {
   });
 });
 
+describe("the GridIntel structure beside the fund alone", () => {
+  it("states both results: the customer alone at 4.9x the cap, and the split that stays within it, with what it fails", async () => {
+    const view = await meteringFundView(published, { case: "nigeria" });
+    const structure = view.structure!;
+    assert.equal(structure.fundAlone, "Fund alone: ₦1,286 a month, 4.9x the cap.");
+    assert.match(structure.structure, /^GridIntel structure: within the cap for every band; public top-up ₦[\d.]+ billion, \d+% of the ₦700bn already raised for PMI; survives 2 of 4 shocks\. It fails inflation/);
+    assert.equal(structure.survived, "2 of 4");
+    assert.equal(structure.tone, "warning");
+    assert.equal(structure.investor.base.repaid, true);
+    assert.equal(structure.investor.base.irr, "22.0% a year");
+    assert.equal(structure.investor.stressed.repaid, false);
+    assert.equal(structure.figures.find((one) => one.key === "pmiFunding")?.origin, "reported");
+    assert.deepEqual(structure.bandCharges.at(-1), { band: "Lifeline (R1)", charge: "₦0, exempt" });
+    assert.ok(structure.protection.some((one) => one.requirement && one.title === "Regulatory recognition of the charge"));
+  });
+
+  it("shows NERC's exchange rate beside the assumption", async () => {
+    const view = await meteringFundView(published, { case: "brief" });
+    const nerc = view.costPerMeter.parts.find((one) => one.key === "nercRate")!;
+    assert.equal(nerc.value, "₦1,369 per $ (ours: ₦1,334)");
+    assert.equal(nerc.origin, "reported");
+  });
+});
+
 describe("the assumptions in the address", () => {
   it("takes a valid value, and the default for anything missing, malformed or out of range", () => {
     const read = readAssumptions({ case: "nigeria", fx: "1500", duty: "abc", cap: "500", local: "1" });

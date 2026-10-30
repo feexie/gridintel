@@ -1,8 +1,8 @@
 import type { BandTariff, Citation, DiscoId, PublishedInstallations } from "@/domain";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
-import { METERING_FUND_REFERENCE, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type FundRun, type MeteringFundInputs, type PriceShock } from "../../analytics/planning/meteringFund.ts";
+import { investorOutcome, METERING_FUND_REFERENCE, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type FundRun, type InvestorOutcome, type MeteringFundInputs, type PriceShock } from "../../analytics/planning/meteringFund.ts";
 import { ASSUMPTIONS, BANDS, MITIGATIONS, readAssumptions, type Assumptions, type AssumptionUnit, type CaseId } from "./assumptions.ts";
-import type { BandView, CitationView, FigureOrigin, MeteringFundView, ShownFigure, StressRowView, YearRowView } from "./views.ts";
+import type { BandView, CitationView, FigureOrigin, InvestorView, MeteringFundView, ShownFigure, StressRowView, StructureView, YearRowView } from "./views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: THE METERING FUND
@@ -286,6 +286,9 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
     ...stressRuns.map((one) => stressRow(one.key, one.label, one.words, one.run, one.needed, typicalCap)),
   ];
   const combined = stressRuns[stressRuns.length - 1].run;
+  const programmes = await repository.programmes();
+  const pmi = programmes.find((one) => one.id === "pmi") ?? null;
+  const structure = structureOf({ inputs, values, pct, bandRows, typical, shocks, charge, typicalCap, pmi, citations });
 
   /* The headline, and what holding the charge at the cap would take. */
   const headline = headlineOf(charge, typical, typicalBill, typicalCap, cap, base);
@@ -347,6 +350,13 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
     { key: "hardware", label: `Hardware, $${values.hardware} at ₦${whole.format(values.fx)} per $${imported < 1 ? `, ${formatShare(imported, 0)} imported` : ""}`, value: formatNaira(hardwareNaira), origin: "assumption", basis: "Meter price and exchange rate are assumptions" },
     { key: "duty", label: `Import duty, ${values.duty}% on the imported part`, value: formatNaira(hardwareNaira * imported * pct("duty")), origin: "assumption", basis: "Duty rate is an assumption" },
     { key: "install", label: "Installation and logistics", value: formatNaira(values.install), origin: "assumption", basis: "Assumption" },
+    {
+      key: "nercRate",
+      label: "NERC's exchange rate for September 2026, beside our assumption",
+      value: `₦1,369 per $ (ours: ₦${whole.format(values.fx)})`,
+      origin: "reported",
+      basis: "NERC, AEDC MYTO September 2026, Table 1, p. 4 (the same rate in every September 2026 order)",
+    },
   ];
 
   const years: YearRowView[] = base.years.map((year) => ({
@@ -436,6 +446,9 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
         ],
       },
     },
+    structure,
+    positioning: "GridIntel is the trusted layer between public metering programmes, private investors and DisCos. It plans where meters go, funds them through a protected structure, and monitors that the money is working. Poor residential customers are never left out.",
+    miniGrids: "The same model applies to mini-grids: the meter charge is a share of each customer's token purchase, under the same cap.",
     pmiRule: "Charges collected on PMI meters do not repay investors: those meters were paid for with public money. They go to the maintenance and replacement reserve and to the pool that covers exempt and vulnerable customers.",
     fairnessRule: "Every customer metered under the scheme pays the same charge under the same cap, on a PMI meter or a fund meter. Customers metered before year 1 pay nothing.",
     modelOrigin:
@@ -542,4 +555,118 @@ function monthName(start: { year: number; month: number }, month: number): strin
 
 function yearName(start: { year: number; month: number }, year: number): string {
   return `${monthName(start, (year - 1) * 12 + 1)} to ${monthName(start, year * 12)}`;
+}
+
+/* ---------- the GridIntel structure (docs/geh/DESIGN.md, section 3.7) ---------- */
+
+interface StructureContext {
+  inputs: MeteringFundInputs;
+  values: Record<string, number>;
+  pct: (key: string) => number;
+  bandRows: { band: string; bill: number | null; share: number }[];
+  typical: { band: string; bill: number } | null;
+  shocks: { key: string; label: string; shock: PriceShock }[];
+  charge: number | null;
+  typicalCap: number | null;
+  pmi: { fundingNaira: number | null; citationIds: string[] } | null;
+  citations: Map<string, Citation>;
+}
+
+function structureOf(context: StructureContext): StructureView | null {
+  const { inputs, values, pct, bandRows, typical, shocks, charge, typicalCap, pmi, citations } = context;
+  const billed = bandRows.filter((row) => row.bill !== null && row.share > 0);
+  const shareTotal = sum(billed.map((row) => row.share));
+  if (charge === null || typical === null || typicalCap === null || shareTotal === 0) return null;
+  const billShare = pct("billShare");
+  const lifeline = pct("lifelineShare");
+  // One rule for everyone: each customer pays the same share of their own bill; Lifeline pays nothing.
+  const averageCharge = (billShare * sum(billed.map((row) => row.share * (row.bill as number)))) / shareTotal * (1 - lifeline);
+  const structured: MeteringFundInputs = {
+    ...inputs,
+    importedShare: 1 - pct("localShare"),
+    capital: { currency: "ngn", ratePerYear: pct("guaranteedRate") },
+    sizingDutyRate: pct("shockDuty"),
+    // A share of the bill rises with the tariff by itself.
+    chargeIndexed: true,
+    exemptShare: 0,
+  };
+  const short = shortfallAtCharge(structured, averageCharge);
+  if (short === null) return null;
+  const withTopUp: MeteringFundInputs = { ...structured, topUpPerMeter: short.perCohort };
+  const base = runMeteringFund(withTopUp, undefined, averageCharge);
+  const monthlyRecoveries = (base.years[4].charges + base.years[4].collectionGain) / 12;
+  const buffers = { firstLossShare: pct("firstLoss"), reserveAccount: values.reserveMonths * monthlyRecoveries };
+  const baseOutcome = investorOutcome(base, buffers);
+  const shockOutcomes = shocks.map((one) => ({ ...one, outcome: investorOutcome(runMeteringFund(withTopUp, one.shock, averageCharge), buffers) }));
+  const survived = shockOutcomes.filter((one) => one.outcome.repaidInFull).length;
+  const stressed = shockOutcomes[shockOutcomes.length - 1];
+
+  const cap = pct("cap");
+  const withinCap = billShare <= cap;
+  const pmiFunding = pmi?.fundingNaira ?? null;
+  const pmiSource = pmi === null ? "" : pmi.citationIds.map((id) => citations.get(id)?.title).filter(Boolean).join("; ");
+  const ofPmi = pmiFunding === null ? "" : `, ${formatShare(short.total / pmiFunding, 0)} of the ₦${whole.format(pmiFunding / 1e9)}bn already raised for PMI`;
+  const failed = shockOutcomes.filter((one) => !one.outcome.repaidInFull);
+  const capWords = withinCap ? "within the cap for every band" : `above the ${formatShare(cap, 0)} cap: the charge is ${formatShare(billShare, 1)} of every bill`;
+  const structureSentence =
+    `GridIntel structure: ${capWords}; public top-up ${formatNaira(short.total)}${ofPmi}; survives ${survived} of ${shocks.length} shocks.` +
+    (failed.length === 0 ? "" : ` It fails ${failed.map((one) => `${one.label.toLowerCase()} (investors lose ${formatNaira(one.outcome.investorLoss)} after the first-loss layer and the reserve)`).join(", ")}.`);
+  const ratio = charge / typicalCap;
+
+  const typicalCharge = billShare * typical.bill;
+  const pmiMetersValue = sum(base.years.map((year) => year.publicMetersValue));
+  return {
+    fundAlone: `Fund alone: ₦${whole.format(charge)} a month, ${ratio.toFixed(1)}x the cap.`,
+    structure: structureSentence,
+    tone: withinCap && failed.length === 0 && baseOutcome.repaidInFull ? "ok" : "warning",
+    figures: [
+      { key: "typicalCharge", label: `Charge for a typical Band ${typical.band} customer`, value: `₦${whole.format(typicalCharge)} a month`, origin: "calculated", basis: `${values.billShare}% of a Band ${typical.band} bill of ${formatNaira(typical.bill)}` },
+      { key: "topUp", label: "Public top-up (PMI, DISREP, MAF)", value: formatNaira(short.total), origin: "calculated", basis: "For each meter, its installed cost (at the duty-shock rate) less what the charge and the collection gain repay in 60 months; paid at installation" },
+      ...(pmiFunding === null ? [] : [{ key: "pmiFunding", label: "Already raised for PMI", value: formatNaira(pmiFunding), origin: "reported" as const, basis: `As reported: ${pmiSource}` }]),
+      { key: "capital", label: "Investors' capital put in", value: formatNaira(baseOutcome.capital), origin: "calculated", basis: `In naira, at ${values.guaranteedRate}% a year with a local-currency guarantee (assumption)` },
+      { key: "firstLoss", label: "First-loss layer", value: formatNaira(baseOutcome.firstLoss), origin: "calculated", basis: `${values.firstLoss}% of investors' capital, from public or DFI money (assumption)` },
+      { key: "reserveAccount", label: "Reserve account", value: formatNaira(buffers.reserveAccount), origin: "calculated", basis: `${values.reserveMonths} months of repayments at full rollout, held from the start (assumption)` },
+      { key: "publicTotal", label: "All public money in the structure", value: formatNaira(short.total + baseOutcome.firstLoss + buffers.reserveAccount), origin: "calculated", basis: "Top-up, first-loss layer and reserve account together" },
+      ...(pmiMetersValue > 0 ? [{ key: "pmiMeters", label: "PMI meters in the plan, at cost", value: formatNaira(pmiMetersValue), origin: "calculated" as const, basis: "Also paid from PMI's money, on top of the top-up" }] : []),
+    ],
+    how: `How this is calculated: every customer pays ${values.billShare}% of their own bill; Lifeline customers pay nothing. For each meter, what that charge and the DisCo's share of the collection gain repay in 60 months is set against its installed cost at the duty-shock rate; public money tops up the difference at installation. Local assembly (${values.localShare}%) and naira funding apply. Investors are repaid from the rest; a loss falls first on the first-loss layer, then the reserve account.`,
+    survived: `${survived} of ${shocks.length}`,
+    shocks: shockOutcomes.map((one) => ({
+      key: one.key,
+      label: one.label,
+      survives: one.outcome.repaidInFull,
+      outcome: one.outcome.loss <= 1 ? "Investors repaid in full; no loss" : one.outcome.repaidInFull ? `Loss of ${formatNaira(one.outcome.loss)} taken by the first-loss layer and the reserve; investors repaid in full` : `Investors lose ${formatNaira(one.outcome.investorLoss)} after the buffers`,
+    })),
+    investor: { base: investorView("Base case", baseOutcome), stressed: investorView(`${stressed.label}`, stressed.outcome) },
+    protection: [
+      { title: "Split at source", text: "The meter charge is split at the token vending point into a trustee escrow account. It never passes through the DisCo's books.", requirement: false },
+      { title: "Meters owned by the fund", text: "The meters belong to the fund vehicle, not the DisCo, so they stay security for investors.", requirement: false },
+      { title: "First-loss layer", text: `Public or DFI money takes the first ${values.firstLoss}% of losses on investors' capital.`, requirement: false },
+      { title: "Reserve account", text: `About ${values.reserveMonths} months of repayments held from the start.`, requirement: false },
+      { title: "Regulatory recognition of the charge", text: "NERC would need to recognise the meter charge on token purchases in the tariff order. This is a requirement, not a fact today.", requirement: true },
+    ],
+    receipt: {
+      band: `Band ${typical.band}`,
+      charge: `₦${whole.format(typicalCharge)}`,
+      monthsLeft: "48",
+      note: `Illustrative: a Band ${typical.band} customer one year after the meter was installed, paying ${values.billShare}% of a ${formatNaira(typical.bill)} bill. The charge stops after 60 months.`,
+    },
+    bandCharges: [
+      ...bandRows.map((row) => ({ band: row.band, charge: row.bill === null ? "Not available" : `₦${whole.format(billShare * row.bill)}` })),
+      { band: "Lifeline (R1)", charge: "₦0, exempt" },
+    ],
+  };
+}
+
+function investorView(label: string, outcome: InvestorOutcome): InvestorView {
+  return {
+    label,
+    repaid: outcome.repaidInFull,
+    loss: outcome.loss <= 1 ? "None" : formatNaira(outcome.loss),
+    absorbedByFirstLoss: formatNaira(outcome.absorbedByFirstLoss),
+    absorbedByReserve: formatNaira(outcome.absorbedByReserve),
+    investorLoss: outcome.investorLoss <= 1 ? "None" : formatNaira(outcome.investorLoss),
+    irr: outcome.irr === null ? "Not available" : `${(outcome.irr * 100).toFixed(1)}% a year`,
+    payback: outcome.paybackMonth === null ? "Not by month 120" : `Month ${outcome.paybackMonth} (year ${Math.ceil(outcome.paybackMonth / 12)})`,
+  };
 }

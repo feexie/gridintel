@@ -1,4 +1,4 @@
-import type { BandTariff, Citation, DiscoId, PublishedInstallations, PublishedMetering, ReportedNationalMetering, ServiceBand } from "@/domain";
+import type { BandTariff, Citation, DiscoId, PublicMeteringProgramme, PublishedInstallations, PublishedMetering, ReportedNationalMetering, ServiceBand } from "@/domain";
 import type { PublishedFiguresRepository } from "../ports/published.ts";
 
 /* Published metering figures for Nigeria, transcribed from the documents named in each citation
@@ -13,6 +13,8 @@ const Q2_2026 = "nerc-q2-2026";
 const Q1_2026 = "nerc-q1-2026";
 const THISDAY = "s5-thisday-2026-10-15";
 const BRIEF = "b15-geh-brief";
+const VANGUARD = "s1-allafrica-vanguard-2026-10-22";
+const STARTUP_ACT = "s2-nigeriastartupact-2026-10-16";
 
 const DISCO_ORDERS: Record<DiscoId, { code: string; file: string }> = {
   abuja: { code: "AEDC", file: "AEDC_HOLDCO_YSS_September_2026_088" },
@@ -54,6 +56,22 @@ export const NERC_CITATIONS: Citation[] = [
     published: "2026-10-15",
     standing: "secondary",
     locator: "Figures for August 2026, as reported; the factsheet itself was not found on nerc.gov.ng",
+  },
+  {
+    id: VANGUARD,
+    title: "AllAfrica / Vanguard, on the Presidential Metering Initiative, citing NERC's metering factsheet",
+    url: "https://allafrica.com/stories/202610220636.html",
+    published: "2026-10-22",
+    standing: "secondary",
+    locator: "The programme's size, funding and implementer; distribution from 2027",
+  },
+  {
+    id: STARTUP_ACT,
+    title: "Nigeria Startup Act, \"FG: PMI trainees to install 750,000 meters in 2027\", citing NERC's metering factsheet of 14 October 2026",
+    url: "https://www.nigeriastartupact.ng/fg-pmi-trainees-to-install-750000-meters-in-2027-see-details/",
+    published: "2026-10-16",
+    standing: "secondary",
+    locator: "750,000 meters in 2027",
   },
   {
     id: BRIEF,
@@ -138,6 +156,20 @@ const TARIFFS: BandTariff[] = (Object.keys(TARIFF_ROWS) as DiscoId[]).flatMap((d
   BANDS.map((band, index) => ({ disco, band, nairaPerKwh: TARIFF_ROWS[disco][index], effective: "2026-09-01", citationId: orderCitation(disco) })),
 );
 
+const PROGRAMMES: PublicMeteringProgramme[] = [
+  {
+    id: "pmi",
+    name: "Presidential Metering Initiative (PMI)",
+    totalMeters: 3_800_000,
+    fundingNaira: 700_000_000_000,
+    fundedBy: "FAAC, 2024",
+    firstYear: 2027,
+    firstYearMeters: 750_000,
+    implementer: "PMI-Smart Grid Development Limited",
+    citationIds: [VANGUARD, STARTUP_ACT],
+  },
+];
+
 export function nercPublishedFigures(): PublishedFiguresRepository {
   return {
     citations: async () => NERC_CITATIONS,
@@ -145,5 +177,6 @@ export function nercPublishedFigures(): PublishedFiguresRepository {
     installations: async () => INSTALLATIONS,
     nationalReports: async () => NATIONAL,
     residentialTariffs: async () => TARIFFS,
+    programmes: async () => PROGRAMMES,
   };
 }

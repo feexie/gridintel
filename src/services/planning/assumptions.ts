@@ -24,7 +24,7 @@ export interface AssumptionSpec {
   basis: string;
   /** A placeholder is shown as one until a sourced figure replaces it. */
   origin: "assumption" | "placeholder";
-  group: "meter" | "money" | "customers" | "bands" | "public" | "shocks";
+  group: "meter" | "money" | "customers" | "bands" | "public" | "shocks" | "structure";
   /** Only for one case. */
   onlyFor?: CaseId;
 }
@@ -74,7 +74,12 @@ export const ASSUMPTIONS: AssumptionSpec[] = [
   percent("shockDevaluation", "Naira devaluation", 30, "The naira loses this share of its value against the dollar.", "shocks"),
   percent("shockInflation", "Inflation a year in the inflation shock", 30, "Applied to naira costs and, by the pass-through, to tariffs.", "shocks"),
   { key: "shockMonth", label: "Month the shocks start", unit: "month", defaultValue: 13, min: 1, max: 60, step: 1, basis: "Year 2, after the fund has committed to its first meters. Assumption.", origin: "assumption", group: "shocks" },
-  percent("localShare", "Local-assembly share of the meter", 40, "Used when local assembly is on: that share is priced in naira, without duty.", "meter"),
+  percent("localShare", "Local-assembly share of the meter", 40, "Used when local assembly is on, and in the GridIntel structure: that share is priced in naira, without duty.", "meter"),
+  percent("billShare", "GridIntel structure: charge as a share of each customer's bill", 5, "One rule for everyone, so higher bands pay more naira. Assumption.", "structure", { max: 50 }),
+  { key: "lifelineShare", label: "Customers on Lifeline (R1), exempt", unit: "percent", defaultValue: 10, min: 0, max: 100, step: 1, basis: "Lifeline is up to 50 kWh a month (NERC's September 2026 orders). The share of customers on it is a placeholder, to be replaced with sourced figures.", origin: "placeholder", group: "structure" },
+  percent("guaranteedRate", "Naira capital with a local-currency guarantee, a year", 22, "InfraCredit-type guarantee. Its effect on the rate is not known, so no benefit is assumed until its terms are set. Assumption.", "structure", { step: 0.25 }),
+  percent("firstLoss", "First-loss layer, share of investors' capital", 10, "Public or DFI money that takes the first losses. Assumption, set by the user.", "structure"),
+  { key: "reserveMonths", label: "Reserve account, months of repayments", unit: "month", defaultValue: 6, min: 0, max: 24, step: 1, basis: "Held from the start, funded by public or DFI money. Assumption, set by the user.", origin: "assumption", group: "structure" },
 ];
 
 export type MitigationKey = "local" | "naira" | "dutyReserve" | "indexed";

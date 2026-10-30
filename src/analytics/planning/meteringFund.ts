@@ -38,7 +38,8 @@ export interface MeteringFundParameters {
 
 export const METERING_FUND_REFERENCE: Methodology<MeteringFundParameters> = {
   id: "gridintel.planning.metering-fund",
-  version: "0.1.0",
+  // 0.2.0: a public top-up per meter; a cohort's shortfall is sized at the duty-shock rate when the reserve is on; investors' outcome.
+  version: "0.2.0",
   name: "GridIntel reference metering fund (pay-as-you-meter)",
   description:
     "A month-by-month cash model of a fund that meters every customer in 60 months with no upfront payment, recovering each meter within 60 months of its installation from a fixed charge on token purchases and a share of the DisCo's collection gain.",

@@ -63,6 +63,22 @@ export interface ReportedNationalMetering {
 }
 
 /** The allowed residential (non-maximum-demand) tariff of one band of one DisCo, as ordered. */
+/** A public metering programme as reported: its size, funding and first year. */
+export interface PublicMeteringProgramme {
+  id: string;
+  name: string;
+  /** Meters in the whole programme, as reported; null when not stated. */
+  totalMeters: number | null;
+  /** Money raised for it, in naira, as reported; null when not stated. */
+  fundingNaira: number | null;
+  /** How the money was raised, as reported. */
+  fundedBy: string | null;
+  firstYear: number | null;
+  firstYearMeters: number | null;
+  implementer: string | null;
+  citationIds: string[];
+}
+
 export interface BandTariff {
   disco: DiscoId;
   band: ServiceBand;
