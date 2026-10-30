@@ -1,199 +1,230 @@
 # Planning: design for the Global Energy Hackathon sprint
 
-Design text only. Nothing here is built at tag `geh-baseline`. Today
-`/dashboard/planning` is a "planned" page that holds no data and no figure.
+Entry: Brief 15, "Meter every customer" (summary in `BRIEF-15.md`). Track 3,
+Business Models & Financing. Setting A, Residential.
 
-Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026,
-18:00 WAT. **Only the Metering planner is built in the sprint:** the DT
-planner on the synthetic network (2.1 to 2.3) and the national / DisCo view
-on NERC's published figures (2.5). Every other item below is labelled
-**Planned** and shows no figure.
+Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00
+WAT. Feature freeze Sunday 01:00 WAT. Baseline: tag `geh-baseline`, commit
+`839c5d9`. At the baseline `/dashboard/planning` is a "planned" page with no
+data and no figure.
 
-## 1. Structure of the Planning section
+## 1. The concept: pay-as-you-meter, funded by the meters themselves
 
-Planning is a sector with the same structure as the others (ADR 0017), split
-by who is planning.
+1. **No upfront payment.** A Metering Fund buys and installs the meters. It
+   is financed by a blend of investor and DFI capital, and public money
+   (PMI, DISREP, MAF) reserved for vulnerable customers.
+2. **Cost recovered through energy purchases.** A meter charge is taken on
+   each token purchase, capped at a set share of the monthly bill (default
+   5%). The same rule applies to every customer, so customers on a free
+   meter and on a paid meter are treated alike.
+3. **The DisCo repays part of the fund** from the collection gain that
+   metering brings: metered customers stop disputing estimated bills.
+4. **Rollout order by revenue recovered per naira spent**, DT by DT, so the
+   first meters earn the cash that pays for later ones (a revolving fund).
+5. **Stress-tested** against import duty, naira devaluation and inflation,
+   with mitigations the user can switch on.
+6. **Equity.** The charge as a share of the monthly bill by tariff band.
+   Lifeline and vulnerable customers are exempt; the public share covers
+   them.
 
-| Group | Planner | Status |
+Where this model comes from (shown on the fund screen): "Pay-as-you-meter
+applies the PAYGo model used for solar home systems and phone financing in
+Africa: the customer pays for the asset in small amounts as they buy
+energy, not upfront."
+
+**Today's route, for comparison only.** Under MAP the customer pays for the
+meter upfront and is refunded as energy credits over 120 months (as
+reported [S5]). MAP meter prices were deregulated by NERC Order
+NERC/2024/040, effective 1 May 2024 [S3], so there is no single regulated
+price. The fund replaces the upfront payment; it does not use MAP's terms.
+
+## 2. Structure of the Planning section
+
+| Group | Planner | Address | Status |
+| --- | --- | --- | --- |
+| Utility planning | **Metering** | `/dashboard/planning/metering` | **Built in the sprint** |
+| Utility planning | Distribution transformers (DT) | `/dashboard/planning/dt` | Planned |
+| Utility planning | Feeders | `/dashboard/planning/feeders` | Planned |
+| Utility planning | Network expansion | `/dashboard/planning/network-expansion` | Planned |
+| Mini-grid planning | Unserved | `/dashboard/planning/unserved` | Planned |
+| Mini-grid planning | Underserved | `/dashboard/planning/underserved` | Planned |
+| Mini-grid planning | Productive use of energy (PUE) | `/dashboard/planning/pue` | Planned |
+| Mini-grid planning | E-mobility | `/dashboard/planning/e-mobility` | Planned |
+
+A planned page states its purpose in one line and that it is not built. It
+holds no figure.
+
+The Metering planner has four screens (exact addresses fixed in M1):
+
+| Screen | Milestone | Question it answers |
 | --- | --- | --- |
-| Utility planning | **Metering** | **Built in the sprint** |
-| Utility planning | Distribution transformers (DT) | Planned |
-| Utility planning | Feeders | Planned |
-| Utility planning | Network expansion | Planned |
-| Mini-grid planning | Unserved | Planned |
-| Mini-grid planning | Underserved | Planned |
-| Mini-grid planning | Productive use of energy (PUE) | Planned |
-| Mini-grid planning | E-mobility | Planned |
+| Metering Fund | M2 | Can every customer be metered in five years with no upfront payment, what is the monthly charge, and does the fund survive shocks? |
+| Where the first meters go | M3 | Which DTs to meter first so early meters fund later ones? |
+| Who pays, and is it fair | M4 | What the charge is as a share of the bill by band, who is exempt, and what public money covers them |
+| About this build | M4 | What existed at `geh-baseline` and what was built in the sprint |
 
-Each planned planner keeps a page that states its purpose and that it is
-not built, like the sector pages today.
+## 3. The Metering Fund model (M2)
 
-## 2. The Metering planner
+### 3.1 Two cases, switchable
 
-**Question it answers.** Which distribution transformers should a DisCo
-meter first, how fast can it close its metering gap over five years, what
-does that cost, and who pays?
-
-### 2.1 Inputs
-
-Every input has an origin. Inputs from records come from the existing
-utility services, with their sourcing; inputs the user sets are
-assumptions and are shown as assumptions, never as measured values.
-
-| Input | Origin | Notes |
+| Case | Customers and metered share | Origin |
 | --- | --- | --- |
-| Customers, per DT | Records (service points and the network hierarchy) | Counted per DT from the topology; where a count is estimated the planner says so |
-| Metered share, per DT | Records (each service point's meter, or none) | Unmetered connections are counted as unmetered, not as zero consumption |
-| Estimated-billing exposure, per DT | Records (bills on the `estimated` basis) | Customers and energy billed on estimates in the chosen period |
-| Losses, per DT | Calculated (energy account, where the DT has a boundary meter) | Where a DT has no boundary meter the loss is "not available", never 0 |
-| Meter unit cost (NGN) | Assumption, set by the user | Per meter type (single-phase, three-phase), installed; no default is presented as a market price |
-| Rollout capacity | Assumption, set by the user | Meters installed per year, or a budget per year |
-| Funding split | Assumption, set by the user | See "Who pays" |
+| Brief scenario | 15 million customers, 45% metered, growth 2% a year | GEH Brief 15 test scenario; growth an assumption |
+| Nigeria reference | Active and metered customers, meters installed per month | NERC. The primary source is NERC's metering factsheet of 14 October 2026, if found on nerc.gov.ng; the press articles [S1], [S2], [S5] are secondary. The brief's figures (December 2025: 6.97m of 12.16m metered, 57.27%) are shown as reported, citing GEH Brief 15 |
 
-### 2.2 Outputs
+If the NERC factsheet cannot be reached, work stops and the Founder is told
+before the Nigeria case is built.
 
-| Output | What it is |
-| --- | --- |
-| DT-by-DT priority ranking | Every DT ranked by a stated, deterministic score: unmetered customers, estimated-billing exposure and losses on the DT. The weights are shown; each row shows its inputs and which are missing |
-| 5-year rollout plan | Meters to install per year, assigned to DTs in ranking order within the capacity or budget set |
-| Metered share by year | The share of customers metered at the end of each year, starting from the share in the records |
-| Estimated bills removed | Per year, the estimated bills that would no longer be issued, counted from the estimated-basis bills in the records |
-| CAPEX | Meters times unit cost, per year and in total, in NGN |
-| Payback | Years until the change in revenue recovers the CAPEX. The direction of the change is not assumed: replacing an estimate with a reading can raise or lower a bill. Where the records cannot support a figure the planner says "insufficient data" |
-| Who pays | CAPEX split by the funding sources the user sets (for example the DisCo, a Meter Asset Provider, the customer, a programme or donor), as amounts per year. The split is an assumption, not a statement of any scheme's rules |
+### 3.2 Assumptions (every one editable and labelled "assumption" with its basis)
 
-### 2.3 Layering
+| Assumption | Default | Basis |
+| --- | --- | --- |
+| Exchange rate | N1,334 per $ | 30 October 2026, to confirm |
+| Meter hardware | $45 per single-phase meter | Brief: mini-grid meters fell to about $40; utility meters cost more |
+| USD share of meter cost | 100% | Imported; a local-assembly toggle lowers it |
+| Import duty | 10% | Base case; the brief notes the rise from 10% to 45% that stalled the 2018 MAP scheme |
+| Installation and logistics | N25,000 per meter | Assumption |
+| Reference price only | Eko DisCo MAP vendor prices 2024: single-phase N122,000 to N168,000 | [S4]. "For reference, not current market price." Not used in the calculation |
+| Meter life | 10 years | Assumption |
+| Maintenance and replacement reserve | 2% of meter cost a year | Assumption |
+| Meter failure rate | User-set | Assumption |
+| Fund cost of capital | 12% a year, blended | Assumption |
+| Charge cap | 5% of the monthly bill | Assumption |
+| Monthly bill by band, A to E | **Placeholders**, shown on screen as "to be replaced with sourced figures" | The Founder supplies sourced values before recording |
+| Collection gain from metering | 15% of the metered customer's billed revenue | Assumption |
+| Share of the collection gain paid to the fund | 50% | Assumption |
+| Customers who stop buying tokens or fall behind | 10% | Assumption; its effect on the fund is shown |
+| Customer growth | 2% a year (brief scenario); from NERC periods (Nigeria case) | Assumption / calculated from reported figures |
+| PMI | 750,000 meters in 2027, 62,500 a month, shared by unmetered customers at the start of 2027; later years user-set, default 0 | [S1], [S2]; phasing and share are assumptions |
+| DISREP, MAF | User-set, default 0 | Assumption |
 
-- The scoring, rollout and payback are a new, versioned methodology in
-  `src/analytics`: pure and deterministic, tested with fixed inputs.
-- A planning service in `src/services` reads the records through the
-  existing repository ports and returns a view model with `sourcing`. On the
-  demonstration dataset every result is marked synthetic and shown as such.
-- The screen formats and displays. It calculates nothing.
-- User assumptions travel with the result, so the plan states the unit
-  cost, capacity and funding split it was built on.
+### 3.3 Calculation (versioned methodology in `src/analytics`; pure, deterministic)
 
-### 2.4 Not in the sprint
+The model runs month by month over five years (60 months) and reports by
+year. The exact treatment of the points below is fixed in M2 and stated in
+the methodology and on screen:
 
-The other seven planners, optimisation beyond a ranked rollout, a DisCo's
-own operational records (the DT planner stays on the synthetic network),
-and any live price or tariff feed.
+- **Meters to install:** enough to reach 100% metered by month 60,
+  including customer growth. Public meters (PMI) are installed on their
+  schedule; the fund installs the rest.
+- **Cost per meter (naira):** hardware in USD × exchange rate on the USD
+  share, plus import duty on the imported part, plus installation and
+  logistics.
+- **CAPEX:** meters installed × cost per meter, per year.
+- **Funding drawn by source:** investor/DFI capital and public money, per
+  year.
+- **Recoveries:** the meter charge on token purchases (less the customers
+  who stop buying), the DisCo's share of the collection gain, and the
+  public share covering exempt customers.
+- **Outgoings:** CAPEX, the maintenance and replacement reserve, failed
+  meters replaced, and the cost of capital on the fund's balance.
+- **Fund balance** each month, and the year the fund turns cash-positive.
+- **Customer charge** per month, in naira and as a share of the bill by
+  band. The charge is the same for every customer.
 
-### 2.5 National / DisCo view (real public data)
+### 3.4 Headline
 
-The DT planner (2.1 to 2.3) runs on the synthetic network. This view does
-not: it runs on **NERC's published metering figures**, per DisCo and
-nationally. Every figure carries its source (the NERC publication, with
-its title and address) and its date (the period it covers and the date it
-was published). Figures are entered as reported (`ReportedKpi`), never as
-measured, and the view is labelled as public reported data, apart from the
-synthetic screens. A figure NERC does not publish for a period is shown as
-missing, never as 0.
+"Every customer metered by year 5 with no upfront payment. Charge: N[x] a
+month, [y]% of a typical Band [z] bill."
 
-**Inputs, per DisCo and per period**
+[x], [y] and [z] come from the service. If the cap is breached or the fund
+runs dry, the headline says so plainly and by how much (for example "The
+charge breaches the 5% cap for Band E by N[x] a month").
 
-| Input | Origin |
-| --- | --- |
-| Active customers | NERC, reported |
-| Metered customers | NERC, reported |
-| Meters installed that month | NERC, reported |
-| Metering rate | NERC, reported; shown beside the rate calculated from the two counts above, as separate figures |
+### 3.5 Stress tests and mitigations
 
-Unmetered customers = active customers − metered customers (calculated).
-Customer growth per month = the change in active customers between
-consecutive periods (calculated). Where a period is missing, growth over
-the gap is not spread across it; the view says the figure is unavailable.
+Beside the base case: import duty 45%; naira devaluation (default −30%);
+inflation (default 30%); all three together. For each: is the fund solvent,
+and is the charge under the cap?
 
-**Calculation** (a versioned methodology in `src/analytics`, deterministic)
+Mitigation toggles, each recalculating the model: local-assembly share;
+naira-denominated funding; duty-shock reserve; charge indexed to the
+tariff.
 
+### 3.6 Charts
+
+- Fund balance over 60 months, base case against stressed.
+- Meters installed per year.
+- Funding sources per year (stacked bar).
+
+Plain titles, axes with units, nothing that needs hovering.
+
+## 4. Where the first meters go: DT planner (M3, synthetic network)
+
+- Every DT ranked by revenue recovered per naira spent, from unmetered
+  customers, estimated-billing exposure and losses on the DT. The weights
+  are shown. Each row shows its inputs and which are missing; a DT with no
+  boundary meter has its loss shown as "not available", never 0.
+- The revolving effect: cumulative recovered revenue against cumulative
+  CAPEX, ranked order against a fixed random order, same budget.
+- A year-by-year rollout that can feed the Metering Fund: the user can use
+  the DT plan's cash flows in place of the fund model's averages.
+- Every figure is marked synthetic: it comes from the demonstration network.
+
+## 5. Who pays, and is it fair: equity view (M4)
+
+- The charge as a share of the bill by band (A to E).
+- Vulnerable and lifeline customers exempt, and the public money needed to
+  cover them.
+- The fairness rule stated on screen: every customer, on a free meter or a
+  paid one, pays the same charge under the same cap.
+- A mini-grid case: the same charge rule, lower consumption, user inputs.
+
+## 6. About this build (M4)
+
+`/dashboard/planning/about-this-build`: what existed at `geh-baseline` and
+what was built in the sprint (from `CHANGELOG-GEH.md`, with times), and a
+link to https://github.com/feexie/gridintel/compare/geh-baseline...geh-sprint.
+
+## 7. Estimated billing and the metering gap (used by M2)
+
+From the earlier national view, kept:
+
+- Unmetered customers = active customers − metered customers.
 - Net backlog change per month = customer growth − meters installed.
 - Months to meter everyone = unmetered ÷ (meters installed − customer
-  growth).
-- If meters installed ≤ customer growth, the gap never closes. The view
-  says so in words ("At this pace the metering gap does not close") and
-  shows no number of months.
-- Required pace: meters to install per month to meter everyone within 60
-  months = unmetered ÷ 60 + customer growth.
-- The pace and growth used are stated with the periods they were taken
-  from (for example the average of the latest N months, N shown).
-
-**Scenarios**
-
-| Scenario | Installs per month | Status |
-| --- | --- | --- |
-| Current pace | From the NERC figures, as above | Calculated from reported figures |
-| Current pace + Presidential Metering Initiative (PMI) | Current pace plus 750,000 meters in 2027; later years user-set, default 0 | Reported facts and stated assumptions, below |
-| User-set pace | Set by the user | Assumption |
-
-**The PMI scenario.** Facts as reported (each shown with its source and
-date; reported in the press, not taken from a NERC or government document):
-
-- The programme totals about 3.8 million meters, funded with N700bn via
-  FAAC in 2024, and is implemented by PMI-Smart Grid Development Limited.
-  Source [S1].
-- Per NERC's metering factsheet as reported there, distribution starts in
-  2027 with 750,000 meters. Sources [S1], [S2].
-
-Phasing beyond 2027 and the split between DisCos are not published
-consistently, so the scenario rests on three assumptions, each stated on
-the screen:
-
-- The 750,000 meters of 2027 are installed evenly over its 12 months
-  (62,500 a month).
-- They are shared across DisCos in proportion to each DisCo's unmetered
-  customers at the start of 2027.
-- PMI meters in 2028 and later are set by the user; the default is 0. The
-  remainder of the reported 3.8 million is not assumed to arrive.
-
-**Estimated billing**
-
-- Assumption, stated on the screen: every unmetered customer receives an
+  growth). If meters installed ≤ customer growth, the gap never closes and
+  the screen says so ("At this pace the metering gap does not close"), with
+  no number of months.
+- Required pace to meter everyone in 60 months = unmetered ÷ 60 + customer
+  growth, per month.
+- Assumption, stated on screen: every unmetered customer receives an
   estimated bill each month, so each meter installed removes 12 estimated
-  bills a year once in place (counted from the month after installation).
-- Reported: estimated bills a year, by scenario and by year. The figure is
-  labelled modelled, from this assumption, not a count of bills issued.
-  Estimated bills to metered customers (missed readings) are not included,
-  and the view says so.
+  bills a year once in place. Estimated bills a year are shown by scenario
+  and year, labelled modelled. Estimated bills to metered customers (missed
+  readings) are not included, and the screen says so.
 
-**Who pays and affordability**
+## 8. How it is built
 
-| Route | Who pays the meter | How |
-| --- | --- | --- |
-| MAP (Meter Asset Provider) | The customer, upfront | Refunded as energy credits over 120 months (as reported [S5]) |
-| MAF / DISREP | No charge to the customer | Funded by the programme |
+- Methodology in `src/analytics`: pure, versioned, tested with fixed inputs.
+- Services in `src/services` return view models with `sourcing`. Every
+  figure is labelled records (synthetic), reported (source and date) or
+  assumption. Missing is shown as missing, never 0.
+- Screens display only. No number is typed into a page; headline figures
+  come from the service.
+- The assumptions are carried in the page address, so a scenario can be
+  reloaded and filmed exactly. The planner pages are rendered on request.
+- Presentation mode (`?present=1`) hides the navigation and enlarges the
+  headline figures.
+- Under each headline, a "How this is calculated" line states the formula
+  in words. The method is transparent and deterministic; it is never called
+  AI.
 
-- The cost per meter under each route, per year and in total, by scenario.
-- **There is no single regulated MAP price.** MAP meter prices were
-  deregulated by NERC Order NERC/2024/040, effective 1 May 2024 (as
-  summarised in [S3]).
-- Unit prices are user assumptions. The defaults are the midpoints of the
-  ranges below, and the range is shown beside each default:
+## 9. Not in the sprint
 
-  | Meter | Range (VAT inclusive) | Default (midpoint) |
-  | --- | --- | --- |
-  | Single-phase | N122,000 to N168,000 | N145,000 |
-  | Three-phase | N207,000 to N258,000 | N232,500 |
+The seven planned planners, optimisation beyond a ranked rollout, a DisCo's
+own operational records (the DT planner runs on the synthetic network), and
+any live price, tariff or exchange-rate feed.
 
-  Label on the screen: "Eko DisCo published MAP vendor prices, 2024; for
-  reference, not current market price." Source [S4]. No price is presented
-  as a current market price.
-- The 120-month energy-credit refund and the rule that a MAP meter is
-  installed within 10 days are labelled "as reported" [S5], not as the
-  text of the regulation.
-- Affordability: the upfront MAP payment and the monthly energy credit per
-  customer, from the user's prices, shown beside each other. No household
-  income figure is assumed.
+## 10. Sources
 
-**Sources for 2.5** (supplied by the Founder, 30 October 2026; to be cited
-on the screen with their dates)
+Supplied by the Founder, 30 October 2026; cited on screen with their dates.
 
 | Ref | Source | Date | Used for |
 | --- | --- | --- | --- |
 | S1 | AllAfrica / Vanguard, https://allafrica.com/stories/202610220636.html | 22 Oct 2026 | PMI total, funding, implementer; 750,000 meters in 2027 (citing NERC's factsheet) |
 | S2 | Nigeria Startup Act, https://www.nigeriastartupact.ng/fg-pmi-trainees-to-install-750000-meters-in-2027-see-details/ | 16 Oct 2026 | 750,000 meters in 2027; gives as its source NERC's metering factsheet of 14 Oct 2026 (the factsheet behind the 63.1% / 4.7m figures). When the factsheet is found on nerc.gov.ng, NERC is cited as the primary source and the press articles as secondary |
 | S3 | Mondaq summary, https://www.mondaq.com/nigeria/oil-gas-electricity/1488638/ | not recorded | NERC/2024/040: MAP prices deregulated from 1 May 2024 |
-| S4 | The Guardian (Nigeria), https://guardian.ng/?p=2393191 | 2024 | Eko DisCo MAP vendor price ranges |
-| S5 | ThisDay, https://www.thisdaylive.com/2026/10/15/nerc-metering-rate-now-63-1-4-7m-customers-still-without-devices/ | 15 Oct 2026 | 120-month refund, 10-day installation, as reported citing NERC |
-
-Each source also goes in `DISCLOSURE-DRAFT.md` under "Datasets" when the
-view uses it.
+| S4 | The Guardian (Nigeria), https://guardian.ng/?p=2393191 | 2024 | Eko DisCo MAP vendor price ranges (reference only) |
+| S5 | ThisDay, https://www.thisdaylive.com/2026/10/15/nerc-metering-rate-now-63-1-4-7m-customers-still-without-devices/ | 15 Oct 2026 | MAP's 120-month refund and 10-day installation, as reported citing NERC (comparison only) |
+| B15 | GEH Brief 15, "Meter every customer", and its references | — | Test scenario; December 2025 metering (6.97m of 12.16m, 57.27%); DisCo losses Q4 2025; estimated-billing complaints 2020; mini-grid meter cost |
