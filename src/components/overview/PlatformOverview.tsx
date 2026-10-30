@@ -5,6 +5,7 @@ import { DER_HOME, MINIGRID_HOME, PLANNING_HOME, UTILITY_HOME } from "@/constant
 import { AttentionList } from "@/components/system/Attention";
 import { EnergySystemArt, KeyFold, PlannedTag } from "@/components/system/Brand";
 import { Panel } from "@/components/system/Metric";
+import { PLANNING_STATUS } from "@/constants/planning";
 
 /* The Platform Overview: what GridIntel does, said to a first-time visitor in half a minute, and
    then straight into what each sector's records show. The hero is a brand area and holds no
@@ -26,8 +27,8 @@ const PROMISES = [
 ];
 
 const TO_JOIN = [
-  { id: "der", title: "DER Intelligence", href: DER_HOME, text: "Solar, storage, inverters and generators as fleets: performance, aggregation and dispatch." },
-  { id: "planning", title: "Planning", href: PLANNING_HOME, text: "Load growth, capacity, scenarios and investment priorities, from the same records." },
+  { id: "der", title: "DER Intelligence", href: DER_HOME, text: "Solar, storage, inverters and generators as fleets: performance, aggregation and dispatch.", partly: false },
+  { id: "planning", title: "Planning", href: PLANNING_HOME, text: PLANNING_STATUS, partly: true },
 ];
 
 /** True when the viewer may enter the sector; every sector is open when the read model names none. */
@@ -137,7 +138,7 @@ export function PlatformOverview({ view, map }: { view: PlatformOverviewView; ma
                 ) : (
                   sector.title
                 )}{" "}
-                <PlannedTag />
+                <PlannedTag>{sector.partly ? "Partly built" : "Planned"}</PlannedTag>
               </p>
               <p className="mt-0.5 text-caption leading-snug text-ink-4">{sector.text}</p>
             </li>

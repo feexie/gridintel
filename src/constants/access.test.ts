@@ -38,6 +38,8 @@ const ROUTES = [
   "/dashboard/minigrid/reports/compliance/2026-09-14",
   "/dashboard/der",
   "/dashboard/planning",
+  "/dashboard/planning/metering",
+  "/dashboard/planning/dt",
   "/dashboard/reports",
   "/dashboard/settings",
 ];
@@ -57,6 +59,9 @@ describe("which screens a viewer may open", () => {
     assert.equal(keyFor("/dashboard/utility/reports/reliability/2026-09/data.csv"), "utility.reports.reliability");
     assert.equal(keyFor("/dashboard/utility/reports"), "utility.reports");
     assert.equal(keyFor(REFUSED_PATH), null);
+    assert.equal(keyFor("/dashboard/planning"), "planning.overview");
+    assert.equal(keyFor("/dashboard/planning/metering"), "planning.metering");
+    assert.equal(keyFor("/dashboard/planning/e-mobility"), "planning.e-mobility");
   });
 
   it("opens everything to the public demonstration, whose menu is the whole catalogue", () => {
