@@ -1,4 +1,4 @@
-import type { BandTariff, Citation, DiscoId, PublicMeteringProgramme, PublishedInstallations, PublishedMetering, ReportedNationalMetering, ServiceBand } from "@/domain";
+import type { BandTariff, Citation, DiscoId, PublicMeteringProgramme, PublishedDiscoPerformance, PublishedInstallations, PublishedMetering, ReportedNationalMetering, ServiceBand } from "@/domain";
 import type { PublishedFiguresRepository } from "../ports/published.ts";
 
 /* Published metering figures for Nigeria, transcribed from the documents named in each citation
@@ -39,7 +39,7 @@ export const NERC_CITATIONS: Citation[] = [
     url: "https://nerc.gov.ng/wp-content/uploads/2026/09/2026_Q2_Report.pdf",
     published: "2026-09-29",
     standing: "primary",
-    locator: "Table 15, p. 56: metering progress as of 30 June 2026; Appendix IX, p. 76: meter installation for all frameworks",
+    locator: "Table 15, p. 56: metering progress as of 30 June 2026; Appendix IX, p. 76: meter installation for all frameworks; Table 7, p. 36: revenue collection performance; Table 8, p. 38: ATC&C loss performance",
   },
   {
     id: Q1_2026,
@@ -156,6 +156,25 @@ const TARIFFS: BandTariff[] = (Object.keys(TARIFF_ROWS) as DiscoId[]).flatMap((d
   BANDS.map((band, index) => ({ disco, band, nairaPerKwh: TARIFF_ROWS[disco][index], effective: "2026-09-01", citationId: orderCitation(disco) })),
 );
 
+/* Tables 7 and 8 of the Q2 report, 2026 Q2 columns. The columns of both tables are interleaved in
+   the PDF's text; each figure was matched by recomputing it (collected / billed gives the stated
+   efficiency; target less actual gives the stated variance). */
+const PERFORMANCE: PublishedDiscoPerformance[] = (
+  [
+    ["abuja", 83.45, 32.31, 16.97],
+    ["benin", 92.68, 33.84, 17.23],
+    ["eko", 89.39, 21.0, 14.19],
+    ["enugu", 79.52, 36.8, 18.08],
+    ["ibadan", 80.33, 40.03, 17.5],
+    ["ikeja", 92.2, 25.12, 13.54],
+    ["jos", 55.02, 61.3, 20.8],
+    ["kaduna", 52.16, 67.7, 18.18],
+    ["kano", 47.74, 60.43, 17.45],
+    ["port_harcourt", 87.27, 29.6, 16.67],
+    ["yola", 69.09, 54.04, 29.0],
+  ] as [DiscoId, number, number, number][]
+).map(([disco, collectionEfficiencyPercent, atccLossPercent, atccTargetPercent]) => ({ disco, quarter: "2026-Q2", collectionEfficiencyPercent, atccLossPercent, atccTargetPercent, citationId: Q2_2026 }));
+
 const PROGRAMMES: PublicMeteringProgramme[] = [
   {
     id: "pmi",
@@ -177,6 +196,7 @@ export function nercPublishedFigures(): PublishedFiguresRepository {
     installations: async () => INSTALLATIONS,
     nationalReports: async () => NATIONAL,
     residentialTariffs: async () => TARIFFS,
+    performance: async () => PERFORMANCE,
     programmes: async () => PROGRAMMES,
   };
 }

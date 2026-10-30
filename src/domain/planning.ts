@@ -63,6 +63,20 @@ export interface ReportedNationalMetering {
 }
 
 /** The allowed residential (non-maximum-demand) tariff of one band of one DisCo, as ordered. */
+/** One DisCo's commercial performance in a quarter, as the regulator published it. */
+export interface PublishedDiscoPerformance {
+  disco: DiscoId;
+  /** e.g. "2026-Q2". */
+  quarter: string;
+  /** Revenue collected as a share of billing, in percent; null when not published. */
+  collectionEfficiencyPercent: number | null;
+  /** Aggregate technical, commercial and collection loss, in percent; null when not published. */
+  atccLossPercent: number | null;
+  /** The ATC&C loss the tariff order allows, in percent; null when not published. */
+  atccTargetPercent: number | null;
+  citationId: string;
+}
+
 /** A public metering programme as reported: its size, funding and first year. */
 export interface PublicMeteringProgramme {
   id: string;

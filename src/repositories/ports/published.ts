@@ -1,4 +1,4 @@
-import type { BandTariff, Citation, PublicMeteringProgramme, PublishedInstallations, PublishedMetering, ReportedNationalMetering } from "@/domain";
+import type { BandTariff, Citation, PublicMeteringProgramme, PublishedDiscoPerformance, PublishedInstallations, PublishedMetering, ReportedNationalMetering } from "@/domain";
 
 /* Figures published by a regulator or reported in the press, for the Metering planner
    (docs/geh/DESIGN.md). Each record names the citation it was taken from. The adapter returns
@@ -13,6 +13,8 @@ export interface PublishedFiguresRepository {
   nationalReports(): Promise<ReportedNationalMetering[]>;
   /** The allowed residential tariff of each band of each DisCo. */
   residentialTariffs(): Promise<BandTariff[]>;
+  /** Each DisCo's collection efficiency and ATC&C loss in each quarter a document gives. */
+  performance(): Promise<PublishedDiscoPerformance[]>;
   /** Public metering programmes, as reported. */
   programmes(): Promise<PublicMeteringProgramme[]>;
 }
