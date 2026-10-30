@@ -34,6 +34,20 @@ test("the Metering Fund states its finding first, with the charge, how it is cal
   for (const word of ["ai-powered", "insights", "unlock", "seamless", "leverage", "empower", "revolutionise", "harness", "cutting-edge", "journey", "at a glance"]) expect(text, word).not.toContain(word);
 });
 
+test("the GridIntel structure stands beside the fund alone, with investors, protection and a receipt", async ({ page }) => {
+  await page.goto(`${FUND}?case=nigeria`);
+  const main = page.getByRole("main");
+  await expect(main.locator("[data-positioning]")).toContainText("Plan → Fund → Monitor");
+  await expect(main.locator("[data-fund-alone]")).toHaveText("Fund alone: ₦1,286 a month, 4.9x the cap.");
+  await expect(main.locator("[data-structure-sentence]")).toContainText("GridIntel structure: within the cap for every band; public top-up");
+  await expect(main.locator("[data-structure-sentence]")).toContainText("of the ₦700bn already raised for PMI; survives 2 of 4 shocks.");
+  await expect(main.locator("[data-receipt]")).toContainText("Meter charge paid:");
+  await expect(main.locator("[data-protection] li")).toHaveCount(5);
+  await expect(main.locator("[data-protection]")).toContainText("Requirement, not yet in place");
+  await expect(main.locator('[data-band="lifeline"]')).toContainText("Exempt");
+  await expect(main.locator("[data-mini-grids]")).toContainText("The same model applies to mini-grids");
+});
+
 test("the Nigeria case is built from NERC's figures, by DisCo, each cited", async ({ page }) => {
   await page.goto(FUND);
   await page.locator("[data-case-switch]").getByRole("link", { name: "Nigeria reference" }).click();

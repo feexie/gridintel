@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Panel } from "@/components/system/Metric";
-import type { FigureOrigin, MeteringFundView, ShownFigure } from "@/services/planning/views";
+import type { FigureOrigin, InvestorView, MeteringFundView, ShownFigure, StructureView } from "@/services/planning/views";
 import { BalanceChart, StackedBars } from "./FundCharts";
 
 /* The Metering Fund screen (docs/geh/DESIGN.md, section 3). One finding at the top with its figure
@@ -46,6 +46,11 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
   const presentHref = `?${new URLSearchParams({ ...query, present: present ? "0" : "1" })}`;
   return (
     <div className={`space-y-4 ${present ? "mx-auto max-w-6xl" : ""}`} data-metering-fund data-case={view.caseId}>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-3" data-positioning>
+        <span className="font-semibold uppercase tracking-eyebrow text-brand">Plan → Fund → Monitor</span>
+        <span className="max-w-4xl">{view.positioning}</span>
+      </p>
+
       {/* The case, and the DisCo in the Nigeria case. */}
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden" data-case-switch>
         <nav aria-label="Case" className="flex gap-1 rounded-tile border border-line bg-panel p-1">
@@ -105,6 +110,8 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
           <p className="mt-1 text-caption leading-snug text-caution-ink/80">{view.atCap.how}</p>
         </section>
       ) : null}
+
+      {view.structure ? <Structure structure={view.structure} /> : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="The metering gap">
@@ -176,7 +183,8 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
                 <th className="py-1.5 pr-3 font-medium">Consumption a month</th>
                 <th className="py-1.5 pr-3 font-medium">Bill a month</th>
                 <th className="py-1.5 pr-3 font-medium">Customers</th>
-                <th className="py-1.5 font-medium">Charge as share of bill</th>
+                <th className="py-1.5 pr-3 font-medium">Fund alone: charge as share of bill</th>
+                <th className="py-1.5 font-medium">GridIntel structure: charge a month</th>
               </tr>
             </thead>
             <tbody>
@@ -202,9 +210,22 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
                       {band.customerShare} <Origin origin="placeholder" />
                     </span>
                   </td>
-                  <td className={`py-2 font-semibold ${band.underCap === null ? "text-ink-4" : band.underCap ? "text-ok" : "text-alert"}`}>{band.chargeShareOfBill}</td>
+                  <td className={`py-2 pr-3 font-semibold ${band.underCap === null ? "text-ink-4" : band.underCap ? "text-ok" : "text-alert"}`}>{band.chargeShareOfBill}</td>
+                  <td className="py-2 font-semibold text-ink" data-structure-charge>
+                    {view.structure?.bandCharges.find((one) => one.band === band.band)?.charge ?? "Not available"}
+                  </td>
                 </tr>
               ))}
+              {view.structure ? (
+                <tr className="border-b border-line/60" data-band="lifeline">
+                  <td className="py-2 pr-3 font-semibold text-ink">Lifeline (R1)</td>
+                  <td className="py-2 pr-3 text-ink-4" colSpan={4}>
+                    Up to 50 kWh a month (NERC order). Exempt; public money covers them.
+                  </td>
+                  <td className="py-2 pr-3 text-ink-4">Exempt</td>
+                  <td className="py-2 font-semibold text-ink">₦0</td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -262,6 +283,9 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
           </p>
           <p className="text-sm leading-snug text-ink-2" data-pmi-rule>
             {view.pmiRule}
+          </p>
+          <p className="text-sm leading-snug text-ink-2" data-mini-grids>
+            {view.miniGrids}
           </p>
         </Panel>
         <Panel title="Where this model comes from">
@@ -346,5 +370,99 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
         </ol>
       </Panel>
     </div>
+  );
+}
+
+function InvestorColumn({ investor }: { investor: InvestorView }) {
+  const rows: [string, string][] = [
+    ["Repaid in full", investor.repaid ? "Yes" : "No"],
+    ["Loss before the buffers", investor.loss],
+    ["Taken by the first-loss layer", investor.absorbedByFirstLoss],
+    ["Taken by the reserve account", investor.absorbedByReserve],
+    ["Investors lose", investor.investorLoss],
+    ["Investors' return (IRR), modelled", investor.irr],
+    ["Payback, modelled", investor.payback],
+  ];
+  return (
+    <div data-investor={investor.label}>
+      <p className={`text-sm font-semibold ${investor.repaid ? "text-ok" : "text-alert"}`}>{investor.label}</p>
+      <dl className="mt-1 space-y-0.5 text-sm">
+        {rows.map(([term, value]) => (
+          <div key={term} className="flex justify-between gap-3 border-b border-line/50 py-0.5">
+            <dt className="text-ink-4">{term}</dt>
+            <dd className="text-right font-medium text-ink">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/* The GridIntel structure beside the fund alone (docs/geh/DESIGN.md, sections 3.7 to 3.9). */
+function Structure({ structure }: { structure: StructureView }) {
+  return (
+    <section className="space-y-4" data-structure>
+      <div className="grid gap-4 lg:grid-cols-2" data-headline-pair>
+        <div className="rounded-panel border border-alert-line/60 bg-alert-surface px-4 py-4">
+          <p className="text-micro font-semibold uppercase tracking-eyebrow text-alert">The customer alone</p>
+          <p className="mt-1 text-xl font-semibold text-alert-ink" data-fund-alone>
+            {structure.fundAlone}
+          </p>
+        </div>
+        <div className={`rounded-panel border px-4 py-4 ${structure.tone === "ok" ? "border-ok-line/60 bg-panel" : "border-caution-line/60 bg-caution-surface"}`}>
+          <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">The right split</p>
+          <p className={`mt-1 text-xl font-semibold ${structure.tone === "ok" ? "text-ink" : "text-caution-ink"}`} data-structure-sentence>
+            {structure.structure}
+          </p>
+          <p className="mt-2 text-caption text-ink-4">Survives {structure.survived} shocks.</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Panel title="GridIntel structure" aside="Each part an assumption you can change below">
+          <Figures figures={structure.figures} />
+          <How>{structure.how}</How>
+        </Panel>
+        <Panel title="Investors, base case and all three shocks" aside="Modelled">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InvestorColumn investor={structure.investor.base} />
+            <InvestorColumn investor={structure.investor.stressed} />
+          </div>
+          <ul className="space-y-1 text-caption text-ink-3" data-structure-shocks>
+            {structure.shocks.map((shock) => (
+              <li key={shock.key}>
+                <span className={`font-semibold ${shock.survives ? "text-ok" : "text-alert"}`}>{shock.label}:</span> {shock.outcome}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+        <Panel title="Customer receipt" aside="Illustrative">
+          <div className="mx-auto max-w-xs rounded-tile border border-dashed border-line-bold bg-app px-4 py-3 font-mono text-sm text-ink-2" data-receipt>
+            <p className="text-center text-caption uppercase tracking-wide text-ink-4">Token purchase · {structure.receipt.band}</p>
+            <p className="mt-2 flex justify-between">
+              <span>Meter charge paid:</span>
+              <span className="font-semibold text-ink">{structure.receipt.charge}</span>
+            </p>
+            <p className="flex justify-between">
+              <span>Months left:</span>
+              <span className="font-semibold text-ink">{structure.receipt.monthsLeft}</span>
+            </p>
+          </div>
+          <p className="text-caption leading-snug text-ink-4">{structure.receipt.note}</p>
+        </Panel>
+      </div>
+
+      <Panel title="How investors are protected">
+        <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-5" data-protection>
+          {structure.protection.map((item) => (
+            <li key={item.title} className={`rounded-tile border px-3 py-2 ${item.requirement ? "border-dashed border-caution-line" : "border-line"}`}>
+              <p className="text-sm font-semibold text-ink">{item.title}</p>
+              <p className="mt-0.5 text-caption leading-snug text-ink-3">{item.text}</p>
+              {item.requirement ? <p className="mt-1 text-micro font-semibold uppercase tracking-wide text-caution">Requirement, not yet in place</p> : null}
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </section>
   );
 }
