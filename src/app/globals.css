@@ -1208,3 +1208,11 @@ ol.gr-list {
   border-style: solid;
   color: var(--color-on-brand);
 }
+
+/* Presentation mode on a planning screen (?present=1): the navigation around the screen is
+   hidden, so a recording shows the finding and its figures only. */
+html[data-present] [data-sector-bar],
+html[data-present] [data-topbar],
+html[data-present] [data-sidebar] {
+  display: none !important;
+}

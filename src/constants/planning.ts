@@ -40,3 +40,15 @@ export const plannerOf = (id: string): Planner | undefined => PLANNERS.find((pla
 
 /** How the Platform Overview describes the sector while only Metering is built. */
 export const PLANNING_STATUS = "Metering is built. The other planners are planned.";
+
+/** What the bar above the Metering Fund says about its data: it holds no synthetic record. */
+export const PUBLISHED_FIGURES_NOTICE = {
+  path: `${PLANNING_HOME}/metering`,
+  label: "PUBLISHED FIGURES AND ASSUMPTIONS",
+  summary:
+    "No synthetic records on this screen. The Nigeria case uses NERC's published figures, cited where they are shown; the brief case is GEH Brief 15's test scenario. Every other input is an assumption, labelled.",
+  context: [
+    { term: "NERC figures as of", value: "30 Jun 2026" },
+    { term: "Latest reported", value: "Aug 2026" },
+  ],
+};
