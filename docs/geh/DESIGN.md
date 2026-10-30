@@ -190,7 +190,7 @@ on the screen with their dates)
 | Ref | Source | Date | Used for |
 | --- | --- | --- | --- |
 | S1 | AllAfrica / Vanguard, https://allafrica.com/stories/202610220636.html | 22 Oct 2026 | PMI total, funding, implementer; 750,000 meters in 2027 (citing NERC's factsheet) |
-| S2 | Nigeria Startup Act, https://www.nigeriastartupact.ng/fg-pmi-trainees-to-install-750000-meters-in-2027-see-details/ | not recorded | 750,000 meters in 2027 |
+| S2 | Nigeria Startup Act, https://www.nigeriastartupact.ng/fg-pmi-trainees-to-install-750000-meters-in-2027-see-details/ | 16 Oct 2026 | 750,000 meters in 2027; gives as its source NERC's metering factsheet of 14 Oct 2026 (the factsheet behind the 63.1% / 4.7m figures). When the factsheet is found on nerc.gov.ng, NERC is cited as the primary source and the press articles as secondary |
 | S3 | Mondaq summary, https://www.mondaq.com/nigeria/oil-gas-electricity/1488638/ | not recorded | NERC/2024/040: MAP prices deregulated from 1 May 2024 |
 | S4 | The Guardian (Nigeria), https://guardian.ng/?p=2393191 | 2024 | Eko DisCo MAP vendor price ranges |
 | S5 | ThisDay, https://www.thisdaylive.com/2026/10/15/nerc-metering-rate-now-63-1-4-7m-customers-still-without-devices/ | 15 Oct 2026 | 120-month refund, 10-day installation, as reported citing NERC |
