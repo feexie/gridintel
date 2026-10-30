@@ -88,9 +88,11 @@ before the Nigeria case is built.
 | Meter life | 10 years | Assumption |
 | Maintenance and replacement reserve | 2% of meter cost a year | Assumption |
 | Meter failure rate | User-set | Assumption |
-| Fund cost of capital | 12% a year, blended | Assumption |
+| Investor / DFI capital | 100% in USD at 8% a year | Concessional DFI; assumption to verify (Founder, 30 Oct) |
+| Naira-funding toggle | Capital in naira at 22% a year | Assumption to verify (Founder, 30 Oct) |
 | Charge cap | 5% of the monthly bill | Assumption |
 | Monthly bill by band, A to E | **Placeholders**, shown on screen as "to be replaced with sourced figures" | The Founder supplies sourced values before recording |
+| Share of customers in each band, A to E | **Placeholders**, shown the same way | The Founder supplies sourced values before recording |
 | Collection gain from metering | 15% of the metered customer's billed revenue | Assumption |
 | Share of the collection gain paid to the fund | 50% | Assumption |
 | Customers who stop buying tokens or fall behind | 10% | Assumption; its effect on the fund is shown |
@@ -100,9 +102,26 @@ before the Nigeria case is built.
 
 ### 3.3 Calculation (versioned methodology in `src/analytics`; pure, deterministic)
 
-The model runs month by month over five years (60 months) and reports by
-year. The exact treatment of the points below is fixed in M2 and stated in
-the methodology and on screen:
+The rollout runs over five years (60 months). The model runs month by month
+over 120 months (the meter life), so the repayment of the last meters is
+seen; it reports by year. Charts and the headline stay on the 60-month
+rollout. Rules decided by the Founder (30 October):
+
+- **The charge is sized so that each meter is repaid within 60 months of its
+  own installation** (Brief 15: cost recovery through energy purchases over
+  five years). One line on screen: "Each meter is repaid within 5 years of
+  installation; the last meters finish repaying in month [n]."
+- **The fund's cash-positive year is shown even if it falls after year 5.**
+- **Who pays the charge.** Every customer metered under the scheme pays the
+  same charge, on a fund meter or a PMI meter. Customers metered before
+  year 1 pay nothing.
+- **Charges on PMI meters do not repay investor capital**: those meters were
+  publicly funded. They go to the maintenance and replacement reserve and to
+  the pool that covers exempt and vulnerable customers. This rule is stated
+  on screen.
+
+The exact treatment of the points below is fixed in M2 and stated in the
+methodology and on screen:
 
 - **Meters to install:** enough to reach 100% metered by month 60,
   including customer growth. Public meters (PMI) are installed on their
@@ -166,8 +185,10 @@ Plain titles, axes with units, nothing that needs hovering.
 - The charge as a share of the bill by band (A to E).
 - Vulnerable and lifeline customers exempt, and the public money needed to
   cover them.
-- The fairness rule stated on screen: every customer, on a free meter or a
-  paid one, pays the same charge under the same cap.
+- The fairness rule stated on screen: every customer metered under the
+  scheme, on a free (PMI) meter or a fund meter, pays the same charge under
+  the same cap. Customers metered before year 1 pay nothing. Charges on PMI
+  meters go to the reserve and the exempt-customer pool, not to investors.
 - A mini-grid case: the same charge rule, lower consumption, user inputs.
 
 ## 6. About this build (M4)
