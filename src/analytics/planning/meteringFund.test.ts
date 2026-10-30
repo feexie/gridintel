@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type MeteringFundInputs } from "./meteringFund.ts";
+import { investorOutcome, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type MeteringFundInputs } from "./meteringFund.ts";
 
 /** A fund with no cost of capital, no gain, no reserve and no growth: each meter costs N60,000, all in naira. */
 const PLAIN: MeteringFundInputs = {
@@ -136,6 +136,40 @@ describe("the metering fund", () => {
   it("charges nothing and installs nothing when every customer is already metered", () => {
     assert.equal(sizeCharge({ ...PLAIN, meteredShare: 1 }), null);
     assert.equal(runMeteringFund({ ...PLAIN, meteredShare: 1 }).lastRepaymentMonth, null);
+  });
+});
+
+describe("the structure around the fund", () => {
+  it("repays every meter when public money tops up each one by what the lower charge leaves short", () => {
+    const short = shortfallAtCharge(PLAIN, 600)!;
+    assert.equal(short.perCohort.length, 60);
+    const run = runMeteringFund({ ...PLAIN, topUpPerMeter: short.perCohort }, undefined, 600);
+    close(run.totalTopUp, 24_000 * 600_000, 1e-2);
+    close(run.owedAtEnd, 0, 1e-3);
+    close(run.years[0].topUp, 24_000 * 120_000, 1e-3);
+  });
+
+  it("pays investors back at the fund's cost of capital when it repays in full", () => {
+    const at12 = { ...PLAIN, capital: { currency: "ngn" as const, ratePerYear: 0.12 } };
+    const outcome = investorOutcome(runMeteringFund(at12), { firstLossShare: 0.1, reserveAccount: 0 });
+    assert.equal(outcome.repaidInFull, true);
+    close(outcome.loss, 0);
+    close(outcome.irr!, 0.12, 1e-4);
+    assert.ok(outcome.paybackMonth !== null && outcome.paybackMonth <= 120);
+  });
+
+  it("puts a loss on the first-loss layer first, then the reserve account, then investors", () => {
+    // At N600 a month and no top-up, each meter is N24,000 short: N14.4bn in all.
+    const run = runMeteringFund(PLAIN, undefined, 600);
+    close(run.owedAtEnd, 24_000 * 600_000, 1e-2);
+    const outcome = investorOutcome(run, { firstLossShare: 0.1, reserveAccount: 2e9 });
+    close(outcome.absorbedByFirstLoss, outcome.capital * 0.1, 1e-2);
+    close(outcome.absorbedByReserve, 2e9, 1e-2);
+    close(outcome.investorLoss, 14.4e9 - outcome.capital * 0.1 - 2e9, 1);
+    assert.equal(outcome.repaidInFull, false);
+    assert.ok(outcome.irr! < 0);
+    const covered = investorOutcome(run, { firstLossShare: 0.5, reserveAccount: 2e9 });
+    assert.equal(covered.repaidInFull, true);
   });
 });
 

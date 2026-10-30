@@ -86,6 +86,8 @@ export interface MeteringFundInputs {
   chargeIndexed: boolean;
   /** Size the charge as if import duty were this rate (a duty-shock reserve). */
   sizingDutyRate?: number;
+  /** Public money paid into the fund for each meter it installs, by installation month (index 0 is month 1). */
+  topUpPerMeter?: number[];
 }
 
 /** A shock to prices from a month on. */
@@ -114,6 +116,8 @@ export interface FundYear {
   publicMetersValue: number;
   capitalDrawn: number;
   grants: number;
+  /** Public top-up paid in for the meters installed in the year. */
+  topUp: number;
   /** Recoveries spent on new meters and the reserve in the same month: the fund revolving. */
   recycled: number;
   charges: number;
@@ -152,6 +156,12 @@ export interface FundRun {
   pool: { inflow: number; outflow: number };
   /** The reserve for maintenance and replacement at month 120, after failed meters are replaced. */
   reserveAtEnd: number;
+  /** Investors' money put in each month, months 0 to 120. */
+  drawnByMonth: number[];
+  /** Investors' money paid back each month, months 0 to 120. */
+  repaidByMonth: number[];
+  /** All public top-up paid in. */
+  totalTopUp: number;
 }
 
 interface Path {
@@ -241,6 +251,8 @@ export interface CapShortfall {
   perMeter: number;
   /** All the fund's meters together, each in naira of its installation month: the public money that would keep the charge at the cap. */
   total: number;
+  /** Each meter's shortfall by installation month (index 0 is month 1). */
+  perCohort: number[];
 }
 
 /**
@@ -255,8 +267,9 @@ export function shortfallAtCharge(inputs: MeteringFundInputs, charge: number, sh
   if (perMonth <= 0) return null;
   let perMeter = 0;
   let total = 0;
+  const perCohort: number[] = [];
   for (let installed = 1; installed <= rolloutMonths; installed++) {
-    const cost = costPerMeter(inputs, path, installed);
+    const cost = costPerMeter(inputs, path, installed, Math.max(path.duty[installed], inputs.sizingDutyRate ?? 0));
     let owed = 1;
     let recovered = 0;
     for (let k = 1; k <= repaymentMonths; k++) {
@@ -266,10 +279,11 @@ export function shortfallAtCharge(inputs: MeteringFundInputs, charge: number, sh
       recovered += (chargeNow + gainPerCustomer(inputs, path, month) - (cost * inputs.reserveRatePerYear) / 12) / owed;
     }
     const short = Math.max(0, cost - recovered);
+    perCohort.push(short);
     perMeter = Math.max(perMeter, short);
     total += short * perMonth;
   }
-  return { charge, perMeter, total };
+  return { charge, perMeter, total, perCohort };
 }
 
 /** Runs the fund month by month with a given charge (by default, the one sized for these inputs and no shock). */
@@ -306,6 +320,9 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
   let publicCumulative = 0;
   const pool = { inflow: 0, outflow: 0 };
   const owedByMonth = [0];
+  const drawnByMonth = [0];
+  const repaidByMonth = [0];
+  let totalTopUp = 0;
   const years: FundYear[] = [];
   let year = blankYear(1);
 
@@ -319,14 +336,22 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     const gain = fund.count * gainPerCustomer(inputs, path, month);
     const reserve = (fund.cost * inputs.reserveRatePerYear) / 12;
     const capex = fundInstalled[month] * installCost[month];
-    const grants = month <= rolloutMonths && (month - 1) % 12 === 0 ? (inputs.grantsPerYear[(month - 1) / 12] ?? 0) : 0;
+    const grants =
+      (month <= rolloutMonths && (month - 1) % 12 === 0 ? (inputs.grantsPerYear[(month - 1) / 12] ?? 0) : 0) +
+      fundInstalled[month] * (inputs.topUpPerMeter?.[month - 1] ?? 0);
+    const topUp = fundInstalled[month] * (inputs.topUpPerMeter?.[month - 1] ?? 0);
 
     const need = capex + reserve;
     const inflow = charges + gain + exemptCover + grants;
     const recycled = Math.min(need, charges + gain + exemptCover);
     const fromGrants = Math.min(need - recycled, grants);
     const drawn = need - recycled - fromGrants;
-    owed = owed * growth(inputs, path, month) + need - inflow;
+    const grown = owed * growth(inputs, path, month);
+    const repaid = Math.max(0, Math.min(inflow - need, grown));
+    owed = grown + need - inflow;
+    drawnByMonth.push(drawn);
+    repaidByMonth.push(repaid);
+    totalTopUp += topUp;
 
     fundCumulative += fundInstalled[month];
     publicCumulative += publicInstalled[month];
@@ -342,7 +367,8 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     year.capex += capex;
     year.publicMetersValue += publicInstalled[month] * installCost[month];
     year.capitalDrawn += drawn;
-    year.grants += grants;
+    year.grants += grants - topUp;
+    year.topUp += topUp;
     year.recycled += recycled;
     year.charges += charges;
     year.collectionGain += gain;
@@ -378,6 +404,9 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     totalPublicMeters: publicCumulative,
     pool,
     reserveAtEnd: reserveBalance,
+    drawnByMonth,
+    repaidByMonth,
+    totalTopUp,
   };
 }
 
@@ -393,6 +422,7 @@ function blankYear(year: number): FundYear {
     publicMetersValue: 0,
     capitalDrawn: 0,
     grants: 0,
+    topUp: 0,
     recycled: 0,
     charges: 0,
     collectionGain: 0,
@@ -426,4 +456,72 @@ export function meteringPace(unmetered: number, installsPerMonth: number, growth
     monthsToClose: net > 0 ? unmetered / net : null,
     requiredPerMonth: unmetered / withinMonths + growthPerMonth,
   };
+}
+
+/* ==========================================================
+   WHAT INVESTORS GET BACK
+
+   Investors put money in when the fund's own inflows do not cover
+   its meters, and are paid back from surplus inflows. What the fund
+   still owes at month 120 is a loss: the first-loss layer takes it
+   first, then the reserve account, and only then the investors.
+========================================================== */
+
+export interface InvestorBuffers {
+  /** The first-loss layer, as a share of the capital investors put in. */
+  firstLossShare: number;
+  /** The reserve account, in naira, held from the start. */
+  reserveAccount: number;
+}
+
+export interface InvestorOutcome {
+  capital: number;
+  firstLoss: number;
+  /** What the fund still owes at month 120; 0 when it has repaid. */
+  loss: number;
+  absorbedByFirstLoss: number;
+  absorbedByReserve: number;
+  /** What investors lose after both buffers. */
+  investorLoss: number;
+  repaidInFull: boolean;
+  /** Investors' annual rate of return on their naira cash flows; null when it cannot be found. */
+  irr: number | null;
+  /** The month investors have their money back; null if not by month 120. */
+  paybackMonth: number | null;
+}
+
+export function investorOutcome(run: FundRun, buffers: InvestorBuffers): InvestorOutcome {
+  const capital = run.drawnByMonth.reduce((total, value) => total + value, 0);
+  const firstLoss = buffers.firstLossShare * capital;
+  const loss = Math.max(0, run.owedAtEnd);
+  const absorbedByFirstLoss = Math.min(loss, firstLoss);
+  const absorbedByReserve = Math.min(loss - absorbedByFirstLoss, buffers.reserveAccount);
+  const investorLoss = loss - absorbedByFirstLoss - absorbedByReserve;
+  const flows = run.drawnByMonth.map((drawn, month) => run.repaidByMonth[month] - drawn);
+  // The buffers pay investors what the fund still owes, at the end.
+  flows[flows.length - 1] += absorbedByFirstLoss + absorbedByReserve;
+  let cumulative = 0;
+  let paybackMonth: number | null = null;
+  flows.forEach((flow, month) => {
+    cumulative += flow;
+    if (paybackMonth === null && month > 0 && cumulative >= 0 && capital > 0) paybackMonth = month;
+  });
+  return { capital, firstLoss, loss, absorbedByFirstLoss, absorbedByReserve, investorLoss, repaidInFull: investorLoss <= 1, irr: annualIrr(flows), paybackMonth };
+}
+
+/** The annual rate at which monthly flows are worth nothing today, found by bisection; null when it lies outside -99% to +200% a year. */
+function annualIrr(flows: number[]): number | null {
+  const value = (annual: number) => {
+    const monthly = Math.pow(1 + annual, 1 / 12);
+    return flows.reduce((total, flow, month) => total + flow / Math.pow(monthly, month), 0);
+  };
+  let low = -0.99;
+  let high = 2;
+  if (value(low) * value(high) > 0) return null;
+  for (let step = 0; step < 200; step++) {
+    const middle = (low + high) / 2;
+    if (value(low) * value(middle) <= 0) high = middle;
+    else low = middle;
+  }
+  return (low + high) / 2;
 }
