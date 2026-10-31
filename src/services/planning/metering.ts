@@ -227,6 +227,19 @@ function discoTariffs(tariffs: BandTariff[], disco: DiscoId, citations: Map<stri
   return result;
 }
 
+/** Each band's typical monthly bill, as the Metering Fund computes it (tariff × the band's consumption assumption), in the Nigeria reference case. Null when the band has no tariff. */
+export async function typicalBandBills(repository: PublishedFiguresRepository): Promise<Record<string, number | null>> {
+  const assumptions = readAssumptions({ case: "nigeria" });
+  const citations = new Map((await repository.citations()).map((citation) => [citation.id, citation]));
+  const facts = await caseFacts(repository, assumptions, citations);
+  return Object.fromEntries(
+    BANDS.map((band) => {
+      const tariff = facts.tariffs.get(band)!;
+      return [band, tariff.value === null ? null : tariff.value * assumptions.values[`use${band}`]];
+    }),
+  );
+}
+
 /* ---------- the view ---------- */
 
 type Query = Record<string, string | string[] | undefined>;

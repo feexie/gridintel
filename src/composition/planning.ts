@@ -40,9 +40,9 @@ export const planning = {
   dtSequencing: async (query: Record<string, string | string[] | undefined>) => dtSequencingView(await getRuntime(), query),
   monitoring: async (query: Record<string, string | string[] | undefined>) => monitoringView(published, await monitoringRecords(), query),
   /** The Metering Marketplace: synthetic pledges matched to synthetic approved applications. */
-  marketplace: () => marketplaceView(marketplace),
+  marketplace: () => marketplaceView(marketplace, published),
   /** One meter's journey: one synthetic household, with the Marketplace's terms and match. */
-  journey: () => journeyView(marketplace),
+  journey: () => journeyView(marketplace, published),
   aboutBuild: () => aboutBuildView(sprintChangelog()),
   /** The Metering Plan report, from the same three views the screens show, for the assumptions in the address (Nigeria reference case by default). */
   meteringPlanReport: async (query: Record<string, string | string[] | undefined>) => {

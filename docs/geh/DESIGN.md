@@ -360,18 +360,25 @@ synthetic and labelled so; no existing method or figure changes.
   Enugu, Ibadan and Port Harcourt, 24%, 24 months).
 - **Demand:** approved meter applications by DisCo and band (A single-phase,
   A three-phase, B to E, Lifeline), designed records.
-- **Daily meter charge by band** (assumptions): A single-phase N200, A
-  three-phase N250, B N150, C N100, D N75, E N50; Lifeline exempt. Taken at
-  each recharge, never more than half of the recharge, into escrow; the rest
-  carries to the next recharge. Months to repay = installed meter cost ÷
-  (charge a day × 30.4). Installed cost from the Metering Fund's defaults
-  ($45 single-phase; three-phase hardware $110, assumption).
+- **Daily meter charge by band**: A single-phase N200, A three-phase N250,
+  B N150 (assumptions). Bands C, D, E pay 5% of the band's typical bill (the
+  Metering Fund's cap, on the Metering Fund's bills: tariff × consumption,
+  NERC's September 2026 orders) for 60 months (the Metering Fund's repayment
+  period); the rest of the meter's cost is a blended top-up per meter, DFI or
+  public money (Founder, 1 November 2026, for consistency with the Metering
+  Fund). Lifeline exempt. Taken at each recharge, never more than half of
+  the recharge, into escrow; the rest carries to the next recharge. Every
+  band shows its share of a typical bill. Bands A and B: months to repay at
+  cost and as a loan at each private pledge's return (monthly compounding).
+  Installed cost from the Metering Fund's defaults ($45 single-phase;
+  three-phase hardware $110, assumption). Method 0.2.0.
 - **Matching** (method `gridintel.planning.marketplace` 0.1.0, unit-tested):
   pledges cheapest money first (lowest return; then fewer DisCos; then id).
   A pledge funds a band only if its kind allows it (private money Bands A
   and B; DFI money C to E; public money C to E and Lifeline), it lists the
   band and the DisCo, and the band's months to repay fit within its tenor
-  (a grant has none; only a grant funds Lifeline). Applications are taken
+  (at the pledge's own return for Bands A and B; 60 months for C to E; a
+  grant has none; only a grant funds Lifeline). Applications are taken
   poorest band first, then by DisCo. A meter is matched when the pledge has
   its full installed cost left. What a pledge cannot place is "Queued for
   the next allocation"; applications with no funder are "Waiting for a
@@ -394,7 +401,8 @@ the funder repaid). Each step names who acts and links to the screen that
 shows it (Marketplace, Metering Fund, Monitoring). The charge, cost, months
 and funder come from the Marketplace's terms and match; the household, its
 dates, feeder and recharges are designed records. The schedule repays the
-meter's cost; the funder's return is set in its pledge and not modelled.
+meter's cost with the funder's return on the balance (the second private
+fund's 24% a year: 18 months, against 15 at cost).
 To give this household a funder, the second private fund's DisCos include
 Ibadan (synthetic design, 31 October 2026).
 

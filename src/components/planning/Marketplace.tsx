@@ -85,10 +85,10 @@ export function Marketplace({ view }: { view: MarketplaceView }) {
 
       <Panel title="Daily meter charge by band, into escrow" aside="Assumptions">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[56rem] text-sm" data-band-charges>
+          <table className="w-full min-w-[90rem] text-sm" data-band-charges>
             <thead>
               <tr className="border-b border-line-strong text-left text-caption text-ink-5">
-                {["Band", "Meter", "Installed cost", "Charge a day", "Charge a month", "Smallest recharge a month", "Months to repay", "Funded by"].map((head) => (
+                {["Band", "Meter", "Installed cost", "Typical bill a month", "Charge a day", "Charge a month", "Share of a typical bill", "Smallest recharge a month", "Months to repay", "Customer repays", "Top-up per meter", "Funded by"].map((head) => (
                   <th key={head} className={`${cell} font-medium`}>
                     {head}
                   </th>
@@ -97,14 +97,18 @@ export function Marketplace({ view }: { view: MarketplaceView }) {
             </thead>
             <tbody>
               {view.bands.map((row) => (
-                <tr key={row.band} className="border-b border-line/60 text-ink-2">
+                <tr key={row.band} className="border-b border-line/60 align-top text-ink-2">
                   <td className={`${cell} font-semibold text-ink`}>{row.band}</td>
                   <td className={cell}>{row.meter}</td>
                   <td className={cell}>{row.meterCost}</td>
+                  <td className={cell}>{row.typicalBill}</td>
                   <td className={`${cell} font-semibold text-ink`}>{row.perDay}</td>
                   <td className={cell}>{row.perMonth}</td>
+                  <td className={`${cell} font-semibold text-ink`} data-share-of-bill>{row.shareOfBill}</td>
                   <td className={cell}>{row.minRecharge}</td>
-                  <td className={`${cell} font-semibold text-ink`}>{row.monthsToRepay}</td>
+                  <td className={`${cell} max-w-[20rem] font-semibold text-ink`}>{row.monthsToRepay}</td>
+                  <td className={cell}>{row.customerRepays}</td>
+                  <td className={cell}>{row.topUp}</td>
                   <td className={cell}>{row.fundedBy}</td>
                 </tr>
               ))}
