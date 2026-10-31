@@ -12,15 +12,17 @@ const PLACEHOLDERS = [
 const UTILITY = "/dashboard/utility";
 const MINIGRID = "/dashboard/minigrid";
 const ASSISTANTS = [`${UTILITY}/ai`, `${MINIGRID}/ai`];
-const PLANNED_SECTORS = ["/dashboard/der", "/dashboard/planning"];
+const PLANNED_SECTORS = ["/dashboard/der"];
+const PLANNING = "/dashboard/planning";
+const PLANNED_PLANNERS = ["dt", "feeders", "network-expansion", "unserved", "underserved", "pue", "e-mobility"].map((id) => `${PLANNING}/${id}`);
 const REFUSED = "/dashboard/refused";
 
 test("the sectors are across the top, and the menu holds the screens of the sector the reader is in", async ({ page }) => {
   await page.goto(UTILITY);
-  // The row of sectors: the same five on every screen, the ones not built marked so in a word.
+  // The row of sectors: the same five on every screen, the one not built marked so in a word.
   const sectors = page.locator("[data-sector-bar]").getByRole("navigation", { name: "Sectors" });
-  await expect(sectors.getByRole("link")).toHaveText(["Platform", "Utility", "Mini-grid", "DERPlanned", "PlanningPlanned"]);
-  expect(await sectors.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")))).toEqual(["/dashboard", UTILITY, MINIGRID, ...PLANNED_SECTORS]);
+  await expect(sectors.getByRole("link")).toHaveText(["Platform", "Utility", "Mini-grid", "DERPlanned", "Planning"]);
+  expect(await sectors.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")))).toEqual(["/dashboard", UTILITY, MINIGRID, ...PLANNED_SECTORS, PLANNING]);
   await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Utility"]);
 
   const menu = page.getByRole("navigation", { name: "Main" });
@@ -55,7 +57,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().left)).toBe(0);
 
   // Every link in the menu and in the row of sectors leads to a screen that exists: none says "Coming Soon".
-  for (const href of [...visited, ...PLANNED_SECTORS]) {
+  for (const href of [...visited, ...PLANNED_SECTORS, PLANNING, `${PLANNING}/metering`, ...PLANNED_PLANNERS]) {
     await page.goto(href);
     await expect(page.getByText("Coming Soon"), href).toHaveCount(0);
   }
@@ -63,10 +65,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
 });
 
 test("a sector that is not built says so, in the row of sectors, in the menu and on its one page", async ({ page }) => {
-  for (const [route, name] of [
-    ["/dashboard/der", "DER Intelligence"],
-    ["/dashboard/planning", "Planning"],
-  ]) {
+  for (const [route, name] of [["/dashboard/der", "DER Intelligence"]]) {
     await page.goto(route);
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 }), route).toHaveText("Overview");
@@ -81,6 +80,27 @@ test("a sector that is not built says so, in the row of sectors, in the menu and
     await expect(page.locator("[data-sector-bar] [aria-current=true]"), route).toContainText("Planned");
     await expect(page.getByRole("note", { name: "About the data on this screen" }), route).toContainText("SYNTHETIC DATA");
   }
+});
+
+test("Planning lists its planners in two groups: Metering is built, the other seven say they are planned and hold no figure", async ({ page }) => {
+  await page.goto(PLANNING);
+  const main = page.getByRole("main");
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText("Overview");
+  await expect(main.locator('[data-planning-group="utility"] [data-planner]')).toHaveText([/^Metering\s*Built/, /^Distribution transformers \(DT\)\s*Planned/, /^Feeders\s*Planned/, /^Network expansion\s*Planned/]);
+  await expect(main.locator('[data-planning-group="minigrid"] [data-planner]')).toHaveText([/^Unserved\s*Planned/, /^Underserved\s*Planned/, /^Productive use of energy \(PUE\)\s*Planned/, /^E-mobility\s*Planned/]);
+  // The menu: the Overview, then the planners under their two groups, the planned ones marked so.
+  const menu = page.getByRole("navigation", { name: "Main" });
+  await expect(menu.locator("[data-menu-group]")).toHaveText(["Utility planning", "Mini-grid planning"]);
+  await expect(menu.getByRole("link")).toHaveText(["Overview", "Metering", ...["Distribution transformers (DT)", "Feeders", "Network expansion", "Unserved", "Underserved", "Productive use of energy (PUE)", "E-mobility"].map((label) => `${label}Planned`)]);
+  await expect(page.locator("[data-sector-bar] [aria-current=true]")).toHaveText("Planning");
+
+  for (const route of PLANNED_PLANNERS) {
+    await page.goto(route);
+    await expect(main, route).toContainText("Planned · not built");
+    await expect(main, route).toContainText("This planner is not built yet. There is no data and no figure on this page.");
+    await expect(main.locator("[data-metric], [data-figure], input, textarea, select, button, form"), route).toHaveCount(0);
+  }
+  expect((await page.request.get(`${PLANNING}/no-such-planner`)).status()).toBe(404);
 });
 
 test("an AI Assistant page says it is not built, gives example questions, and is nothing like a working assistant", async ({ page }) => {
@@ -134,7 +154,7 @@ test("the Platform Overview says what GridIntel does, shows every sector on one 
   await expect(page.locator("path.gi-outline-state")).toHaveCount(37);
   await expect(page.locator("[data-map-credits]")).toContainText("geoBoundaries");
   // The sectors that are not built are said not to be.
-  await expect(main.locator("[data-to-join] li")).toHaveText([/DER Intelligence\s*Planned/, /Planning\s*Planned/]);
+  await expect(main.locator("[data-to-join] li")).toHaveText([/DER Intelligence\s*Planned/, /Planning\s*Partly built\s*Metering is built. The other planners are planned./]);
   await utility.locator("[data-open-sector]").click();
   await expect(page).toHaveURL(/\/dashboard\/utility$/);
 });
@@ -247,7 +267,7 @@ test("the old Map addresses lead to the Platform Overview", async ({ page }) => 
 });
 
 test("every page has exactly one h1", async ({ page }) => {
-  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, REFUSED, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
+  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, PLANNING, `${PLANNING}/metering`, ...PLANNED_PLANNERS, REFUSED, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
   test.setTimeout(pages.length * 6_000);
   for (const route of pages) {
     await page.goto(route);
@@ -289,7 +309,7 @@ test("the site asks not to be indexed: a robots meta on every page and a robots.
 
 test("the public demonstration may open every screen, and the page a refused route is answered with says only that it is not open", async ({ page, request }) => {
   // The viewer of the demonstration holds everything: nothing in its menu or its routes is refused.
-  for (const route of ["/dashboard", UTILITY, `${UTILITY}/revenue`, `${OPERATIONS}/feeders/FD-OLD`, MINIGRID, `${MINIGRID}/sites/MG-DRY`, ...PLANNED_SECTORS]) {
+  for (const route of ["/dashboard", UTILITY, `${UTILITY}/revenue`, `${OPERATIONS}/feeders/FD-OLD`, MINIGRID, `${MINIGRID}/sites/MG-DRY`, ...PLANNED_SECTORS, PLANNING, `${PLANNING}/metering`, ...PLANNED_PLANNERS]) {
     const response = await request.get(route);
     expect(response.status(), route).toBe(200);
   }
@@ -299,4 +319,15 @@ test("the public demonstration may open every screen, and the page a refused rou
   await expect(page.locator("[data-refused]")).toContainText("Your access does not include this screen.");
   await expect(page.locator("[data-refused] [data-metric], [data-refused] [data-figure]")).toHaveCount(0);
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
+});
+
+test("the public demonstration has no accounts: no sign-in, no people screen, no one signed in (ADR 0020)", async ({ page, request }) => {
+  for (const route of ["/login", "/login/verify", "/login/enrol", "/dashboard/settings/people"]) {
+    expect((await request.get(route)).status(), route).toBe(404);
+  }
+  expect((await request.get("/auth/confirm?token_hash=x&type=invite")).status()).toBe(404);
+  expect((await request.post("/auth/signout")).status()).toBe(404);
+  await page.goto("/dashboard");
+  await expect(page.locator("[data-account]")).toHaveCount(0);
+  await expect(page.locator("[data-sector]")).toHaveCount(2);
 });

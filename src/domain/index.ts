@@ -17,3 +17,4 @@ export type * from "./observations";
 export type * from "./events";
 export type * from "./billing";
 export type * from "./reporting";
+export type * from "./planning";

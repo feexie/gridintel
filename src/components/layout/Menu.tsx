@@ -18,8 +18,16 @@ export default function Menu({ navigation, onNavigate }: { navigation: Sector[];
       </div>
       {sector.workspaces.length > 0 ? (
         <div className={`space-y-0.5 ${sector.opening.length > 0 ? "mt-2 border-t border-line pt-2" : ""}`} data-workspaces>
-          {sector.workspaces.map((item) => (
-            <NavItem key={item.href} item={item} onNavigate={onNavigate} />
+          {sector.workspaces.map((item, index) => (
+            <div key={item.href}>
+              {/* A sector that groups its workspaces (Planning) heads each group once. */}
+              {item.group !== undefined && item.group !== sector.workspaces[index - 1]?.group ? (
+                <p className={`mb-0.5 px-3 text-micro font-semibold uppercase tracking-title text-ink-5 ${index > 0 ? "mt-2" : ""}`} data-menu-group>
+                  {item.group}
+                </p>
+              ) : null}
+              <NavItem item={item} onNavigate={onNavigate} />
+            </div>
           ))}
         </div>
       ) : null}

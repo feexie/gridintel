@@ -21,13 +21,17 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run lint
-      # Two builds of the same application (ADR 0012): rendered on request, then the ordinary one.
+      # Three builds of the same application: rendered on request, the ordinary one (ADR 0012),
+      # and a tenant deployment with the in-memory identity adapter (ADR 0020).
       - run: npm run build:request
       - run: npm run build
+      - run: npm run build:tenant
       - name: Install Chromium for browser tests
         run: npx playwright install --with-deps chromium
       - name: Browser tests
         run: npm run test:e2e
+      - name: Browser tests of a tenant deployment
+        run: npm run test:e2e:tenant
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

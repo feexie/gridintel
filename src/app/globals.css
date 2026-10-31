@@ -1208,3 +1208,31 @@ ol.gr-list {
   border-style: solid;
   color: var(--color-on-brand);
 }
+
+/* Presentation mode on a planning screen (?present=1): the navigation around the screen is
+   hidden, so a recording shows the finding and its figures only. */
+html[data-present] [data-sector-bar],
+html[data-present] [data-topbar],
+html[data-present] [data-sidebar],
+html[data-present] [data-metering-tabs] {
+  display: none !important;
+}
+
+/* The headline of a planning screen in presentation mode, enlarged for a recording. The Metering
+   Fund sizes its own. */
+[data-present-frame="on"] h1 {
+  font-size: 2.25rem;
+  line-height: 1.2;
+}
+
+/* The Metering Plan report (components/planning/MeteringPlanReport.tsx): its figures are words as
+   the screens show them ("₦184,211 to ₦636,364"), so they wrap inside their box; its tables hold
+   words, so their headings sit over the words, on the left. */
+.gr-value.gr-value-words {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.gr-words-table th[scope="col"] {
+  text-align: left;
+}

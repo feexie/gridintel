@@ -4,6 +4,35 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
+> **State at the Phase 8A checkpoint (2026-10-21; branch `phase-8a`, not
+> merged; ADR 0020).** Login and separate organizations, on synthetic data:
+>
+> - **Two deployments** (`composition/mode.ts`): the public demonstration
+>   (no login, no secret, screens built ahead of time) and a tenant
+>   deployment (`GRIDINTEL_MODE=tenant`: every page rendered on request,
+>   for the person signed in). A tenant deployment refuses any build not
+>   made as one.
+> - **Identity port** (`repositories/ports/identity.ts`) with a Supabase
+>   adapter (`repositories/supabase`) and an in-memory one; a new ESLint
+>   boundary for the Supabase adapter.
+> - **The viewer of a tenant deployment** is built from records
+>   (`composition/identity.ts`): the person as Supabase verified them at
+>   aal2, their membership and organization read with their own rights.
+>   `getViewer()` is now async.
+> - **The gate** (`composition/runtime.ts`): every read of a sector's
+>   records asks whether the viewer's organization holds the sector and
+>   their grant opens the address asked for. `getRuntime()` and
+>   `getMinigridRuntime()` are async and pass it. The proxy makes the quick
+>   check first; Postgres row-level security is beneath both.
+> - **Spatial by organization**: a viewer's map has their own sectors'
+>   modules and layers, on their own repositories with the states and LGAs.
+> - **Links cut to the grant** in the read models (`services/overview/links.ts`).
+> - **Pages**: `/login` (password, code, adding an app, choosing a password),
+>   `/auth/confirm` (an invitation), `/auth/signout`, and
+>   `/dashboard/settings/people` for an organization's administrator.
+> - **Three builds**: `build`, `build:request` and `build:tenant`, each with
+>   its browser tests.
+
 > **State at the Phase REPORTS-B checkpoint (2026-10-20; branch
 > `phase-reports-b`, not merged; ADR 0019 and its REPORTS-B amendment).**
 > All five reports are built, each a configuration of the one service:

@@ -18,6 +18,7 @@
 # next.js
 /.next/
 /.next-request/
+/.next-tenant/
 /out/
 
 # production
@@ -48,3 +49,7 @@ next-env.d.ts
 
 # checkpoint screenshots and PDFs: attached to the phase's GitHub release, not committed
 /docs/screenshots/
+
+# the GEH demo recordings (npm run geh:record): only the README is committed
+/docs/geh/recordings/*
+!/docs/geh/recordings/README.md

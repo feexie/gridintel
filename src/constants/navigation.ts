@@ -1,6 +1,7 @@
 /* The menu. Across the top, the sectors; down the side, the screens of the sector the reader is
    in. Every sector has the same structure: Overview, GIS Map, AI Assistant, then its workspaces
    (ADR 0017). A sector that joins later (DER, Planning) is one more entry of the same shape.
+   Planning opens with its Overview only, and lists its planners under two groups.
 
    Every item leads to a screen that exists. An item marked `planned` leads to a page that says
    what is not built yet, and the menu marks it so before it is opened.
@@ -9,6 +10,8 @@
    ("utility"), a screen's is the sector's and the screen's ("utility.revenue"). Which of them a
    viewer holds decides what the row of sectors, the menu and the routes show
    (`src/constants/access.ts`). */
+
+import { PLANNERS, PLANNING_GROUPS, PLANNING_HOME, plannerHref } from "./planning.ts";
 
 export type NavigationItem = {
   /** The permission key of the screen, e.g. "utility.revenue". */
@@ -21,6 +24,8 @@ export type NavigationItem = {
   exact?: boolean;
   /** Not built yet. Shown with the word "Planned" in the menu. */
   planned?: boolean;
+  /** The heading the item is listed under in the menu, when a sector groups its workspaces (Planning). */
+  group?: string;
 };
 
 export type SectorId = "platform" | "utility" | "minigrid" | "der" | "planning";
@@ -44,7 +49,7 @@ export const PLATFORM_HOME = "/dashboard";
 export const UTILITY_HOME = "/dashboard/utility";
 export const MINIGRID_HOME = "/dashboard/minigrid";
 export const DER_HOME = "/dashboard/der";
-export const PLANNING_HOME = "/dashboard/planning";
+export { PLANNING_HOME };
 
 export const UTILITY_WORKSPACES: NavigationItem[] = [
   { key: "utility.executive", label: "Executive", href: `${UTILITY_HOME}/executive`, description: "What is happening across the portfolio, and where should I look first?" },
@@ -60,6 +65,16 @@ export const MINIGRID_WORKSPACES: NavigationItem[] = [
   { key: "minigrid.sites", label: "Sites", href: `${MINIGRID_HOME}/sites`, description: "Which sites are underperforming and why, and do their reports match the records?" },
   { key: "minigrid.reports", label: "Reports", href: `${MINIGRID_HOME}/reports`, description: "Which reports can I download, for which period?" },
 ];
+
+/** Planning's planners, under the group of who is planning (docs/geh/DESIGN.md). */
+export const PLANNING_WORKSPACES: NavigationItem[] = PLANNERS.map((planner) => ({
+  key: `planning.${planner.id}`,
+  label: planner.label,
+  href: plannerHref(planner.id),
+  description: planner.purpose,
+  group: PLANNING_GROUPS.find((group) => group.id === planner.group)?.label,
+  ...(planner.planned ? { planned: true } : {}),
+}));
 
 /* ==========================================================
    REPORTS (ADR 0019)
@@ -92,6 +107,11 @@ export type ReportItem = {
 
 /** Where every report the viewer may open is listed, across sectors. */
 export const ALL_REPORTS_PATH = "/dashboard/reports";
+
+/** Where an organization's administrator manages who may sign in and what each person may open (Phase 8A). */
+export const PEOPLE_PATH = "/dashboard/settings/people";
+/** The key of that screen: held by an organization's administrators only. */
+export const PEOPLE_KEY = "platform.people";
 
 const report = (sector: ReportItem["sector"], id: ReportId, label: string, audience: string, description: string, planned = false): ReportItem => {
   const home = sector === "utility" ? UTILITY_HOME : MINIGRID_HOME;
@@ -139,7 +159,14 @@ export const sectors: Sector[] = [
     workspaces: MINIGRID_WORKSPACES,
   },
   { id: "der", label: "DER", title: "DER Intelligence", home: DER_HOME, planned: true, opening: notBuilt("der", DER_HOME), workspaces: [] },
-  { id: "planning", label: "Planning", title: "Planning", home: PLANNING_HOME, planned: true, opening: notBuilt("planning", PLANNING_HOME), workspaces: [] },
+  {
+    id: "planning",
+    label: "Planning",
+    title: "Planning",
+    home: PLANNING_HOME,
+    opening: [{ key: "planning.overview", label: "Overview", href: PLANNING_HOME, exact: true, description: "Which planners are built, and which are planned?" }],
+    workspaces: PLANNING_WORKSPACES,
+  },
 ];
 
 /** The sector an address is in, of those given. An address in none of them is the platform's. */

@@ -5,6 +5,8 @@ export const BUILT_PORT = 3210;
 /** The same application built to render every data screen on request (GRIDINTEL_RENDER=request). */
 export const REQUEST_PORT = 3212;
 export const REQUEST_BASE = `http://localhost:${REQUEST_PORT}`;
+/** A tenant deployment's build, with the in-memory identity adapter (playwright.tenant.config.ts; ADR 0020). */
+export const TENANT_PORT = 3214;
 /** The environment that selects the request-rendered build, for a server a test starts itself. */
 export const REQUEST_ENV = { ...process.env, GRIDINTEL_RENDER: "request" };
 

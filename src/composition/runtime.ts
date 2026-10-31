@@ -1,10 +1,13 @@
 import type { DataSource, IsoTimestamp, Period } from "@/domain";
 import type { GridIntelRepositories } from "../repositories/ports/index.ts";
+import { admitsRead } from "../constants/access.ts";
 import type { OperationsRuntime } from "../services/operations/levels.ts";
 import { createMemoryCache } from "../services/analytics/cache.ts";
 import { DEMO_CLOCK, DEMO_NOTICE, DEMO_PERIOD, createDemoRepositories } from "../repositories/demo/index.ts";
 import { withGeoBoundaries } from "../repositories/geoboundaries/index.ts";
 import { MINIGRID_DATA_SOURCES, createMinigridDemoRepositories } from "../repositories/demo/minigrid/index.ts";
+import { PATH_HEADER, deploymentMode, isSystemWork } from "./mode.ts";
+import { getViewer } from "./viewer.ts";
 
 /* ==========================================================
    COMPOSITION ROOT
@@ -27,7 +30,7 @@ interface ProcessState {
   repositories: GridIntelRepositories | null;
   results: ReturnType<typeof createMemoryCache>;
   /** The mini-grid operator's records and the results computed from them: a set of their own. */
-  minigrid: { repositories: GridIntelRepositories | null; results: ReturnType<typeof createMemoryCache> };
+  minigrid: { repositories: GridIntelRepositories | null; spatialRepositories?: GridIntelRepositories; results: ReturnType<typeof createMemoryCache> };
   readiness: Readiness;
 }
 
@@ -82,7 +85,48 @@ export function isPreparing(): boolean {
 const ADAPTER_DATASET_IS_FIXED = true;
 
 export function datasetIsFixed(): boolean {
-  return ADAPTER_DATASET_IS_FIXED && process.env.GRIDINTEL_RENDER !== "request";
+  // A tenant deployment renders every screen for the person who asks (ADR 0020).
+  return ADAPTER_DATASET_IS_FIXED && process.env.GRIDINTEL_RENDER !== "request" && deploymentMode() !== "tenant";
+}
+
+/* ==========================================================
+   THE GATE (Phase 8A, ADR 0020)
+
+   Every read of a sector's records passes here first. In a tenant
+   deployment it asks, of the viewer built from records (identity.ts):
+
+   1. does their organization hold this sector's records? The grant
+      is cut to the organization's sectors, so a person of the
+      mini-grid operator never holds "utility", whatever is asked;
+   2. does their grant open the screen being asked for? The proxy
+      writes the address into the request (PATH_HEADER); a request
+      without it opens nothing.
+
+   Either answer "no" is "not found": the records of another
+   organization are not said to exist. The proxy's refusal page
+   with 403 is the first check (ADR 0018); this is the one that
+   holds where the data is read.
+
+   The public demonstration's viewer holds everything and is asked
+   nothing, so its screens can still be built ahead of time. The
+   start-up warm-up computes each sector's screens into that
+   sector's own cache for no one (mode.ts, `asSystem`).
+========================================================== */
+
+export type DatasetSector = "utility" | "minigrid";
+
+export async function gate(sector: DatasetSector): Promise<void> {
+  if (deploymentMode() === "demo" || isSystemWork()) return;
+  const viewer = await getViewer();
+  // Next's request functions are loaded here, on a tenant deployment's path only.
+  const { headers } = await import("next/headers");
+  if (!admitsRead(viewer.screens, sector, (await headers()).get(PATH_HEADER))) await refuse();
+}
+
+/** Answers the request "not found": what a viewer who may not read the records is told. */
+export async function refuse(): Promise<never> {
+  const { notFound } = await import("next/navigation");
+  return notFound();
 }
 
 /**
@@ -91,7 +135,9 @@ export function datasetIsFixed(): boolean {
  * spatial services never relate the two (ADR 0014).
  */
 export function getRepositories(): GridIntelRepositories {
-  state.repositories ??= withDataSources(withGeoBoundaries(createDemoRepositories()), MINIGRID_DATA_SOURCES);
+  // On the public demonstration the mini-grid operator's sites are drawn beside the utility's
+  // network, so their sources are listed with the utility's. A tenant's lists hold its own only.
+  state.repositories ??= deploymentMode() === "demo" ? withDataSources(withGeoBoundaries(createDemoRepositories()), MINIGRID_DATA_SOURCES) : withGeoBoundaries(createDemoRepositories());
   return state.repositories;
 }
 
@@ -122,10 +168,25 @@ export function getMinigridRepositories(): GridIntelRepositories {
   return state.minigrid.repositories;
 }
 
-/** What the mini-grid read models are given: the operator's repositories, the clock and their own cache. */
-export function getMinigridRuntime(): OperationsRuntime {
+function minigridRuntime(repos: GridIntelRepositories): OperationsRuntime {
   const clock = getClock();
-  return { repos: getMinigridRepositories(), now: clock.now, period: clock.reportingPeriod, caveats: { tariffs: getDataNotice()?.caveats.tariffs }, cache: state.minigrid.results };
+  return { repos, now: clock.now, period: clock.reportingPeriod, caveats: { tariffs: getDataNotice()?.caveats.tariffs }, cache: state.minigrid.results };
+}
+
+/** What the mini-grid read models are given, past the gate: the operator's repositories, the clock and their own cache. */
+export async function getMinigridRuntime(): Promise<OperationsRuntime> {
+  await gate("minigrid");
+  return minigridRuntime(getMinigridRepositories());
+}
+
+/**
+ * The same, with the states and LGAs added to its areas: the spatial runtime of an organization
+ * that holds the mini-grid sector and not the utility's (spatial.ts).
+ */
+export async function getMinigridSpatialRuntime(): Promise<OperationsRuntime> {
+  await gate("minigrid");
+  state.minigrid.spatialRepositories ??= withGeoBoundaries(getMinigridRepositories());
+  return minigridRuntime(state.minigrid.spatialRepositories);
 }
 
 export interface RuntimeClock {
@@ -158,7 +219,7 @@ export function getDataContext(): { notice: { label: string; summary: string } |
 }
 
 // The viewer is kept in viewer.ts, which imports nothing heavy, so that the proxy can ask for it.
-export { getViewer } from "./viewer.ts";
+export { getAccount, getViewer } from "./viewer.ts";
 
 /* ==========================================================
    RESULT CACHE AND ITS INVALIDATION RULE
@@ -200,8 +261,18 @@ export function invalidateResults(): void {
   state.minigrid.results.clear();
 }
 
-/** What every read model is given: the adapter, the clock, the dataset's caveats and the cache. */
-export function getRuntime(): OperationsRuntime {
+/** What every read model of the utility is given, past the gate: the adapter, the clock, the dataset's caveats and the cache. */
+export async function getRuntime(): Promise<OperationsRuntime> {
+  await gate("utility");
+  return utilityRuntime();
+}
+
+/**
+ * The utility's runtime without the gate. For the outlines of the states and LGAs only, which
+ * are public reference geography read from the same repositories (spatial.ts), and for nothing
+ * that reads the utility's own records.
+ */
+export function utilityRuntime(): OperationsRuntime {
   const clock = getClock();
   const caveats = getDataNotice()?.caveats;
   return {
@@ -214,7 +285,7 @@ export function getRuntime(): OperationsRuntime {
 }
 
 /** A whole screen's view model, computed once while the cache is valid. */
-export function cachedView<T>(name: string, compute: (runtime: OperationsRuntime) => Promise<T>): Promise<T> {
-  const runtime = getRuntime();
+export async function cachedView<T>(name: string, compute: (runtime: OperationsRuntime) => Promise<T>): Promise<T> {
+  const runtime = await getRuntime();
   return state.results.get(`screen:${name}|${runtime.period.start}|${runtime.period.end}|${runtime.now}`, () => compute(runtime));
 }

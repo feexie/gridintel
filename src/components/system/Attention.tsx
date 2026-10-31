@@ -33,7 +33,9 @@ export function workspaceHref(workspace: WorkspaceKey): string {
   return WORKSPACE_ROUTE[workspace];
 }
 
-export function targetHref(target: AttentionTarget): string {
+/** The address a line leads to; null when it leads nowhere the viewer may open. */
+export function targetHref(target: AttentionTarget): string | null {
+  if (target.type === "none") return null;
   if (target.type === "level") return levelHref(target.kind, target.id);
   if (target.type === "site") return siteHref(target.id);
   if (target.type === "section") return `#${target.id}`;
@@ -63,6 +65,7 @@ function Comparison({ row }: { row: ReportedComparisonView }) {
 }
 
 export function AttentionItem({ item }: { item: AttentionItemView }) {
+  const href = targetHref(item.target);
   const tone = TONE[item.tone];
   const { figure } = item;
   const [firstComparison] = item.comparisons;
@@ -116,9 +119,11 @@ export function AttentionItem({ item }: { item: AttentionItemView }) {
       ) : null}
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <Link href={targetHref(item.target)} className="text-caption font-medium text-link hover:text-link-hover hover:underline">
-          {item.targetLabel} →
-        </Link>
+        {href === null ? null : (
+          <Link href={href} className="text-caption font-medium text-link hover:text-link-hover hover:underline">
+            {item.targetLabel} →
+          </Link>
+        )}
         <details className="group w-full sm:w-auto sm:flex-1 sm:text-right">
           <summary className="cursor-pointer list-none text-caption text-ink-4 hover:text-ink-2">
             <span className="group-open:hidden">Rule, figures, source &amp; method ▸</span>

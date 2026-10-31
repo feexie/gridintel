@@ -1,12 +1,6 @@
-import { SectorPlanned } from "@/components/overview/SectorPlanned";
+import { PlanningOverview } from "@/components/planning/PlanningOverview";
 
-/* Planning: planned, not built (ROADMAP, Phase 12; ADR 0017). The page holds no data and no figure. */
+/* Planning: the planners in two groups (docs/geh/DESIGN.md). Metering is built; the others are planned. */
 export default function PlanningPage() {
-  return (
-    <SectorPlanned
-      sector="Planning"
-      purpose="Where the network and the sites should grow, worked out from the same records the other sectors read."
-      covers={["Load growth", "Capacity", "Scenarios", "Investment priorities"]}
-    />
-  );
+  return <PlanningOverview />;
 }

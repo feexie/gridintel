@@ -25,13 +25,13 @@ type Sector = "utility" | "minigrid";
 type ReportParams = { params: Promise<{ report: string; period: string }> };
 
 export function reportsIndex(sector: Sector, title: string, eyebrow: string) {
-  return function ReportsIndexPage() {
-    return <ReportsIndex title={title} eyebrow={eyebrow} reports={reportsFor(getViewer().screens, sector)} defaultPeriods={reports.defaultPeriods()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
+  return async function ReportsIndexPage() {
+    return <ReportsIndex title={title} eyebrow={eyebrow} reports={reportsFor((await getViewer()).screens, sector)} defaultPeriods={reports.defaultPeriods()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
   };
 }
 
-export function allReportsIndex() {
-  return <ReportsIndex title="All reports" eyebrow="Platform" reports={reportsFor(getViewer().screens)} defaultPeriods={reports.defaultPeriods()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
+export async function allReportsIndex() {
+  return <ReportsIndex title="All reports" eyebrow="Platform" reports={reportsFor((await getViewer()).screens)} defaultPeriods={reports.defaultPeriods()} coverage={reports.coverageWords()} sample={reports.sampleLabel()} />;
 }
 
 /** A report's address without a period opens on the default period. */

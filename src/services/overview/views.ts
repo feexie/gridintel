@@ -33,7 +33,9 @@ export type AttentionTarget =
   | { type: "site"; id: string }
   | { type: "workspace"; workspace: WorkspaceKey }
   /** A section of the same screen, by its anchor. */
-  | { type: "section"; id: string };
+  | { type: "section"; id: string }
+  /** No link: the screen behind the line is not open to the viewer (links.ts). */
+  | { type: "none" };
 
 export interface AttentionItemView {
   /** Stable within a screen: "<rule>:<subject>". */
@@ -94,6 +96,8 @@ export interface SectorOverviewView {
   /** The few figures that say how the sector stands, each from the workspace that owns it. */
   headline: MetricView[];
   workspaces: WorkspaceLinkView[];
+  /** Whether the sector's map and its assistant are open to the viewer; absent when every way in is. */
+  waysIn?: { map: boolean; assistant: boolean };
   sourcing: SourcingView;
 }
 
@@ -142,10 +146,14 @@ export interface PlatformSectorView {
   /** How many of them are not shown here. */
   findingsMore: number;
   headline: MetricView[];
+  /** False when the sector's own Overview is not open to the viewer; absent when it is. */
+  overviewOpen?: boolean;
 }
 
 export interface PlatformOverviewView {
   sectors: PlatformSectorView[];
+  /** The sectors the viewer may enter, for the ways in at the top; absent when every sector is open. */
+  openSectors?: readonly string[];
   /** How the lines shown for each sector were chosen from its Overview, in words. */
   selectionRule: string;
   sourcing: SourcingView;

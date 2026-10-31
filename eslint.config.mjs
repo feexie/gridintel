@@ -37,10 +37,25 @@ const importBoundaries = [
     reaching("analytics|data|types|services|composition|components|app|context|constants|lib",
       "The demo adapter may import only the domain, the ports and the in-memory adapter."),
   ]),
+  boundary(["src/repositories/supabase/**"], [
+    OUTSIDE_DOMAIN,
+    reaching("memory|demo|geoboundaries|analytics|data|types|services|composition|components|app|context|constants|lib",
+      "The Supabase adapter may import only the domain and the ports."),
+  ]),
   boundary(["src/repositories/geoboundaries/**"], [
     OUTSIDE_DOMAIN,
     reaching("memory|demo|analytics|data|types|services|composition|components|app|context|constants|lib",
       "The geoBoundaries adapter may import only the domain and the ports."),
+  ]),
+  boundary(["src/repositories/published/**"], [
+    OUTSIDE_DOMAIN,
+    reaching("memory|demo|supabase|geoboundaries|analytics|data|types|services|composition|components|app|context|constants|lib",
+      "The published-figures adapter may import only the domain and the ports."),
+  ]),
+  boundary(["src/repositories/sprint/**"], [
+    OUTSIDE_DOMAIN,
+    reaching("memory|demo|supabase|geoboundaries|published|analytics|data|types|services|composition|components|app|context|constants|lib",
+      "The sprint-record adapter may import only the domain and the ports."),
   ]),
   boundary(["src/composition/**"], [
     OUTSIDE_DOMAIN,
@@ -83,6 +98,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     // The same application built to render on request (npm run build:request).
     ".next-request/**",
+    ".next-tenant/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

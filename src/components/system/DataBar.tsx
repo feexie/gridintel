@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { NO_DATA_NOTICE, PUBLISHED_FIGURES_NOTICE, REPORT_NOTICE } from "@/constants/planning";
 import { formatPeriod, formatTime } from "./format";
 
 /* The one place a screen says what data it is looking at: the SYNTHETIC DATA label when the
@@ -27,9 +28,20 @@ export interface DataContext {
 }
 
 export function DataBar({ context }: { context: DataContext }) {
-  const { notice } = context;
+  const pathname = usePathname() ?? "";
+  // The Metering Fund shows published figures and assumptions, not the synthetic dataset.
+  const published = PUBLISHED_FIGURES_NOTICE.paths.includes(pathname);
+  const noData = NO_DATA_NOTICE.summaries[pathname];
+  const planReport = REPORT_NOTICE.paths.includes(pathname);
+  const notice = published
+    ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary }
+    : planReport
+      ? { label: REPORT_NOTICE.label, summary: REPORT_NOTICE.summary }
+      : noData
+        ? { label: NO_DATA_NOTICE.label, summary: noData }
+        : context.notice;
   const [open, setOpen] = useState(false);
-  const key = REPORT_ADDRESS.exec(usePathname() ?? "")?.[1];
+  const key = REPORT_ADDRESS.exec(pathname)?.[1];
   const report = key === undefined ? undefined : context.reportPeriods[key];
   return (
     <div
@@ -49,7 +61,14 @@ export function DataBar({ context }: { context: DataContext }) {
         </>
       ) : null}
       <dl className="flex flex-wrap gap-x-4 gap-y-0.5 text-caption sm:ml-auto" data-context>
-        {report === undefined ? (
+        {published ? (
+          PUBLISHED_FIGURES_NOTICE.context.map((item) => (
+            <div key={item.term} className="flex gap-1.5">
+              <dt className="opacity-80">{item.term}</dt>
+              <dd className="font-mono">{item.value}</dd>
+            </div>
+          ))
+        ) : report === undefined ? (
           <>
             <div className="flex gap-1.5">
               <dt className="opacity-80">Reporting period</dt>

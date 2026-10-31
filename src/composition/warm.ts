@@ -1,3 +1,4 @@
+import { asSystem, deploymentMode } from "./mode.ts";
 import { getRepositories, getClock, getReadiness, setReadiness } from "./runtime.ts";
 import { assets } from "./assets.ts";
 import { events } from "./events.ts";
@@ -29,6 +30,12 @@ import { spatial } from "./spatial.ts";
    A failure here is logged and the process is marked "failed": the
    screens then compute on first request, as they would without a
    warm-up.
+
+   A TENANT DEPLOYMENT (ADR 0020). The warm-up is the server's own
+   work, for no one (`asSystem`): it computes each sector's screens
+   into that sector's own cache, which only that sector's
+   organization is let read. The maps and the overviews are put
+   together for the person who asks, so they are not warmed there.
 ========================================================== */
 
 /**
@@ -40,8 +47,13 @@ import { spatial } from "./spatial.ts";
 const PAUSE_MS = 10;
 const yieldToRequests = () => new Promise<void>((resolve) => setTimeout(resolve, PAUSE_MS));
 
-export async function warmResults(): Promise<void> {
+export function warmResults(): Promise<void> {
+  return asSystem(warm);
+}
+
+async function warm(): Promise<void> {
   if (getReadiness() !== "not_started") return;
+  const forEveryone = deploymentMode() === "demo";
   setReadiness("warming");
   const started = Date.now();
   try {
@@ -58,17 +70,21 @@ export async function warmResults(): Promise<void> {
       () => revenue.view(),
       () => assets.view(),
       () => events.view(),
-      // The map draws on the blocks above. Warmed for the viewer of the moment only: a result for
-      // one viewer is never served to another, so a second viewer's first map is computed on request.
-      () => spatial.sector("utility"),
-      () => spatial.embedded(),
       // The Mini-grid workspace: every site is computed for the portfolio, so the site screens are warm too.
       () => minigrid.portfolioView(),
-      () => spatial.sites(),
-      () => spatial.sector("minigrid"),
-      // The overviews are put together from the read models above.
-      () => spatial.platform(),
-      () => overview.platform(),
+      // The maps draw on the blocks above. Warmed for the viewer of the moment only: a result for
+      // one viewer is never served to another, so a second viewer's first map is computed on request.
+      ...(forEveryone
+        ? [
+            () => spatial.sector("utility"),
+            () => spatial.embedded(),
+            () => spatial.sites(),
+            () => spatial.sector("minigrid"),
+            // The overviews are put together from the read models above.
+            () => spatial.platform(),
+            () => overview.platform(),
+          ]
+        : []),
     ];
     for (const step of steps) {
       await yieldToRequests();
