@@ -46,3 +46,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Sat 23:27 | `fd7abcc` | One meter's journey: one synthetic household in Ibadan, Band A single-phase, from application to the funder repaid, six steps each naming who acts and linking to its screen; scene k filmed |
 | Sat 23:38 | `6419f9b` | Marketplace consistent with the Metering Fund: Bands C to E pay 5% of their typical bill with a blended top-up per meter; share of a typical bill for every band; months to repay at each private pledge's return; the journey repays at 24% (18 months); scenes j and k re-filmed |
 | Sat 23:56 | `55edaf4` | Platform clips p1-p7 in the recorder, captioned "Existing platform, before the hackathon" (filming only) |
+| Sun 00:46 | `1235539` | Band B joins Bands C to E in the Marketplace: 5% of its typical bill for 60 months with a blended top-up; private money funds Band A only; scenes j and k re-filmed |
