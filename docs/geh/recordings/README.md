@@ -22,8 +22,9 @@ are listed in `last-run.txt`.
 Every Metering screen is filmed in presentation mode (`?present=1`; the Metering Fund in the
 Nigeria reference case). The Planning overview keeps its navigation.
 
-Nothing on a screen is changed for the camera. Next.js's development badge is hidden, and a small
-indigo circle is drawn where the mouse is, because a headless browser films no pointer. Every route
+Every scene is filmed in the dark theme. Nothing on a screen is changed for the camera. Next.js's
+development badge is hidden, and a small circle (white rim, indigo ring) is drawn where the mouse
+is, because a headless browser films no pointer. Every route
 is loaded once before filming, so no scene shows a page compiling.
 
 Re-film one or more scenes only: `npm run geh:record -- c e`.

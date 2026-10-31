@@ -6,9 +6,10 @@
    Starts a dev server on port 3300 (or uses one already running there), then records each scene at
    1920x1080 into docs/geh/recordings/: <letter>-<name>.webm, and a PNG of each key moment. The
    recordings are not committed (.gitignore keeps only the README). Every Metering screen is filmed
-   in presentation mode (?present=1); the Planning overview keeps its navigation. Nothing on a screen is changed for the camera: Next.js's development badge is hidden,
-   a small pointer is drawn where the mouse is (a headless browser films none), and every route is
-   loaded once before filming so no scene shows it compiling. The dashboard scrolls inside <main>,
+   in presentation mode (?present=1); the Planning overview keeps its navigation. Every scene is in
+   the dark theme. Nothing on a screen is changed for the camera: Next.js's development badge is
+   hidden, a small pointer is drawn where the mouse is (a headless browser films none), and every
+   route is loaded once before filming so no scene shows it compiling. The dashboard scrolls inside <main>,
    so the scrolling here moves <main>, not the window. */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -256,7 +257,7 @@ const FILMING = `
     const pointer = document.createElement("div");
     pointer.setAttribute("aria-hidden", "true");
     pointer.style.cssText = "position:fixed;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;" +
-      "background:rgba(79,70,229,.28);border:2px solid rgba(79,70,229,.85);pointer-events:none;z-index:2147483647;transition:transform .12s";
+      "background:rgba(165,180,252,.35);border:2px solid rgba(255,255,255,.92);box-shadow:0 0 0 2px rgba(79,70,229,.9);pointer-events:none;z-index:2147483647;transition:transform .12s";
     document.body.append(pointer);
     addEventListener("mousemove", (event) => { pointer.style.left = event.clientX + "px"; pointer.style.top = event.clientY + "px"; }, true);
     addEventListener("mousedown", () => { pointer.style.transform = "scale(.7)"; }, true);
@@ -267,7 +268,15 @@ const FILMING = `
 async function record(browser: Browser, scene: Scene): Promise<{ file: string; seconds: number; shots: string[] }> {
   // The video starts when the context opens, so the length is timed from here.
   const began = Date.now();
-  const context = await browser.newContext({ viewport: SIZE, deviceScaleFactor: 1, recordVideo: { dir: OUT, size: SIZE } });
+  // Filmed in the dark theme: the browser asks for dark, and the saved choice says dark.
+  const context = await browser.newContext({ viewport: SIZE, deviceScaleFactor: 1, colorScheme: "dark", recordVideo: { dir: OUT, size: SIZE } });
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("gridintel-theme", "dark");
+    } catch {
+      // No storage: the dark colour scheme above still selects the dark theme.
+    }
+  });
   await context.addInitScript(FILMING);
   const page = await context.newPage();
   const shots: string[] = [];
