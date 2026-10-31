@@ -37,3 +37,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Sat 08:00 | `c585501` | Demo recording helper: `npm run geh:record`, nine scenes, one video and key-moment PNGs each (recordings not committed) |
 | Sat 09:35 | `7f0e353` | Investors never lose more than they put in: each shock split into fund shortfall, buffers, investors (capital lost, return due) and uncovered; public money per meter beside PMI's reported range; wording approved (W1-W4); presentation mode on every Metering screen |
 | Sat 09:35 | `ce7a045` | Key figures regenerated (docs only) |
+| Sat 09:57 | `b0b0742` | Presentation mode full width on the four screens; demo re-filmed (receipt moved to scene h) |
