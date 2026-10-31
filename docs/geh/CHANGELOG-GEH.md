@@ -35,3 +35,5 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Sat 07:21 | `ac58192` | `npm run geh:figures` added; key figures regenerated, all 93 unchanged |
 | Sat 07:36 | `ab88247` | Metering Fund layout fixed for filming at 1920x1080 (presentation mode): no empty stretched cards, no wrapped figures, chart labels readable |
 | Sat 08:00 | `c585501` | Demo recording helper: `npm run geh:record`, nine scenes, one video and key-moment PNGs each (recordings not committed) |
+| Sat 09:35 | `7f0e353` | Investors never lose more than they put in: each shock split into fund shortfall, buffers, investors (capital lost, return due) and uncovered; public money per meter beside PMI's reported range; wording approved (W1-W4); presentation mode on every Metering screen |
+| Sat 09:35 | `ce7a045` | Key figures regenerated (docs only) |
