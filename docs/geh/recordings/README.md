@@ -13,14 +13,14 @@ are listed in `last-run.txt`.
 | b | Planning overview | The two groups; Metering built, the others planned |
 | c | DisCo allocation | Headline, the first million, the 11 DisCos (pause on Enugu), the first-million table, the pilot |
 | d | DT sequencing | The revolving chart and the ranking (synthetic network) |
-| e | Metering Fund | Fund alone, then the GridIntel structure, band charges, estimated bills removed, receipt |
+| e | Metering Fund | Fund alone, then the GridIntel structure (what it fails, public money per meter), band charges, estimated bills removed, receipt |
 | f | Metering Fund | Initial investment against break-even |
 | g | Metering Fund | Shocks and the inflation line; Duty-shock reserve ticked, Recalculate |
 | h | Metering Fund | Investor protection and investor outcome |
 | i | Monitoring | Plan against synthetic actuals; a later quarter not reported |
 
-The Metering Fund is filmed in presentation mode (`?present=1`, Nigeria reference case). The other
-screens have no presentation mode and keep their navigation.
+Every Metering screen is filmed in presentation mode (`?present=1`; the Metering Fund in the
+Nigeria reference case). The Planning overview keeps its navigation.
 
 Nothing on a screen is changed for the camera. Next.js's development badge is hidden, and a small
 indigo circle is drawn where the mouse is, because a headless browser films no pointer. Every route

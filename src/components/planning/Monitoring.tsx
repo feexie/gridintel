@@ -21,7 +21,7 @@ function PlanActual({ plan, actual }: { plan: string; actual: string }) {
   );
 }
 
-export function Monitoring({ view }: { view: MonitoringView }) {
+export function Monitoring({ view, present = false }: { view: MonitoringView; present?: boolean }) {
   const groups = ["Supply a day", "Consumption a month", "Charge into escrow", "Investors repaid to date"];
   return (
     <div className="space-y-4" data-monitoring>
@@ -41,7 +41,7 @@ export function Monitoring({ view }: { view: MonitoringView }) {
 
       <nav aria-label="Quarter" className="flex flex-wrap gap-1 rounded-tile border border-line bg-panel p-1 print:hidden" data-quarters>
         {view.quarters.map((one) => (
-          <Link key={one.id} href={one.href} aria-current={one.current ? "page" : undefined} className={`rounded-tile px-3 py-1.5 text-sm ${one.current ? "bg-brand-soft font-semibold text-ink" : "text-ink-3 hover:text-ink"}`}>
+          <Link key={one.id} href={present ? `${one.href}&present=1` : one.href} aria-current={one.current ? "page" : undefined} className={`rounded-tile px-3 py-1.5 text-sm ${one.current ? "bg-brand-soft font-semibold text-ink" : "text-ink-3 hover:text-ink"}`}>
             {one.label}
             {one.reported ? null : <span className="ml-1.5 text-micro uppercase tracking-wide text-ink-5">Not reported</span>}
           </Link>

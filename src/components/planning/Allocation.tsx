@@ -10,7 +10,7 @@ function How({ children }: { children: string }) {
   return <p className="max-w-4xl text-caption leading-snug text-ink-4" data-how>{children}</p>;
 }
 
-export function Allocation({ view }: { view: AllocationView }) {
+export function Allocation({ view, present = false }: { view: AllocationView; present?: boolean }) {
   const heads = ["DisCo", "Customers", "Metered", "Unmetered", "Share of gap", "Metering rate", "Installed Q1", "Installed Q2", "To 100% at this pace", "Collection efficiency", "ATC&C (target)", "Need", "Repayment risk"];
   return (
     <div className="space-y-4" data-allocation>
@@ -121,6 +121,7 @@ export function Allocation({ view }: { view: AllocationView }) {
 
         <Panel title="Weights and the tranche" aside="Change and recalculate">
           <form method="get" className="space-y-3 print:hidden" data-allocation-form>
+            {present ? <input type="hidden" name="present" value="1" /> : null}
             <label className="block text-sm">
               <span className="text-ink-2">Pilot DisCo</span>
               <select name="pilotDisco" defaultValue={view.discos.find((one) => one.current)?.id} className="mt-1 block rounded-tile border border-line-strong bg-panel px-2 py-1 text-ink">

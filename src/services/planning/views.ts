@@ -54,6 +54,8 @@ export interface StressRowView {
   /** Whether the charge needed stays under the cap for the typical band. */
   underCap: boolean;
   verdict: string;
+  /** Who carries a shortfall: investors (never more than their capital and its return) and what lies beyond them; null when solvent. */
+  split: string | null;
 }
 
 export interface BandView {
@@ -92,11 +94,18 @@ export interface ChartSeries {
 export interface InvestorView {
   label: string;
   repaid: boolean;
-  /** What the fund still owes at month 120, before the buffers. */
+  /** The capital investors put in. */
+  capital: string;
+  /** The fund's shortfall: what it still owes at month 120, before the buffers. */
   loss: string;
   absorbedByFirstLoss: string;
   absorbedByReserve: string;
+  /** The capital investors put in and never get back, with its share of their capital: never more than 100%. */
   investorLoss: string;
+  /** The return due to investors that is never paid: the rest of what they are owed after the buffers. */
+  returnUnpaid: string;
+  /** The shortfall beyond investors, which nobody in the structure carries. */
+  uncovered: string;
   irr: string;
   payback: string;
 }
@@ -116,6 +125,10 @@ export interface StructureView {
   /** The two results side by side: the fund alone, and the GridIntel structure. */
   fundAlone: string;
   structure: string;
+  /** The shocks the structure fails, each split into the fund's shortfall, investors' loss and what is uncovered; null when it fails none. */
+  failures: string | null;
+  /** Public money per meter in the structure, beside the per-meter cost reported for PMI, and what the same money meters here. */
+  publicPerMeter: { line: string; figures: ShownFigure[] } | null;
   tone: "ok" | "warning";
   figures: ShownFigure[];
   how: string;

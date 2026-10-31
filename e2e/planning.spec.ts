@@ -51,6 +51,12 @@ test("the GridIntel structure stands beside the fund alone, with investors, prot
   await expect(main.locator('[data-investment-case="Fund alone"]')).toContainText("Peak capital in");
   await expect(main.locator('[data-investment-case="GridIntel structure"]')).toContainText("Break-even");
   await expect(main.locator("[data-structure-sentence]")).toContainText("of the ₦700bn already raised for PMI; survives 2 of 4 shocks.");
+  // What it fails, split: the fund's shortfall, investors (never more than their capital) and what is uncovered.
+  await expect(main.locator("[data-structure-failures]")).toContainText("Inflation: fund shortfall");
+  await expect(main.locator("[data-structure-failures]")).toContainText("uncovered beyond investors, which falls to the public side unless tariffs follow inflation");
+  await expect(main.locator("[data-public-per-meter]")).toHaveText(/^The same order of public money meters [\d.]+ million customers in this structure\.$/);
+  await expect(main.locator('[data-shown-figure="pmiPerMeter"]')).toContainText(" to ");
+  await expect(main.locator('[data-stress-row="combined"] [data-stress-split]')).toContainText("of their");
   await expect(main.locator("[data-receipt]")).toContainText("Meter charge paid:");
   await expect(main.locator("[data-protection] li")).toHaveCount(5);
   await expect(main.locator("[data-protection]")).toContainText("Requirement, not yet in place");
@@ -143,4 +149,30 @@ test("About this build: the baseline, the sprint's commits with times, and the c
   await expect(main.locator("[data-compare-link]")).toHaveAttribute("href", "https://github.com/feexie/gridintel/compare/geh-baseline...geh-sprint");
   expect(await main.locator("[data-sprint-rows] tbody tr").count()).toBeGreaterThan(10);
   await expect(main.locator("[data-baseline] li").first()).toBeVisible();
+});
+
+test("presentation mode on DisCo allocation, DT sequencing, Monitoring and About this build: no navigation, no tabs, a larger headline, kept through a form or a quarter", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  for (const path of ["/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/monitoring", "/dashboard/planning/about-this-build"]) {
+    await page.goto(`${path}?present=1`);
+    await expect(page.locator("[data-sidebar]"), path).toBeHidden();
+    await expect(page.locator("[data-metering-tabs]"), path).toBeHidden();
+    const size = await page.getByRole("main").getByRole("heading", { level: 1 }).evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+    expect(size, path).toBeGreaterThanOrEqual(36);
+    await expect(page.getByRole("link", { name: "Leave presentation mode" }), path).toBeVisible();
+  }
+  await page.goto("/dashboard/planning/metering/allocation?present=1");
+  await page.locator("[data-allocation-form]").getByRole("button", { name: "Recalculate" }).click();
+  await expect(page).toHaveURL(/present=1/);
+  await page.goto("/dashboard/planning/metering/monitoring?present=1");
+  await page.locator("[data-quarters]").getByRole("link", { name: /2027 Q1/ }).click();
+  await expect(page).toHaveURL(/quarter=.*present=1/);
+  await expect(page.locator("[data-sidebar]")).toBeHidden();
+  await page.getByRole("link", { name: "Leave presentation mode" }).click();
+  await expect(page.locator("[data-sidebar]")).toBeVisible();
+});
+
+test("the Planning overview says it shows no data", async ({ page }) => {
+  await page.goto("/dashboard/planning");
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("NO DATA ON THIS SCREEN");
 });

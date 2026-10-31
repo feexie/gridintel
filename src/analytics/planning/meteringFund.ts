@@ -39,7 +39,9 @@ export interface MeteringFundParameters {
 export const METERING_FUND_REFERENCE: Methodology<MeteringFundParameters> = {
   id: "gridintel.planning.metering-fund",
   // 0.2.0: a public top-up per meter; a cohort's shortfall is sized at the duty-shock rate when the reserve is on; investors' outcome.
-  version: "0.2.0",
+  // 0.3.0: investors commit a fixed capital; a shortfall is split into the buffers, investors' loss (never more than their
+  // capital and its accrued return) and what lies beyond them, uncovered.
+  version: "0.3.0",
   name: "GridIntel reference metering fund (pay-as-you-meter)",
   description:
     "A month-by-month cash model of a fund that meters every customer in 60 months with no upfront payment, recovering each meter within 60 months of its installation from a fixed charge on token purchases and a share of the DisCo's collection gain.",
@@ -161,6 +163,8 @@ export interface FundRun {
   drawnByMonth: number[];
   /** Investors' money paid back each month, months 0 to 120. */
   repaidByMonth: number[];
+  /** How much a naira owed grows over each month (the cost of capital, and the naira's fall on dollar capital), months 0 to 120; 1 at month 0. */
+  growthByMonth: number[];
   /** All public top-up paid in. */
   totalTopUp: number;
   /** The fund's own net cash each month (inflows less new meters and the reserve), months 0 to 120. */
@@ -331,6 +335,7 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
   const drawnByMonth = [0];
   const netCashByMonth = [0];
   const repaidByMonth = [0];
+  const growthByMonth = [1];
   let totalTopUp = 0;
   const years: FundYear[] = [];
   let year = blankYear(1);
@@ -355,12 +360,14 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     const recycled = Math.min(need, charges + gain + exemptCover);
     const fromGrants = Math.min(need - recycled, grants);
     const drawn = need - recycled - fromGrants;
-    const grown = owed * growth(inputs, path, month);
+    const monthGrowth = growth(inputs, path, month);
+    const grown = owed * monthGrowth;
     const repaid = Math.max(0, Math.min(inflow - need, grown));
     owed = grown + need - inflow;
     drawnByMonth.push(drawn);
     netCashByMonth.push(inflow - need);
     repaidByMonth.push(repaid);
+    growthByMonth.push(monthGrowth);
     totalTopUp += topUp;
 
     fundCumulative += fundInstalled[month];
@@ -417,6 +424,7 @@ export function runMeteringFund(inputs: MeteringFundInputs, shock: PriceShock = 
     reserveAtEnd: reserveBalance,
     drawnByMonth,
     repaidByMonth,
+    growthByMonth,
     totalTopUp,
     netCashByMonth,
   };
@@ -473,10 +481,18 @@ export function meteringPace(unmetered: number, installsPerMonth: number, growth
 /* ==========================================================
    WHAT INVESTORS GET BACK
 
-   Investors put money in when the fund's own inflows do not cover
-   its meters, and are paid back from surplus inflows. What the fund
-   still owes at month 120 is a loss: the first-loss layer takes it
-   first, then the reserve account, and only then the investors.
+   Investors commit a fixed capital (by default, all the run draws).
+   When a run needs more than that, the rest is not investors' money:
+   it is drawn from outside them and owed alongside them. Both balances
+   grow at the fund's cost of capital, and each month's repayment is
+   shared between them in proportion to what each is owed.
+
+   What the fund still owes at month 120 is its shortfall. The
+   first-loss layer takes it first, then the reserve account; both
+   protect investors, so they pay investors' balance first. Investors
+   lose what is left of their balance: never more than their capital
+   and its accrued return. Whatever lies beyond investors' balance is
+   uncovered: nobody in the structure carries it.
 ========================================================== */
 
 export interface InvestorBuffers {
@@ -487,47 +503,94 @@ export interface InvestorBuffers {
 }
 
 export interface InvestorOutcome {
+  /** The capital investors put in: what they committed, or what the run drew if that is less. */
   capital: number;
   firstLoss: number;
-  /** What the fund still owes at month 120; 0 when it has repaid. */
+  /** The fund's shortfall: what it still owes at month 120, cost of capital included; 0 when it has repaid. */
   loss: number;
   absorbedByFirstLoss: number;
   absorbedByReserve: number;
-  /** What investors lose after both buffers. */
+  /** What investors lose after both buffers: what is left of their capital and its accrued return. */
   investorLoss: number;
+  /** The part of investors' capital they never got back in cash; the rest of their loss is return they were due. */
+  capitalLost: number;
+  /** The shortfall beyond investors' balance, after the buffers: carried by nobody in the structure. */
+  uncovered: number;
+  /** Investors are owed nothing at month 120. */
   repaidInFull: boolean;
-  /** Investors' annual rate of return on their naira cash flows; null when it cannot be found. */
+  /** The buffers cover the whole shortfall: investors repaid, nothing uncovered. */
+  covered: boolean;
+  /** Investors' annual rate of return on their naira cash flows: -100% when they get nothing back; null when it cannot be found. */
   irr: number | null;
   /** The month investors have their money back; null if not by month 120. */
   paybackMonth: number | null;
+  /** Investors' own cash each month, months 0 to 120: what they are paid back less what they put in; the buffers' payment in month 120. */
+  flowsByMonth: number[];
 }
 
-export function investorOutcome(run: FundRun, buffers: InvestorBuffers): InvestorOutcome {
-  const capital = run.drawnByMonth.reduce((total, value) => total + value, 0);
+export function investorOutcome(run: FundRun, buffers: InvestorBuffers, committedCapital?: number): InvestorOutcome {
+  const drawnInAll = run.drawnByMonth.reduce((total, value) => total + value, 0);
+  const commitment = committedCapital ?? drawnInAll;
+  let investors = 0;
+  let beyond = 0;
+  let put = 0;
+  const flows = [0];
+  for (let month = 1; month < run.drawnByMonth.length; month++) {
+    investors *= run.growthByMonth[month];
+    beyond *= run.growthByMonth[month];
+    const fromInvestors = Math.min(run.drawnByMonth[month], Math.max(0, commitment - put));
+    put += fromInvestors;
+    investors += fromInvestors;
+    beyond += run.drawnByMonth[month] - fromInvestors;
+    const owed = investors + beyond;
+    const toInvestors = owed > 0 ? Math.min(investors, (run.repaidByMonth[month] * investors) / owed) : 0;
+    investors -= toInvestors;
+    beyond = Math.max(0, beyond - (run.repaidByMonth[month] - toInvestors));
+    flows.push(toInvestors - fromInvestors);
+  }
+  const capital = put;
   const firstLoss = buffers.firstLossShare * capital;
   const loss = Math.max(0, run.owedAtEnd);
   const absorbedByFirstLoss = Math.min(loss, firstLoss);
   const absorbedByReserve = Math.min(loss - absorbedByFirstLoss, buffers.reserveAccount);
-  const investorLoss = loss - absorbedByFirstLoss - absorbedByReserve;
-  const flows = run.drawnByMonth.map((drawn, month) => run.repaidByMonth[month] - drawn);
-  // The buffers pay investors what the fund still owes, at the end.
-  flows[flows.length - 1] += absorbedByFirstLoss + absorbedByReserve;
+  // Investors' balance is part of the shortfall, never more than it.
+  const investorsOwed = Math.min(investors, loss);
+  const buffersToInvestors = Math.min(investorsOwed, absorbedByFirstLoss + absorbedByReserve);
+  const investorLoss = investorsOwed - buffersToInvestors;
+  const uncovered = Math.max(0, loss - absorbedByFirstLoss - absorbedByReserve - investorLoss);
+  flows[flows.length - 1] += buffersToInvestors;
+  // Cash investors got back, in all.
+  const received = flows.reduce((total, flow) => total + flow, 0) + capital;
   let cumulative = 0;
   let paybackMonth: number | null = null;
   flows.forEach((flow, month) => {
     cumulative += flow;
     if (paybackMonth === null && month > 0 && cumulative >= 0 && capital > 0) paybackMonth = month;
   });
-  return { capital, firstLoss, loss, absorbedByFirstLoss, absorbedByReserve, investorLoss, repaidInFull: investorLoss <= 1, irr: annualIrr(flows), paybackMonth };
+  return {
+    capital,
+    firstLoss,
+    loss,
+    absorbedByFirstLoss,
+    absorbedByReserve,
+    investorLoss,
+    capitalLost: Math.max(0, capital - received),
+    uncovered,
+    repaidInFull: investorLoss <= 1,
+    covered: investorLoss + uncovered <= 1,
+    irr: capital > 0 && received <= 1 ? -1 : annualIrr(flows),
+    paybackMonth,
+    flowsByMonth: flows,
+  };
 }
 
-/** The annual rate at which monthly flows are worth nothing today, found by bisection; null when it lies outside -99% to +200% a year. */
+/** The annual rate at which monthly flows are worth nothing today, found by bisection between -100% and +200% a year; null outside it. */
 function annualIrr(flows: number[]): number | null {
   const value = (annual: number) => {
     const monthly = Math.pow(1 + annual, 1 / 12);
     return flows.reduce((total, flow, month) => total + flow / Math.pow(monthly, month), 0);
   };
-  let low = -0.99;
+  let low = -0.999999;
   let high = 2;
   if (value(low) * value(high) > 0) return null;
   for (let step = 0; step < 200; step++) {
@@ -564,9 +627,8 @@ export interface InvestmentProfile {
 
 export function investmentProfile(run: FundRun, outcome: InvestorOutcome): InvestmentProfile {
   let cumulative = 0;
-  const cumulativeByMonth = run.drawnByMonth.map((drawn, month) => (cumulative += run.repaidByMonth[month] - drawn));
+  const cumulativeByMonth = outcome.flowsByMonth.map((flow) => (cumulative += flow));
   const last = cumulativeByMonth.length - 1;
-  cumulativeByMonth[last] += outcome.absorbedByFirstLoss + outcome.absorbedByReserve;
   const lowest = Math.min(...cumulativeByMonth);
   let breakEvenMonth: number | null = null;
   for (let month = run.netCashByMonth.length - 1; month >= 1; month--) {

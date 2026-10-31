@@ -5,9 +5,8 @@
 
    Starts a dev server on port 3300 (or uses one already running there), then records each scene at
    1920x1080 into docs/geh/recordings/: <letter>-<name>.webm, and a PNG of each key moment. The
-   recordings are not committed (.gitignore keeps only the README). The Metering Fund is filmed in
-   presentation mode (?present=1); the other screens have no presentation mode and keep their
-   navigation. Nothing on a screen is changed for the camera: Next.js's development badge is hidden,
+   recordings are not committed (.gitignore keeps only the README). Every Metering screen is filmed
+   in presentation mode (?present=1); the Planning overview keeps its navigation. Nothing on a screen is changed for the camera: Next.js's development badge is hidden,
    a small pointer is drawn where the mouse is (a headless browser films none), and every route is
    loaded once before filming so no scene shows it compiling. The dashboard scrolls inside <main>,
    so the scrolling here moves <main>, not the window. */
@@ -76,7 +75,7 @@ async function point(page: Page, selector: string, hold = 2500) {
 
 const SCENES: Scene[] = [
   {
-    id: "a", name: "about-this-build", path: `${PLANNING}/about-this-build`,
+    id: "a", name: "about-this-build", path: `${PLANNING}/about-this-build?present=1`,
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -100,7 +99,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "c", name: "disco-allocation", path: `${PLANNING}/metering/allocation`,
+    id: "c", name: "disco-allocation", path: `${PLANNING}/metering/allocation?present=1`,
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -117,7 +116,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "d", name: "dt-sequencing", path: `${PLANNING}/metering/dt`,
+    id: "d", name: "dt-sequencing", path: `${PLANNING}/metering/dt?present=1`,
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -132,16 +131,19 @@ const SCENES: Scene[] = [
   {
     id: "e", name: "metering-fund", path: FUND,
     play: async (page, shot) => {
-      await wait(2500);
+      await wait(2000);
       await shot("headline");
-      await glideToElement(page, "[data-headline-pair]", 1500);
-      await point(page, "[data-fund-alone]", 3000);
+      await glideToElement(page, "[data-headline-pair]", 1000);
+      await point(page, "[data-fund-alone]", 2500);
       await shot("fund-alone");
-      await point(page, "[data-structure-sentence]", 4000);
+      await point(page, "[data-structure-sentence]", 2500);
       await shot("gridintel-structure");
-      await glideToElement(page, "[data-bands]", 4000);
+      await point(page, "[data-structure-failures]", 3500);
+      await point(page, "[data-public-per-meter]", 3000);
+      await shot("public-per-meter");
+      await glideToElement(page, "[data-bands]", 3000);
       await shot("band-charges");
-      await glideToElement(page, "[data-impact]", 4000);
+      await glideToElement(page, "[data-impact]", 3000);
       await shot("estimated-bills");
       await glideToElement(page, "[data-receipt]", 3000, 200);
       await shot("receipt");
@@ -196,7 +198,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "i", name: "monitoring", path: `${PLANNING}/metering/monitoring`,
+    id: "i", name: "monitoring", path: `${PLANNING}/metering/monitoring?present=1`,
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");

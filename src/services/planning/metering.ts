@@ -68,6 +68,10 @@ const UNIT_LABEL: Record<AssumptionUnit, string> = {
   month: "month",
 };
 
+/** A source cited at the one table used: its title and date, and that locator only. */
+const citedAt = (citation: Citation | undefined, locator: string) =>
+  citation === undefined ? "Source not found" : `${citation.title}${citation.published ? `, ${formatDate(citation.published)}` : ""}, ${locator}`;
+
 const citationLabel = (citation: Citation | undefined) =>
   citation === undefined ? "Source not found" : `${citation.title}${citation.published ? `, ${formatDate(citation.published)}` : ""}${citation.locator ? ` (${citation.locator})` : ""}`;
 
@@ -105,7 +109,9 @@ function sum(values: number[]): number {
 async function caseFacts(repository: PublishedFiguresRepository, assumptions: Assumptions, citations: Map<string, Citation>): Promise<CaseFacts> {
   const [metering, installations, national, tariffs] = await Promise.all([repository.metering(), repository.installations(), repository.nationalReports(), repository.residentialTariffs()]);
   const values = assumptions.values;
-  const reportedNational: ShownFigure[] = national.map((report) => ({
+  // NERC's own total for 30 June 2026 is shown beside the planner's sum, not again among the other published figures.
+  const nercTotal = national.find((report) => report.citationId === "nerc-q2-2026") ?? null;
+  const reportedNational: ShownFigure[] = national.filter((report) => report !== nercTotal).map((report) => ({
     key: `national-${report.period}`,
     label: `Nigeria, ${report.period}`,
     value: [
@@ -166,9 +172,10 @@ async function caseFacts(repository: PublishedFiguresRepository, assumptions: As
   });
   const single = discos.length === 1 ? discos[0] : null;
   const scope = single === null ? "Nigeria, all 11 DisCos" : `${DISCO_NAMES[single]} DisCo`;
-  const q2 = citationLabel(citations.get("nerc-q2-2026"));
-  const q1 = citationLabel(citations.get("nerc-q1-2026"));
-  const reportedRate = single === null ? null : june[0].meteringRatePercent;
+  const reportedRate = single === null ? nercTotal?.meteringRatePercent ?? null : june[0].meteringRatePercent;
+  const q2Table15 = citedAt(citations.get("nerc-q2-2026"), "Table 15, p. 56");
+  const q1Table18 = citedAt(citations.get("nerc-q1-2026"), "Table 18, p. 58");
+  const q2AppendixIX = citedAt(citations.get("nerc-q2-2026"), "Appendix IX, p. 76");
   return {
     scope,
     shortScope: single === null ? "Nigeria" : DISCO_NAMES[single],
@@ -180,12 +187,12 @@ async function caseFacts(repository: PublishedFiguresRepository, assumptions: As
     publicMeters,
     tariffs: single === null ? averageTariffs(tariffs, "Nigeria") : discoTariffs(tariffs, single, citations),
     startingPoint: [
-      { key: "customers", label: "Active customers, 30 June 2026", value: formatCount(active), origin: single === null ? "calculated" : "reported", basis: single === null ? `The 11 DisCos added up, from ${q2}` : q2 },
-      { key: "metered", label: "Metered customers, 30 June 2026", value: formatCount(metered), origin: single === null ? "calculated" : "reported", basis: single === null ? `The 11 DisCos added up, from ${q2}` : q2 },
+      { key: "customers", label: "Active customers, 30 June 2026", value: formatCount(active), origin: single === null ? "calculated" : "reported", basis: single === null ? `The 11 DisCos added up, from ${q2Table15}` : q2Table15 },
+      { key: "metered", label: "Metered customers, 30 June 2026", value: formatCount(metered), origin: single === null ? "calculated" : "reported", basis: single === null ? `The 11 DisCos added up, from ${q2Table15}` : q2Table15 },
       { key: "unmetered", label: "Unmetered customers, 30 June 2026", value: formatCount(active - metered), origin: "calculated", basis: "Active customers less metered customers" },
-      { key: "rate", label: "Metering rate, 30 June 2026", value: `${formatShare(metered / active, 2)} calculated${reportedRate === null ? "; NERC states 61.51% for all DisCos" : `; NERC states ${reportedRate}%`}`, origin: "calculated", basis: `Metered ÷ active customers. The rate NERC publishes is shown beside it, from ${q2}` },
-      { key: "growth", label: "Customers added a month", value: formatCount(growthPerMonth), origin: "calculated", basis: `Active customers at 30 June 2026 less those at 31 March 2026, over 3 months. From ${q1} and ${q2}. "Active" means a customer who vended or was billed in the last 12 months, so the count also moves when customers fall out of it.` },
-      { key: "pace", label: "Meters installed a month, first half of 2026", value: formatCount(installsPerMonth), origin: "calculated", basis: `Meters installed in 2026 Q1 and Q2, all schemes, over 6 months. From ${q2}, Appendix IX` },
+      { key: "rate", label: "Metering rate, 30 June 2026", value: `${formatShare(metered / active, 2)}${reportedRate === null ? "" : ` (NERC: ${reportedRate}%)`}`, origin: "calculated", basis: `Metered ÷ active customers. The rate NERC publishes is shown beside it, from ${q2Table15}` },
+      { key: "growth", label: "Customers added a month", value: formatCount(growthPerMonth), origin: "calculated", basis: `Active customers at 30 June 2026 less those at 31 March 2026, over 3 months. From ${q1Table18} and ${q2Table15}. "Active" means a customer who vended or was billed in the last 12 months, so the count also moves when customers fall out of it.` },
+      { key: "pace", label: "Meters installed a month, first half of 2026", value: formatCount(installsPerMonth), origin: "calculated", basis: `Meters installed in 2026 Q1 and Q2, all schemes, over 6 months. From ${q2AppendixIX}` },
     ],
     references: reportedNational,
     yearsNote: "Year 1 is July 2026 to June 2027, starting from NERC's figures at 30 June 2026. PMI's 2027 meters fall in months 7 to 18.",
@@ -281,16 +288,20 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
     { key: "combined", label: "All three together", shock: { fromMonth: from, dutyRate: pct("shockDuty"), devaluation: pct("shockDevaluation"), inflationPerYear: pct("shockInflation") }, words: "Duty, devaluation and inflation from the same month" },
   ];
   const stressRuns = shocks.map((one) => ({ ...one, run: runMeteringFund(inputs, one.shock, charge), needed: sizeCharge(inputs, one.shock) }));
+  const NO_BUFFERS = { firstLossShare: 0, reserveAccount: 0 };
+  const fundAloneOutcome = investorOutcome(base, NO_BUFFERS);
   const stress: StressRowView[] = [
-    stressRow("base", "Base case", "Prices as today", base, charge, typicalCap),
-    ...stressRuns.map((one) => stressRow(one.key, one.label, one.words, one.run, one.needed, typicalCap)),
+    stressRow("base", "Base case", "Prices as today", base, charge, typicalCap, fundAloneOutcome, false),
+    ...stressRuns.map((one) =>
+      stressRow(one.key, one.label, one.words, one.run, one.needed, typicalCap, investorOutcome(one.run, NO_BUFFERS, fundAloneOutcome.capital), one.shock.inflationPerYear !== undefined),
+    ),
   ];
   const combined = stressRuns[stressRuns.length - 1].run;
   const programmes = await repository.programmes();
   const pmi = programmes.find((one) => one.id === "pmi") ?? null;
   const built = structureOf({ inputs, values, pct, bandRows, typical, shocks, charge, typicalCap, pmi, citations, startMonth: facts.startMonth });
   const structure = built?.view ?? null;
-  const fundAloneProfile = investmentProfile(base, investorOutcome(base, { firstLossShare: 0, reserveAccount: 0 }));
+  const fundAloneProfile = investmentProfile(base, fundAloneOutcome);
   const investment = {
     fundAlone: investmentView("Fund alone", fundAloneProfile, facts.startMonth),
     structure: built === null ? null : investmentView("GridIntel structure", built.profile, facts.startMonth),
@@ -522,7 +533,7 @@ function typicalBand(rows: { band: string; bill: number | null; share: number }[
   return null;
 }
 
-function stressRow(key: string, label: string, shock: string, run: FundRun, needed: number | null, typicalCap: number | null): StressRowView {
+function stressRow(key: string, label: string, shock: string, run: FundRun, needed: number | null, typicalCap: number | null, outcome: InvestorOutcome, inflation: boolean): StressRowView {
   const solvent = run.owedAtEnd <= 1;
   const underCap = needed !== null && typicalCap !== null && needed <= typicalCap;
   const verdict = `${solvent ? "Solvent" : `Runs short by ${formatNaira(run.owedAtEnd)}`}. ${needed === null ? "" : underCap ? "The charge needed stays under the cap." : typicalCap === null ? "The cap cannot be checked: no bill for the typical band." : `The charge needed is ${formatNaira(needed - typicalCap)} a month above the cap.`}`.trim();
@@ -535,7 +546,28 @@ function stressRow(key: string, label: string, shock: string, run: FundRun, need
     chargeNeeded: needed === null ? "Not available" : `${formatNaira(needed)} a month`,
     underCap,
     verdict,
+    split: solvent ? null : shortfallSplit(outcome, inflation),
   };
+}
+
+/** Who carries a shortfall, in words: investors' loss (with its share of their capital) and what lies beyond them. */
+function shortfallSplit(outcome: InvestorOutcome, inflation: boolean): string {
+  const buffers = outcome.absorbedByFirstLoss + outcome.absorbedByReserve;
+  const parts = [
+    ...(buffers > 1 ? [`${formatNaira(buffers)} taken by the first-loss layer and the reserve`] : []),
+    investorLossWords(outcome),
+    ...(outcome.uncovered > 1 ? [`${formatNaira(outcome.uncovered)} uncovered beyond investors, which falls to the public side${inflation ? " unless tariffs follow inflation" : ""}`] : []),
+  ];
+  return `${parts.join("; ")}.`.replace(/^./, (first) => first.toUpperCase());
+}
+
+/** What investors lose, in words: capital they never get back (with its share of their capital), and return due that is never paid. */
+function investorLossWords(outcome: InvestorOutcome): string {
+  if (outcome.investorLoss <= 1) return "investors repaid in full";
+  const returnUnpaid = outcome.investorLoss - outcome.capitalLost;
+  const unpaid = returnUnpaid > 1 ? `${formatNaira(returnUnpaid)} of return due is unpaid` : "";
+  if (outcome.capitalLost <= 1) return `investors get back all their ${formatNaira(outcome.capital)} capital${outcome.irr === null ? "" : ` (${(outcome.irr * 100).toFixed(1)}% a year)`}, but ${unpaid}`;
+  return `investors lose ${formatNaira(outcome.capitalLost)} of their ${formatNaira(outcome.capital)} capital (${formatShare(outcome.capitalLost / outcome.capital, 0)})${unpaid ? `, and ${unpaid}` : ""}`;
 }
 
 function headlineOf(charge: number | null, typical: { band: string } | null, bill: number | null, capAmount: number | null, cap: number, base: FundRun): MeteringFundView["headline"] {
@@ -587,7 +619,7 @@ interface StructureContext {
   shocks: { key: string; label: string; shock: PriceShock }[];
   charge: number | null;
   typicalCap: number | null;
-  pmi: { fundingNaira: number | null; citationIds: string[] } | null;
+  pmi: { fundingNaira: number | null; citationIds: string[]; reportedMeterCounts: { meters: number; citationId: string }[] } | null;
   citations: Map<string, Citation>;
   startMonth: { year: number; month: number } | null;
 }
@@ -617,8 +649,10 @@ function structureOf(context: StructureContext): { view: StructureView; profile:
   const monthlyRecoveries = (base.years[4].charges + base.years[4].collectionGain) / 12;
   const buffers = { firstLossShare: pct("firstLoss"), reserveAccount: values.reserveMonths * monthlyRecoveries };
   const baseOutcome = investorOutcome(base, buffers);
-  const shockOutcomes = shocks.map((one) => ({ ...one, outcome: investorOutcome(runMeteringFund(withTopUp, one.shock, averageCharge), buffers) }));
-  const survived = shockOutcomes.filter((one) => one.outcome.repaidInFull).length;
+  // Investors commit the capital the base case needs; a shock does not make them put in more.
+  const committed = baseOutcome.capital;
+  const shockOutcomes = shocks.map((one) => ({ ...one, outcome: investorOutcome(runMeteringFund(withTopUp, one.shock, averageCharge), buffers, committed) }));
+  const survived = shockOutcomes.filter((one) => one.outcome.covered).length;
   const stressed = shockOutcomes[shockOutcomes.length - 1];
 
   const cap = pct("cap");
@@ -634,7 +668,7 @@ function structureOf(context: StructureContext): { view: StructureView; profile:
     const shock = shocks.find((one) => one.key === key)!.shock;
     for (let percent = 0; percent <= 100; percent += 5) {
       const trial = { ...withTopUp, tariffPassThrough: percent / 100 };
-      if (investorOutcome(runMeteringFund(trial, shock, averageCharge), buffers).repaidInFull) return percent;
+      if (investorOutcome(runMeteringFund(trial, shock, averageCharge), buffers, committed).covered) return percent;
     }
     return null;
   };
@@ -644,18 +678,51 @@ function structureOf(context: StructureContext): { view: StructureView; profile:
     inflationAt === null && allAt === null
       ? "Investors are not repaid in full under inflation, or under all three shocks, even if tariffs follow all of it."
       : `Survives inflation ${inflationAt === null ? "at no pass-through up to 100%" : `if tariffs follow at least ${inflationAt}% of it`}; all three shocks ${allAt === null ? "at no pass-through up to 100%" : `at ${allAt}%`}. Today's assumption: ${values.passThrough}%.`;
-  const failed = shockOutcomes.filter((one) => !one.outcome.repaidInFull);
+  const failed = shockOutcomes.filter((one) => !one.outcome.covered);
   const capWords = withinCap ? "within the cap for every band" : `above the ${formatShare(cap, 0)} cap: the charge is ${formatShare(billShare, 1)} of every bill`;
-  const structureSentence =
-    `GridIntel structure: ${capWords}; public money ${formatNaira(allPublic)}${ofPmi}; survives ${survived} of ${shocks.length} shocks.` +
-    (failed.length === 0 ? "" : ` It fails ${failed.map((one) => `${one.label.toLowerCase()} (investors lose ${formatNaira(one.outcome.investorLoss)} after the first-loss layer and the reserve)`).join(", ")}.`);
+  const structureSentence = `GridIntel structure: ${capWords}; public money ${formatNaira(allPublic)}${ofPmi}; survives ${survived} of ${shocks.length} shocks.`;
+  const failures =
+    failed.length === 0
+      ? null
+      : failed.map((one) => `${one.label}: fund shortfall ${formatNaira(one.outcome.loss)}. ${shortfallSplit(one.outcome, one.shock.inflationPerYear !== undefined)}`).join(" ");
+
+  /* Public money per meter: all public money over every meter the plan installs, beside what PMI's own figures imply. */
+  const allMeters = base.totalFundMeters + base.totalPublicMeters;
+  const perMeter = allMeters > 0 ? allPublic / allMeters : null;
+  const reportedPerMeter = pmiFunding === null ? [] : (pmi?.reportedMeterCounts ?? []).map((one) => ({ ...one, perMeter: pmiFunding / one.meters }));
+  const sortedReported = [...reportedPerMeter].sort((a, b) => a.perMeter - b.perMeter);
+  const publicPerMeter =
+    perMeter === null
+      ? null
+      : {
+          line:
+            pmiFunding === null
+              ? `Public money per meter in this structure: ${formatNaira(perMeter)}.`
+              : `The same order of public money meters ${(pmiFunding / perMeter / 1e6).toFixed(1)} million customers in this structure.`,
+          figures: [
+            { key: "publicPerMeter", label: "Public money per meter, this structure", value: formatNaira(perMeter), origin: "calculated" as const, basis: `All public money (${formatNaira(allPublic)}) over every meter the plan installs, fund and PMI (${(allMeters / 1e6).toFixed(2)} million)` },
+            ...(sortedReported.length === 0
+              ? []
+              : [
+                  {
+                    key: "pmiPerMeter",
+                    label: "PMI, public money per meter",
+                    value: sortedReported.length === 1 ? formatNaira(sortedReported[0].perMeter) : `${formatNaira(sortedReported[0].perMeter)} to ${formatNaira(sortedReported[sortedReported.length - 1].perMeter)}`,
+                    origin: "reported" as const,
+                    basis: `₦${whole.format(pmiFunding! / 1e9)}bn over the meters each source reports, a range because sources differ: ${reportedPerMeter.map((one) => `${(one.meters / 1e6).toFixed(1)} million meters (${citations.get(one.citationId)?.title ?? one.citationId})`).join("; ")}`,
+                  },
+                ]),
+          ],
+        };
   const ratio = charge / typicalCap;
 
   const typicalCharge = billShare * typical.bill;
   const view: StructureView = {
     fundAlone: `Fund alone: ₦${whole.format(charge)} a month, ${ratio.toFixed(1)}x the cap.`,
     structure: structureSentence,
-    tone: withinCap && failed.length === 0 && baseOutcome.repaidInFull ? "ok" : "warning",
+    failures,
+    publicPerMeter,
+    tone: withinCap && failed.length === 0 && baseOutcome.covered ? "ok" : "warning",
     figures: [
       { key: "typicalCharge", label: `Charge for a typical Band ${typical.band} customer`, value: `₦${whole.format(typicalCharge)} a month`, origin: "calculated", basis: `${values.billShare}% of a Band ${typical.band} bill of ${formatNaira(typical.bill)}` },
       { key: "topUp", label: "Public top-up (PMI, DISREP, MAF)", value: formatNaira(short.total), origin: "calculated", basis: "For each meter, its installed cost (at the duty-shock rate) less what the charge and the collection gain repay in 60 months; paid at installation" },
@@ -671,8 +738,8 @@ function structureOf(context: StructureContext): { view: StructureView; profile:
     shocks: shockOutcomes.map((one) => ({
       key: one.key,
       label: one.label,
-      survives: one.outcome.repaidInFull,
-      outcome: one.outcome.loss <= 1 ? "Investors repaid in full; no loss" : one.outcome.repaidInFull ? `Loss of ${formatNaira(one.outcome.loss)} taken by the first-loss layer and the reserve; investors repaid in full` : `Investors lose ${formatNaira(one.outcome.investorLoss)} after the buffers`,
+      survives: one.outcome.covered,
+      outcome: one.outcome.loss <= 1 ? "Investors repaid in full; no shortfall" : `Fund shortfall ${formatNaira(one.outcome.loss)}. ${shortfallSplit(one.outcome, one.shock.inflationPerYear !== undefined)}`,
     })),
     investor: { base: investorView("Base case", baseOutcome), stressed: investorView(`${stressed.label}`, stressed.outcome) },
     inflationLine,
@@ -718,11 +785,14 @@ function investmentView(label: string, profile: InvestmentProfile, start: { year
 function investorView(label: string, outcome: InvestorOutcome): InvestorView {
   return {
     label,
-    repaid: outcome.repaidInFull,
+    repaid: outcome.covered,
+    capital: formatNaira(outcome.capital),
     loss: outcome.loss <= 1 ? "None" : formatNaira(outcome.loss),
     absorbedByFirstLoss: formatNaira(outcome.absorbedByFirstLoss),
     absorbedByReserve: formatNaira(outcome.absorbedByReserve),
-    investorLoss: outcome.investorLoss <= 1 ? "None" : formatNaira(outcome.investorLoss),
+    investorLoss: outcome.capitalLost <= 1 ? "None" : `${formatNaira(outcome.capitalLost)} (${formatShare(outcome.capitalLost / outcome.capital, 0)} of capital)`,
+    returnUnpaid: outcome.investorLoss - outcome.capitalLost <= 1 ? "None" : formatNaira(outcome.investorLoss - outcome.capitalLost),
+    uncovered: outcome.uncovered <= 1 ? "None" : formatNaira(outcome.uncovered),
     irr: outcome.irr === null ? "Not available" : `${(outcome.irr * 100).toFixed(1)}% a year`,
     payback: outcome.paybackMonth === null ? "Not by month 120" : `Month ${outcome.paybackMonth} (year ${Math.ceil(outcome.paybackMonth / 12)})`,
   };

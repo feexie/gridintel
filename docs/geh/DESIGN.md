@@ -233,6 +233,28 @@ Text and figures from the model:
   fact.
 - Investor outcome, base and stressed: repaid or not, loss absorbed by the
   first-loss layer and the reserve, IRR and payback (modelled, labelled).
+- **Investors never lose more than they put in** (Founder, 31 October 2026;
+  method 0.3.0). Investors commit the capital the base case needs (₦63.0bn in
+  the Nigeria case); a shock does not make them put in more. A shock's result
+  is split: the fund's shortfall at month 120 (cost of capital included); what
+  the first-loss layer, then the reserve, take (they protect investors, so
+  they pay investors' balance first); investors' loss, never more than their
+  capital and its accrued return, shown as capital lost (with its share of
+  capital, at most 100%) and return due unpaid; and the rest, uncovered
+  beyond investors, which falls to the public side (unless tariffs follow
+  inflation, when the shock includes inflation). Money drawn beyond investors
+  is owed alongside them at the same cost of capital, and each repayment is
+  shared in proportion to what each is owed. The IRR is on investors' own
+  cash and is never below -100%. The fund alone follows the same rule, with
+  its own base-case capital and no buffers. "Survives" still means the
+  buffers cover the whole shortfall, so the count of shocks survived and the
+  inflation line do not change.
+- **Public money per meter.** All public money in the structure over every
+  meter the plan installs (fund and PMI), beside PMI's own figure as
+  reported: ₦700bn over 1.1 million meters (GEH Brief 15, citing
+  Nairametrics, October 2025) and over 3.8 million meters [S1], shown as a
+  range because the sources differ. One line under the structure sentence
+  says how many customers the same ₦700bn meters in the structure.
 
 ### 3.9 Customer receipt (illustrative)
 
@@ -338,7 +360,9 @@ From the earlier national view, kept:
 - The assumptions are carried in the page address, so a scenario can be
   reloaded and filmed exactly. The planner pages are rendered on request.
 - Presentation mode (`?present=1`) hides the navigation and enlarges the
-  headline figures.
+  headline figures, on every Metering screen (Metering Fund, DisCo
+  allocation, DT sequencing, Monitoring, About this build). Forms and the
+  quarter links keep it on.
 - Under each headline, a "How this is calculated" line states the formula
   in words. The method is transparent and deterministic; it is never called
   AI.

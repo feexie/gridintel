@@ -14,9 +14,10 @@ export function Synthetic() {
   return <span className="inline-flex shrink-0 items-center rounded-full border border-caution-line px-1.5 py-px text-micro font-semibold uppercase tracking-wide text-caution">Synthetic</span>;
 }
 
-export function InputsForm({ inputs, name }: { inputs: PlanningInputView[]; name: string }) {
+export function InputsForm({ inputs, name, present = false }: { inputs: PlanningInputView[]; name: string; present?: boolean }) {
   return (
     <form method="get" className="space-y-3 print:hidden" data-planning-form={name}>
+      {present ? <input type="hidden" name="present" value="1" /> : null}
       <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
         {inputs.map((input) => (
           <label key={input.key} className="block text-sm" data-planning-input={input.key}>
@@ -36,7 +37,7 @@ export function InputsForm({ inputs, name }: { inputs: PlanningInputView[]; name
   );
 }
 
-export function DtSequencing({ view }: { view: DtSequencingView }) {
+export function DtSequencing({ view, present = false }: { view: DtSequencingView; present?: boolean }) {
   const heads = ["Rank", "DT", "Feeder", "Connections", "Unmetered", "Estimated billing a month", "Commercial loss a month", "ATC&C", "CAPEX", "Recovered a year", "Per ₦1 of CAPEX"];
   return (
     <div className="space-y-4" data-dt-sequencing>
@@ -112,7 +113,7 @@ export function DtSequencing({ view }: { view: DtSequencingView }) {
       </Panel>
 
       <Panel title="Recovery shares and the budget" aside="Change and recalculate">
-        <InputsForm inputs={view.inputs} name="dt" />
+        <InputsForm inputs={view.inputs} name="dt" present={present} />
       </Panel>
 
       <Panel title="Method">

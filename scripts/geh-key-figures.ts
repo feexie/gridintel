@@ -60,10 +60,16 @@ const structure = nigeria.structure;
 if (structure === null) throw new Error("No GridIntel structure in the Nigeria case");
 add(FUND, "Fund alone, one line", structure.fundAlone, "", "calculated", structure.how);
 add(FUND, "GridIntel structure sentence", structure.structure, structure.survived + " shocks survived", "calculated", structure.how);
+if (structure.failures) add(FUND, "GridIntel structure: the shocks it fails, split", structure.failures, "", "calculated", "Fund shortfall at month 120; the first-loss layer, then the reserve, pay investors first; investors lose at most their committed capital and its return (capital lost, and return due unpaid); the rest is uncovered");
+if (structure.publicPerMeter) {
+  add(FUND, "Public money per meter: what the same money meters here", structure.publicPerMeter.line, "", "calculated", "₦700bn raised for PMI (reported) over public money per meter in this structure");
+  for (const figure of structure.publicPerMeter.figures) add(FUND, `Public money per meter: ${figure.label}`, words(figure), figure.value, figure.origin, figure.basis);
+}
 for (const figure of structure.figures) add(FUND, `Structure: ${figure.label}`, words(figure), figure.value, figure.origin, figure.basis);
 for (const band of structure.bandCharges) add(FUND, `Structure charge, ${band.band}`, `${band.band}: ${band.charge}`, band.charge, band.band.startsWith("Lifeline") ? "rule" : "calculated", band.band.startsWith("Lifeline") ? "Exempt: Lifeline (R1) is up to 50 kWh a month (NERC, September 2026 orders); the share of customers on it, 10%, is a placeholder" : `5% of the band's bill; tariffs from ${MYTO}`);
 add(FUND, "Fairness rule", nigeria.fairnessRule, "", "rule", "Design, section 3");
 add(FUND, "PMI rule", nigeria.pmiRule, "", "rule", "Design, section 3");
+for (const row of nigeria.stress) if (row.split) add(FUND, `Fund alone, shock: ${row.label}`, `${row.label}: no, short ${row.owedAtEnd}. ${row.split}`, `short ${row.owedAtEnd}`, "calculated", "The launch charge kept; investors commit the fund alone's base-case capital; no buffers");
 for (const shock of structure.shocks) add(FUND, `Shock: ${shock.label}`, `${shock.label}: ${shock.outcome}`, shock.survives ? "Survives" : "Fails", "calculated", "Shocks from month 13: duty 45%, devaluation 30%, inflation 30% a year (assumptions)");
 add(FUND, "Inflation pass-through line", structure.inflationLine, "", "calculated", "Lowest pass-through, in 5% steps, at which investors are repaid in full");
 
@@ -73,7 +79,7 @@ for (const investment of [nigeria.investment.fundAlone, nigeria.investment.struc
   for (const figure of investment.figures) add(FUND, `${investment.label}: ${figure.label}`, words(figure), figure.value, figure.origin, figure.basis);
 }
 for (const [label, investor] of [["base", structure.investor.base], ["stressed (all three shocks)", structure.investor.stressed]] as const) {
-  add(FUND, `Investor IRR, ${label}`, `${investor.label}: IRR ${investor.irr}, payback ${investor.payback}`, investor.irr, "calculated", `Investor loss ${investor.investorLoss}; absorbed by first loss ${investor.absorbedByFirstLoss}, by the reserve ${investor.absorbedByReserve}`);
+  add(FUND, `Investor IRR, ${label}`, `${investor.label}: IRR ${investor.irr}, payback ${investor.payback}`, investor.irr, "calculated", `Capital ${investor.capital}; fund shortfall ${investor.loss}; first-loss layer ${investor.absorbedByFirstLoss}, reserve ${investor.absorbedByReserve}; capital lost ${investor.investorLoss}; return due unpaid ${investor.returnUnpaid}; uncovered ${investor.uncovered}`);
 }
 
 /* The cost of a meter. */

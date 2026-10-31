@@ -214,7 +214,14 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
                     <p className="font-semibold text-ink">{row.label}</p>
                     <p className="text-caption text-ink-4">{row.shock}</p>
                   </td>
-                  <td className={`py-2 pr-3 font-semibold ${row.solvent ? "text-ok" : "text-alert"}`}>{row.solvent ? "Yes" : `No: short ${row.owedAtEnd}`}</td>
+                  <td className="py-2 pr-3">
+                    <p className={`font-semibold ${row.solvent ? "text-ok" : "text-alert"}`}>{row.solvent ? "Yes" : `No: short ${row.owedAtEnd}`}</p>
+                    {row.split ? (
+                      <p className="max-w-md text-caption leading-snug text-ink-4" data-stress-split>
+                        {row.split}
+                      </p>
+                    ) : null}
+                  </td>
                   <td className="py-2 pr-3 text-ink-2">{row.chargeNeeded}</td>
                   <td className={`py-2 font-semibold ${row.underCap ? "text-ok" : "text-alert"}`}>{row.underCap ? "Yes" : "No"}</td>
                 </tr>
@@ -439,10 +446,13 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
 function InvestorColumn({ investor }: { investor: InvestorView }) {
   const rows: [string, string][] = [
     ["Repaid in full", investor.repaid ? "Yes" : "No"],
-    ["Loss before the buffers", investor.loss],
+    ["Investors' capital", investor.capital],
+    ["Fund shortfall at month 120", investor.loss],
     ["Taken by the first-loss layer", investor.absorbedByFirstLoss],
     ["Taken by the reserve account", investor.absorbedByReserve],
-    ["Investors lose", investor.investorLoss],
+    ["Capital investors lose", investor.investorLoss],
+    ["Return due, unpaid", investor.returnUnpaid],
+    ["Uncovered beyond investors", investor.uncovered],
     ["Investors' return (IRR), modelled", investor.irr],
     ["Payback, modelled", investor.payback],
   ];
@@ -477,13 +487,22 @@ function Structure({ structure }: { structure: StructureView }) {
           <p className={`mt-1 text-xl font-semibold ${structure.tone === "ok" ? "text-ink" : "text-caution-ink"}`} data-structure-sentence>
             {structure.structure}
           </p>
-          <p className="mt-2 text-caption text-ink-4">Survives {structure.survived} shocks.</p>
+          {structure.failures ? (
+            <p className="mt-2 text-sm leading-snug text-caution-ink" data-structure-failures>
+              {structure.failures}
+            </p>
+          ) : null}
+          {structure.publicPerMeter ? (
+            <p className="mt-2 text-sm font-semibold text-ink" data-public-per-meter>
+              {structure.publicPerMeter.line}
+            </p>
+          ) : null}
         </div>
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <Panel title="GridIntel structure" aside="Each part an assumption you can change below">
-          <Figures figures={structure.figures} />
+          <Figures figures={[...structure.figures, ...(structure.publicPerMeter?.figures ?? [])]} />
           <How>{structure.how}</How>
         </Panel>
         <div className="space-y-4">

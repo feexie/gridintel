@@ -1213,6 +1213,14 @@ ol.gr-list {
    hidden, so a recording shows the finding and its figures only. */
 html[data-present] [data-sector-bar],
 html[data-present] [data-topbar],
-html[data-present] [data-sidebar] {
+html[data-present] [data-sidebar],
+html[data-present] [data-metering-tabs] {
   display: none !important;
+}
+
+/* The headline of a planning screen in presentation mode, enlarged for a recording. The Metering
+   Fund sizes its own. */
+[data-present-frame="on"] h1 {
+  font-size: 2.25rem;
+  line-height: 1.2;
 }

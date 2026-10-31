@@ -82,6 +82,9 @@ test("a password alone opens nothing: the code is asked for, and a wrong one is 
 });
 
 test("the DisCo's administrator sees the DisCo only: no screen, download or name of the mini-grid operator", async ({ page }) => {
+  // It opens every utility screen and download in turn: on a laptop short of memory that takes longer
+  // than the default 30 s. How fast one page answers is held to its own budget (timing.spec.ts).
+  test.setTimeout(90_000);
   await signIn(page, TEST_PEOPLE.discoAdmin);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.locator("[data-account-email]").first()).toHaveText(TEST_PEOPLE.discoAdmin.email);

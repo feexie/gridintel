@@ -31,8 +31,8 @@ export function DataBar({ context }: { context: DataContext }) {
   const pathname = usePathname() ?? "";
   // The Metering Fund shows published figures and assumptions, not the synthetic dataset.
   const published = PUBLISHED_FIGURES_NOTICE.paths.includes(pathname);
-  const noData = NO_DATA_NOTICE.paths.includes(pathname);
-  const notice = published ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary } : noData ? { label: NO_DATA_NOTICE.label, summary: NO_DATA_NOTICE.summary } : context.notice;
+  const noData = NO_DATA_NOTICE.summaries[pathname];
+  const notice = published ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary } : noData ? { label: NO_DATA_NOTICE.label, summary: noData } : context.notice;
   const [open, setOpen] = useState(false);
   const key = REPORT_ADDRESS.exec(pathname)?.[1];
   const report = key === undefined ? undefined : context.reportPeriods[key];

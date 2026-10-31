@@ -83,6 +83,8 @@ export interface PublicMeteringProgramme {
   name: string;
   /** Meters in the whole programme, as reported; null when not stated. */
   totalMeters: number | null;
+  /** Every count of the programme's meters that a source reports, each with its source: sources differ, so all are kept. */
+  reportedMeterCounts: { meters: number; citationId: string }[];
   /** Money raised for it, in naira, as reported; null when not stated. */
   fundingNaira: number | null;
   /** How the money was raised, as reported. */

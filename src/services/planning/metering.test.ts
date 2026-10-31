@@ -36,7 +36,13 @@ describe("the Metering Fund screen", () => {
     assert.equal(figure(view.startingPoint, "growth"), "67,546");
     assert.equal(figure(view.startingPoint, "pace"), "129,543");
     assert.match(view.gap.sentence, /^Nigeria needs [\d,]+ meters a month to finish in five years\. It installed 129,543 a month in the first half of 2026\.$/);
-    assert.match(figure(view.startingPoint, "rate")!, /NERC states 61\.51% for all DisCos/);
+    assert.equal(figure(view.startingPoint, "rate"), "61.51% (NERC: 61.51%)");
+    // Each figure cites only the table it comes from.
+    const customers = view.startingPoint.find((one) => one.key === "customers")!;
+    assert.match(customers.basis, /Table 15, p\. 56$/);
+    assert.ok(!customers.basis.includes("Table 7"));
+    // NERC's total is shown beside the sum, not again among the other published figures.
+    assert.ok(!view.references.some((one) => one.label === "Nigeria, 30 June 2026"));
     assert.ok(view.references.some((one) => one.label === "Nigeria, August 2026" && one.value.startsWith("63.1% metered")));
     assert.match(view.yearsNote, /^Year 1 is July 2026 to June 2027/);
     assert.ok(view.citations.some((one) => one.id === "nerc-q2-2026" && one.standing === "primary"));
@@ -75,7 +81,26 @@ describe("the GridIntel structure beside the fund alone", () => {
     const view = await meteringFundView(published, { case: "nigeria" });
     const structure = view.structure!;
     assert.equal(structure.fundAlone, "Fund alone: ₦1,286 a month, 4.9x the cap.");
-    assert.match(structure.structure, /^GridIntel structure: within the cap for every band; public money ₦650\.2 billion, 93% of the ₦700bn already raised for PMI; survives 2 of 4 shocks\. It fails inflation/);
+    assert.equal(structure.structure, "GridIntel structure: within the cap for every band; public money ₦650.2 billion, 93% of the ₦700bn already raised for PMI; survives 2 of 4 shocks.");
+    // What it fails, split: the fund's shortfall, the buffers, investors (never more than their capital), and what is uncovered.
+    assert.match(structure.failures!, /^Inflation: fund shortfall ₦469\.8 billion\. ₦69\.6 billion taken by the first-loss layer and the reserve; investors get back all their ₦63\.0 billion capital \([\d.]+% a year\), but ₦[\d.]+ billion of return due is unpaid; ₦[\d.]+ billion uncovered beyond investors, which falls to the public side unless tariffs follow inflation\. All three together: fund shortfall ₦1\.56 trillion\./);
+    assert.ok(!/investors lose ₦381/.test(structure.failures!));
+    assert.equal(structure.investor.stressed.capital, "₦63.0 billion");
+    assert.equal(structure.investor.stressed.investorLoss, "None");
+    assert.equal(structure.investor.stressed.uncovered, "₦1.26 trillion");
+    // Public money per meter, beside PMI's reported range, and what the same money meters here.
+    const perMeter = structure.publicPerMeter!;
+    assert.equal(perMeter.line, "The same order of public money meters 10.4 million customers in this structure.");
+    assert.equal(perMeter.figures.find((one) => one.key === "publicPerMeter")?.value, "₦67,226");
+    const pmiRange = perMeter.figures.find((one) => one.key === "pmiPerMeter")!;
+    assert.equal(pmiRange.value, "₦184,211 to ₦636,364");
+    assert.equal(pmiRange.origin, "reported");
+    assert.match(pmiRange.basis, /Nairametrics/);
+    // The fund alone's shocks say who carries each shortfall, and no share of capital lost is over 100%.
+    const combined = view.stress.find((row) => row.key === "combined")!;
+    assert.match(combined.split!, /^Investors lose ₦[\d.]+ billion of their ₦342\.8 billion capital \((\d+)%\)/);
+    assert.ok(Number(/\((\d+)%\)/.exec(combined.split!)![1]) <= 100);
+    assert.equal(view.stress.find((row) => row.key === "base")?.split, null);
     assert.equal(structure.inflationLine, "Survives inflation if tariffs follow at least 20% of it; all three shocks at 55%. Today's assumption: 0%.");
     assert.equal(structure.survived, "2 of 4");
     assert.equal(structure.tone, "warning");

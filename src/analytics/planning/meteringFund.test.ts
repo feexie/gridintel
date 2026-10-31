@@ -170,6 +170,37 @@ describe("the structure around the fund", () => {
     assert.ok(outcome.irr! < 0);
     const covered = investorOutcome(run, { firstLossShare: 0.5, reserveAccount: 2e9 });
     assert.equal(covered.repaidInFull, true);
+    assert.equal(covered.covered, true);
+  });
+
+  it("never puts more on investors than the capital they committed and its return: the rest of a shortfall is uncovered", () => {
+    // At N600 a month the fund runs N14.4bn short; investors commit only half of what it draws.
+    const run = runMeteringFund(PLAIN, undefined, 600);
+    const drawn = run.drawnByMonth.reduce((total, value) => total + value, 0);
+    const buffers = { firstLossShare: 0.1, reserveAccount: 1e9 };
+    const outcome = investorOutcome(run, buffers, drawn / 2);
+    close(outcome.capital, drawn / 2, 1e-9);
+    // The parts add up to the shortfall.
+    close(outcome.absorbedByFirstLoss + outcome.absorbedByReserve + outcome.investorLoss + outcome.uncovered, outcome.loss, 1e-9);
+    assert.ok(outcome.uncovered > 0);
+    assert.ok(outcome.capitalLost <= outcome.capital);
+    assert.ok(outcome.capitalLost <= outcome.investorLoss + 1);
+    assert.equal(outcome.covered, false);
+    // Committing less never makes investors lose more.
+    const full = investorOutcome(run, buffers);
+    assert.ok(outcome.investorLoss <= full.investorLoss);
+    close(full.uncovered, 0);
+    // A return can be low, but never worse than -100% a year.
+    assert.ok(outcome.irr === null || outcome.irr >= -1);
+  });
+
+  it("gives an IRR of -100% when investors get nothing back", () => {
+    const nothing = { ...PLAIN, collectionGainShare: 0 };
+    const run = runMeteringFund(nothing, undefined, 0);
+    const outcome = investorOutcome(run, { firstLossShare: 0, reserveAccount: 0 });
+    assert.ok(outcome.capital > 0);
+    close(outcome.capitalLost, outcome.capital, 1e-9);
+    assert.equal(outcome.irr, -1);
   });
 });
 

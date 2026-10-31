@@ -52,14 +52,16 @@ export const METERING_SCREENS: { id: MeteringScreenId; step: string; label: stri
   { id: "about", step: "", label: "About this build", href: `${PLANNING_HOME}/about-this-build`, planned: false },
 ];
 
-/** What the bar above the Metering Fund and the DisCo allocation says about their data: they hold no synthetic record. */
-/** What the bar above About this build says: the page shows no data. */
+/** What the bar says above a planning screen that shows no data: the Planning overview and About this build, each with its own summary. */
 export const NO_DATA_NOTICE = {
-  paths: [`${PLANNING_HOME}/about-this-build`],
   label: "NO DATA ON THIS SCREEN",
-  summary: "What existed before the Global Energy Hackathon sprint and what was built during it, from the repository's sprint changelog.",
+  summaries: {
+    [PLANNING_HOME]: "The planners in the Planning section and which are built. No figure is shown here.",
+    [`${PLANNING_HOME}/about-this-build`]: "What existed before the Global Energy Hackathon sprint and what was built during it, from the repository's sprint changelog.",
+  } as Record<string, string>,
 };
 
+/** What the bar above the Metering Fund and the DisCo allocation says about their data: they hold no synthetic record. */
 export const PUBLISHED_FIGURES_NOTICE = {
   paths: [`${PLANNING_HOME}/metering`, `${PLANNING_HOME}/metering/allocation`],
   label: "PUBLISHED FIGURES AND ASSUMPTIONS",

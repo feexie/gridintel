@@ -13,6 +13,7 @@ const Q2_2026 = "nerc-q2-2026";
 const Q1_2026 = "nerc-q1-2026";
 const THISDAY = "s5-thisday-2026-10-15";
 const BRIEF = "b15-geh-brief";
+const BRIEF_PMI = "b15-geh-brief-nairametrics-2025-10";
 const VANGUARD = "s1-allafrica-vanguard-2026-10-22";
 const STARTUP_ACT = "s2-nigeriastartupact-2026-10-16";
 
@@ -81,6 +82,14 @@ export const NERC_CITATIONS: Citation[] = [
     standing: "secondary",
     locator: "Reference data: December 2025",
   },
+  {
+    id: BRIEF_PMI,
+    title: "GEH Brief 15, \"Meter every customer\", citing Nairametrics, October 2025",
+    url: null,
+    published: "2025-10",
+    standing: "secondary",
+    locator: "PMI: ₦700 billion for 1.1 million meters, as reported",
+  },
   ...(Object.keys(DISCO_ORDERS) as DiscoId[]).map((disco) => ({
     id: orderCitation(disco),
     title: `NERC, ${DISCO_ORDERS[disco].code} MYTO September 2026 (supplementary order, effective 1 September 2026)`,
@@ -132,6 +141,8 @@ const INSTALLATIONS: PublishedInstallations[] = [
 ];
 
 const NATIONAL: ReportedNationalMetering[] = [
+  // Table 15's total row: the 11 DisCos together. The planner adds the DisCos up itself and shows this beside it.
+  { asOf: "2026-06-30", period: "30 June 2026", meteringRatePercent: 61.51, activeCustomers: 12_589_486, meteredCustomers: 7_743_839, unmeteredCustomers: null, citationId: Q2_2026 },
   { asOf: "2026-10-15", period: "August 2026", meteringRatePercent: 63.1, activeCustomers: 12_750_000, meteredCustomers: 8_050_000, unmeteredCustomers: 4_704_224, citationId: THISDAY },
   { asOf: "2025-12-31", period: "December 2025", meteringRatePercent: 57.27, activeCustomers: 12_160_000, meteredCustomers: 6_970_000, unmeteredCustomers: null, citationId: BRIEF },
 ];
@@ -180,6 +191,10 @@ const PROGRAMMES: PublicMeteringProgramme[] = [
     id: "pmi",
     name: "Presidential Metering Initiative (PMI)",
     totalMeters: 3_800_000,
+    reportedMeterCounts: [
+      { meters: 1_100_000, citationId: BRIEF_PMI },
+      { meters: 3_800_000, citationId: VANGUARD },
+    ],
     fundingNaira: 700_000_000_000,
     fundedBy: "FAAC, 2024",
     firstYear: 2027,
