@@ -24,6 +24,20 @@ are listed in `last-run.txt`.
 Every Metering screen is filmed in presentation mode (`?present=1`; the Metering Fund in the
 Nigeria reference case). The Planning overview keeps its navigation.
 
+Platform clips, in `platform/` (`npm run geh:record -- p1 p2 p3 p4 p5 p6 p7`): screens that
+existed before the hackathon, each about 10 to 15 s, with the caption "Existing platform, before the
+hackathon" in the bottom-left corner.
+
+| Clip | Screen |
+| --- | --- |
+| p1 | Platform home (`/dashboard`) |
+| p2 | Utility executive |
+| p3 | Reliability |
+| p4 | Revenue and losses |
+| p5 | GIS map |
+| p6 | Mini-grid site performance (site MG-TAM) |
+| p7 | A report (Reliability, September 2026) opened, and its figures downloaded as CSV |
+
 Every scene is filmed in the dark theme. Nothing on a screen is changed for the camera. Next.js's
 development badge is hidden, and a small circle (white rim, indigo ring) is drawn where the mouse
 is, because a headless browser films no pointer. Every route

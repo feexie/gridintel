@@ -24,7 +24,11 @@ const SIZE = { width: 1920, height: 1080 };
 const PLANNING = "/dashboard/planning";
 const FUND = `${PLANNING}/metering?case=nigeria&present=1`;
 
-type Scene = { id: string; name: string; path: string; play: (page: Page, shot: (moment: string) => Promise<void>) => Promise<void> };
+/** A scene. `dir` files it in a subfolder of the recordings; `caption` is drawn in a corner for the whole clip. */
+type Scene = { id: string; name: string; path: string; dir?: string; caption?: string; warm?: string[]; play: (page: Page, shot: (moment: string) => Promise<void>) => Promise<void> };
+
+/* The platform clips p1-p7: screens that existed before the hackathon, filmed for the video with a caption that says so. */
+const BEFORE = "Existing platform, before the hackathon";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -248,7 +252,54 @@ const SCENES: Scene[] = [
       await shot("balance");
     },
   },
+  ...platformScenes(),
 ];
+
+/** The platform before the hackathon: about 10 s on each screen, scrolling once or twice. */
+function platformScenes(): Scene[] {
+  const look = (first = 3000, ...moves: number[]) => async (page: Page, shot: (moment: string) => Promise<void>) => {
+    await wait(first);
+    await shot("screen");
+    for (const distance of moves) {
+      await glideBy(page, distance);
+      await wait(1800);
+    }
+  };
+  const scene = (id: string, name: string, path: string, play: Scene["play"]): Scene => ({ id, name, path, dir: "platform", caption: BEFORE, play });
+  return [
+    scene("p1", "platform-home", "/dashboard", look(3000, 500, 500)),
+    scene("p2", "utility-executive", "/dashboard/utility/executive", look(3000, 600, 600)),
+    scene("p3", "reliability", "/dashboard/utility/reliability", look(3000, 600, 600)),
+    scene("p4", "revenue-and-losses", "/dashboard/utility/revenue", look(3000, 600, 600)),
+    scene("p5", "gis-map", "/dashboard/utility/map", async (page, shot) => {
+      await wait(4500);
+      await shot("screen");
+      await page.mouse.move(900, 500, { steps: 30 });
+      await wait(1500);
+      await page.mouse.move(1200, 650, { steps: 30 });
+      await wait(3000);
+    }),
+    scene("p6", "minigrid-site-performance", "/dashboard/minigrid/sites/MG-TAM", look(3000, 600, 600)),
+    { ...scene("p7", "report-opened-and-downloaded", "/dashboard/utility/reports", async (page, shot) => {
+      await wait(1500);
+      const open = page.locator('[data-report="reliability"]').getByRole("link", { name: "Open the report" });
+      await point(page, '[data-report="reliability"] a:has-text("Open the report")', 800);
+      await open.click();
+      await page.waitForURL(/\/reliability\//);
+      await wait(2000);
+      await shot("report");
+      const csv = page.getByRole("link", { name: "Download figures (CSV)" });
+      await csv.scrollIntoViewIfNeeded();
+      const box = await csv.boundingBox();
+      if (box) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 25 });
+      await wait(1000);
+      const [download] = await Promise.all([page.waitForEvent("download"), csv.click()]);
+      await download.cancel();
+      await wait(1500);
+      await shot("downloaded");
+    }), warm: ["/dashboard/utility/reports/reliability/2026-09"] },
+  ];
+}
 
 async function serverAnswers() {
   try {
@@ -301,7 +352,9 @@ async function record(browser: Browser, scene: Scene): Promise<{ file: string; s
   // The video starts when the context opens, so the length is timed from here.
   const began = Date.now();
   // Filmed in the dark theme: the browser asks for dark, and the saved choice says dark.
-  const context = await browser.newContext({ viewport: SIZE, deviceScaleFactor: 1, colorScheme: "dark", recordVideo: { dir: OUT, size: SIZE } });
+  const out = join(OUT, scene.dir ?? "");
+  mkdirSync(out, { recursive: true });
+  const context = await browser.newContext({ viewport: SIZE, deviceScaleFactor: 1, colorScheme: "dark", acceptDownloads: true, recordVideo: { dir: out, size: SIZE } });
   await context.addInitScript(() => {
     try {
       localStorage.setItem("gridintel-theme", "dark");
@@ -310,11 +363,23 @@ async function record(browser: Browser, scene: Scene): Promise<{ file: string; s
     }
   });
   await context.addInitScript(FILMING);
+  if (scene.caption) {
+    // The caption, drawn in the bottom-left corner for the whole clip.
+    await context.addInitScript((text: string) => {
+      addEventListener("DOMContentLoaded", () => {
+        const caption = document.createElement("div");
+        caption.setAttribute("aria-hidden", "true");
+        caption.textContent = text;
+        caption.style.cssText = "position:fixed;left:24px;bottom:24px;padding:8px 14px;border-radius:6px;background:rgba(15,23,42,.88);border:1px solid rgba(165,180,252,.6);color:#e0e7ff;font:600 18px/1.3 system-ui,sans-serif;letter-spacing:.01em;pointer-events:none;z-index:2147483646";
+        document.body.append(caption);
+      });
+    }, scene.caption);
+  }
   const page = await context.newPage();
   const shots: string[] = [];
   const shot = async (moment: string) => {
     const file = `${scene.id}-${scene.name}--${moment}.png`;
-    await page.screenshot({ path: join(OUT, file) });
+    await page.screenshot({ path: join(out, file) });
     shots.push(file);
   };
   await page.goto(`${BASE}${scene.path}`, { waitUntil: "networkidle" });
@@ -325,8 +390,8 @@ async function record(browser: Browser, scene: Scene): Promise<{ file: string; s
   const video = page.video();
   await context.close();
   const file = `${scene.id}-${scene.name}.webm`;
-  rmSync(join(OUT, file), { force: true });
-  if (video) renameSync(await video.path(), join(OUT, file));
+  rmSync(join(out, file), { force: true });
+  if (video) renameSync(await video.path(), join(out, file));
   return { file, seconds, shots };
 }
 
@@ -337,7 +402,7 @@ async function main() {
   const server = await startServer();
   try {
     // Every route compiled and rendered once before filming.
-    for (const path of new Set(scenes.map((scene) => scene.path))) await fetch(`${BASE}${path}`);
+    for (const path of new Set(scenes.flatMap((scene) => [scene.path, ...(scene.warm ?? [])]))) await fetch(`${BASE}${path}`);
     const browser = await chromium.launch();
     const results = [];
     for (const scene of scenes) {
