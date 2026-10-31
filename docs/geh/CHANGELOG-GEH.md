@@ -19,3 +19,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Fri 22:35 | `9eaf9b2` | Initial investment against break-even (both cases, with chart); all public money in the structure headline; inflation pass-through needed |
 | Fri 22:36 | `d17a041` | M3 data and method: DisCo collection efficiency and ATC&C (NERC Q2 Tables 7, 8); need and repayment-risk scores; tranche split against pro-rata; 4 tests |
 | Fri 22:47 | `0d3f131` | M3 DisCo allocation screen: largest gap headline, 11 DisCos with need and risk scores, first million against pro-rata, pilot card, screen tabs |
+| Sat 01:47 | `dd112e9` | Brief 15's two impact measures as headlines on the Metering Fund: customers metered by year 5, estimated bills removed a year at full rollout, row by year 1-5 |
