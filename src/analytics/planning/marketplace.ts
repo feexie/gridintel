@@ -12,15 +12,15 @@ import { REFERENCE_DISCLAIMER } from "../core/methodology.ts";
    - Months to repay a meter = its installed cost ÷ (the charge a day
      × days in a month); with a funder's return, the months for the
      charge a month to repay the cost as a loan at that rate.
-   - Bands C to E (0.2.0): the customer's charge is a share of the
+   - Bands B to E (0.3.0; C to E in 0.2.0): the customer's charge is a share of the
      band's typical bill; over a fixed repayment period it repays part
      of the meter, and a blended top-up (DFI or public money) covers
      the rest.
    - Matching: pledges in order of the return they ask, lowest first
      (then the pledge with fewer DisCos first, then by id). A pledge
-     funds a band only when its kind allows it (private money Bands A
-     and B; DFI money Bands C to E; public money Bands C to E and
-     Lifeline), the pledge lists the band and the DisCo, and the
+     funds a band only when its kind allows it (private money Band A
+     only, single-phase and three-phase; DFI money Bands B to E; public
+     money Bands B to E and Lifeline), the pledge lists the band and the DisCo, and the
      band's months to repay fit within the pledge's tenor (a grant
      has no tenor and is not repaid). Applications are taken poorest
      band first (Lifeline, E, D, C, B, A three-phase, A
@@ -38,7 +38,7 @@ export interface MarketplaceParameters {
 
 export const MARKETPLACE_REFERENCE: Methodology<MarketplaceParameters> = {
   id: "gridintel.planning.marketplace",
-  version: "0.2.0",
+  version: "0.3.0",
   name: "GridIntel reference matching of metering pledges to approved applications",
   description: "Daily meter charge by band taken at each recharge (at most half of it) into escrow; pledges matched to approved meter applications by funder kind, band, DisCo and tenor.",
   authority: "gridintel_reference",
@@ -51,9 +51,9 @@ export const MARKETPLACE_REFERENCE: Methodology<MarketplaceParameters> = {
 export const BAND_ORDER: readonly MarketplaceBand[] = ["lifeline", "E", "D", "C", "B", "A3", "A1"];
 
 const ALLOWED: Record<FunderKind, readonly MarketplaceBand[]> = {
-  private: ["A1", "A3", "B"],
-  dfi: ["C", "D", "E"],
-  public: ["C", "D", "E", "lifeline"],
+  private: ["A1", "A3"],
+  dfi: ["B", "C", "D", "E"],
+  public: ["B", "C", "D", "E", "lifeline"],
 };
 
 /** The bands a kind of funder may fund. */

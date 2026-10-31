@@ -26,10 +26,11 @@ describe("the metering marketplace", () => {
     assert.deepEqual(takeAtRecharge(3_000, 2_000), { toEscrow: 1_000, carried: 2_000 });
   });
 
-  it("sends private money to Bands A and B, DFI and public money to C to E, and only grants to Lifeline", () => {
-    assert.deepEqual(allowedBands("private"), ["A1", "A3", "B"]);
+  it("sends private money to Band A only, DFI and public money to B to E, and only grants to Lifeline", () => {
+    assert.deepEqual(allowedBands("private"), ["A1", "A3"]);
+    assert.ok(!canFund(pledge({ kind: "private" }), terms("B")));
+    assert.ok(canFund(pledge({ kind: "dfi", tenorMonths: 120, returnPercent: 8 }), { band: "B", meterCost: 90_000, chargePerDay: 16, blendedMonths: 60 }));
     assert.ok(!canFund(pledge({ kind: "private" }), terms("C")));
-    assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 120 }), terms("B")));
     assert.ok(canFund(pledge({ kind: "dfi", tenorMonths: 120, returnPercent: 8 }), terms("E")));
     assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 120 }), terms("lifeline")));
     assert.ok(canFund(pledge({ kind: "public", tenorMonths: null }), terms("lifeline")));
@@ -96,7 +97,7 @@ describe("the metering marketplace", () => {
   });
 
   it("gives the same matches for the same inputs", () => {
-    const run = () => matchPledges([pledge({}), pledge({ id: "q", returnPercent: 20 })], [{ disco: "eko", band: "B", approved: 20 }], TERMS, ["kano", "eko"]);
+    const run = () => matchPledges([pledge({}), pledge({ id: "q", returnPercent: 20 })], [{ disco: "eko", band: "A1", approved: 20 }], TERMS, ["kano", "eko"]);
     assert.deepEqual(run(), run());
   });
 });
