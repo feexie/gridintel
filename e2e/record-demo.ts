@@ -162,14 +162,14 @@ const SCENES: Scene[] = [
   {
     id: "g", name: "shocks-and-reserve", path: FUND,
     play: async (page, shot) => {
-      await glideToElement(page, "[data-inflation-line]", 2500, 300);
+      await glideToElement(page, "[data-inflation-line]", 2000, 300);
       await shot("inflation-line");
       await glideToElement(page, "[data-stress]", 1000);
-      await point(page, '[data-stress-row="duty"]', 3000);
+      await point(page, '[data-stress-row="duty"]', 2500);
       await shot("shocks-before");
       await glideToElement(page, "[data-assumptions]", 500);
       const reserve = page.locator("[data-assumptions]").getByLabel(/Duty-shock reserve/);
-      await point(page, "[data-assumptions] label:has-text('Duty-shock reserve')", 1500);
+      await point(page, "[data-assumptions] label:has-text('Duty-shock reserve')", 1000);
       await reserve.check();
       await wait(800);
       const recalculate = page.locator("[data-assumptions]").getByRole("button", { name: "Recalculate" });
@@ -178,9 +178,9 @@ const SCENES: Scene[] = [
       await recalculate.click();
       await page.waitForURL(/dutyReserve=1/);
       await page.locator('[data-stress-row="duty"]').waitFor();
-      await wait(1000);
-      await glideToElement(page, "[data-stress]", 1000);
-      await point(page, '[data-stress-row="duty"]', 3500);
+      await wait(700);
+      await glideToElement(page, "[data-stress]", 700);
+      await point(page, '[data-stress-row="duty"]', 3000);
       await shot("shocks-after-reserve");
     },
   },
