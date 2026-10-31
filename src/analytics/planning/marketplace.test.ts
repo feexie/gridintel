@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { allowedBands, canFund, matchPledges, monthsToRepay, repaymentSchedule, takeAtRecharge, type BandTerms, type PledgeInput } from "./marketplace.ts";
+import { allowedBands, blendedShare, canFund, matchPledges, monthsToRepay, monthsToRepayWithReturn, repaymentSchedule, takeAtRecharge, type BandTerms, type PledgeInput } from "./marketplace.ts";
 
 const TERMS: BandTerms[] = [
   { band: "A1", meterCost: 90_000, chargePerDay: 200 },
@@ -30,17 +30,33 @@ describe("the metering marketplace", () => {
     assert.deepEqual(allowedBands("private"), ["A1", "A3", "B"]);
     assert.ok(!canFund(pledge({ kind: "private" }), terms("C")));
     assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 120 }), terms("B")));
-    assert.ok(canFund(pledge({ kind: "dfi", tenorMonths: 120 }), terms("E")));
+    assert.ok(canFund(pledge({ kind: "dfi", tenorMonths: 120, returnPercent: 8 }), terms("E")));
     assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 120 }), terms("lifeline")));
     assert.ok(canFund(pledge({ kind: "public", tenorMonths: null }), terms("lifeline")));
     assert.ok(!canFund(pledge({ kind: "public", tenorMonths: 120 }), terms("lifeline")));
   });
 
-  it("matches a band only when its months to repay fit within the pledge's tenor", () => {
-    // A3: 180,000 ÷ (250 × 30.4) = 23.7 months; E: 59.2 months.
-    assert.ok(canFund(pledge({ tenorMonths: 24 }), terms("A3")));
-    assert.ok(!canFund(pledge({ tenorMonths: 23 }), terms("A3")));
-    assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 48 }), terms("E")));
+  it("matches a band only when its months to repay, at the pledge's return, fit within the pledge's tenor", () => {
+    // A3 at cost: 180,000 ÷ (250 × 30.4) = 23.7 months; at 20% a year, about 30.
+    assert.ok(canFund(pledge({ tenorMonths: 24, returnPercent: 0 }), terms("A3")));
+    assert.ok(!canFund(pledge({ tenorMonths: 24, returnPercent: 20 }), terms("A3")));
+    assert.ok(canFund(pledge({ tenorMonths: 36, returnPercent: 20 }), terms("A3")));
+    assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 48, returnPercent: 0 }), terms("E")));
+    // A blended band runs for its fixed period, whatever the charge.
+    assert.ok(canFund(pledge({ kind: "dfi", tenorMonths: 84 }), { band: "C", meterCost: 90_000, chargePerDay: 8, blendedMonths: 60 }));
+    assert.ok(!canFund(pledge({ kind: "dfi", tenorMonths: 48 }), { band: "C", meterCost: 90_000, chargePerDay: 8, blendedMonths: 60 }));
+  });
+
+  it("repays a meter more slowly with a return on the money, and never when the charge does not cover the interest", () => {
+    assert.equal(monthsToRepayWithReturn(91_200, 200, 0), 15);
+    const months = monthsToRepayWithReturn(91_200, 200, 0.24)!;
+    assert.ok(months > 17.9 && months < 18.1, String(months));
+    assert.equal(monthsToRepayWithReturn(1_000_000, 100, 0.24), null);
+  });
+
+  it("splits a blended band's meter into what the customer repays and the top-up", () => {
+    assert.deepEqual(blendedShare(90_000, 10, 60), { customerRepays: 18_240, topUp: 71_760 });
+    assert.deepEqual(blendedShare(90_000, 1_000, 60), { customerRepays: 90_000, topUp: 0 });
   });
 
   it("takes the cheapest money first, poorest band first, and queues what cannot be placed", () => {
@@ -73,6 +89,10 @@ describe("the metering marketplace", () => {
     assert.deepEqual(rows[0], { month: 1, paid: 3_040, balance: 6_960 });
     assert.deepEqual(rows.at(-1), { month: 4, paid: 880, balance: 0 });
     assert.deepEqual(repaymentSchedule(10_000, 0), []);
+    const withReturn = repaymentSchedule(10_000, 100, 0.12);
+    assert.equal(withReturn[0].balance, 10_000 * 1.01 - 3_040);
+    assert.equal(withReturn.length, 4);
+    assert.equal(withReturn.at(-1)?.balance, 0);
   });
 
   it("gives the same matches for the same inputs", () => {

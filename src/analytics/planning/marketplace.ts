@@ -10,7 +10,12 @@ import { REFERENCE_DISCLAIMER } from "../core/methodology.ts";
      half of the recharge; the rest is carried to the next recharge.
      Lifeline (R1) customers are exempt.
    - Months to repay a meter = its installed cost ÷ (the charge a day
-     × days in a month).
+     × days in a month); with a funder's return, the months for the
+     charge a month to repay the cost as a loan at that rate.
+   - Bands C to E (0.2.0): the customer's charge is a share of the
+     band's typical bill; over a fixed repayment period it repays part
+     of the meter, and a blended top-up (DFI or public money) covers
+     the rest.
    - Matching: pledges in order of the return they ask, lowest first
      (then the pledge with fewer DisCos first, then by id). A pledge
      funds a band only when its kind allows it (private money Bands A
@@ -33,7 +38,7 @@ export interface MarketplaceParameters {
 
 export const MARKETPLACE_REFERENCE: Methodology<MarketplaceParameters> = {
   id: "gridintel.planning.marketplace",
-  version: "0.1.0",
+  version: "0.2.0",
   name: "GridIntel reference matching of metering pledges to approved applications",
   description: "Daily meter charge by band taken at each recharge (at most half of it) into escrow; pledges matched to approved meter applications by funder kind, band, DisCo and tenor.",
   authority: "gridintel_reference",
@@ -61,19 +66,36 @@ export function monthsToRepay(meterCost: number, chargePerDay: number | null, me
   return chargePerDay === null || chargePerDay <= 0 ? null : meterCost / (chargePerDay * methodology.parameters.daysPerMonth);
 }
 
+/** Months for a monthly charge to repay a meter's cost as a loan at a yearly rate (monthly compounding); null when the charge never repays it. */
+export function monthsToRepayWithReturn(meterCost: number, chargePerDay: number | null, ratePerYear: number, methodology = MARKETPLACE_REFERENCE): number | null {
+  if (ratePerYear <= 0) return monthsToRepay(meterCost, chargePerDay, methodology);
+  if (chargePerDay === null || chargePerDay <= 0) return null;
+  const perMonth = chargePerDay * methodology.parameters.daysPerMonth;
+  const rate = ratePerYear / 12;
+  const owedShare = (meterCost * rate) / perMonth;
+  return owedShare >= 1 ? null : -Math.log(1 - owedShare) / Math.log(1 + rate);
+}
+
+/** A band whose charge repays only part of the meter: what the customer repays over the period, and the top-up that covers the rest. */
+export function blendedShare(meterCost: number, chargePerDay: number, repaymentMonths: number, methodology = MARKETPLACE_REFERENCE): { customerRepays: number; topUp: number } {
+  const customerRepays = Math.min(meterCost, chargePerDay * methodology.parameters.daysPerMonth * repaymentMonths);
+  return { customerRepays, topUp: meterCost - customerRepays };
+}
+
 /** At a recharge: what goes into escrow (what is owed, at most half the recharge) and what is carried to the next one. */
 export function takeAtRecharge(owed: number, recharge: number, methodology = MARKETPLACE_REFERENCE): { toEscrow: number; carried: number } {
   const toEscrow = Math.max(0, Math.min(owed, recharge * methodology.parameters.maxShareOfRecharge));
   return { toEscrow, carried: owed - toEscrow };
 }
 
-/** Month by month: the charge a month into escrow until the meter's cost is repaid; the last month pays only what is left. */
-export function repaymentSchedule(meterCost: number, chargePerDay: number, methodology = MARKETPLACE_REFERENCE): { month: number; paid: number; balance: number }[] {
+/** Month by month: the charge a month into escrow until the meter's cost, with the funder's return on the balance, is repaid; the last month pays only what is left. */
+export function repaymentSchedule(meterCost: number, chargePerDay: number, ratePerYear = 0, methodology = MARKETPLACE_REFERENCE): { month: number; paid: number; balance: number }[] {
   const perMonth = chargePerDay * methodology.parameters.daysPerMonth;
-  if (perMonth <= 0 || meterCost <= 0) return [];
+  if (perMonth <= 0 || meterCost <= 0 || meterCost * (ratePerYear / 12) >= perMonth) return [];
   const rows: { month: number; paid: number; balance: number }[] = [];
   let balance = meterCost;
   for (let month = 1; balance > 1e-6; month++) {
+    balance *= 1 + ratePerYear / 12;
     const paid = Math.min(perMonth, balance);
     balance -= paid;
     rows.push({ month, paid, balance: balance < 1e-6 ? 0 : balance });
@@ -87,6 +109,8 @@ export interface BandTerms {
   meterCost: number;
   /** Naira a day; null when exempt. */
   chargePerDay: number | null;
+  /** Set for a band repaid partly by the customer and partly by a top-up: the months the customer's charge runs. */
+  blendedMonths?: number;
 }
 
 export interface PledgeInput {
@@ -124,10 +148,12 @@ export interface MatchResult {
 /** Whether a pledge may fund a band: kind, the pledge's own bands, and months to repay within its tenor. */
 export function canFund(pledge: PledgeInput, terms: BandTerms, methodology = MARKETPLACE_REFERENCE): boolean {
   if (!allowedBands(pledge.kind).includes(terms.band) || !pledge.bands.includes(terms.band)) return false;
-  const months = monthsToRepay(terms.meterCost, terms.chargePerDay, methodology);
   // An exempt band is never repaid, so only a grant (no tenor) can fund it.
-  if (months === null) return pledge.tenorMonths === null;
-  return pledge.tenorMonths === null || months <= pledge.tenorMonths;
+  if (terms.chargePerDay === null) return pledge.tenorMonths === null;
+  if (pledge.tenorMonths === null) return true;
+  // A blended band runs for its fixed period; otherwise the months for the charge to repay the meter at the pledge's return.
+  const months = terms.blendedMonths ?? monthsToRepayWithReturn(terms.meterCost, terms.chargePerDay, pledge.returnPercent / 100, methodology);
+  return months !== null && months <= pledge.tenorMonths;
 }
 
 /** Matches pledges to approved applications. Deterministic: the same inputs give the same matches. */

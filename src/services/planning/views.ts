@@ -351,7 +351,7 @@ export interface MarketplaceView {
     queued: string;
     hasQueued: boolean;
   }[];
-  bands: { band: string; meter: string; meterCost: string; perDay: string; perMonth: string; minRecharge: string; monthsToRepay: string; fundedBy: string }[];
+  bands: { band: string; meter: string; meterCost: string; typicalBill: string; perDay: string; perMonth: string; shareOfBill: string; minRecharge: string; monthsToRepay: string; customerRepays: string; topUp: string; fundedBy: string }[];
   bandsHow: string;
   demandBands: string[];
   demand: { disco: string; name: string; approved: string[]; matched: string; waiting: string }[];

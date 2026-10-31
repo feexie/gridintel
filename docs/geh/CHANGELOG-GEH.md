@@ -43,3 +43,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Sat 13:48 | `1f0a308` | Key figures regenerated, all unchanged (docs only) |
 | Sat 14:48 | `08a123d` | Disclosure and About this build note that main also includes Phase 8A (87e63a8, before the sprint) and the public site runs without login (docs only) |
 | Sat 20:40 | `e47955e` | Metering Marketplace (Marketplace · Match): five synthetic pledges matched to synthetic approved meter applications by DisCo and band; daily meter charge by band, at most half of each recharge, into escrow; unplaced money queued for the next allocation; scene j filmed. No existing method or figure changed |
+| Sat 23:27 | `fd7abcc` | One meter's journey: one synthetic household in Ibadan, Band A single-phase, from application to the funder repaid, six steps each naming who acts and linking to its screen; scene k filmed |

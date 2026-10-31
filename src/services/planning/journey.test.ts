@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createSyntheticMarketplace } from "../../repositories/demo/marketplace.ts";
+import { nercPublishedFigures } from "../../repositories/published/nerc.ts";
 import { journeyView } from "./journey.ts";
 
 describe("one meter's journey", () => {
   it("follows one household in Ibadan, Band A single-phase, through six steps, each naming who acts and linking to a screen", async () => {
-    const view = await journeyView(createSyntheticMarketplace());
+    const view = await journeyView(createSyntheticMarketplace(), nercPublishedFigures());
     assert.deepEqual(
       view.steps.map((step) => step.title),
       ["Applied", "Approved", "Priced", "Funded", "Installed", "Repaying"],
@@ -20,10 +21,11 @@ describe("one meter's journey", () => {
   });
 
   it("is funded by the Marketplace's match, and repays the meter with the balance falling to nothing", async () => {
-    const view = await journeyView(createSyntheticMarketplace());
+    const view = await journeyView(createSyntheticMarketplace(), nercPublishedFigures());
     assert.deepEqual(view.steps[3].who, ["Second private fund", "GridIntel"]);
-    assert.equal(view.schedule.length, 15);
+    // ₦200 a day repays ₦91,033 in 15 months at cost; with the second private fund's 24% a year, in 18.
+    assert.equal(view.schedule.length, 18);
     assert.equal(view.schedule.at(-1)?.repaid, true);
-    assert.match(view.headline, /^On GridIntel one household in Ibadan applied, Ibadan DisCo approved it, .+ repays the funder in 15 months\.$/);
+    assert.match(view.headline, /^On GridIntel one household in Ibadan applied, Ibadan DisCo approved it, .+ repays the funder in 18 months\.$/);
   });
 });

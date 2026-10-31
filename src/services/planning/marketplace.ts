@@ -1,8 +1,11 @@
 import type { DiscoId, FunderKind, MarketplaceBand, MeterPledge } from "@/domain";
 import type { MarketplaceRepository } from "../../repositories/ports/marketplace.ts";
-import { BAND_ORDER, MARKETPLACE_REFERENCE, matchPledges, monthsToRepay, type BandTerms, type MatchResult } from "../../analytics/planning/marketplace.ts";
+import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
+import { METERING_FUND_REFERENCE } from "../../analytics/planning/meteringFund.ts";
+import { BAND_ORDER, blendedShare, MARKETPLACE_REFERENCE, matchPledges, monthsToRepay, monthsToRepayWithReturn, type BandTerms, type MatchResult } from "../../analytics/planning/marketplace.ts";
 import { startingCostPerMeter } from "./allocation.ts";
-import { DISCO_NAMES, formatCount, formatNaira } from "./metering.ts";
+import { readAssumptions } from "./assumptions.ts";
+import { DISCO_NAMES, formatCount, formatNaira, typicalBandBills } from "./metering.ts";
 import type { MarketplaceView, ShownFigure } from "./views.ts";
 
 /* ==========================================================
@@ -20,8 +23,16 @@ export const MARKETPLACE_PATH = "/dashboard/planning/metering/marketplace";
 /** Three-phase meter hardware, in dollars: an assumption (single-phase is the Metering Fund's $45). */
 export const THREE_PHASE_HARDWARE_USD = 110;
 
-/** The daily meter charge by band, in naira; null for Lifeline, which is exempt. Assumptions. */
-export const DAILY_CHARGE: Record<MarketplaceBand, number | null> = { A1: 200, A3: 250, B: 150, C: 100, D: 75, E: 50, lifeline: null };
+/** The daily meter charge of Bands A and B, in naira: assumptions. Bands C to E pay a share of their typical bill (the Metering Fund's cap); Lifeline is exempt. */
+export const DAILY_CHARGE: Partial<Record<MarketplaceBand, number>> = { A1: 200, A3: 250, B: 150 };
+
+/** Bands whose charge is a share of the bill, with a blended top-up for the rest of the meter. */
+const BLENDED: MarketplaceBand[] = ["C", "D", "E"];
+
+/** The tariff band a marketplace band bills in. */
+const BILL_BAND: Record<MarketplaceBand, string | null> = { A1: "A", A3: "A", B: "B", C: "C", D: "D", E: "E", lifeline: null };
+
+const perDayText = (value: number) => (value < 100 ? `₦${value.toFixed(2)}` : formatNaira(value));
 
 export const BAND_LABEL: Record<MarketplaceBand, string> = { A1: "A, single-phase", A3: "A, three-phase", B: "B", C: "C", D: "D", E: "E", lifeline: "Lifeline (R1)" };
 
@@ -42,8 +53,6 @@ const FUNDED_BY: Record<MarketplaceBand, string> = {
 
 const DISCOS = Object.keys(DISCO_NAMES) as DiscoId[];
 
-const months = (value: number | null) => (value === null ? "Not repaid: exempt" : `${value.toFixed(1)} months`);
-
 function bandList(bands: readonly MarketplaceBand[]): string {
   return SHOWN_ORDER.filter((band) => bands.includes(band))
     .map((band) => BAND_LABEL[band])
@@ -58,17 +67,31 @@ function discoList(discos: readonly DiscoId[]): string {
         .join(", ");
 }
 
-/** The band terms: the installed cost of the meter each band needs and its daily charge. */
-export function marketplaceTerms(): BandTerms[] {
+/** The share of a typical bill Bands C to E pay: the Metering Fund's charge cap. */
+export const capShare = () => readAssumptions({}).values.cap / 100;
+
+/** The months a blended band's charge runs: the Metering Fund's repayment period. */
+export const BLENDED_MONTHS = METERING_FUND_REFERENCE.parameters.repaymentMonths;
+
+/** The band terms: the installed cost of the meter each band needs and its daily charge (Bands C to E: the cap's share of the band's typical bill). */
+export function marketplaceTerms(bills: Record<string, number | null>): BandTerms[] {
   const singlePhase = startingCostPerMeter();
   const threePhase = startingCostPerMeter(THREE_PHASE_HARDWARE_USD);
-  return SHOWN_ORDER.map((band) => ({ band, meterCost: band === "A3" ? threePhase : singlePhase, chargePerDay: DAILY_CHARGE[band] }));
+  const daysPerMonth = MARKETPLACE_REFERENCE.parameters.daysPerMonth;
+  return SHOWN_ORDER.map((band) => {
+    const meterCost = band === "A3" ? threePhase : singlePhase;
+    if (BLENDED.includes(band)) {
+      const bill = bills[BILL_BAND[band]!];
+      return { band, meterCost, chargePerDay: bill === null || bill === undefined ? null : (capShare() * bill) / daysPerMonth, blendedMonths: BLENDED_MONTHS };
+    }
+    return { band, meterCost, chargePerDay: DAILY_CHARGE[band] ?? null };
+  });
 }
 
 /** The pledges, the applications and their match: the marketplace as it stands. */
-export async function marketplaceMatch(repository: MarketplaceRepository): Promise<{ pledges: readonly MeterPledge[]; amountOf: (pledge: MeterPledge) => number; terms: BandTerms[]; result: MatchResult }> {
-  const [pledges, applications] = await Promise.all([repository.pledges(), repository.applications()]);
-  const terms = marketplaceTerms();
+export async function marketplaceMatch(repository: MarketplaceRepository, published: PublishedFiguresRepository): Promise<{ pledges: readonly MeterPledge[]; amountOf: (pledge: MeterPledge) => number; terms: BandTerms[]; bills: Record<string, number | null>; result: MatchResult }> {
+  const [pledges, applications, bills] = await Promise.all([repository.pledges(), repository.applications(), typicalBandBills(published)]);
+  const terms = marketplaceTerms(bills);
   const singlePhase = terms.find((one) => one.band === "A1")!.meterCost;
   /* A pledge of meters is valued at the single-phase installed cost: the meters it funds (Bands C to E, Lifeline) are single-phase. */
   const amountOf = (pledge: MeterPledge) => pledge.amountNaira ?? (pledge.meters ?? 0) * singlePhase;
@@ -78,11 +101,11 @@ export async function marketplaceMatch(repository: MarketplaceRepository): Promi
     terms,
     DISCOS,
   );
-  return { pledges, amountOf, terms, result };
+  return { pledges, amountOf, terms, bills, result };
 }
 
-export async function marketplaceView(repository: MarketplaceRepository): Promise<MarketplaceView> {
-  const [{ pledges, amountOf, terms, result }, applications, sources] = await Promise.all([marketplaceMatch(repository), repository.applications(), repository.sources()]);
+export async function marketplaceView(repository: MarketplaceRepository, published: PublishedFiguresRepository): Promise<MarketplaceView> {
+  const [{ pledges, amountOf, terms, bills, result }, applications, sources] = await Promise.all([marketplaceMatch(repository, published), repository.applications(), repository.sources()]);
   const termsOf = (band: MarketplaceBand) => terms.find((one) => one.band === band)!;
   const singlePhase = termsOf("A1").meterCost;
   const daysPerMonth = MARKETPLACE_REFERENCE.parameters.daysPerMonth;
@@ -117,14 +140,33 @@ export async function marketplaceView(repository: MarketplaceRepository): Promis
   const bands: MarketplaceView["bands"] = SHOWN_ORDER.map((band) => {
     const one = termsOf(band);
     const perMonth = one.chargePerDay === null ? null : one.chargePerDay * daysPerMonth;
+    const bill = BILL_BAND[band] === null ? null : (bills[BILL_BAND[band]!] ?? null);
+    const blended = one.blendedMonths !== undefined && one.chargePerDay !== null ? blendedShare(one.meterCost, one.chargePerDay, one.blendedMonths) : null;
+    /* Bands A and B: months at cost, then at each private pledge's return. */
+    const atReturns = pledges
+      .filter((pledge) => pledge.kind === "private" && pledge.bands.includes(band))
+      .map((pledge) => {
+        const value = monthsToRepayWithReturn(one.meterCost, one.chargePerDay, pledge.returnPercent / 100);
+        return `${value === null ? "never" : value.toFixed(1)} at ${pledge.returnPercent}% (${pledge.funder}${value !== null && pledge.tenorMonths !== null && value > pledge.tenorMonths ? `: over its ${pledge.tenorMonths}-month tenor` : ""})`;
+      });
+    const monthsText =
+      one.chargePerDay === null
+        ? "Not repaid: exempt"
+        : blended !== null
+          ? `${one.blendedMonths} months: customer repays ${((blended.customerRepays / one.meterCost) * 100).toFixed(1)}% of the meter`
+          : [`${monthsToRepay(one.meterCost, one.chargePerDay)!.toFixed(1)} at cost`, ...atReturns].join("; ");
     return {
       band: BAND_LABEL[band],
       meter: band === "A3" ? `Three-phase ($${THREE_PHASE_HARDWARE_USD})` : "Single-phase ($45)",
       meterCost: formatNaira(one.meterCost),
-      perDay: one.chargePerDay === null ? "Exempt" : formatNaira(one.chargePerDay),
+      typicalBill: bill === null ? "Not billed: Lifeline" : formatNaira(bill),
+      perDay: one.chargePerDay === null ? "Exempt" : perDayText(one.chargePerDay),
       perMonth: perMonth === null ? "Exempt" : formatNaira(perMonth),
+      shareOfBill: perMonth === null || bill === null || bill <= 0 ? "Exempt" : `${((perMonth / bill) * 100).toFixed(1)}%`,
       minRecharge: perMonth === null ? "Exempt" : formatNaira(perMonth / halfCap),
-      monthsToRepay: months(monthsToRepay(one.meterCost, one.chargePerDay)),
+      monthsToRepay: monthsText,
+      customerRepays: blended === null ? (one.chargePerDay === null ? "Nothing: exempt" : "All of the meter") : formatNaira(blended.customerRepays),
+      topUp: blended === null ? (one.chargePerDay === null ? `${formatNaira(one.meterCost)} (public grant)` : "None") : formatNaira(blended.topUp),
       fundedBy: FUNDED_BY[band],
     };
   });
@@ -164,20 +206,21 @@ export async function marketplaceView(repository: MarketplaceRepository): Promis
   return {
     headline,
     headlineHow:
-      "How this is calculated: pledges are taken cheapest money first (lowest return). Each is matched to approved applications in its own DisCos and bands, poorest band first: private money to Bands A and B, DFI and public money to Bands C to E, public grants alone to Lifeline, and only where the months to repay fit the pledge's tenor. A meter is matched when the pledge has its full installed cost left; what a pledge cannot place is queued for the next allocation.",
+      "How this is calculated: pledges are taken cheapest money first (lowest return). Each is matched to approved applications in its own DisCos and bands, poorest band first: private money to Bands A and B, DFI and public money to Bands C to E, public grants alone to Lifeline, and only where the months to repay, at the pledge's own return, fit its tenor. A meter is matched when the pledge has its full installed cost left; what a pledge cannot place is queued for the next allocation.",
     platformLine:
       "Households, DisCos, programme managers (PMI, DISREP), the World Bank and DFIs, private investors, meter makers and NERC in one place. Money for metering exists; private money holds back because no model reliably pays it back. Here each pledge is matched to approved meters that repay it.",
     totals,
     funders,
     bands,
-    bandsHow: `How this is calculated: a daily meter charge is owed every day and taken at each recharge, never more than ${halfCap * 100}% of the recharge, into escrow; anything above that carries to the next recharge. A month = the charge a day × ${daysPerMonth} days. Smallest recharge a month for the full charge = the charge a month ÷ ${halfCap}. Months to repay = installed meter cost ÷ the charge a month. Installed cost = hardware × ₦1,334/$ + 10% duty + ₦25,000 installation (the Metering Fund's defaults).`,
+    bandsHow: `How this is calculated: a daily meter charge is owed every day and taken at each recharge, never more than ${halfCap * 100}% of the recharge, into escrow; anything above that carries to the next recharge. A month = the charge a day × ${daysPerMonth} days. Typical bill = the band's tariff × its consumption, the Metering Fund's bills (NERC's September 2026 orders). Bands A and B: fixed charges; months to repay = the months for the charge a month to repay the installed cost, at cost and as a loan at each private pledge's return. Bands C to E: the charge = ${capShare() * 100}% of the typical bill (the Metering Fund's cap) for ${BLENDED_MONTHS} months; what that leaves of the meter's cost is the blended top-up, DFI or public money. Smallest recharge a month for the full charge = the charge a month ÷ ${halfCap}. Installed cost = hardware × ₦1,334/$ + 10% duty + ₦25,000 installation (the Metering Fund's defaults).`,
     demandBands: SHOWN_ORDER.map((band) => BAND_LABEL[band]),
     demand,
     demandHow: "Approved meter applications by DisCo and band (synthetic). Matched = approved applications a pledge funds; waiting = approved, with no funder yet.",
     matching,
     matchingHow: "Each row: one funder's meters in one band, the DisCos they go to, and the money placed (meters × installed cost).",
     assumptions: [
-      { label: "Daily meter charge", value: "A single-phase ₦200, A three-phase ₦250, B ₦150, C ₦100, D ₦75, E ₦50; Lifeline exempt", basis: "Assumption (Founder, 31 October 2026, for A and B; C to E lower, with blended money; C to E values set by GridIntel)." },
+      { label: "Daily meter charge, Bands A and B", value: "A single-phase ₦200, A three-phase ₦250, B ₦150", basis: "Assumption (Founder, 31 October 2026)." },
+      { label: "Charge, Bands C to E", value: `${capShare() * 100}% of the band's typical bill, for ${BLENDED_MONTHS} months; Lifeline exempt`, basis: "The Metering Fund's charge cap and repayment period; the rest of the meter is a blended top-up (DFI or public money)." },
       { label: "Three-phase meter hardware", value: `$${THREE_PHASE_HARDWARE_USD}`, basis: "Assumption. Single-phase is the Metering Fund's $45." },
       { label: "Most of a recharge taken for the meter", value: `${halfCap * 100}%`, basis: "Assumption (Founder, 31 October 2026)." },
       { label: "Pledges and approved applications", value: "Synthetic", basis: "Designed records. No pledge or application is real." },
