@@ -9,6 +9,7 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 - Mini-grid Intelligence on a synthetic operator: sites, sales, supply and reports.
 - Platform: layered architecture with provenance on every value, 734 unit tests, a public demo build and a tenant build.
 - Planning: placeholder pages only, with no figures.
+- Main also includes 87e63a8 (Phase 8A: login, organisations, tenant deployment), committed before the sprint; the public site runs in demo mode without login.
 
 ## Built during the sprint
 
