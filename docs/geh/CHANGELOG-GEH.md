@@ -32,3 +32,4 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Sat 01:57 | `3b8dc4f` | M4: DT sequencing (synthetic network, revenue per naira, revolving effect), Monitoring (plan against synthetic actuals, tranches against verified installs), About this build; tabs on |
 | Sat 01:59 | `7c4d2d7` | Key figures: 93 figures generated from the services with wording, value, origin and source (docs and script) |
 | Sat 01:59 | `a833e13` | Disclosure finished as paste-ready portal text (docs only) |
+| Sat 07:21 | `ac58192` | `npm run geh:figures` added; key figures regenerated, all 93 unchanged |
