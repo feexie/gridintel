@@ -30,3 +30,5 @@ Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
 | Fri 22:47 | `0d3f131` | M3 DisCo allocation screen: largest gap headline, 11 DisCos with need and risk scores, first million against pro-rata, pilot card, screen tabs |
 | Sat 01:47 | `dd112e9` | Brief 15's two impact measures as headlines on the Metering Fund: customers metered by year 5, estimated bills removed a year at full rollout, row by year 1-5 |
 | Sat 01:57 | `3b8dc4f` | M4: DT sequencing (synthetic network, revenue per naira, revolving effect), Monitoring (plan against synthetic actuals, tranches against verified installs), About this build; tabs on |
+| Sat 01:59 | `7c4d2d7` | Key figures: 93 figures generated from the services with wording, value, origin and source (docs and script) |
+| Sat 01:59 | `a833e13` | Disclosure finished as paste-ready portal text (docs only) |
