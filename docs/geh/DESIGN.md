@@ -31,6 +31,16 @@ money needed to hold the charge at the cap (about N408.6bn for Nigeria) is
 less than the N700bn already raised for PMI [S1]. No single payer closes the
 gap; the right split does.
 
+## 0a. The platform: a meeting place for metering (Founder, 31 October 2026)
+
+GridIntel is a platform as a service for metering, a meeting place in the way
+LinkedIn is for work: households, DisCos, programme managers (PMI, DISREP),
+the World Bank and DFIs, private investors, meter makers (OEMs) and NERC meet
+in one place. Money for metering exists; private money holds back because no
+model reliably pays it back. The Marketplace (section 6c) shows the match: each
+pledge goes to approved meters whose daily charge repays it within the
+funder's tenor.
+
 ## 1. The concept: pay-as-you-meter, funded by the meters themselves
 
 1. **No upfront payment.** A Metering Fund buys and installs the meters. It
@@ -84,6 +94,7 @@ The Metering planner's screens (revised after M2, Founder, 30 October 2026):
 | Metering Fund (fund alone, and the GridIntel structure) | Fund | M2, M2 additions | Can every customer be metered in five years with no upfront payment; what does the customer pay; who tops up; does it survive shocks; are investors protected? |
 | DisCo allocation | Plan | M3 | Where should public meters and private capital go first, DisCo by DisCo, on NERC's figures? |
 | DT sequencing | Plan | M4 | Inside one DisCo, which DTs first, so early meters fund later ones? (synthetic network) |
+| Marketplace · Match | Fund | After M4 | Which funder pays for which approved meters, and what money waits for the next allocation? (synthetic, labelled) |
 | Monitoring | Monitor | M4 | Is the money working: plan against actual, quarter by quarter? (synthetic, labelled) |
 | About this build | | M4 | What existed at `geh-baseline` and what was built in the sprint |
 
@@ -333,6 +344,41 @@ meter; what the plan expected beyond them is held. Planned supply 12 hours a
 day (assumption, Band C level); planned consumption 100 kWh a month (the
 fund's Band C assumption); planned escrow = planned meters × 1.5 months ×
 5% of a Band C bill on the DisCo's tariff.
+
+## 6c. Metering Marketplace (synthetic, labelled)
+
+`/dashboard/planning/metering/marketplace`, tab "Marketplace · Match" (Fund
+step), presentation mode supported. Every pledge and application is
+synthetic and labelled so; no existing method or figure changes.
+
+- **Funders:** five designed pledges, each with amount, bands, DisCos,
+  return and tenor: a Mission 300-style programme (1,000 meters, grant), a
+  private capital fund (N150m, Bands A and B, Abuja, Eko, Ikeja, 22%, 36
+  months), a DFI with cheaper, longer money (N400m, Bands C to E, 8% in
+  dollars, 84 months), a DISREP-style programme (N120m, C to E and Lifeline,
+  the four northern DisCos, grant), a second private fund (N80m, Band A,
+  Enugu, Ibadan and Port Harcourt, 24%, 24 months).
+- **Demand:** approved meter applications by DisCo and band (A single-phase,
+  A three-phase, B to E, Lifeline), designed records.
+- **Daily meter charge by band** (assumptions): A single-phase N200, A
+  three-phase N250, B N150, C N100, D N75, E N50; Lifeline exempt. Taken at
+  each recharge, never more than half of the recharge, into escrow; the rest
+  carries to the next recharge. Months to repay = installed meter cost ÷
+  (charge a day × 30.4). Installed cost from the Metering Fund's defaults
+  ($45 single-phase; three-phase hardware $110, assumption).
+- **Matching** (method `gridintel.planning.marketplace` 0.1.0, unit-tested):
+  pledges cheapest money first (lowest return; then fewer DisCos; then id).
+  A pledge funds a band only if its kind allows it (private money Bands A
+  and B; DFI money C to E; public money C to E and Lifeline), it lists the
+  band and the DisCo, and the band's months to repay fit within its tenor
+  (a grant has none; only a grant funds Lifeline). Applications are taken
+  poorest band first, then by DisCo. A meter is matched when the pledge has
+  its full installed cost left. What a pledge cannot place is "Queued for
+  the next allocation"; applications with no funder are "Waiting for a
+  funder".
+- Headline: "[x] funders have pledged N[y]; [z] approved meters are matched;
+  N[w] is queued for the next allocation.", with a "How this is calculated"
+  line.
 
 ## 6a. About this build (M4)
 

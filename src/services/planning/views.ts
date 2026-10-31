@@ -328,3 +328,37 @@ export interface AboutBuildView {
   unread: number;
   how: string;
 }
+
+/** The Metering Marketplace: funders' pledges matched to approved meter applications. Every record is synthetic. */
+export interface MarketplaceView {
+  headline: string;
+  headlineHow: string;
+  /** The platform the marketplace sits in, in one line. */
+  platformLine: string;
+  totals: ShownFigure[];
+  funders: {
+    id: string;
+    funder: string;
+    kind: string;
+    pledged: string;
+    bands: string;
+    discos: string;
+    returnAsked: string;
+    tenor: string;
+    matchedMeters: string;
+    placed: string;
+    /** "Queued for the next allocation: ₦…", or "Nothing queued". */
+    queued: string;
+    hasQueued: boolean;
+  }[];
+  bands: { band: string; meter: string; meterCost: string; perDay: string; perMonth: string; minRecharge: string; monthsToRepay: string; fundedBy: string }[];
+  bandsHow: string;
+  demandBands: string[];
+  demand: { disco: string; name: string; approved: string[]; matched: string; waiting: string }[];
+  demandHow: string;
+  matching: { funder: string; band: string; discos: string; meters: string; money: string }[];
+  matchingHow: string;
+  assumptions: { label: string; value: string; basis: string }[];
+  methodology: { id: string; version: string; disclaimer: string };
+  sourcing: { synthetic: boolean; sources: { id: string; name: string; kind: string }[] };
+}
