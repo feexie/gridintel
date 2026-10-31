@@ -47,7 +47,7 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
   const big = present ? "text-7xl sm:text-8xl" : "text-5xl sm:text-6xl";
   const presentHref = `?${new URLSearchParams({ ...query, present: present ? "0" : "1" })}`;
   return (
-    <div className={`space-y-4 ${present ? "mx-auto max-w-6xl" : ""}`} data-metering-fund data-case={view.caseId}>
+    <div className={`space-y-4 ${present ? "mx-auto max-w-7xl" : ""}`} data-metering-fund data-case={view.caseId}>
       {present ? null : <MeteringTabs current="fund" />}
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-3" data-positioning>
         <span className="font-semibold uppercase tracking-eyebrow text-brand">Plan → Fund → Monitor</span>
@@ -319,16 +319,16 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
               {view.years.map((year) => (
                 <tr key={year.year} className="border-b border-line/60 text-ink-2">
                   <td className="py-1.5 pr-3 font-semibold text-ink">{year.year}</td>
-                  <td className="py-1.5 pr-3">{year.meteredShare}</td>
-                  <td className="py-1.5 pr-3">{year.fundMeters}</td>
-                  <td className="py-1.5 pr-3">{year.publicMeters}</td>
-                  <td className="py-1.5 pr-3">{year.capex}</td>
-                  <td className="py-1.5 pr-3">{year.capitalDrawn}</td>
-                  <td className="py-1.5 pr-3">{year.recoveries}</td>
-                  <td className="py-1.5 pr-3">{year.netCash}</td>
-                  <td className="py-1.5 pr-3">{year.owed}</td>
-                  <td className="py-1.5 pr-3">{year.estimatedBills}</td>
-                  <td className="py-1.5 pr-3">{year.estimatedBillsRemoved}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.meteredShare}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.fundMeters}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.publicMeters}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.capex}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.capitalDrawn}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.recoveries}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.netCash}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.owed}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.estimatedBills}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-3">{year.estimatedBillsRemoved}</td>
                 </tr>
               ))}
             </tbody>
@@ -337,26 +337,28 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
         <How>{view.yearsNote}</How>
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Who pays">
-          <p className="text-sm leading-snug text-ink-2" data-fairness-rule>
-            {view.fairnessRule}
-          </p>
-          <p className="text-sm leading-snug text-ink-2" data-pmi-rule>
-            {view.pmiRule}
-          </p>
-          <p className="text-sm leading-snug text-ink-2" data-mini-grids>
-            {view.miniGrids}
-          </p>
-        </Panel>
-        <Panel title="Where this model comes from">
-          <p className="text-sm leading-snug text-ink-2" data-model-origin>
-            {view.modelOrigin}
-          </p>
-          <p className="text-caption text-ink-4">
-            A transparent, deterministic method: {view.methodology.id} {view.methodology.version}. {view.methodology.disclaimer}
-          </p>
-        </Panel>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
+          <Panel title="Who pays">
+            <p className="text-sm leading-snug text-ink-2" data-fairness-rule>
+              {view.fairnessRule}
+            </p>
+            <p className="text-sm leading-snug text-ink-2" data-pmi-rule>
+              {view.pmiRule}
+            </p>
+            <p className="text-sm leading-snug text-ink-2" data-mini-grids>
+              {view.miniGrids}
+            </p>
+          </Panel>
+          <Panel title="Where this model comes from">
+            <p className="text-sm leading-snug text-ink-2" data-model-origin>
+              {view.modelOrigin}
+            </p>
+            <p className="text-caption text-ink-4">
+              A transparent, deterministic method: {view.methodology.id} {view.methodology.version}. {view.methodology.disclaimer}
+            </p>
+          </Panel>
+        </div>
         <Panel title="Starting point">
           <Figures figures={view.startingPoint} />
         </Panel>
@@ -463,7 +465,7 @@ function InvestorColumn({ investor }: { investor: InvestorView }) {
 function Structure({ structure }: { structure: StructureView }) {
   return (
     <section className="space-y-4" data-structure>
-      <div className="grid gap-4 lg:grid-cols-2" data-headline-pair>
+      <div className="grid items-start gap-4 lg:grid-cols-2" data-headline-pair>
         <div className="rounded-panel border border-alert-line/60 bg-alert-surface px-4 py-4">
           <p className="text-micro font-semibold uppercase tracking-eyebrow text-alert">The customer alone</p>
           <p className="mt-1 text-xl font-semibold text-alert-ink" data-fund-alone>
@@ -479,41 +481,43 @@ function Structure({ structure }: { structure: StructureView }) {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid items-start gap-4 xl:grid-cols-2">
         <Panel title="GridIntel structure" aside="Each part an assumption you can change below">
           <Figures figures={structure.figures} />
           <How>{structure.how}</How>
         </Panel>
-        <Panel title="Investors, base case and all three shocks" aside="Modelled">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <InvestorColumn investor={structure.investor.base} />
-            <InvestorColumn investor={structure.investor.stressed} />
-          </div>
-          <ul className="space-y-1 text-caption text-ink-3" data-structure-shocks>
-            {structure.shocks.map((shock) => (
-              <li key={shock.key}>
-                <span className={`font-semibold ${shock.survives ? "text-ok" : "text-alert"}`}>{shock.label}:</span> {shock.outcome}
-              </li>
-            ))}
-          </ul>
-          <p className="text-sm font-semibold text-ink" data-inflation-line>
-            {structure.inflationLine}
-          </p>
-        </Panel>
-        <Panel title="Customer receipt" aside="Illustrative">
-          <div className="mx-auto max-w-xs rounded-tile border border-dashed border-line-bold bg-app px-4 py-3 font-mono text-sm text-ink-2" data-receipt>
-            <p className="text-center text-caption uppercase tracking-wide text-ink-4">Token purchase · {structure.receipt.band}</p>
-            <p className="mt-2 flex justify-between">
-              <span>Meter charge paid:</span>
-              <span className="font-semibold text-ink">{structure.receipt.charge}</span>
+        <div className="space-y-4">
+          <Panel title="Investors, base case and all three shocks" aside="Modelled">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InvestorColumn investor={structure.investor.base} />
+              <InvestorColumn investor={structure.investor.stressed} />
+            </div>
+            <ul className="space-y-1 text-caption text-ink-3" data-structure-shocks>
+              {structure.shocks.map((shock) => (
+                <li key={shock.key}>
+                  <span className={`font-semibold ${shock.survives ? "text-ok" : "text-alert"}`}>{shock.label}:</span> {shock.outcome}
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm font-semibold text-ink" data-inflation-line>
+              {structure.inflationLine}
             </p>
-            <p className="flex justify-between">
-              <span>Months left:</span>
-              <span className="font-semibold text-ink">{structure.receipt.monthsLeft}</span>
-            </p>
-          </div>
-          <p className="text-caption leading-snug text-ink-4">{structure.receipt.note}</p>
-        </Panel>
+          </Panel>
+          <Panel title="Customer receipt" aside="Illustrative">
+            <div className="mx-auto max-w-xs rounded-tile border border-dashed border-line-bold bg-app px-4 py-3 font-mono text-sm text-ink-2" data-receipt>
+              <p className="text-center text-caption uppercase tracking-wide text-ink-4">Token purchase · {structure.receipt.band}</p>
+              <p className="mt-2 flex justify-between">
+                <span>Meter charge paid:</span>
+                <span className="font-semibold text-ink">{structure.receipt.charge}</span>
+              </p>
+              <p className="flex justify-between">
+                <span>Months left:</span>
+                <span className="font-semibold text-ink">{structure.receipt.monthsLeft}</span>
+              </p>
+            </div>
+            <p className="text-caption leading-snug text-ink-4">{structure.receipt.note}</p>
+          </Panel>
+        </div>
       </div>
 
       <Panel title="How investors are protected">

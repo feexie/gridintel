@@ -123,6 +123,9 @@ export function StackedBars({ title, unit, years, series, id }: { title: string;
 }
 
 /** Investors' cumulative cash over the months, with the peak, break-even and payback marked. */
+/** A halo in the panel's colour behind a chart label, so a line or the curve never runs through it. */
+const HALO = { stroke: "var(--color-panel)", strokeWidth: 4, paintOrder: "stroke" as const, strokeLinejoin: "round" as const };
+
 export function CashFlowChart({ title, values, peakMonth, breakEvenMonth, paybackMonth }: { title: string; values: number[]; peakMonth: number; breakEvenMonth: number | null; paybackMonth: number | null }) {
   const months = values.length - 1;
   const yTicks = ticks(Math.min(...values), Math.max(...values));
@@ -132,11 +135,14 @@ export function CashFlowChart({ title, values, peakMonth, breakEvenMonth, paybac
   const scaleX = (month: number) => PAD.left + (month / months) * PLOT_W;
   const path = values.map((value, month) => `${month === 0 ? "M" : "L"}${scaleX(month).toFixed(1)},${scaleY(value).toFixed(1)}`).join(" ");
   const xLabels = Array.from({ length: Math.floor(months / 24) + 1 }, (_, index) => ({ x: scaleX(index * 24), label: index === 0 ? "Month 0" : `${index * 24}` }));
+  // A label sits right of its month, or left of it in the last third, so it never runs off the chart.
+  const beside = (month: number, gap = 4) =>
+    month > months * 0.66 ? { x: scaleX(month) - gap, textAnchor: "end" as const } : { x: scaleX(month) + gap };
   const marker = (month: number | null, label: string, className: string, row: number) =>
     month === null ? null : (
       <g key={label} className={className}>
         <line x1={scaleX(month)} x2={scaleX(month)} y1={PAD.top} y2={PAD.top + PLOT_H} stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
-        <text x={scaleX(month) + 4} y={PAD.top + 14 + row * 15} fill="currentColor" fontSize="12">
+        <text {...beside(month)} y={PAD.top + 14 + row * 15} fill="currentColor" fontSize="12" {...HALO}>
           {label}, month {month}
         </text>
       </g>
@@ -148,7 +154,7 @@ export function CashFlowChart({ title, values, peakMonth, breakEvenMonth, paybac
         <Axes yTicks={yTicks} scaleY={scaleY} unit="₦ billion" xLabels={xLabels} />
         <path d={path} fill="none" strokeWidth="3" className="text-brand" stroke="currentColor" />
         <circle cx={scaleX(peakMonth)} cy={scaleY(values[peakMonth])} r="5" className="text-alert-line" fill="currentColor" />
-        <text x={scaleX(peakMonth) + 8} y={scaleY(values[peakMonth]) - 6} className="text-alert" fill="currentColor" fontSize="12">
+        <text {...beside(peakMonth, 8)} y={scaleY(values[peakMonth]) - 8} className="text-alert" fill="currentColor" fontSize="12" {...HALO}>
           Peak capital, month {peakMonth}
         </text>
         {marker(breakEvenMonth, "Break-even", "text-ok", 0)}
