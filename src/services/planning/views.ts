@@ -4,7 +4,7 @@ import type { AssumptionUnit, CaseId, MitigationKey } from "./assumptions.ts";
    from: reported (with its source and date), calculated (with its method), an assumption or a
    placeholder (with its basis). The screen displays them; it calculates nothing. */
 
-export type FigureOrigin = "reported" | "calculated" | "assumption" | "placeholder" | "test_scenario";
+export type FigureOrigin = "reported" | "calculated" | "assumption" | "placeholder" | "test_scenario" | "synthetic";
 
 export interface ShownFigure {
   key: string;
@@ -222,4 +222,96 @@ export interface AllocationView {
   discos: { id: string; label: string; current: boolean }[];
   citations: CitationView[];
   methodology: { id: string; version: string; disclaimer: string };
+}
+
+export interface PlanningInputView {
+  key: string;
+  label: string;
+  value: number;
+  defaultValue: number;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  basis: string;
+}
+
+export interface DtRowView {
+  id: string;
+  rank: string;
+  name: string;
+  feeder: string;
+  connections: string;
+  unmetered: string;
+  estimatedBilling: string;
+  loss: string;
+  atcc: string;
+  capex: string;
+  recovered: string;
+  perNaira: string;
+  /** The parts with no figure, left out of the DT's figure. */
+  missing: string[];
+}
+
+/** DT sequencing inside one DisCo (M4), on the synthetic network. */
+export interface DtSequencingView {
+  network: string;
+  headline: string;
+  headlineHow: string;
+  revolvingLine: string;
+  figures: ShownFigure[];
+  rows: DtRowView[];
+  rowsHow: string;
+  chart: { title: string; unit: string; months: number; base: ChartSeries; stressed: ChartSeries; how: string };
+  fairness: string;
+  inputs: PlanningInputView[];
+  methodology: { id: string; version: string; disclaimer: string };
+  sourcing: { synthetic: boolean; sources: { id: string; name: string; kind: string }[] };
+}
+
+export interface MonitoringRowView {
+  disco: string;
+  name: string;
+  plannedMeters: string;
+  installed: string;
+  verified: string;
+  /** Verified installs as a share of plan. */
+  againstPlan: string;
+  behind: boolean;
+  trancheReleased: string;
+  trancheHeld: string;
+  supplyPlan: string;
+  supplyActual: string;
+  consumptionPlan: string;
+  consumptionActual: string;
+  escrowPlan: string;
+  escrowActual: string;
+  repaidPlan: string;
+  repaidActual: string;
+}
+
+/** Monitoring (M4): plan against actual per DisCo per quarter. Actuals are synthetic. */
+export interface MonitoringView {
+  quarter: string;
+  quarters: { id: string; label: string; href: string; current: boolean; reported: boolean }[];
+  headline: string;
+  headlineHow: string;
+  trancheLine: string;
+  /** Null when the quarter has no records yet. */
+  rows: MonitoringRowView[] | null;
+  notReported: string | null;
+  totals: ShownFigure[];
+  how: string;
+  methodology: { id: string; version: string; disclaimer: string };
+  sourcing: { synthetic: boolean; sources: { id: string; name: string; kind: string }[] };
+}
+
+/** About this build: what existed at the baseline and what the sprint added, from the sprint changelog. */
+export interface AboutBuildView {
+  baseline: { tag: string; commit: string; time: string; summary: string[] };
+  sprint: { window: string; branch: string; compareUrl: string };
+  rows: { time: string; commit: string; commitUrl: string; what: string }[];
+  /** Rows of the changelog that could not be read, so none is dropped silently. */
+  unread: number;
+  how: string;
 }

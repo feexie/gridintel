@@ -110,3 +110,37 @@ test("DisCo allocation: the largest gap first, the two scores, the first million
   await expect(page).toHaveURL(/pilotDisco=kano/);
   await expect(main.locator("[data-pilot]")).toContainText("Pilot: Kano DisCo");
 });
+
+test("DT sequencing: every DT ranked by revenue per naira, the revolving effect, all marked synthetic", async ({ page }) => {
+  await page.goto("/dashboard/planning/metering/allocation");
+  await page.locator("[data-metering-tabs]").getByRole("link", { name: /DT sequencing/ }).click();
+  await expect(page).toHaveURL(/\/dashboard\/planning\/metering\/dt$/);
+  const main = page.getByRole("main");
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^Metering the 5 highest-ranked DTs first recovers \d+% of the revenue for \d+% of the CAPEX\.$/);
+  await expect(main.locator("[data-headline]")).toContainText("Synthetic");
+  await expect(main.locator('[data-chart="revolving"] [data-chart-legend] li')).toHaveCount(2);
+  await expect(main.locator("[data-dts] tbody tr").first()).toContainText("1");
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
+  await main.locator('[data-planning-input="budget"] input').fill("10000000");
+  await main.getByRole("button", { name: "Recalculate" }).click();
+  await expect(page).toHaveURL(/budget=10000000/);
+});
+
+test("Monitoring: plan against synthetic actuals, tranches against verified installs, a later quarter not reported", async ({ page }) => {
+  await page.goto("/dashboard/planning/metering/monitoring");
+  const main = page.getByRole("main");
+  await expect(main.locator("[data-tranche-line]")).toHaveText(/^Fund money is released in tranches against verified installs/);
+  await expect(main.locator("[data-monitoring-table] tbody tr")).toHaveCount(11);
+  await expect(main.locator("[data-headline]")).toContainText("Synthetic");
+  await main.locator("[data-quarters]").getByRole("link", { name: /2027 Q1/ }).click();
+  await expect(main.locator("[data-not-reported]")).toContainText("not as zero");
+});
+
+test("About this build: the baseline, the sprint's commits with times, and the comparison link", async ({ page }) => {
+  await page.goto("/dashboard/planning/about-this-build");
+  const main = page.getByRole("main");
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^The Metering planner was built in the sprint: \d+ commits after the tag geh-baseline\.$/);
+  await expect(main.locator("[data-compare-link]")).toHaveAttribute("href", "https://github.com/feexie/gridintel/compare/geh-baseline...geh-sprint");
+  expect(await main.locator("[data-sprint-rows] tbody tr").count()).toBeGreaterThan(10);
+  await expect(main.locator("[data-baseline] li").first()).toBeVisible();
+});

@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
   // GRIDINTEL_DIST_DIR is set by scripts/next-as-tenant.mjs, so that the tests' tenant build lies beside the other two.
   distDir: process.env.GRIDINTEL_DIST_DIR ?? (onRequest ? ".next-request" : ".next"),
   env: { GRIDINTEL_BUILT_AS_TENANT: String(tenant) },
+  // About this build reads the sprint changelog (src/repositories/sprint/changelog.ts).
+  outputFileTracingIncludes: { "/dashboard/planning/about-this-build": ["./docs/geh/CHANGELOG-GEH.md"] },
   async redirects() {
     return [
       fullList("/dashboard/utility/executive", "feeders"),

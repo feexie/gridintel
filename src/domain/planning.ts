@@ -102,3 +102,29 @@ export interface BandTariff {
   effective: IsoDate;
   citationId: string;
 }
+
+/** The meters a DisCo is planned to install in a quarter of the metering programme. */
+export interface MeteringPlanQuarter {
+  disco: DiscoId;
+  /** "2026-Q3". */
+  quarter: string;
+  plannedMeters: number;
+}
+
+/** One DisCo's quarter in the metering programme, as monitoring records it. */
+export interface MeteringMonitoringRecord {
+  disco: DiscoId;
+  quarter: string;
+  metersInstalled: number;
+  /** Installs verified: a certified installer, the meter commissioned and vending. Tranches are released against these. */
+  metersVerified: number;
+  /** Average hours of supply a day to the customers metered under the programme. */
+  supplyHoursPerDay: number;
+  /** Average consumption a month of a customer metered under the programme, in kWh. */
+  consumptionKwhPerMonth: number;
+  /** Meter charges collected into escrow in the quarter, in naira. */
+  escrowCollected: number;
+  /** Paid to investors from escrow in the quarter, in naira. */
+  investorRepaid: number;
+  sourceId: string;
+}

@@ -277,6 +277,14 @@ From NERC's Q2 2026 report [N1] (Table 15, Appendix IX), with Q1 [N2]:
 - The revolving effect: cumulative recovered revenue against cumulative
   CAPEX, ranked order against a fixed random order, same budget.
 - Every figure is marked synthetic.
+- As built (method `gridintel.planning.dt-sequencing` 0.1.0): recovered a
+  year = 12 × (estimated billing a month × 15% recovered, the fund's
+  collection gain + commercial loss a month × unmetered ÷ connections × 50%
+  recovered, an assumption). CAPEX = unmetered × the fund's starting cost of
+  a meter. Budget ₦5 million a month (assumption), recoveries reinvested;
+  the random order is a fixed shuffle (seed 15). Public meters still go to
+  the DTs with most unmetered customers first: this order is for the fund's
+  own meters.
 
 ## 6. Monitoring (M4, synthetic, labelled)
 
@@ -284,6 +292,16 @@ Plan against actual per DisCo per quarter: meters installed, supply to
 metered customers, consumption, charge collected into escrow, investor
 repaid to date. One line: tranches are released against verified installs
 (results-based). Every figure is synthetic and labelled so.
+
+As built (method `gridintel.planning.monitoring` 0.1.0): the plan is each
+DisCo's recommended first million (section 4) spread evenly over 2026 Q3 to
+2027 Q2. Actuals are designed records from a synthetic adapter, for 2026 Q3
+only (the demonstration clock is 1 October 2026); later quarters show "not
+reported", never 0. A tranche releases verified meters × the cost of a
+meter; what the plan expected beyond them is held. Planned supply 12 hours a
+day (assumption, Band C level); planned consumption 100 kWh a month (the
+fund's Band C assumption); planned escrow = planned meters × 1.5 months ×
+5% of a Band C bill on the DisCo's tariff.
 
 ## 6a. About this build (M4)
 

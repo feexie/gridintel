@@ -1,7 +1,7 @@
 import type { Citation, DiscoId } from "@/domain";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
 import { allocateTranche, ALLOCATION_REFERENCE, scoreDiscos, type DiscoFacts, type Weights } from "../../analytics/planning/allocation.ts";
-import { installedCostAtStart, type MeteringFundInputs } from "../../analytics/planning/meteringFund.ts";
+import { installedCostAtStart } from "../../analytics/planning/meteringFund.ts";
 import { readAssumptions } from "./assumptions.ts";
 import { DISCO_NAMES, formatCount, formatNaira } from "./metering.ts";
 import type { AllocationView, CitationView, ShownFigure } from "./views.ts";
@@ -54,8 +54,35 @@ function citationView(citation: Citation): CitationView {
   return { id: citation.id, title: citation.title, url: citation.url, published: citation.published, standing: citation.standing, locator: citation.locator ?? null };
 }
 
-export async function allocationView(repository: PublishedFiguresRepository, query: Query): Promise<AllocationView> {
-  const values = readInputs(query);
+/** The installed cost of one meter at the start, on the Metering Fund's default assumptions. */
+export function startingCostPerMeter(): number {
+  const fund = readAssumptions({});
+  return installedCostAtStart({
+    customers: 1,
+    meteredShare: 0,
+    growthPerYear: 0,
+    publicMeters: [],
+    grantsPerYear: [],
+    hardwareUsd: fund.values.hardware,
+    importedShare: 1,
+    dutyRate: fund.values.duty / 100,
+    installNaira: fund.values.install,
+    fxNairaPerUsd: fund.values.fx,
+    reserveRatePerYear: 0,
+    failureRatePerYear: 0,
+    capital: { currency: "usd", ratePerYear: 0 },
+    nonPayingShare: 0,
+    exemptShare: 0,
+    collectionGainShare: 0,
+    gainToFundShare: 0,
+    averageBillNaira: null,
+    tariffPassThrough: 0,
+    chargeIndexed: false,
+  });
+}
+
+/** The published figures, the scores and the split of the first million, for the inputs given. */
+async function allocate(repository: PublishedFiguresRepository, values: Record<string, number>) {
   const [metering, installations, performance, citations] = await Promise.all([repository.metering(), repository.installations(), repository.performance(), repository.citations()]);
   const facts: DiscoFacts[] = DISCOS.map((disco) => {
     const june = metering.find((row) => row.disco === disco && row.asOf === "2026-06-30")!;
@@ -79,6 +106,18 @@ export async function allocationView(repository: PublishedFiguresRepository, que
   };
   const scored = scoreDiscos(facts, weights);
   const result = allocateTranche(scored, values.publicTranche, values.privateTranche, values.riskEmphasis / 100);
+  return { metering, installations, performance, citations, facts, scored, result };
+}
+
+/** Each DisCo's recommended meters in the first million, on the default weights and tranche, in whole meters. */
+export async function recommendedSplit(repository: PublishedFiguresRepository): Promise<{ disco: DiscoId; recommended: number }[]> {
+  const { result } = await allocate(repository, readInputs({}));
+  return result.allocation.map((row) => ({ disco: row.id as DiscoId, recommended: Math.round(row.recommended) }));
+}
+
+export async function allocationView(repository: PublishedFiguresRepository, query: Query): Promise<AllocationView> {
+  const values = readInputs(query);
+  const { metering, installations, performance, citations, facts, scored, result } = await allocate(repository, values);
   const byId = (id: string) => result.allocation.find((row) => row.id === id)!;
   const name = (id: string) => DISCO_NAMES[id as DiscoId];
 
@@ -101,30 +140,7 @@ export async function allocationView(repository: PublishedFiguresRepository, que
 
   /* The pilot. */
   const pilotDisco = (DISCOS as string[]).includes(first(query.pilotDisco) ?? "") ? (first(query.pilotDisco) as DiscoId) : (topPrivate[0].id as DiscoId);
-  const fund = readAssumptions({});
-  const costInputs: MeteringFundInputs = {
-    customers: 1,
-    meteredShare: 0,
-    growthPerYear: 0,
-    publicMeters: [],
-    grantsPerYear: [],
-    hardwareUsd: fund.values.hardware,
-    importedShare: 1,
-    dutyRate: fund.values.duty / 100,
-    installNaira: fund.values.install,
-    fxNairaPerUsd: fund.values.fx,
-    reserveRatePerYear: 0,
-    failureRatePerYear: 0,
-    capital: { currency: "usd", ratePerYear: 0 },
-    nonPayingShare: 0,
-    exemptShare: 0,
-    collectionGainShare: 0,
-    gainToFundShare: 0,
-    averageBillNaira: null,
-    tariffPassThrough: 0,
-    chargeIndexed: false,
-  };
-  const costPerMeter = installedCostAtStart(costInputs);
+  const costPerMeter = startingCostPerMeter();
   const pilotScored = scored.find((one) => one.id === pilotDisco)!;
   const pilotFigures: ShownFigure[] = [
     { key: "meters", label: "Meters", value: `${formatCount(values.pilotMeters)} over ${values.pilotMonths} months`, origin: "assumption", basis: "Proposal" },

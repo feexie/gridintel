@@ -15,6 +15,7 @@ const ORIGIN_WORD: Record<FigureOrigin, string> = {
   assumption: "Assumption",
   placeholder: "Placeholder",
   test_scenario: "Test scenario",
+  synthetic: "Synthetic",
 };
 
 function Origin({ origin }: { origin: FigureOrigin }) {

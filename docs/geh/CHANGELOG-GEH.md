@@ -1,7 +1,16 @@
 # Global Energy Hackathon: sprint changelog
 
-Baseline: tag `geh-baseline` (commit `839c5d9`). Branch: `geh-sprint`.
+Baseline: tag `geh-baseline` (commit `839c5d9`, Friday 30 October 2026, 15:45 WAT). Branch: `geh-sprint`.
 Sprint: Friday 30 October 2026, 17:00 WAT, to Sunday 1 November 2026, 18:00 WAT.
+
+## At the baseline
+
+- Utility Intelligence on a synthetic DisCo: network drill-down, revenue and ATC&C losses, reliability, assets, alarms, map and reports.
+- Mini-grid Intelligence on a synthetic operator: sites, sales, supply and reports.
+- Platform: layered architecture with provenance on every value, 734 unit tests, a public demo build and a tenant build.
+- Planning: placeholder pages only, with no figures.
+
+## Built during the sprint
 
 | Time (WAT) | Commit | What was built |
 | --- | --- | --- |

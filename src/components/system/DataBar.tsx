@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { PUBLISHED_FIGURES_NOTICE } from "@/constants/planning";
+import { NO_DATA_NOTICE, PUBLISHED_FIGURES_NOTICE } from "@/constants/planning";
 import { formatPeriod, formatTime } from "./format";
 
 /* The one place a screen says what data it is looking at: the SYNTHETIC DATA label when the
@@ -31,7 +31,8 @@ export function DataBar({ context }: { context: DataContext }) {
   const pathname = usePathname() ?? "";
   // The Metering Fund shows published figures and assumptions, not the synthetic dataset.
   const published = PUBLISHED_FIGURES_NOTICE.paths.includes(pathname);
-  const notice = published ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary } : context.notice;
+  const noData = NO_DATA_NOTICE.paths.includes(pathname);
+  const notice = published ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary } : noData ? { label: NO_DATA_NOTICE.label, summary: NO_DATA_NOTICE.summary } : context.notice;
   const [open, setOpen] = useState(false);
   const key = REPORT_ADDRESS.exec(pathname)?.[1];
   const report = key === undefined ? undefined : context.reportPeriods[key];

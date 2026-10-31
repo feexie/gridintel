@@ -64,7 +64,7 @@ function Axes({ yTicks, scaleY, unit, xLabels }: { yTicks: number[]; scaleY: (va
 }
 
 /** Two series over the months of the rollout. */
-export function BalanceChart({ title, unit, months, base, stressed }: { title: string; unit: string; months: number; base: ChartSeries; stressed: ChartSeries }) {
+export function BalanceChart({ title, unit, months, base, stressed, id = "balance" }: { title: string; unit: string; months: number; base: ChartSeries; stressed: ChartSeries; id?: string }) {
   const all = [...base.values, ...stressed.values];
   const yTicks = ticks(Math.min(...all), Math.max(...all));
   const low = yTicks[0];
@@ -74,7 +74,7 @@ export function BalanceChart({ title, unit, months, base, stressed }: { title: s
   const line = (values: number[]) => values.map((value, month) => `${month === 0 ? "M" : "L"}${scaleX(month).toFixed(1)},${scaleY(value).toFixed(1)}`).join(" ");
   const xLabels = Array.from({ length: months / 12 + 1 }, (_, index) => ({ x: scaleX(index * 12), label: index === 0 ? "Month 0" : `${index * 12}` }));
   return (
-    <figure className="max-w-4xl space-y-2" data-chart="balance">
+    <figure className="max-w-4xl space-y-2" data-chart={id}>
       <figcaption className="text-sm font-semibold text-ink">{title}</figcaption>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-auto w-full" role="img" aria-label={`${title}, in ${unit}`}>
         <Axes yTicks={yTicks} scaleY={scaleY} unit={unit} xLabels={xLabels} />
