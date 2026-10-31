@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "test:e2e:local": "node scripts/e2e-local.mjs",
     "test:e2e:tenant": "playwright test -c playwright.tenant.config.ts",
+    "geh:figures": "node scripts/geh-key-figures.ts",
     "verify": "npm run typecheck && npm test && npm run lint && npm run build:request && npm run build && npm run build:tenant && npm run test:e2e && npm run test:e2e:tenant",
     "verify:local": "npm run typecheck && npm test && npm run lint && npm run build && npm run build:tenant && npm run test:e2e:local && npm run test:e2e:tenant"
   },

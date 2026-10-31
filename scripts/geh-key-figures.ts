@@ -2,8 +2,10 @@
    view model, exactly as the screen shows it, never typed. Run after any change to a method, an
    assumption or a published figure:
 
+     npm run geh:figures            (records the current commit)
      node scripts/geh-key-figures.ts <short commit>
 */
+import { execSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { DEMO_CLOCK, DEMO_PERIOD, createDemoRepositories } from "../src/repositories/demo/index.ts";
 import { createSyntheticMonitoring } from "../src/repositories/demo/monitoring.ts";
@@ -14,7 +16,7 @@ import { formatNaira, meteringFundView } from "../src/services/planning/metering
 import { monitoringPlan, monitoringView } from "../src/services/planning/monitoring.ts";
 import type { ShownFigure } from "../src/services/planning/views.ts";
 
-const commit = process.argv[2] ?? "working tree";
+const commit = process.argv[2] ?? execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
 const published = nercPublishedFigures();
 const NERC_Q2 = "NERC, Quarterly Report Q2 2026";
 const NERC_Q1 = "NERC, Quarterly Report Q1 2026";
