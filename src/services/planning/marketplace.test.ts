@@ -16,29 +16,31 @@ describe("the Metering Marketplace", () => {
     assert.ok(view.totals.every((one) => one.origin === "synthetic"));
   });
 
-  it("charges Bands A and B by the day, Bands C to E 5% of their typical bill with a top-up, and exempts Lifeline", async () => {
+  it("charges Band A by the day, Bands B to E 5% of their typical bill with a top-up, and exempts Lifeline", async () => {
     const view = await marketplaceView(createSyntheticMarketplace(), nercPublishedFigures());
     assert.deepEqual(
       view.bands.map((one) => one.perDay),
-      ["₦200", "₦250", "₦150", "₦8.58", "₦4.54", "₦2.90", "Exempt"],
+      ["₦200", "₦250", "₦15.98", "₦8.58", "₦4.54", "₦2.90", "Exempt"],
     );
     // The same bills as the Metering Fund: Band C ₦5,215 a month, so 5% is ₦261.
     assert.equal(view.bands[3].typicalBill, "₦5,215");
+    assert.equal(view.bands[2].typicalBill, "₦9,717");
     assert.deepEqual(
-      view.bands.slice(3, 6).map((one) => one.shareOfBill),
-      ["5.0%", "5.0%", "5.0%"],
+      view.bands.slice(2, 6).map((one) => one.shareOfBill),
+      ["5.0%", "5.0%", "5.0%", "5.0%"],
     );
+    assert.match(view.bands[2].monthsToRepay, /^60 months: customer repays/);
     assert.equal(view.bands[3].topUp, "₦75,389");
     assert.equal(view.bands[0].monthsToRepay, "15.0 at cost; 17.7 at 22% (Private capital fund); 18.0 at 24% (Second private fund)");
     assert.match(view.bands[1].monthsToRepay, /Second private fund: over its 24-month tenor/);
     assert.equal(view.bands.at(-1)?.monthsToRepay, "Not repaid: exempt");
   });
 
-  it("sends private money only to Bands A and B, and DFI money only to C to E", async () => {
+  it("sends private money only to Band A, and DFI money only to B to E", async () => {
     const view = await marketplaceView(createSyntheticMarketplace(), nercPublishedFigures());
     for (const row of view.matching) {
-      if (/private/i.test(row.funder)) assert.match(row.band, /^(A|B)/, row.funder);
-      if (row.funder.startsWith("DFI")) assert.match(row.band, /^(C|D|E)$/, row.funder);
+      if (/private/i.test(row.funder)) assert.match(row.band, /^A, /, row.funder);
+      if (row.funder.startsWith("DFI")) assert.match(row.band, /^(B|C|D|E)$/, row.funder);
     }
     assert.equal(view.demand.length, 11);
   });

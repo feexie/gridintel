@@ -23,10 +23,10 @@ const ALL: DiscoId[] = ["abuja", "benin", "eko", "enugu", "ibadan", "ikeja", "jo
 const source = SYNTHETIC_MARKETPLACE_SOURCE.id;
 
 const PLEDGES: MeterPledge[] = [
-  { id: "mission-300", funder: "Mission 300-style programme", kind: "public", amountNaira: null, meters: 1_000, bands: ["C", "D", "E", "lifeline"], discos: ALL, returnPercent: 0, returnCurrency: "naira", tenorMonths: null, sourceId: source },
-  { id: "private-1", funder: "Private capital fund", kind: "private", amountNaira: 150_000_000, meters: null, bands: ["A1", "A3", "B"], discos: ["abuja", "eko", "ikeja"], returnPercent: 22, returnCurrency: "naira", tenorMonths: 36, sourceId: source },
-  { id: "dfi", funder: "DFI (cheaper, longer money)", kind: "dfi", amountNaira: 400_000_000, meters: null, bands: ["C", "D", "E"], discos: ALL, returnPercent: 8, returnCurrency: "usd", tenorMonths: 84, sourceId: source },
-  { id: "disrep", funder: "DISREP-style programme", kind: "public", amountNaira: 120_000_000, meters: null, bands: ["C", "D", "E", "lifeline"], discos: ["jos", "kaduna", "kano", "yola"], returnPercent: 0, returnCurrency: "naira", tenorMonths: null, sourceId: source },
+  { id: "mission-300", funder: "Mission 300-style programme", kind: "public", amountNaira: null, meters: 1_000, bands: ["B", "C", "D", "E", "lifeline"], discos: ALL, returnPercent: 0, returnCurrency: "naira", tenorMonths: null, sourceId: source },
+  { id: "private-1", funder: "Private capital fund", kind: "private", amountNaira: 150_000_000, meters: null, bands: ["A1", "A3"], discos: ["abuja", "eko", "ikeja"], returnPercent: 22, returnCurrency: "naira", tenorMonths: 36, sourceId: source },
+  { id: "dfi", funder: "DFI (cheaper, longer money)", kind: "dfi", amountNaira: 400_000_000, meters: null, bands: ["B", "C", "D", "E"], discos: ALL, returnPercent: 8, returnCurrency: "usd", tenorMonths: 84, sourceId: source },
+  { id: "disrep", funder: "DISREP-style programme", kind: "public", amountNaira: 120_000_000, meters: null, bands: ["B", "C", "D", "E", "lifeline"], discos: ["jos", "kaduna", "kano", "yola"], returnPercent: 0, returnCurrency: "naira", tenorMonths: null, sourceId: source },
   { id: "private-2", funder: "Second private fund", kind: "private", amountNaira: 80_000_000, meters: null, bands: ["A1", "A3"], discos: ["enugu", "ibadan", "port_harcourt"], returnPercent: 24, returnCurrency: "naira", tenorMonths: 24, sourceId: source },
 ];
 

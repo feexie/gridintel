@@ -353,31 +353,32 @@ synthetic and labelled so; no existing method or figure changes.
 
 - **Funders:** five designed pledges, each with amount, bands, DisCos,
   return and tenor: a Mission 300-style programme (1,000 meters, grant), a
-  private capital fund (N150m, Bands A and B, Abuja, Eko, Ikeja, 22%, 36
-  months), a DFI with cheaper, longer money (N400m, Bands C to E, 8% in
-  dollars, 84 months), a DISREP-style programme (N120m, C to E and Lifeline,
+  private capital fund (N150m, Band A, Abuja, Eko, Ikeja, 22%, 36
+  months), a DFI with cheaper, longer money (N400m, Bands B to E, 8% in
+  dollars, 84 months), a DISREP-style programme (N120m, B to E and Lifeline,
   the four northern DisCos, grant), a second private fund (N80m, Band A,
   Enugu, Ibadan and Port Harcourt, 24%, 24 months).
 - **Demand:** approved meter applications by DisCo and band (A single-phase,
   A three-phase, B to E, Lifeline), designed records.
-- **Daily meter charge by band**: A single-phase N200, A three-phase N250,
-  B N150 (assumptions). Bands C, D, E pay 5% of the band's typical bill (the
+- **Daily meter charge by band**: A single-phase N200, A three-phase N250
+  (assumptions). Bands B, C, D, E pay 5% of the band's typical bill (the
   Metering Fund's cap, on the Metering Fund's bills: tariff × consumption,
   NERC's September 2026 orders) for 60 months (the Metering Fund's repayment
   period); the rest of the meter's cost is a blended top-up per meter, DFI or
   public money (Founder, 1 November 2026, for consistency with the Metering
-  Fund). Lifeline exempt. Taken at each recharge, never more than half of
+  Fund; Band B joined C to E on 1 November 2026). Lifeline exempt. Taken at each recharge, never more than half of
   the recharge, into escrow; the rest carries to the next recharge. Every
-  band shows its share of a typical bill. Bands A and B: months to repay at
+  band shows its share of a typical bill. Band A: months to repay at
   cost and as a loan at each private pledge's return (monthly compounding).
   Installed cost from the Metering Fund's defaults ($45 single-phase;
-  three-phase hardware $110, assumption). Method 0.2.0.
+  three-phase hardware $110, assumption). Method 0.3.0.
 - **Matching** (method `gridintel.planning.marketplace` 0.1.0, unit-tested):
   pledges cheapest money first (lowest return; then fewer DisCos; then id).
-  A pledge funds a band only if its kind allows it (private money Bands A
-  and B; DFI money C to E; public money C to E and Lifeline), it lists the
+  A pledge funds a band only if its kind allows it (private money Band A
+  only, single-phase and three-phase; DFI money B to E; public money B to E
+  and Lifeline), it lists the
   band and the DisCo, and the band's months to repay fit within its tenor
-  (at the pledge's own return for Bands A and B; 60 months for C to E; a
+  (at the pledge's own return for Band A; 60 months for B to E; a
   grant has none; only a grant funds Lifeline). Applications are taken
   poorest band first, then by DisCo. A meter is matched when the pledge has
   its full installed cost left. What a pledge cannot place is "Queued for
