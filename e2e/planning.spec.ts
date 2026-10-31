@@ -41,7 +41,8 @@ test("the Metering Fund states its finding first, with the charge, how it is cal
 test("the GridIntel structure stands beside the fund alone, with investors, protection and a receipt", async ({ page }) => {
   await page.goto(`${FUND}?case=nigeria`);
   const main = page.getByRole("main");
-  await expect(main.locator("[data-positioning]")).toContainText("Plan → Fund → Monitor");
+  await expect(main.locator("[data-positioning]")).toContainText("Plan · Access → Fund · Affordability → Monitor · Availability");
+  await expect(main.locator("[data-positioning]")).toContainText("Plan for access, fund for affordability, monitor for availability.");
   await expect(main.locator("[data-fund-alone]")).toHaveText("Fund alone: ₦1,286 a month, 4.9x the cap.");
   await expect(main.locator("[data-structure-sentence]")).toContainText("GridIntel structure: within the cap for every band; public money");
   await expect(main.locator("[data-inflation-line]")).toHaveText(/^Survives inflation if tariffs follow at least \d+% of it; all three shocks at \d+%\./);
@@ -175,4 +176,42 @@ test("presentation mode on DisCo allocation, DT sequencing, Monitoring and About
 test("the Planning overview says it shows no data", async ({ page }) => {
   await page.goto("/dashboard/planning");
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("NO DATA ON THIS SCREEN");
+});
+
+test("each step is paired with its A, in the tabs and the screens' eyebrows", async ({ page }) => {
+  await page.goto("/dashboard/planning/metering/allocation");
+  const tabs = page.locator("[data-metering-tabs]");
+  await expect(tabs.getByRole("link", { name: /DisCo allocation/ })).toContainText("Plan · Access");
+  await expect(tabs.getByRole("link", { name: /Metering Fund/ })).toContainText("Fund · Affordability");
+  await expect(tabs.getByRole("link", { name: /Monitoring/ })).toContainText("Monitor · Availability");
+  await expect(page.locator("[data-headline]").first()).toContainText("Plan · Access · DisCo allocation");
+  await page.goto("/dashboard/planning/metering/monitoring");
+  await expect(page.locator("[data-headline]").first()).toContainText("Monitor · Availability");
+  await page.goto("/dashboard/planning/metering");
+  await expect(page.locator("[data-headline]").first()).toContainText("Fund · Affordability · Metering Fund");
+});
+
+test("the Metering Plan report: a Download report link on every Metering screen, six sections in order, the sources, and a print button", async ({ page }) => {
+  for (const path of ["/dashboard/planning/metering", "/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/monitoring", "/dashboard/planning/about-this-build"]) {
+    await page.goto(path);
+    await expect(page.locator("[data-report-link]"), path).toHaveAttribute("href", /\/dashboard\/planning\/metering\/report/);
+  }
+  await expect(page.locator("[data-about-report]")).toContainText("The Metering Plan report");
+  await expect(page.locator("[data-steps] li")).toHaveCount(3);
+  await page.goto("/dashboard/planning/metering?case=nigeria");
+  await page.locator("[data-report-link]").click();
+  await expect(page).toHaveURL(/\/metering\/report\?case=nigeria/);
+  const report = page.locator("[data-metering-report]");
+  await expect(report.locator("h1")).toHaveText("Metering Plan");
+  await expect(report.locator("[data-report-section]")).toHaveCount(7);
+  const ids = await report.locator("[data-report-section]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-report-section")));
+  expect(ids).toEqual(["gap", "access", "affordability", "availability", "shocks", "assumptions", "sources"]);
+  await expect(report.locator('[data-report-section="access"]')).toContainText("Plan · Access");
+  await expect(report.locator('[data-report-section="availability"]')).toContainText("Synthetic:");
+  await expect(report.locator('[data-report-section="affordability"]')).toContainText("The same order of public money meters");
+  await expect(report.locator("[data-report-citations] li").first()).toBeVisible();
+  await expect(page.locator("[data-print-report]")).toBeVisible();
+  await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("MONITORING SYNTHETIC");
+  const text = (await report.innerText()).toLowerCase();
+  for (const word of ["ai-powered", "insights", "unlock", "seamless", "leverage", "empower", "revolutionise", "harness", "cutting-edge", "journey", "at a glance"]) expect(text, word).not.toContain(word);
 });

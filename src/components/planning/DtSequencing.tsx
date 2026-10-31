@@ -2,6 +2,7 @@ import { Panel } from "@/components/system/Metric";
 import type { DtSequencingView, PlanningInputView } from "@/services/planning/views";
 import { BalanceChart } from "./FundCharts";
 import { MeteringTabs } from "./MeteringTabs";
+import { STEPS } from "@/constants/planning";
 
 /* DT sequencing inside one DisCo (docs/geh/DESIGN.md, section 5), on the synthetic network. It
    displays the view model; it calculates nothing. */
@@ -44,7 +45,7 @@ export function DtSequencing({ view, present = false }: { view: DtSequencingView
       <MeteringTabs current="dt" />
       <header className="gi-band rounded-panel border border-line px-4 py-5 sm:px-6" data-headline>
         <p className="flex flex-wrap items-center gap-2 text-micro font-semibold uppercase tracking-eyebrow text-brand">
-          Plan · DT sequencing · {view.network} <Synthetic />
+          {STEPS.plan} · DT sequencing · {view.network} <Synthetic />
         </p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink sm:text-2xl">{view.headline}</h1>
         <p className="mt-2 max-w-4xl text-sm text-ink-2" data-revolving-line>

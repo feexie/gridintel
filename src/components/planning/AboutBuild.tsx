@@ -1,5 +1,7 @@
 import { Panel } from "@/components/system/Metric";
 import type { AboutBuildView } from "@/services/planning/views";
+import Link from "next/link";
+import { METERING_REPORT_HREF, POSITIONING_LINE, STEP_SCOPES } from "@/constants/planning";
 import { MeteringTabs } from "./MeteringTabs";
 
 /* About this build (docs/geh/DESIGN.md, section 6a): what existed before the sprint and what was
@@ -20,6 +22,22 @@ export function AboutBuild({ view }: { view: AboutBuildView }) {
           </a>
         </p>
       </header>
+
+      <Panel title="What the Metering planner covers" aside={POSITIONING_LINE}>
+        <ul className="space-y-1 text-sm text-ink-2" data-steps>
+          {STEP_SCOPES.map((one) => (
+            <li key={one.step}>
+              <span className="font-semibold uppercase tracking-wide text-brand">{one.step}</span>: {one.covers}
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-ink-2" data-about-report>
+          <Link href={METERING_REPORT_HREF} className="font-semibold text-link hover:underline">
+            The Metering Plan report
+          </Link>
+          : the gap, Access, Affordability, Availability, the shocks, and the assumptions and sources, from the same services as the screens, ready to print or save as PDF.
+        </p>
+      </Panel>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Panel title="Before the sprint" aside={`${view.baseline.tag}, ${view.baseline.commit}`}>

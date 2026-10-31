@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { METERING_SCREENS, type MeteringScreenId } from "@/constants/planning";
+import { METERING_REPORT_HREF, METERING_SCREENS, type MeteringScreenId } from "@/constants/planning";
 
 /* The Metering planner's screens, in the order of the story: Plan, Fund, Monitor. A screen not
    built yet is listed and marked so, with no link. */
-export function MeteringTabs({ current }: { current: MeteringScreenId }) {
+export function MeteringTabs({ current, reportHref = METERING_REPORT_HREF }: { current: MeteringScreenId; reportHref?: string }) {
   return (
     <nav aria-label="Metering screens" className="flex flex-wrap gap-1 rounded-tile border border-line bg-panel p-1 print:hidden" data-metering-tabs>
       {METERING_SCREENS.map((screen) =>
@@ -23,6 +23,9 @@ export function MeteringTabs({ current }: { current: MeteringScreenId }) {
           </Link>
         ),
       )}
+      <Link href={reportHref} className="ml-auto flex items-center rounded-tile border border-line px-3 py-1.5 text-sm font-semibold text-link hover:bg-brand-soft" data-report-link>
+        Download report
+      </Link>
     </nav>
   );
 }

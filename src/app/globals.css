@@ -1224,3 +1224,15 @@ html[data-present] [data-metering-tabs] {
   font-size: 2.25rem;
   line-height: 1.2;
 }
+
+/* The Metering Plan report (components/planning/MeteringPlanReport.tsx): its figures are words as
+   the screens show them ("₦184,211 to ₦636,364"), so they wrap inside their box; its tables hold
+   words, so their headings sit over the words, on the left. */
+.gr-value.gr-value-words {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.gr-words-table th[scope="col"] {
+  text-align: left;
+}

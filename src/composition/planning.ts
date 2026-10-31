@@ -6,6 +6,7 @@ import { allocationView } from "../services/planning/allocation.ts";
 import { dtSequencingView } from "../services/planning/dt.ts";
 import { meteringFundView } from "../services/planning/metering.ts";
 import { monitoringPlan, monitoringView } from "../services/planning/monitoring.ts";
+import { meteringPlanReportView } from "../services/planning/report.ts";
 import { getRuntime } from "./runtime.ts";
 
 /* ==========================================================
@@ -33,4 +34,10 @@ export const planning = {
   dtSequencing: async (query: Record<string, string | string[] | undefined>) => dtSequencingView(await getRuntime(), query),
   monitoring: async (query: Record<string, string | string[] | undefined>) => monitoringView(published, await monitoringRecords(), query),
   aboutBuild: () => aboutBuildView(sprintChangelog()),
+  /** The Metering Plan report, from the same three views the screens show, for the assumptions in the address (Nigeria reference case by default). */
+  meteringPlanReport: async (query: Record<string, string | string[] | undefined>) => {
+    const fundQuery = { case: "nigeria", ...query };
+    const [fund, allocation, monitoring] = await Promise.all([meteringFundView(published, fundQuery), allocationView(published, query), monitoringView(published, await monitoringRecords(), {})]);
+    return meteringPlanReportView(fund, allocation, monitoring);
+  },
 };

@@ -3,6 +3,7 @@ import { Panel } from "@/components/system/Metric";
 import type { FigureOrigin, InvestmentView, InvestorView, MeteringFundView, ShownFigure, StructureView } from "@/services/planning/views";
 import { BalanceChart, CashFlowChart, StackedBars } from "./FundCharts";
 import { MeteringTabs } from "./MeteringTabs";
+import { METERING_REPORT_HREF, STEPS } from "@/constants/planning";
 
 /* The Metering Fund screen (docs/geh/DESIGN.md, section 3). One finding at the top with its figure
    and how it is calculated; then the gap, the shocks, the charts, the bands, the years, the rules,
@@ -48,9 +49,11 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
   const presentHref = `?${new URLSearchParams({ ...query, present: present ? "0" : "1" })}`;
   return (
     <div className={`space-y-4 ${present ? "mx-auto max-w-7xl" : ""}`} data-metering-fund data-case={view.caseId}>
-      {present ? null : <MeteringTabs current="fund" />}
+      {present ? null : <MeteringTabs current="fund" reportHref={`${METERING_REPORT_HREF}?${new URLSearchParams(query)}`} />}
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-3" data-positioning>
-        <span className="font-semibold uppercase tracking-eyebrow text-brand">Plan → Fund → Monitor</span>
+        <span className="font-semibold uppercase tracking-eyebrow text-brand">
+          {STEPS.plan} → {STEPS.fund} → {STEPS.monitor}
+        </span>
         <span className="max-w-4xl">{view.positioning}</span>
       </p>
 
@@ -88,7 +91,7 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
 
       {/* The finding. */}
       <header className="gi-band rounded-panel border border-line px-4 py-5 sm:px-6" data-headline>
-        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">Planning · Metering Fund · {view.scope}</p>
+        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">{STEPS.fund} · Metering Fund · {view.scope}</p>
         <h1 className={`mt-1 font-semibold tracking-tight text-ink ${present ? "text-3xl sm:text-4xl" : "text-xl sm:text-2xl"}`}>{view.headline.sentence}</h1>
         <div className="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3">
           <div>
@@ -109,7 +112,7 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
 
       {/* Brief 15's two impact measures. */}
       <section className="rounded-panel border border-line bg-panel px-4 py-4 sm:px-6" data-impact>
-        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">Impact · Modelled</p>
+        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">{STEPS.monitor} · Five-year rollout · Modelled</p>
         <div className="mt-2 grid gap-4 sm:grid-cols-2">
           <div data-impact-figure="metered">
             <p className="text-sm font-medium text-ink-2">{view.impact.metered.label}</p>

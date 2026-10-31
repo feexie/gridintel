@@ -15,6 +15,15 @@ investors and DisCos. It **plans** where meters go, **funds** them through a
 protected structure, and **monitors** that the money is working:
 Plan → Fund → Monitor. Poor residential customers are never left out.
 
+Each step is paired with the hackathon's three A's (Founder, 31 October
+2026), everywhere the steps appear (the positioning strip, the Metering tabs,
+the screen eyebrows, About this build): **Plan · Access** (DisCo allocation,
+DT sequencing), **Fund · Affordability** (the Metering Fund: the charge under
+the cap, band charges, Lifeline exempt, the GridIntel structure), **Monitor ·
+Availability** (Monitoring of verified installs, with the five-year rollout
+and the estimated bills removed). The positioning line: "Plan for access,
+fund for affordability, monitor for availability."
+
 M2's finding is the story. The customer alone cannot carry the meter: the
 charge that repays a meter in five years is about five times a 5% cap,
 because Bands B to E tariffs have been frozen since December 2022. The public
@@ -330,6 +339,21 @@ fund's Band C assumption); planned escrow = planned meters × 1.5 months ×
 `/dashboard/planning/about-this-build`: what existed at `geh-baseline` and
 what was built in the sprint (from `CHANGELOG-GEH.md`, with times), and a
 link to https://github.com/feexie/gridintel/compare/geh-baseline...geh-sprint.
+
+## 6b. The Metering Plan report
+
+`/dashboard/planning/metering/report`, linked as "Download report" from the
+tabs of every Metering screen (the Metering Fund's link carries its
+assumptions) and from About this build. Built by `meteringPlanReportView`
+from the three views the screens show (Metering Fund, DisCo allocation,
+Monitoring), so it calculates nothing of its own and every figure keeps its
+origin. Sections: the gap; Plan · Access; Fund · Affordability; Monitor ·
+Availability (the monitoring figures labelled synthetic); shocks and the
+inflation line; assumptions and sources, with the origin labels. It uses
+the report system's layout and print stylesheet (ADR 0019): printed, or
+saved as PDF from the browser's print dialog. Its figures are the screens'
+formatted figures with their origins, not the report system's measured
+`MetricView`s, so it has no period, record fingerprint or CSV.
 
 ## 7. Estimated billing and the metering gap (used by M2)
 

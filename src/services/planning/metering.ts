@@ -1,5 +1,6 @@
 import type { BandTariff, Citation, DiscoId, PublishedInstallations } from "@/domain";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
+import { POSITIONING_LINE } from "../../constants/planning.ts";
 import { investmentProfile, investorOutcome, METERING_FUND_REFERENCE, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type FundRun, type InvestmentProfile, type InvestorOutcome, type MeteringFundInputs, type PriceShock } from "../../analytics/planning/meteringFund.ts";
 import { ASSUMPTIONS, BANDS, MITIGATIONS, readAssumptions, type Assumptions, type AssumptionUnit, type CaseId } from "./assumptions.ts";
 import type { BandView, CitationView, FigureOrigin, InvestmentView, InvestorView, MeteringFundView, ShownFigure, StressRowView, StructureView, YearRowView } from "./views.ts";
@@ -477,7 +478,7 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
     },
     structure,
     investment,
-    positioning: "GridIntel is the trusted layer between public metering programmes, private investors and DisCos. It plans where meters go, funds them through a protected structure, and monitors that the money is working. Poor residential customers are never left out.",
+    positioning: `${POSITIONING_LINE} GridIntel is the trusted layer between public metering programmes, private investors and DisCos. Poor residential customers are never left out.`,
     miniGrids: "The same model applies to mini-grids: the meter charge is a share of each customer's token purchase, under the same cap.",
     pmiRule: "Charges collected on PMI meters do not repay investors: those meters were paid for with public money. They go to the maintenance and replacement reserve and to the pool that covers exempt and vulnerable customers.",
     fairnessRule: "Every customer metered under the scheme pays the same charge under the same cap, on a PMI meter or a fund meter. Customers metered before year 1 pay nothing.",

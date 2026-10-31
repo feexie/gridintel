@@ -43,12 +43,32 @@ export const PLANNING_STATUS = "Metering is built. The other planners are planne
 
 export type MeteringScreenId = "allocation" | "dt" | "fund" | "monitoring" | "about";
 
+/* The three steps of the Metering planner, each paired with the hackathon's three A's: plan for
+   access, fund for affordability, monitor for availability. */
+export const STEPS = {
+  plan: "Plan · Access",
+  fund: "Fund · Affordability",
+  monitor: "Monitor · Availability",
+} as const;
+
+export const POSITIONING_LINE = "Plan for access, fund for affordability, monitor for availability.";
+
+/** What each step covers, in the order of the story. */
+export const STEP_SCOPES: { step: string; covers: string }[] = [
+  { step: STEPS.plan, covers: "DisCo allocation and DT sequencing: where the first meters go, DisCo by DisCo and DT by DT." },
+  { step: STEPS.fund, covers: "The Metering Fund: the charge under the cap, the charge in each band, Lifeline customers exempt, and the GridIntel structure." },
+  { step: STEPS.monitor, covers: "Monitoring of verified installs, with the five-year rollout and the estimated bills it removes." },
+];
+
+/** The Metering Plan report: every step's figures on paper, ready to print or save as PDF. */
+export const METERING_REPORT_HREF = `${PLANNING_HOME}/metering/report`;
+
 /** The Metering planner's screens, in the order of the story: Plan, Fund, Monitor. */
 export const METERING_SCREENS: { id: MeteringScreenId; step: string; label: string; href: string; planned: boolean }[] = [
-  { id: "allocation", step: "Plan", label: "DisCo allocation", href: `${PLANNING_HOME}/metering/allocation`, planned: false },
-  { id: "dt", step: "Plan", label: "DT sequencing", href: `${PLANNING_HOME}/metering/dt`, planned: false },
-  { id: "fund", step: "Fund", label: "Metering Fund", href: `${PLANNING_HOME}/metering`, planned: false },
-  { id: "monitoring", step: "Monitor", label: "Monitoring", href: `${PLANNING_HOME}/metering/monitoring`, planned: false },
+  { id: "allocation", step: STEPS.plan, label: "DisCo allocation", href: `${PLANNING_HOME}/metering/allocation`, planned: false },
+  { id: "dt", step: STEPS.plan, label: "DT sequencing", href: `${PLANNING_HOME}/metering/dt`, planned: false },
+  { id: "fund", step: STEPS.fund, label: "Metering Fund", href: `${PLANNING_HOME}/metering`, planned: false },
+  { id: "monitoring", step: STEPS.monitor, label: "Monitoring", href: `${PLANNING_HOME}/metering/monitoring`, planned: false },
   { id: "about", step: "", label: "About this build", href: `${PLANNING_HOME}/about-this-build`, planned: false },
 ];
 
@@ -59,6 +79,13 @@ export const NO_DATA_NOTICE = {
     [PLANNING_HOME]: "The planners in the Planning section and which are built. No figure is shown here.",
     [`${PLANNING_HOME}/about-this-build`]: "What existed before the Global Energy Hackathon sprint and what was built during it, from the repository's sprint changelog.",
   } as Record<string, string>,
+};
+
+/** What the bar above the Metering Plan report says: published figures and assumptions, with the monitoring records synthetic. */
+export const REPORT_NOTICE = {
+  paths: [`${PLANNING_HOME}/metering/report`],
+  label: "PUBLISHED FIGURES AND ASSUMPTIONS; MONITORING SYNTHETIC",
+  summary: "NERC's published figures are cited where they are shown; every other input is an assumption or a placeholder, labelled. The monitoring records in the Availability section are synthetic.",
 };
 
 /** What the bar above the Metering Fund and the DisCo allocation says about their data: they hold no synthetic record. */

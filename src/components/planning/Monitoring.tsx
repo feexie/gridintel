@@ -3,6 +3,7 @@ import { Panel } from "@/components/system/Metric";
 import type { MonitoringView } from "@/services/planning/views";
 import { Synthetic } from "./DtSequencing";
 import { MeteringTabs } from "./MeteringTabs";
+import { STEPS } from "@/constants/planning";
 
 /* Monitoring the metering programme (docs/geh/DESIGN.md, section 6): plan against actual per DisCo
    per quarter. The actuals are synthetic and marked so. It displays the view model; it calculates
@@ -28,7 +29,7 @@ export function Monitoring({ view, present = false }: { view: MonitoringView; pr
       <MeteringTabs current="monitoring" />
       <header className="gi-band rounded-panel border border-line px-4 py-5 sm:px-6" data-headline>
         <p className="flex flex-wrap items-center gap-2 text-micro font-semibold uppercase tracking-eyebrow text-brand">
-          Monitor · Plan against actual · {view.quarter} <Synthetic />
+          {STEPS.monitor} · Plan against actual · {view.quarter} <Synthetic />
         </p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink sm:text-2xl">{view.headline}</h1>
         <p className="mt-2 max-w-4xl text-sm font-medium text-ink-2" data-tranche-line>

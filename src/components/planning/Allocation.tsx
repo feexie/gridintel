@@ -1,6 +1,7 @@
 import { Panel } from "@/components/system/Metric";
 import type { AllocationView } from "@/services/planning/views";
 import { MeteringTabs } from "./MeteringTabs";
+import { STEPS } from "@/constants/planning";
 
 /* DisCo allocation (docs/geh/DESIGN.md, section 4): where the first million meters and the first
    private capital go, DisCo by DisCo, on NERC's published figures. It displays the view model; it
@@ -16,7 +17,7 @@ export function Allocation({ view, present = false }: { view: AllocationView; pr
     <div className="space-y-4" data-allocation>
       <MeteringTabs current="allocation" />
       <header className="gi-band rounded-panel border border-line px-4 py-5 sm:px-6" data-headline>
-        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">Plan · DisCo allocation · Nigeria, 11 DisCos, NERC figures at 30 June 2026</p>
+        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">{STEPS.plan} · DisCo allocation · Nigeria, 11 DisCos, NERC figures at 30 June 2026</p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink sm:text-2xl">{view.headline}</h1>
         <div className="mt-2">
           <How>{view.headlineHow}</How>
