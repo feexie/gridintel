@@ -5,6 +5,7 @@ import { sprintChangelog } from "../repositories/sprint/changelog.ts";
 import { aboutBuildView } from "../services/planning/about.ts";
 import { allocationView } from "../services/planning/allocation.ts";
 import { dtSequencingView } from "../services/planning/dt.ts";
+import { journeyView } from "../services/planning/journey.ts";
 import { marketplaceView } from "../services/planning/marketplace.ts";
 import { meteringFundView } from "../services/planning/metering.ts";
 import { monitoringPlan, monitoringView } from "../services/planning/monitoring.ts";
@@ -40,6 +41,8 @@ export const planning = {
   monitoring: async (query: Record<string, string | string[] | undefined>) => monitoringView(published, await monitoringRecords(), query),
   /** The Metering Marketplace: synthetic pledges matched to synthetic approved applications. */
   marketplace: () => marketplaceView(marketplace),
+  /** One meter's journey: one synthetic household, with the Marketplace's terms and match. */
+  journey: () => journeyView(marketplace),
   aboutBuild: () => aboutBuildView(sprintChangelog()),
   /** The Metering Plan report, from the same three views the screens show, for the assumptions in the address (Nigeria reference case by default). */
   meteringPlanReport: async (query: Record<string, string | string[] | undefined>) => {

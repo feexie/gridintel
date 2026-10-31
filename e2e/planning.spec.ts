@@ -34,7 +34,8 @@ test("the Metering Fund states its finding first, with the charge, how it is cal
   await expect(main.locator('[data-chart="meters"] [data-chart-legend] li')).toHaveCount(1);
   await expect(main.locator('[data-chart="sources"] svg[role=img]')).toHaveAttribute("aria-label", /₦ billion$/);
   // No banned word anywhere on the screen.
-  const text = (await main.innerText()).toLowerCase();
+  // The tab bar is left out: the Founder named the tab "Journey" (31 October 2026); the screen's own words are checked.
+  const text = (await main.evaluate((node) => { const copy = node.cloneNode(true) as HTMLElement; copy.querySelector("[data-metering-tabs]")?.remove(); return copy.textContent ?? ""; })).toLowerCase();
   for (const word of ["ai-powered", "insights", "unlock", "seamless", "leverage", "empower", "revolutionise", "harness", "cutting-edge", "journey", "at a glance"]) expect(text, word).not.toContain(word);
 });
 
@@ -158,6 +159,19 @@ test("Marketplace: pledges matched to approved meters, the daily charge by band,
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
 });
 
+test("One meter's journey: six steps for one household in Ibadan, each naming who acts and linking to its screen, the balance falling, marked synthetic", async ({ page }) => {
+  await page.goto("/dashboard/planning/metering/marketplace");
+  await page.locator("[data-metering-tabs]").getByRole("link", { name: /Journey/ }).click();
+  await expect(page).toHaveURL(/\/metering\/journey$/);
+  const main = page.getByRole("main");
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^On GridIntel one household in Ibadan applied/);
+  await expect(main.locator("[data-headline]")).toContainText("Synthetic");
+  await expect(main.locator("[data-step]")).toHaveCount(6);
+  await expect(main.locator('[data-step="funded"] [data-step-link]')).toHaveAttribute("href", "/dashboard/planning/metering/marketplace");
+  await expect(main.locator('[data-step="installed"] [data-step-link]')).toHaveAttribute("href", "/dashboard/planning/metering/monitoring");
+  await expect(main.locator("[data-schedule] tbody tr").last()).toContainText("Repaid");
+});
+
 test("About this build: the baseline, the sprint's commits with times, and the comparison link", async ({ page }) => {
   await page.goto("/dashboard/planning/about-this-build");
   const main = page.getByRole("main");
@@ -169,7 +183,7 @@ test("About this build: the baseline, the sprint's commits with times, and the c
 
 test("presentation mode on DisCo allocation, DT sequencing, Marketplace, Monitoring and About this build: no navigation, no tabs, a larger headline, kept through a form or a quarter", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  for (const path of ["/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/marketplace", "/dashboard/planning/metering/monitoring", "/dashboard/planning/about-this-build"]) {
+  for (const path of ["/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/marketplace", "/dashboard/planning/metering/monitoring", "/dashboard/planning/metering/journey", "/dashboard/planning/about-this-build"]) {
     await page.goto(`${path}?present=1`);
     await expect(page.locator("[data-sidebar]"), path).toBeHidden();
     await expect(page.locator("[data-metering-tabs]"), path).toBeHidden();
@@ -207,7 +221,7 @@ test("each step is paired with its A, in the tabs and the screens' eyebrows", as
 });
 
 test("the Metering Plan report: a Download report link on every Metering screen, six sections in order, the sources, and a print button", async ({ page }) => {
-  for (const path of ["/dashboard/planning/metering", "/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/marketplace", "/dashboard/planning/metering/monitoring", "/dashboard/planning/about-this-build"]) {
+  for (const path of ["/dashboard/planning/metering", "/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/marketplace", "/dashboard/planning/metering/monitoring", "/dashboard/planning/metering/journey", "/dashboard/planning/about-this-build"]) {
     await page.goto(path);
     await expect(page.locator("[data-report-link]"), path).toHaveAttribute("href", /\/dashboard\/planning\/metering\/report/);
   }

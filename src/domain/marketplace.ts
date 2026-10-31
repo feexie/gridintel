@@ -1,4 +1,5 @@
 import type { DiscoId } from "./planning";
+import type { IsoDate } from "./primitives";
 
 /* ==========================================================
    GRIDINTEL DOMAIN — PLANNING: THE METERING MARKETPLACE
@@ -33,6 +34,25 @@ export interface MeterPledge {
   returnCurrency: "naira" | "usd";
   /** How long the funder will wait to be repaid, in months; null for a grant, which is not repaid. */
   tenorMonths: number | null;
+  sourceId: string;
+}
+
+/** One household's meter, from application to installation, as the marketplace records it. Holds no name or address: a reference only. */
+export interface MeterJourneyRecord {
+  reference: string;
+  disco: DiscoId;
+  band: MarketplaceBand;
+  /** The feeder the DisCo confirmed. */
+  feeder: string;
+  appliedOn: IsoDate;
+  approvedOn: IsoDate;
+  fundedOn: IsoDate;
+  installedOn: IsoDate;
+  /** The DisCo confirms the meter commissioned and vending: the verified install. */
+  confirmedOn: IsoDate;
+  /** The household's usual recharge, in naira, and how many days apart. */
+  rechargeNaira: number;
+  rechargeEveryDays: number;
   sourceId: string;
 }
 

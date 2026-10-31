@@ -67,6 +67,20 @@ export function takeAtRecharge(owed: number, recharge: number, methodology = MAR
   return { toEscrow, carried: owed - toEscrow };
 }
 
+/** Month by month: the charge a month into escrow until the meter's cost is repaid; the last month pays only what is left. */
+export function repaymentSchedule(meterCost: number, chargePerDay: number, methodology = MARKETPLACE_REFERENCE): { month: number; paid: number; balance: number }[] {
+  const perMonth = chargePerDay * methodology.parameters.daysPerMonth;
+  if (perMonth <= 0 || meterCost <= 0) return [];
+  const rows: { month: number; paid: number; balance: number }[] = [];
+  let balance = meterCost;
+  for (let month = 1; balance > 1e-6; month++) {
+    const paid = Math.min(perMonth, balance);
+    balance -= paid;
+    rows.push({ month, paid, balance: balance < 1e-6 ? 0 : balance });
+  }
+  return rows;
+}
+
 export interface BandTerms {
   band: MarketplaceBand;
   /** Installed cost of the meter the band needs, in naira. */

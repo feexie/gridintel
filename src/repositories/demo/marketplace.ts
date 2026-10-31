@@ -1,4 +1,4 @@
-import type { DataSource, DiscoId, MarketplaceBand, MeterApplication, MeterPledge } from "@/domain";
+import type { DataSource, DiscoId, MarketplaceBand, MeterApplication, MeterJourneyRecord, MeterPledge } from "@/domain";
 import type { MarketplaceRepository } from "../ports/marketplace.ts";
 import { seeded } from "./rng.ts";
 
@@ -30,6 +30,11 @@ const PLEDGES: MeterPledge[] = [
   { id: "private-2", funder: "Second private fund", kind: "private", amountNaira: 80_000_000, meters: null, bands: ["A1", "A3"], discos: ["enugu", "ibadan", "port_harcourt"], returnPercent: 24, returnCurrency: "naira", tenorMonths: 24, sourceId: source },
 ];
 
+/** One designed household in Ibadan, Band A single-phase, followed from application to repayment. Not a real customer. */
+const JOURNEYS: MeterJourneyRecord[] = [
+  { reference: "IB-A-00412", disco: "ibadan", band: "A1", feeder: "11 kV feeder IB-07", appliedOn: "2026-07-06", approvedOn: "2026-07-14", fundedOn: "2026-08-01", installedOn: "2026-08-19", confirmedOn: "2026-08-21", rechargeNaira: 5_000, rechargeEveryDays: 7, sourceId: source },
+];
+
 /** The range of approved applications a DisCo holds for a band. */
 const RANGE: Record<MarketplaceBand, [number, number]> = { A1: [20, 150], A3: [5, 40], B: [40, 250], C: [60, 300], D: [40, 220], E: [20, 160], lifeline: [20, 120] };
 
@@ -44,6 +49,7 @@ export function createSyntheticMarketplace(): MarketplaceRepository {
   return {
     pledges: async () => PLEDGES,
     applications: async () => applications,
+    journeys: async () => JOURNEYS,
     sources: async () => [SYNTHETIC_MARKETPLACE_SOURCE],
   };
 }

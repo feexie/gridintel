@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { allowedBands, canFund, matchPledges, monthsToRepay, takeAtRecharge, type BandTerms, type PledgeInput } from "./marketplace.ts";
+import { allowedBands, canFund, matchPledges, monthsToRepay, repaymentSchedule, takeAtRecharge, type BandTerms, type PledgeInput } from "./marketplace.ts";
 
 const TERMS: BandTerms[] = [
   { band: "A1", meterCost: 90_000, chargePerDay: 200 },
@@ -65,6 +65,14 @@ describe("the metering marketplace", () => {
   it("places a pledge of whole meters exactly", () => {
     const result = matchPledges([pledge({ kind: "public", tenorMonths: null, amountNaira: 1_000 * 91_033.3 })], [{ disco: "kano", band: "C", approved: 5_000 }], [{ band: "C", meterCost: 91_033.3, chargePerDay: 100 }], ["kano"]);
     assert.equal(result.pledges.p.meters, 1_000);
+  });
+
+  it("repays a meter month by month, the balance falling to nothing, the last month paying only what is left", () => {
+    const rows = repaymentSchedule(10_000, 100);
+    assert.equal(rows.length, 4);
+    assert.deepEqual(rows[0], { month: 1, paid: 3_040, balance: 6_960 });
+    assert.deepEqual(rows.at(-1), { month: 4, paid: 880, balance: 0 });
+    assert.deepEqual(repaymentSchedule(10_000, 0), []);
   });
 
   it("gives the same matches for the same inputs", () => {

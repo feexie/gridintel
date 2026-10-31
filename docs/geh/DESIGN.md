@@ -380,6 +380,24 @@ synthetic and labelled so; no existing method or figure changes.
   N[w] is queued for the next allocation.", with a "How this is calculated"
   line.
 
+## 6d. One meter's journey (synthetic, labelled)
+
+`/dashboard/planning/metering/journey`, tab "Journey", presentation mode
+supported. One synthetic household in Ibadan, Band A single-phase, as a
+timeline: Applied (household, GridIntel), Approved (Ibadan DisCo confirms
+the account and the feeder), Priced (N200 a day at each recharge, at most
+half the recharge, into escrow; months to repay), Funded (the Marketplace's
+match for Ibadan, Band A), Installed (a certified installer fits it, the
+DisCo confirms it, fund money released against the verified install),
+Repaying (the charge a month into escrow, the balance falling to nothing,
+the funder repaid). Each step names who acts and links to the screen that
+shows it (Marketplace, Metering Fund, Monitoring). The charge, cost, months
+and funder come from the Marketplace's terms and match; the household, its
+dates, feeder and recharges are designed records. The schedule repays the
+meter's cost; the funder's return is set in its pledge and not modelled.
+To give this household a funder, the second private fund's DisCos include
+Ibadan (synthetic design, 31 October 2026).
+
 ## 6a. About this build (M4)
 
 `/dashboard/planning/about-this-build`: what existed at `geh-baseline` and
