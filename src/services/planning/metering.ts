@@ -366,6 +366,16 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
     },
   ];
 
+  /* Brief 15's impact measures: the share metered within five years, and estimated bills removed.
+     Customers stop growing at month 60, so year 6 is the first year with every customer metered. */
+  const removed = (year: (typeof base.years)[number]) => year.estimatedBillsWithoutPlan - year.estimatedBills;
+  const impact = {
+    metered: { label: "Customers metered at the end of year 5", value: formatShare(base.years[4].meteredShare) },
+    bills: { label: "Estimated bills removed a year at full rollout", value: formatCount(removed(base.years[5])) },
+    byYear: base.years.slice(0, 5).map((year) => ({ year: `Year ${year.year}`, meteredShare: formatShare(year.meteredShare), billsRemoved: formatCount(removed(year)) })),
+    how: "How this is calculated: estimated bills removed = estimated bills if no meter were installed after the start, less estimated bills with the plan, month by month. Customers added during the rollout count as unmetered without the plan. Assumption: each unmetered customer gets one estimated bill a month. Estimated bills to metered customers (missed readings) are not included. Modelled, not a count of bills issued. Full rollout is year 6, the first year with every customer metered.",
+  };
+
   const years: YearRowView[] = base.years.map((year) => ({
     year: facts.startMonth ? `Year ${year.year} (${yearName(facts.startMonth, year.year)})` : `Year ${year.year}`,
     meteredShare: formatShare(year.meteredShare),
@@ -406,6 +416,7 @@ export async function meteringFundView(repository: PublishedFiguresRepository, q
     discos: [{ id: "national", label: "All 11 DisCos", current: assumptions.disco === "national" }, ...DISCOS.map((disco) => ({ id: disco, label: DISCO_NAMES[disco], current: assumptions.disco === disco }))],
     scope: facts.scope,
     headline,
+    impact,
     atCap,
     repaymentLine,
     cashPositiveLine,

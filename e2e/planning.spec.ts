@@ -14,6 +14,10 @@ test("the Metering Fund states its finding first, with the charge, how it is cal
   await expect(main.locator('[data-headline]')).toContainText("Meter charge a month, on token purchases");
   await expect(main.locator("[data-repayment]")).toHaveText(/^Each meter is repaid within 5 years of installation; the last meters finish repaying in month 120\.$/);
   await expect(main.locator("[data-at-cap]")).toContainText("Held at the cap, ₦261 a month");
+  // Brief 15's two impact measures are headlines: metered in five years, and estimated bills removed.
+  await expect(main.locator('[data-impact-figure="metered"]')).toContainText("Customers metered at the end of year 5");
+  await expect(main.locator('[data-impact-figure="bills"]')).toContainText(/Estimated bills removed a year at full rollout\s*[\d.]+ million/);
+  await expect(main.locator("[data-impact-years] tbody tr")).toHaveCount(2);
   // A "How this is calculated" line under each figure that a formula drives.
   expect(await main.locator("[data-how]").filter({ hasText: /^How this is calculated:/ }).count()).toBeGreaterThanOrEqual(4);
   // The bar says what the data is: published figures and assumptions, not the synthetic dataset.

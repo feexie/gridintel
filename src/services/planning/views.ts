@@ -138,6 +138,13 @@ export interface MeteringFundView {
   /** The scope the case covers, e.g. "Nigeria, all 11 DisCos" or "GEH Brief 15 test scenario". */
   scope: string;
   headline: { sentence: string; figure: string; figureLabel: string; tone: "ok" | "warning"; how: string };
+  /** Brief 15's two impact measures: customers metered within five years, and estimated bills removed. */
+  impact: {
+    metered: { label: string; value: string };
+    bills: { label: string; value: string };
+    byYear: { year: string; meteredShare: string; billsRemoved: string }[];
+    how: string;
+  };
   /** When the charge breaks the cap: what holding it at the cap leaves unpaid, and the public money that would close it. */
   atCap: { sentence: string; how: string } | null;
   repaymentLine: string;

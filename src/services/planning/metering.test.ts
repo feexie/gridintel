@@ -18,6 +18,16 @@ describe("the Metering Fund screen", () => {
     assert.equal(view.sourcing.synthetic, false);
   });
 
+  it("shows Brief 15's two impact measures: customers metered in five years and estimated bills removed, by year", async () => {
+    const view = await meteringFundView(published, { case: "nigeria" });
+    assert.equal(view.impact.metered.value, "100.0%");
+    assert.match(view.impact.bills.value, /^[\d.]+ million$/);
+    assert.equal(view.impact.byYear.length, 5);
+    assert.deepEqual(view.impact.byYear.map((year) => year.year), ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"]);
+    assert.match(view.impact.how, /each unmetered customer gets one estimated bill a month/);
+    assert.match(view.impact.how, /missed readings\) are not included/);
+  });
+
   it("builds the Nigeria case from NERC's 30 June 2026 figures, with growth and pace from the two quarters", async () => {
     const view = await meteringFundView(published, { case: "nigeria" });
     assert.equal(view.scope, "Nigeria, all 11 DisCos");

@@ -106,6 +106,56 @@ export function MeteringFund({ view, present, query }: { view: MeteringFundView;
         </div>
       </header>
 
+      {/* Brief 15's two impact measures. */}
+      <section className="rounded-panel border border-line bg-panel px-4 py-4 sm:px-6" data-impact>
+        <p className="text-micro font-semibold uppercase tracking-eyebrow text-brand">Impact · Modelled</p>
+        <div className="mt-2 grid gap-4 sm:grid-cols-2">
+          <div data-impact-figure="metered">
+            <p className="text-sm font-medium text-ink-2">{view.impact.metered.label}</p>
+            <p className="text-4xl font-semibold tracking-tight text-ink">{view.impact.metered.value}</p>
+          </div>
+          <div data-impact-figure="bills">
+            <p className="text-sm font-medium text-ink-2">{view.impact.bills.label}</p>
+            <p className="text-4xl font-semibold tracking-tight text-ink">{view.impact.bills.value}</p>
+          </div>
+        </div>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm" data-impact-years>
+            <thead>
+              <tr className="border-b border-line-strong text-left text-caption text-ink-5">
+                <th className="py-1.5 pr-3 font-medium" />
+                {view.impact.byYear.map((year) => (
+                  <th key={year.year} className="py-1.5 pr-3 font-medium">
+                    {year.year}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="text-ink-2">
+              <tr className="border-b border-line/60">
+                <td className="py-1.5 pr-3 text-caption text-ink-4">Metered at year end</td>
+                {view.impact.byYear.map((year) => (
+                  <td key={year.year} className="py-1.5 pr-3">
+                    {year.meteredShare}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="py-1.5 pr-3 text-caption text-ink-4">Estimated bills removed</td>
+                {view.impact.byYear.map((year) => (
+                  <td key={year.year} className="py-1.5 pr-3 font-semibold text-ink">
+                    {year.billsRemoved}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-2">
+          <How>{view.impact.how}</How>
+        </div>
+      </section>
+
       {view.atCap ? (
         <section className="rounded-panel border border-caution-line/60 bg-caution-surface px-4 py-3" data-at-cap>
           <p className="text-sm font-semibold text-caution-ink">{view.atCap.sentence}</p>
