@@ -232,6 +232,22 @@ const SCENES: Scene[] = [
       await shot("matching");
     },
   },
+  {
+    id: "k", name: "journey", path: `${PLANNING}/metering/journey?present=1`,
+    play: async (page, shot) => {
+      await wait(5000);
+      await shot("headline");
+      await glideToElement(page, '[data-step="applied"]', 3000, 160);
+      await point(page, '[data-step="priced"]', 3500);
+      await shot("priced");
+      await glideToElement(page, '[data-step="funded"]', 3500, 160);
+      await point(page, '[data-step="installed"] [data-step-link]', 3000);
+      await glideToElement(page, '[data-step="repaying"]', 3500, 160);
+      await shot("repaying");
+      await glideToElement(page, "[data-schedule]", 4500, 160);
+      await shot("balance");
+    },
+  },
 ];
 
 async function serverAnswers() {

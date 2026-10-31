@@ -362,3 +362,25 @@ export interface MarketplaceView {
   methodology: { id: string; version: string; disclaimer: string };
   sourcing: { synthetic: boolean; sources: { id: string; name: string; kind: string }[] };
 }
+
+/** One meter's journey: one synthetic household from application to the funder repaid. */
+export interface JourneyView {
+  headline: string;
+  headlineHow: string;
+  household: { label: string; value: string }[];
+  steps: {
+    key: string;
+    title: string;
+    date: string;
+    /** Who acts at this step. */
+    who: string[];
+    what: string;
+    figures: { label: string; value: string }[];
+    /** The screen that shows this step. */
+    link: { label: string; href: string };
+  }[];
+  schedule: { month: string; label: string; paid: string; balance: string; repaid: boolean }[];
+  scheduleHow: string;
+  methodology: { id: string; version: string; disclaimer: string };
+  sourcing: { synthetic: boolean; sources: { id: string; name: string; kind: string }[] };
+}
