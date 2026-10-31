@@ -13,10 +13,10 @@ are listed in `last-run.txt`.
 | b | Planning overview | The two groups; Metering built, the others planned |
 | c | DisCo allocation | Headline, the first million, the 11 DisCos (pause on Enugu), the first-million table, the pilot |
 | d | DT sequencing | The revolving chart and the ranking (synthetic network) |
-| e | Metering Fund | Fund alone, then the GridIntel structure (what it fails, public money per meter), band charges, estimated bills removed, receipt |
+| e | Metering Fund | Fund alone, then the GridIntel structure (what it fails, public money per meter), band charges, estimated bills removed |
 | f | Metering Fund | Initial investment against break-even |
 | g | Metering Fund | Shocks and the inflation line; Duty-shock reserve ticked, Recalculate |
-| h | Metering Fund | Investor protection and investor outcome |
+| h | Metering Fund | Customer receipt, investor protection and investor outcome |
 | i | Monitoring | Plan against synthetic actuals; a later quarter not reported |
 
 Every Metering screen is filmed in presentation mode (`?present=1`; the Metering Fund in the

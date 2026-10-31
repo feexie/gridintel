@@ -103,15 +103,15 @@ const SCENES: Scene[] = [
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
-      await glideToElement(page, "[data-first-million]", 4000, 140);
-      await glideToElement(page, "[data-discos]", 3500);
+      await glideToElement(page, "[data-first-million]", 3500, 140);
+      await glideToElement(page, "[data-discos]", 3000);
       await shot("eleven-discos");
       await glideToElement(page, '[data-disco="enugu"]', 1000, 300);
       await point(page, '[data-disco="enugu"] td:has-text("Never at this pace")', 4500);
       await shot("enugu");
       await glideToElement(page, "[data-split]", 5000);
       await shot("first-million-table");
-      await glideToElement(page, "[data-pilot]", 5000);
+      await glideToElement(page, "[data-pilot]", 4500);
       await shot("pilot");
     },
   },
@@ -145,8 +145,6 @@ const SCENES: Scene[] = [
       await shot("band-charges");
       await glideToElement(page, "[data-impact]", 3000);
       await shot("estimated-bills");
-      await glideToElement(page, "[data-receipt]", 3000, 200);
-      await shot("receipt");
     },
   },
   {
@@ -164,16 +162,16 @@ const SCENES: Scene[] = [
   {
     id: "g", name: "shocks-and-reserve", path: FUND,
     play: async (page, shot) => {
-      await glideToElement(page, "[data-inflation-line]", 3000, 300);
+      await glideToElement(page, "[data-inflation-line]", 2500, 300);
       await shot("inflation-line");
       await glideToElement(page, "[data-stress]", 1000);
-      await point(page, '[data-stress-row="duty"]', 3500);
+      await point(page, '[data-stress-row="duty"]', 3000);
       await shot("shocks-before");
-      await glideToElement(page, "[data-assumptions]", 1000);
+      await glideToElement(page, "[data-assumptions]", 500);
       const reserve = page.locator("[data-assumptions]").getByLabel(/Duty-shock reserve/);
       await point(page, "[data-assumptions] label:has-text('Duty-shock reserve')", 1500);
       await reserve.check();
-      await wait(1200);
+      await wait(800);
       const recalculate = page.locator("[data-assumptions]").getByRole("button", { name: "Recalculate" });
       await recalculate.scrollIntoViewIfNeeded();
       await point(page, "[data-assumptions] button[type=submit]", 1000);
@@ -182,13 +180,15 @@ const SCENES: Scene[] = [
       await page.locator('[data-stress-row="duty"]').waitFor();
       await wait(1000);
       await glideToElement(page, "[data-stress]", 1000);
-      await point(page, '[data-stress-row="duty"]', 4500);
+      await point(page, '[data-stress-row="duty"]', 3500);
       await shot("shocks-after-reserve");
     },
   },
   {
     id: "h", name: "investor-protection", path: FUND,
     play: async (page, shot) => {
+      await glideToElement(page, "[data-receipt]", 4000, 200);
+      await shot("receipt");
       await glideToElement(page, "[data-protection]", 5000);
       await shot("protection");
       await glideToElement(page, "[data-investor]", 5000);
