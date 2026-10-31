@@ -41,7 +41,7 @@ export const plannerOf = (id: string): Planner | undefined => PLANNERS.find((pla
 /** How the Platform Overview describes the sector while only Metering is built. */
 export const PLANNING_STATUS = "Metering is built. The other planners are planned.";
 
-export type MeteringScreenId = "allocation" | "dt" | "fund" | "monitoring" | "about";
+export type MeteringScreenId = "allocation" | "dt" | "fund" | "marketplace" | "monitoring" | "about";
 
 /* The three steps of the Metering planner, each paired with the hackathon's three A's: plan for
    access, fund for affordability, monitor for availability. */
@@ -68,6 +68,7 @@ export const METERING_SCREENS: { id: MeteringScreenId; step: string; label: stri
   { id: "allocation", step: STEPS.plan, label: "DisCo allocation", href: `${PLANNING_HOME}/metering/allocation`, planned: false },
   { id: "dt", step: STEPS.plan, label: "DT sequencing", href: `${PLANNING_HOME}/metering/dt`, planned: false },
   { id: "fund", step: STEPS.fund, label: "Metering Fund", href: `${PLANNING_HOME}/metering`, planned: false },
+  { id: "marketplace", step: STEPS.fund, label: "Marketplace · Match", href: `${PLANNING_HOME}/metering/marketplace`, planned: false },
   { id: "monitoring", step: STEPS.monitor, label: "Monitoring", href: `${PLANNING_HOME}/metering/monitoring`, planned: false },
   { id: "about", step: "", label: "About this build", href: `${PLANNING_HOME}/about-this-build`, planned: false },
 ];

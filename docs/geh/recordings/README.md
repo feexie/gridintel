@@ -18,6 +18,7 @@ are listed in `last-run.txt`.
 | g | Metering Fund | Shocks and the inflation line; Duty-shock reserve ticked, Recalculate |
 | h | Metering Fund | Customer receipt, investor protection and investor outcome |
 | i | Monitoring | Plan against synthetic actuals; a later quarter not reported |
+| j | Marketplace · Match | Headline and how it is calculated, the match, the five pledges (a queued one), the daily charge by band, who funds which meters (synthetic) |
 
 Every Metering screen is filmed in presentation mode (`?present=1`; the Metering Fund in the
 Nigeria reference case). The Planning overview keeps its navigation.

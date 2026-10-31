@@ -1,0 +1,49 @@
+import type { DataSource, DiscoId, MarketplaceBand, MeterApplication, MeterPledge } from "@/domain";
+import type { MarketplaceRepository } from "../ports/marketplace.ts";
+import { seeded } from "./rng.ts";
+
+/* ==========================================================
+   DEMO ADAPTER — SYNTHETIC METERING MARKETPLACE
+
+   Five designed pledges and designed approved meter applications,
+   one record per DisCo per band. The funders are styled on kinds of
+   real funder (a Mission 300-style programme, a DISREP-style
+   programme, a DFI, private funds); none is a real pledge, and no
+   application is a real customer's.
+========================================================== */
+
+export const SYNTHETIC_MARKETPLACE_SOURCE: DataSource = {
+  id: "synthetic-metering-marketplace",
+  name: "Synthetic metering marketplace (designed pledges and applications)",
+  kind: "synthetic",
+  description: "Five designed funders' pledges and designed approved meter applications by DisCo and band. No pledge or application is real.",
+};
+
+const ALL: DiscoId[] = ["abuja", "benin", "eko", "enugu", "ibadan", "ikeja", "jos", "kaduna", "kano", "port_harcourt", "yola"];
+const source = SYNTHETIC_MARKETPLACE_SOURCE.id;
+
+const PLEDGES: MeterPledge[] = [
+  { id: "mission-300", funder: "Mission 300-style programme", kind: "public", amountNaira: null, meters: 1_000, bands: ["C", "D", "E", "lifeline"], discos: ALL, returnPercent: 0, returnCurrency: "naira", tenorMonths: null, sourceId: source },
+  { id: "private-1", funder: "Private capital fund", kind: "private", amountNaira: 150_000_000, meters: null, bands: ["A1", "A3", "B"], discos: ["abuja", "eko", "ikeja"], returnPercent: 22, returnCurrency: "naira", tenorMonths: 36, sourceId: source },
+  { id: "dfi", funder: "DFI (cheaper, longer money)", kind: "dfi", amountNaira: 400_000_000, meters: null, bands: ["C", "D", "E"], discos: ALL, returnPercent: 8, returnCurrency: "usd", tenorMonths: 84, sourceId: source },
+  { id: "disrep", funder: "DISREP-style programme", kind: "public", amountNaira: 120_000_000, meters: null, bands: ["C", "D", "E", "lifeline"], discos: ["jos", "kaduna", "kano", "yola"], returnPercent: 0, returnCurrency: "naira", tenorMonths: null, sourceId: source },
+  { id: "private-2", funder: "Second private fund", kind: "private", amountNaira: 80_000_000, meters: null, bands: ["A1", "A3"], discos: ["enugu", "ibadan", "port_harcourt"], returnPercent: 24, returnCurrency: "naira", tenorMonths: 24, sourceId: source },
+];
+
+/** The range of approved applications a DisCo holds for a band. */
+const RANGE: Record<MarketplaceBand, [number, number]> = { A1: [20, 150], A3: [5, 40], B: [40, 250], C: [60, 300], D: [40, 220], E: [20, 160], lifeline: [20, 120] };
+
+export function createSyntheticMarketplace(): MarketplaceRepository {
+  const applications: MeterApplication[] = ALL.flatMap((disco) =>
+    (Object.keys(RANGE) as MarketplaceBand[]).map((band) => {
+      const random = seeded(`marketplace:${disco}:${band}`);
+      const [low, high] = RANGE[band];
+      return { disco, band, approved: Math.round(low + (high - low) * random()), sourceId: source };
+    }),
+  );
+  return {
+    pledges: async () => PLEDGES,
+    applications: async () => applications,
+    sources: async () => [SYNTHETIC_MARKETPLACE_SOURCE],
+  };
+}

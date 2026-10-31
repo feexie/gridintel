@@ -216,6 +216,22 @@ const SCENES: Scene[] = [
       await shot("not-reported");
     },
   },
+  {
+    id: "j", name: "marketplace", path: `${PLANNING}/metering/marketplace?present=1`,
+    play: async (page, shot) => {
+      await wait(4500);
+      await shot("headline");
+      await point(page, "[data-headline] [data-how]", 3500);
+      await glideToElement(page, "[data-totals]", 3000, 160);
+      await glideToElement(page, "[data-funders]", 3000, 160);
+      await point(page, '[data-queued="yes"]', 3000);
+      await shot("funders");
+      await glideToElement(page, "[data-band-charges]", 4000, 160);
+      await shot("daily-charge");
+      await glideToElement(page, "[data-matching]", 4500, 160);
+      await shot("matching");
+    },
+  },
 ];
 
 async function serverAnswers() {

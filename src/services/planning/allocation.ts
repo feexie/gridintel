@@ -54,8 +54,8 @@ function citationView(citation: Citation): CitationView {
   return { id: citation.id, title: citation.title, url: citation.url, published: citation.published, standing: citation.standing, locator: citation.locator ?? null };
 }
 
-/** The installed cost of one meter at the start, on the Metering Fund's default assumptions. */
-export function startingCostPerMeter(): number {
+/** The installed cost of one meter at the start, on the Metering Fund's default assumptions (single-phase hardware unless another price is given). */
+export function startingCostPerMeter(hardwareUsd?: number): number {
   const fund = readAssumptions({});
   return installedCostAtStart({
     customers: 1,
@@ -63,7 +63,7 @@ export function startingCostPerMeter(): number {
     growthPerYear: 0,
     publicMeters: [],
     grantsPerYear: [],
-    hardwareUsd: fund.values.hardware,
+    hardwareUsd: hardwareUsd ?? fund.values.hardware,
     importedShare: 1,
     dutyRate: fund.values.duty / 100,
     installNaira: fund.values.install,
