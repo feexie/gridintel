@@ -56,6 +56,17 @@ export interface MeterJourneyRecord {
   sourceId: string;
 }
 
+/** The steps a meter application waits at before it is approved (the front door's status flow, ADR 0021). */
+export type PendingApplicationStep = "submitted" | "under_review" | "verified" | "assigned";
+
+/** Meter applications waiting at one DisCo, at one step, as the source holds them: a count, with no customer's details. */
+export interface PendingMeterApplications {
+  disco: DiscoId;
+  step: PendingApplicationStep;
+  count: number;
+  sourceId: string;
+}
+
 /** Meter applications a DisCo has approved for one band. */
 export interface MeterApplication {
   disco: DiscoId;
