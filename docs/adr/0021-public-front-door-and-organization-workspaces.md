@@ -4,9 +4,10 @@ Date: 2026-11-08
 Status: **Draft. Not accepted.** Proposed for Phase NAV-A. The scope
 (public home, role picker, branded workspaces, the slimmed rail, what is
 public and what needs login, the demo workspace) is the Founder's
-(brief of 5 November 2026, refined in the front-door brief). The shapes and
-names below are engineering proposals awaiting the Founder's approval. The
-items marked **gate** need the Founder's answer before they are built.
+(brief of 5 November 2026, refined in the front-door brief). The NAV-A
+plan was approved and the gates below answered by the Founder on
+8 November 2026; the ADR is accepted, or amended, at the NAV-A
+checkpoint.
 
 ## Context
 
@@ -95,6 +96,10 @@ No new tenant concept is introduced.
 | Oversight | Is the programme delivering, across operators? | Regulator only |
 | Reports, Help, account (bottom) | Profile, switch workspace, sign out | Everyone |
 
+- **Applications** (Founder, 2026-11-08) live inside the "Meter every
+  customer" initiative of a Utility workspace, reached from Home, and the
+  initiative's card shows the count of applications pending (synthetic in
+  NAV-A).
 - **Removed** from the earlier NAV draft: Deliver (progress lives inside
   each initiative) and Customers (in the Utility workspace it is
   Applications). The front-door brief wins over the earlier navigation
@@ -114,7 +119,10 @@ No new tenant concept is introduced.
   organization's workspace can never be.
 - There is one demo workspace per workspace type, each a synthetic
   organization, so the switcher can be shown working. The existing
-  synthetic DisCo and mini-grid operator are two of them.
+  synthetic DisCo and mini-grid operator are two of them; the other three
+  are named so that no one could take them for real (Founder,
+  2026-11-08): "Demonstration DER Developer (synthetic)", "Demonstration
+  Financier (synthetic)" and "Demonstration Regulator (synthetic)".
 
 ### 7. Terminology
 
@@ -146,9 +154,16 @@ never the check: each action is checked where it is carried out.
 | DER, Mini-grid | `plan.read`, `charging.load.read`; `reports.read` |
 | Regulator | `oversight.read`; `reports.read` |
 
-How these join the membership's grant (ADR 0020, `grantFor`) is decided
-with the database brief and NAV-B (**gate**: access semantics). NAV-A
-enforces nothing new: it builds no action.
+How these join the membership's grant (ADR 0020, `grantFor`) is
+deferred to the database brief (Founder, 2026-11-08). NAV-A enforces
+nothing new: it builds no action.
+
+**One principle is fixed now (Founder, 2026-11-08): an organization's
+workspace type sets its default sectors.** A Utility workspace includes
+`planning.metering` besides `utility`, so a DisCo's people can open the
+Metering screens; today an organization holds only the sectors listed on
+its record, and `grantFor` drops every other key. The default sectors of
+each type are set with the database brief.
 
 ### 9. Addresses
 
@@ -165,21 +180,22 @@ enforces nothing new: it builds no action.
   opens another organization's records. Every old address redirects (308)
   to its new home, held by a browser test.
 
-## Gates (the Founder's answers needed)
+## Gates, answered (Founder, 2026-11-08)
 
-1. **One site or two.** Today the public demonstration has no sign-in
-   pages (a test holds it) and the tenant deployment has nothing public.
-   Proposed: the front door and the demo workspaces are served by the
-   public demonstration; its Sign in button leads to the tenant
-   deployment's sign-in page (an address set in configuration). The
-   alternative, one deployment that is both public and signed in, changes
-   ADR 0020's separation and is a security decision.
-2. **Public pages on the tenant deployment.** If the tenant deployment
-   also serves the front door, its proxy's list of public addresses grows
-   (`isPublicPath`). That is an auth change.
-3. **Action permissions** (decision 8) and how they join the membership.
-4. **Public form protection** (MTR-A): rate limiting, a captcha and SMS
-   are external services or new infrastructure.
+1. **Two sites.** ADR 0020's separation stands. The public demonstration
+   carries the front door and the demo workspaces; its Sign in button
+   leads to the tenant deployment's sign-in page, whose address is set in
+   configuration. The public demonstration still has no sign-in page of
+   its own.
+2. **Public pages on the tenant deployment.** Not in NAV-A: `/preview` is
+   not found there, and the tenant's proxy is unchanged.
+3. **Action permissions** are deferred to the database brief, with the
+   principle of decision 8 recorded.
+4. **Public form protection** (MTR-A): stubs first. Rate limiting in the
+   application; the captcha and SMS as stubs. Any paid service stays a
+   decision gate.
+5. **Phase 8A** is not closed: the Founder has not yet signed in on the
+   real Supabase project. NAV-A does not depend on it.
 
 ## Consequences
 

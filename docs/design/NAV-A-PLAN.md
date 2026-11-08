@@ -44,7 +44,7 @@ unchanged, and no figure changes (`npm run geh:figures` shows no change).
 | --- | --- | --- |
 | `src/constants/initiatives.ts` | Catalogue | The initiative config (below); no figure |
 | `src/constants/workspaces.ts` | Catalogue | Workspace types, the slimmed rail per type, what each rail item lists, the demo workspaces (synthetic organizations, name, logo or fallback, type) |
-| `src/constants/routing.ts` | Pure function | `routeFor(initiative, role)` and `railFor(type)` |
+| `src/constants/frontDoor.ts` | Pure function | The `/preview` addresses and `routeFor(initiative, role)`; `railFor(type)` is in `workspaces.ts` |
 | `src/services/initiatives/views.ts` | Service | `InitiativeCardView`, `RolePickerView`, `WorkspaceHeaderView`, `RailView`: view models with sourcing |
 | `src/services/initiatives/headline.ts` | Service | Resolves a headline metric id to a `MetricView` from the existing planning and mini-grid services; unknown or unsupported is a status, never 0 |
 | `src/composition/initiatives.ts` | Composition | Wires the service to the existing published data and runtimes |
