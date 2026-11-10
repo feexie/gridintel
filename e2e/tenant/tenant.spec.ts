@@ -206,7 +206,7 @@ test("a tenant deployment serves no front door: /preview leads to signing in, an
   expect(anonymous.status()).toBe(307);
   expect(anonymous.headers().location).toBe(`/login?next=${encodeURIComponent("/preview")}`);
   await signIn(page, TEST_PEOPLE.discoAdmin);
-  for (const route of ["/preview", "/preview/initiatives/meter-every-customer", "/preview/initiatives/meter-every-customer/customer", "/preview/track"]) {
+  for (const route of ["/preview", "/preview/initiatives/meter-every-customer", "/preview/initiatives/meter-every-customer/customer", "/preview/track", "/preview/workspace/demo-utility", "/preview/workspace/demo-utility/intelligence"]) {
     const response = await page.goto(route);
     expect(response?.status(), route).toBe(404);
   }
