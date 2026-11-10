@@ -216,33 +216,53 @@ each type are set with the database brief.
    proposes.
 5. This record is accepted once the fixes below are in.
 
-**Section 3c of the front-door brief (10 November 2026)**, as the Founder
-gave it at the checkpoint:
+**Section 3c of the front-door brief: additions after the NAV-A
+checkpoint (Founder, 10 November 2026).** They keep the structure close to
+the Odyssey pattern (programme page, then role, then the organization's own
+space) without rebuilding what Odyssey does.
 
-- **3c.1 An initiative has a page of its own**, at `/initiatives/[id]`,
-  with "Take part" leading to the role picker at
-  `/initiatives/[id]/take-part`. Not built in NAV-A; planned for NAV-B.
-- **3c.2 "Hosted by"**: an initiative may name who hosts it, as an
-  optional field (`hostedBy`) of the initiative catalogue, empty until set.
-  Not built in NAV-A; planned for NAV-B.
-- **3c.3 Workspace scope.** Inside a workspace, a figure is the
-  workspace's own where it can be: a DisCo's workspace counts its own
-  queue of pending applications only, and a national figure says it is
-  national ("National (NERC)"). The public Home keeps the total across
-  every DisCo. Built at the checkpoint, with a unit test.
-- **3c.4 Regulator on Meter every customer**: "Who are you?" lists the
-  regulator, sent to sign in, with the regulator's demo workspace. Built
-  at the checkpoint.
+- **3c.1 Initiative detail page.** A card opens the initiative's own public
+  page before "Who are you?". It shows what the initiative is, who it is
+  for, the status flow (for Meter every customer: Submitted to Installed),
+  who takes part (counts by organization type, synthetic until real
+  organizations join), its headline figures with their status and source,
+  and one button, "Take part", which opens the role picker. Built in NAV-B
+  or with MTR-A, whichever comes first. Configuration only: the page is
+  drawn from the initiative's catalogue entry. Addresses:
+  `/initiatives/[id]`, with "Take part" at `/initiatives/[id]/take-part`.
+  Not built in NAV-A.
+- **3c.2 "Hosted by".** Each initiative has an optional host organization,
+  empty for now. When set, the host's name and logo show on the card and
+  the initiative page. A host is never set without that organization's
+  written agreement; no real agency, regulator or funder is shown as host,
+  sponsor or partner until then. The field goes into the database brief;
+  NAV-B only reads it from the catalogue (`hostedBy`). Not built in NAV-A.
+- **3c.3 Scope inside a workspace.** A figure shown inside an
+  organization's workspace is that organization's figure, or is labelled
+  clearly as national or sector-wide (for example "National (NERC)"). A
+  Utility workspace's pending applications are its own DisCo's queue
+  only. Built at the checkpoint, with a unit test; the public Home keeps
+  the total across every DisCo.
+- **3c.4 Regulator** is a role on Meter every customer ("I oversee the
+  programme across DisCos"), routed to sign in, with the demo regulator
+  workspace. Built at the checkpoint (its description on screen reads "I
+  oversee the metering programme across the DisCos.").
+- **3c.5 Not built here, by design:** programme finance, tenders,
+  results-based disbursement and data rooms stay on Odyssey. GridIntel may
+  later import that data (a separate brief, with a decision gate).
+
+**Acceptance checks added with 3c** (section 6 of the brief):
+
+- A card opens its initiative page, and "Take part" opens the role
+  picker (NAV-B or MTR-A, with 3c.1).
+- No initiative shows a host it has not been given in writing (no host
+  is set in NAV-A).
 
 **Fixes made at the checkpoint.** 3c.3 and 3c.4 above; a disabled map
 placeholder under "Drop a pin on the map (optional)"; on a phone the theme
 switch shows its icon only, so the public and workspace headers do not
 wrap; an initiative's page inside a workspace names the initiative once,
 and its card carries no link to itself.
-
-The two acceptance checks section 6 of the brief gained with 3c were not
-in the copy of the brief read at the checkpoint (`private/` held the
-earlier text); they are to be added here when read.
 
 ## Consequences
 
