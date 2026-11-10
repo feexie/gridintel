@@ -58,18 +58,23 @@ export async function nationalMeteringRate(published: PublishedFiguresRepository
   };
 }
 
-export async function pendingApplications(marketplace: MarketplaceRepository): Promise<InitiativeFigureView> {
-  const [pending, sources] = await Promise.all([marketplace.pending(), marketplace.sources()]);
+/** Whose queue a figure counts: every DisCo's (the public Home), or one DisCo's (its own workspace, ADR 0021). */
+export type QueueScope = { kind: "all" } | { kind: "disco"; disco: string };
+
+export async function pendingApplications(marketplace: MarketplaceRepository, scope: QueueScope = { kind: "all" }): Promise<InitiativeFigureView> {
+  const [all, sources] = await Promise.all([marketplace.pending(), marketplace.sources()]);
+  const pending = scope.kind === "all" ? all : all.filter((row) => row.disco === scope.disco);
   const synthetic = pending.some((row) => sources.find((source) => source.id === row.sourceId)?.kind === "synthetic");
   const total = pending.reduce((sum, row) => sum + row.count, 0);
+  const across = scope.kind === "all" ? "added up across the DisCos' queues" : "in this DisCo's own queue only";
   return {
     id: "metering.pending-applications",
-    label: "Applications pending",
+    label: scope.kind === "all" ? "Applications pending" : "Applications pending at this DisCo",
     value: count(total),
     status: "ok",
     origin: "calculated",
     synthetic,
-    basis: "Meter applications submitted, under review, verified or assigned a DT and feeder, and not yet approved, added up across the DisCos' queues. Designed records: none is a real customer's application.",
+    basis: `Meter applications submitted, under review, verified or assigned a DT and feeder, and not yet approved, ${across}. Designed records: none is a real customer's application.`,
     share: null,
   };
 }
@@ -127,17 +132,37 @@ export function minigridSummary(portfolio: MinigridPortfolioView): MinigridSumma
   return { figures: [listed, sitesAgreeing(portfolio), checked, different], synthetic };
 }
 
-/** Every figure the initiative catalogue names, resolved. */
-export async function initiativeFigures(inputs: {
+type FigureInputs = {
   published: PublishedFiguresRepository;
   marketplace: MarketplaceRepository;
   minigrid: () => Promise<MinigridPortfolioView>;
-}): Promise<Record<InitiativeFigureId, InitiativeFigureView>> {
+};
+
+/** Every figure the initiative catalogue names, resolved, as the public Home shows them: every DisCo's queue. */
+export async function initiativeFigures(inputs: FigureInputs): Promise<Record<InitiativeFigureId, InitiativeFigureView>> {
   const [rate, pending, portfolio] = await Promise.all([nationalMeteringRate(inputs.published), pendingApplications(inputs.marketplace), inputs.minigrid()]);
   return {
     "metering.national-rate": rate,
     "metering.pending-applications": pending,
     "charging.hubs": chargingHubs(),
     "minigrid.sites-agreeing": sitesAgreeing(portfolio),
+  };
+}
+
+/**
+ * The same figures as a workspace sees them (ADR 0021; brief 3c.3). A DisCo's workspace counts
+ * its own queue only; the national rate is labelled as national, so it is never read as the
+ * workspace's own. Every other figure is the public one.
+ */
+export async function workspaceFigures(
+  publicFigures: Record<InitiativeFigureId, InitiativeFigureView>,
+  marketplace: MarketplaceRepository,
+  queue: QueueScope,
+): Promise<Record<InitiativeFigureId, InitiativeFigureView>> {
+  const rate = publicFigures["metering.national-rate"];
+  return {
+    ...publicFigures,
+    "metering.national-rate": { ...rate, label: "National (NERC)" },
+    "metering.pending-applications": queue.kind === "all" ? publicFigures["metering.pending-applications"] : await pendingApplications(marketplace, queue),
   };
 }

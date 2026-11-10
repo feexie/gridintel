@@ -57,7 +57,7 @@ describe("the initiative catalogue (ADR 0021)", () => {
 
   it("lists each workspace type's initiatives", () => {
     assert.deepEqual(initiativesFor("utility").map((one) => one.id), ["meter-every-customer", "charging-hubs"]);
-    assert.deepEqual(initiativesFor("regulator").map((one) => one.id), ["minigrid-verification"]);
+    assert.deepEqual(initiativesFor("regulator").map((one) => one.id), ["meter-every-customer", "minigrid-verification"]);
     for (const type of WORKSPACE_TYPES) assert.ok(initiativesFor(type).length > 0, type);
   });
 });
@@ -76,6 +76,11 @@ describe("where a role is sent", () => {
 
     const financier = routeFor("meter-every-customer", "financier");
     assert.equal(financier?.kind === "sign-in" && financier.demoHref, "/preview/workspace/demo-financier/finance");
+
+    // Regulator on Meter every customer (brief 3c.4): to sign in, with the regulator's demo workspace.
+    const regulator = routeFor("meter-every-customer", "regulator");
+    assert.equal(regulator?.kind, "sign-in");
+    assert.equal(regulator?.kind === "sign-in" && regulator.demoHref, "/preview/workspace/demo-regulator/initiatives/meter-every-customer");
 
     const operator = routeFor("minigrid-verification", "minigrid");
     assert.equal(operator?.kind === "sign-in" && operator.demoHref, "/preview/workspace/demo-minigrid/intelligence");

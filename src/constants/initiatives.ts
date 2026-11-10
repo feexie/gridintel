@@ -88,6 +88,15 @@ export const INITIATIVES: readonly Initiative[] = [
         landing: { kind: "rail", item: "finance" },
         views: ["finance.marketplace", "finance.metering-fund", "finance.pipeline"],
       },
+      {
+        id: "regulator",
+        label: "Regulator",
+        description: "I oversee the metering programme across the DisCos.",
+        audience: "organization",
+        workspaceType: "regulator",
+        landing: { kind: "initiative" },
+        views: ["oversight.monitoring"],
+      },
     ],
   },
   {

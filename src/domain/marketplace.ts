@@ -61,7 +61,8 @@ export type PendingApplicationStep = "submitted" | "under_review" | "verified" |
 
 /** Meter applications waiting at one DisCo, at one step, as the source holds them: a count, with no customer's details. */
 export interface PendingMeterApplications {
-  disco: DiscoId;
+  /** The DisCo whose queue it is: one of NERC's eleven, or the organization id of a DisCo on GridIntel (the synthetic demonstration DisCo). */
+  disco: string;
   step: PendingApplicationStep;
   count: number;
   sourceId: string;

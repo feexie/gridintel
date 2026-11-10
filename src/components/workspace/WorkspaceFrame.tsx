@@ -77,7 +77,7 @@ export function WorkspaceFrame({ frame, children }: { frame: WorkspaceFrameView;
         <PlannedTag>Prototype</PlannedTag>
         <div className="ml-auto flex items-center gap-3">
           <Switcher frame={frame} />
-          <ThemeToggle />
+          <ThemeToggle compact />
         </div>
       </header>
       {current.demo ? (

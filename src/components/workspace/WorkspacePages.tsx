@@ -50,7 +50,7 @@ export function WorkspaceInitiative({ view }: { view: WorkspaceInitiativeView })
         {view.card.summary}
       </SectorBand>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-        <InitiativeCard card={view.card} />
+        <InitiativeCard card={view.card} onItsPage />
         <section className="space-y-2">
           <h2 className="text-xs font-semibold uppercase tracking-title text-ink-2">Your part of it</h2>
           <ViewList views={view.views} />

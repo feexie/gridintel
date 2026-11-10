@@ -21,7 +21,7 @@ export function PublicFrame({ signInHref, children }: { signInHref: string | nul
             <PlannedTag>Prototype</PlannedTag>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
+            <ThemeToggle compact />
             {signInHref ? (
               <a href={signInHref} className="gi-tap whitespace-nowrap rounded-tile bg-brand-strong px-3 py-1.5 text-sm font-medium text-white hover:opacity-90" data-sign-in>
                 Sign in

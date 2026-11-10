@@ -40,6 +40,8 @@ export interface WorkspaceRecord {
   logo: string | null;
   demo: boolean;
   synthetic: boolean;
+  /** The DisCo whose queue of meter applications the workspace holds (a Utility workspace); null for any other. */
+  disco: string | null;
 }
 
 function card(initiative: Initiative, figures: Figures, href: string): InitiativeCardView {

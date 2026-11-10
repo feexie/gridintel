@@ -3,9 +3,10 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-11-10. **Phase NAV-A is at its checkpoint** (branch
-`phase-nav-a`; ADR 0021, draft): the public front door and the demo
-workspaces as a prototype under `/preview`. Earlier status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-11-10. **Phase NAV-A is accepted** (Founder, 2026-11-10,
+with fixes; tag `phase-nav-a`; ADR 0021 accepted): the public front door
+and the demo workspaces as a prototype under `/preview`. It merges to
+`main` once CI's full `verify` passes. Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2252,16 +2253,16 @@ Made again with
   action).
 - Phone printing was checked in Chromium at phone width, not on a phone.
 
-## Phase NAV: the platform restructure (approved 2026-11-08; NAV-A at its checkpoint)
+## Phase NAV: the platform restructure (approved 2026-11-08; NAV-A accepted 2026-11-10)
 
 **Why (Founder, 5 and 8 November 2026).** GridIntel serves households,
 riders, DisCos, mini-grid and DER companies, financiers and regulators.
 The menu grew by sector. The restructure gives it a public front door
 (initiatives, then "Who are you?"), and branded organization workspaces
 with a slimmed rail (Home, Intelligence, Plan, Finance, Oversight;
-Reports, Help and the account at its foot). ADR 0021 (draft).
+Reports, Help and the account at its foot). ADR 0021 (accepted 2026-11-10).
 
-### Phase NAV-A: the front door and the demo workspaces, as a prototype (at its checkpoint 2026-11-10; branch `phase-nav-a`)
+### Phase NAV-A: the front door and the demo workspaces, as a prototype (accepted 2026-11-10 with fixes; tag `phase-nav-a`; merged once CI's full `verify` passes)
 
 | Built | Where |
 | --- | --- |
@@ -2278,6 +2279,19 @@ The proposed address of every current screen is in
 `docs/design/NAV-A-ADDRESSES.md`. Screenshots in
 `docs/screenshots/phase-nav-a` (not committed), to be attached to the
 release of the phase's tag.
+
+**The Founder's review (2026-11-10).** Accepted with fixes, made before
+the tag: a DisCo's workspace counts its own queue of pending applications
+and labels the 61.51% "National (NERC)", while the public Home keeps the
+total (brief 3c.3, with a unit test); Regulator added to Meter every
+customer's "Who are you?" (3c.4); a disabled map placeholder for the pin;
+the theme switch shows its icon only on a phone; an initiative's page
+inside a workspace names it once. The domain stays in Intelligence's
+addresses; NAV-B removes the three Phase 1 "Coming Soon" pages and moves
+One meter's journey and the Metering Plan report as the address table
+says. The initiative's own page with "Take part" (3c.1) and "Hosted by"
+(3c.2) are planned for NAV-B (`docs/design/NAV-B-PLAN.md`). The merge to
+`main` waits for CI's full `verify`, stopped by a GitHub billing lock.
 
 **Not in NAV-A.** Moving screens, keys and redirects (NAV-B, after Phase
 8A merges); the meter application and tracking working (MTR-A: in-app

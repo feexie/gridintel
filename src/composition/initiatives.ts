@@ -3,7 +3,7 @@ import { createSyntheticMarketplace } from "../repositories/demo/marketplace.ts"
 import { nercPublishedFigures } from "../repositories/published/nerc.ts";
 import { initiativesFor } from "../constants/initiatives.ts";
 import { railFor } from "../constants/workspaces.ts";
-import { initiativeFigures, minigridSummary } from "../services/initiatives/figures.ts";
+import { initiativeFigures, minigridSummary, workspaceFigures, type QueueScope } from "../services/initiatives/figures.ts";
 import { DISCO_NAMES } from "../services/planning/metering.ts";
 import { publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, workspaceHome, workspaceInitiative, type WorkspaceRecord } from "../services/initiatives/frontDoor.ts";
 import { TENANT_ORGANIZATIONS } from "./identityFixture.ts";
@@ -38,11 +38,11 @@ import { MINIGRID_ORGANIZATION_ID } from "../repositories/demo/minigrid/design.t
 const nameOf = (id: string) => TENANT_ORGANIZATIONS.find((one) => one.id === id)?.name ?? null;
 
 export const DEMO_WORKSPACES: readonly WorkspaceRecord[] = [
-  { id: demoWorkspaceId("utility"), name: nameOf(DEMO_ORGANIZATION_ID) ?? "Demonstration DisCo (synthetic)", type: "utility", logo: null, demo: true, synthetic: true },
-  { id: demoWorkspaceId("minigrid"), name: nameOf(MINIGRID_ORGANIZATION_ID) ?? "Demonstration Mini-grid Operator (synthetic)", type: "minigrid", logo: null, demo: true, synthetic: true },
-  { id: demoWorkspaceId("der"), name: "Demonstration DER Developer (synthetic)", type: "der", logo: null, demo: true, synthetic: true },
-  { id: demoWorkspaceId("financier"), name: "Demonstration Financier (synthetic)", type: "financier", logo: null, demo: true, synthetic: true },
-  { id: demoWorkspaceId("regulator"), name: "Demonstration Regulator (synthetic)", type: "regulator", logo: null, demo: true, synthetic: true },
+  { id: demoWorkspaceId("utility"), name: nameOf(DEMO_ORGANIZATION_ID) ?? "Demonstration DisCo (synthetic)", type: "utility", logo: null, demo: true, synthetic: true, disco: DEMO_ORGANIZATION_ID },
+  { id: demoWorkspaceId("minigrid"), name: nameOf(MINIGRID_ORGANIZATION_ID) ?? "Demonstration Mini-grid Operator (synthetic)", type: "minigrid", logo: null, demo: true, synthetic: true, disco: null },
+  { id: demoWorkspaceId("der"), name: "Demonstration DER Developer (synthetic)", type: "der", logo: null, demo: true, synthetic: true, disco: null },
+  { id: demoWorkspaceId("financier"), name: "Demonstration Financier (synthetic)", type: "financier", logo: null, demo: true, synthetic: true, disco: null },
+  { id: demoWorkspaceId("regulator"), name: "Demonstration Regulator (synthetic)", type: "regulator", logo: null, demo: true, synthetic: true, disco: null },
 ];
 
 const published = nercPublishedFigures();
@@ -55,6 +55,12 @@ const cardFigures = () => (figures ??= initiativeFigures({ published, marketplac
 export { tenantSignInHref };
 
 const workspace = (id: string) => DEMO_WORKSPACES.find((one) => one.id === id) ?? null;
+
+/** The figures as one workspace sees them: a DisCo's own queue, the national rate labelled national (brief 3c.3). */
+async function figuresFor(found: WorkspaceRecord) {
+  const queue: QueueScope = found.disco === null ? { kind: "all" } : { kind: "disco", disco: found.disco };
+  return workspaceFigures(await cardFigures(), marketplace, queue);
+}
 
 export const frontDoor = {
   /** The front door is served by the public demonstration only (ADR 0021, gate 1). */
@@ -73,11 +79,11 @@ export const frontDoor = {
   frame: (workspaceId: string) => workspaceFrame(workspaceId, DEMO_WORKSPACES),
   home: async (workspaceId: string) => {
     const found = workspace(workspaceId);
-    return found === null ? null : workspaceHome(found, await cardFigures());
+    return found === null ? null : workspaceHome(found, await figuresFor(found));
   },
   initiative: async (workspaceId: string, initiativeId: string) => {
     const found = workspace(workspaceId);
-    return found === null ? null : workspaceInitiative(found, initiativeId, await cardFigures());
+    return found === null ? null : workspaceInitiative(found, initiativeId, await figuresFor(found));
   },
   railItem: (workspaceId: string, item: string) => {
     const found = workspace(workspaceId);

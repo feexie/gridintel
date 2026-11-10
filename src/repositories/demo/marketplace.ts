@@ -1,6 +1,7 @@
 import type { DataSource, DiscoId, MarketplaceBand, MeterApplication, MeterJourneyRecord, MeterPledge, PendingApplicationStep, PendingMeterApplications } from "@/domain";
 import type { MarketplaceRepository } from "../ports/marketplace.ts";
 import { seeded } from "./rng.ts";
+import { DEMO_ORGANIZATION_ID } from "./sources.ts";
 
 /* ==========================================================
    DEMO ADAPTER — SYNTHETIC METERING MARKETPLACE
@@ -49,7 +50,8 @@ export function createSyntheticMarketplace(): MarketplaceRepository {
       return { disco, band, approved: Math.round(low + (high - low) * random()), sourceId: source };
     }),
   );
-  const pending: PendingMeterApplications[] = ALL.flatMap((disco) =>
+  // The eleven DisCos' queues, and the synthetic demonstration DisCo's own (its workspace counts that one only).
+  const pending: PendingMeterApplications[] = [...ALL, DEMO_ORGANIZATION_ID].flatMap((disco) =>
     (Object.keys(PENDING_RANGE) as PendingApplicationStep[]).map((step) => {
       const random = seeded(`marketplace:pending:${disco}:${step}`);
       const [low, high] = PENDING_RANGE[step];

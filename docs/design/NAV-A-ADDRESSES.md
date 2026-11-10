@@ -1,7 +1,7 @@
 # Phase NAV-A: every current address against its proposed new one
 
-Date: 2026-11-10. Branch `phase-nav-a`. Status: **a proposal for the
-Founder's approval at the NAV-A checkpoint.** Nothing has moved: every
+Date: 2026-11-10. Branch `phase-nav-a`. Status: **approved by the Founder at the NAV-A
+checkpoint (2026-11-10)**, with the initiative page of brief 3c.1 added. Nothing has moved: every
 address below answers today exactly as before. NAV-B moves the screens,
 adds a 308 redirect from each old address, and a browser test walks every
 old address (ADR 0021, decision 9).
@@ -10,7 +10,7 @@ old address (ADR 0021, decision 9).
 
 | Layer | Address | Notes |
 | --- | --- | --- |
-| Public | `/` Home (the initiatives), `/initiatives/[id]` (Who are you?), `/initiatives/[id]/[role]`, `/track` | Today under `/preview`. No login; no report; no rail |
+| Public | `/` Home (the initiatives); `/initiatives/[id]`, the initiative's own page with "Take part" (brief 3c.1); `/initiatives/[id]/take-part` (Who are you?); `/initiatives/[id]/take-part/[role]`; `/track` | Today under `/preview`, where the role picker is at `/preview/initiatives/[id]` and a role at `/preview/initiatives/[id]/[role]`. No login; no report; no rail. `take-part` keeps the picker one step from the page, and gives a role an address no initiative's own sub-page can take |
 | Signed in | `/dashboard` Home; `/dashboard/initiatives/[id]` | The organization is taken from the session, never from the address |
 | | `/dashboard/intelligence/[domain]/...` | The domain (`utility`, `minigrid`, `der`) stays in the address, because the public demonstration shows more than one demo workspace to the same visitor and the views of two domains share names (GIS Map, AI Assistant, Overview) |
 | | `/dashboard/plan/...`, `/dashboard/finance/...`, `/dashboard/oversight/...` | View names are unique across domains here, so no domain segment |
@@ -111,8 +111,8 @@ Everything under `/preview` (Home, `/preview/initiatives/...`, `/preview/track`,
 `/preview/workspace/[demo]/...`) redirects to its public or signed-in
 equivalent above once NAV-B is live.
 
-## Questions for the Founder
+## The Founder's answers (2026-11-10)
 
-1. Does the domain stay in the Intelligence addresses (`/dashboard/intelligence/utility/...`), as proposed, or does the session's workspace decide the domain, with shorter addresses?
-2. Can the three Phase 1 "Coming Soon" pages (`/dashboard/settings`, `/dashboard/intelligence/ai`, `/dashboard/intelligence/analytics`) be removed in NAV-B?
-3. Should One meter's journey and the Metering Plan report move as proposed, or stay beside the Metering screens?
+1. The domain stays in Intelligence's addresses, as proposed.
+2. NAV-B removes the three Phase 1 "Coming Soon" pages.
+3. One meter's journey and the Metering Plan report move as proposed.

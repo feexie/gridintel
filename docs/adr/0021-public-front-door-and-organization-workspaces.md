@@ -1,13 +1,11 @@
 # ADR 0021: A public front door, initiatives as configuration, and branded organization workspaces
 
 Date: 2026-11-08
-Status: **Draft. Not accepted.** Proposed for Phase NAV-A. The scope
-(public home, role picker, branded workspaces, the slimmed rail, what is
-public and what needs login, the demo workspace) is the Founder's
-(brief of 5 November 2026, refined in the front-door brief). The NAV-A
-plan was approved and the gates below answered by the Founder on
-8 November 2026; the ADR is accepted, or amended, at the NAV-A
-checkpoint.
+Status: **Accepted** (Founder, 2026-11-10, at the NAV-A checkpoint, with
+the fixes recorded below). The scope is the Founder's (briefs of 5 and 8
+November 2026, and section 3c of the front-door brief, 10 November). The
+plan was approved and the gates answered on 8 November; the checkpoint
+answers and section 3c are recorded at the end of this record.
 
 ## Context
 
@@ -24,7 +22,7 @@ each other's records, in two deployments: the public demonstration (no
 login) and a tenant deployment (every page behind login). It did not give
 GridIntel a public face for people who are not members of an organization.
 
-## Decisions (proposed)
+## Decisions
 
 ### 1. Two layers: public and signed in
 
@@ -170,9 +168,11 @@ each type are set with the database brief.
 - **NAV-A**: the clickable shell lives under its own prefix, `/preview`,
   on the public demonstration only, and replaces nothing: `/` still leads
   to `/dashboard`, and the current menu is unchanged.
-- **NAV-B** (proposed, to be fixed in the address table at the NAV-A
-  checkpoint): the public layer at `/` (Home), `/initiatives/[id]` (role
-  picker) and its public views, and `/track`; the signed-in layer stays
+- **NAV-B** (fixed at the NAV-A checkpoint in
+  `docs/design/NAV-A-ADDRESSES.md`): the public layer at `/` (Home),
+  `/initiatives/[id]` (the initiative's own page, brief 3c.1),
+  `/initiatives/[id]/take-part` (Who are you?) and
+  `/initiatives/[id]/take-part/[role]`, and `/track`; the signed-in layer stays
   under `/dashboard`, by rail item (`/dashboard/intelligence/...`,
   `/dashboard/plan/...`, `/dashboard/finance/...`,
   `/dashboard/oversight/...`, `/dashboard/reports`). The organization is
@@ -196,6 +196,53 @@ each type are set with the database brief.
    decision gate.
 5. **Phase 8A** is not closed: the Founder has not yet signed in on the
    real Supabase project. NAV-A does not depend on it.
+
+## The NAV-A checkpoint (Founder, 2026-11-10)
+
+**Answers.**
+
+1. The phase is tagged `phase-nav-a` with its screenshots on the release;
+   it is merged to `main` only once CI's full `verify` passes (CI was
+   stopped by a GitHub billing lock, which the Founder is clearing).
+2. The domain stays in Intelligence's addresses
+   (`/dashboard/intelligence/utility/...`): the public demonstration shows
+   several demo workspaces to one visitor, and two domains' views share
+   names.
+3. NAV-B removes the three Phase 1 "Coming Soon" pages
+   (`/dashboard/settings`, `/dashboard/intelligence/ai`,
+   `/dashboard/intelligence/analytics`).
+4. One meter's journey moves inside Meter every customer, and the
+   Metering Plan report to Reports, as `docs/design/NAV-A-ADDRESSES.md`
+   proposes.
+5. This record is accepted once the fixes below are in.
+
+**Section 3c of the front-door brief (10 November 2026)**, as the Founder
+gave it at the checkpoint:
+
+- **3c.1 An initiative has a page of its own**, at `/initiatives/[id]`,
+  with "Take part" leading to the role picker at
+  `/initiatives/[id]/take-part`. Not built in NAV-A; planned for NAV-B.
+- **3c.2 "Hosted by"**: an initiative may name who hosts it, as an
+  optional field (`hostedBy`) of the initiative catalogue, empty until set.
+  Not built in NAV-A; planned for NAV-B.
+- **3c.3 Workspace scope.** Inside a workspace, a figure is the
+  workspace's own where it can be: a DisCo's workspace counts its own
+  queue of pending applications only, and a national figure says it is
+  national ("National (NERC)"). The public Home keeps the total across
+  every DisCo. Built at the checkpoint, with a unit test.
+- **3c.4 Regulator on Meter every customer**: "Who are you?" lists the
+  regulator, sent to sign in, with the regulator's demo workspace. Built
+  at the checkpoint.
+
+**Fixes made at the checkpoint.** 3c.3 and 3c.4 above; a disabled map
+placeholder under "Drop a pin on the map (optional)"; on a phone the theme
+switch shows its icon only, so the public and workspace headers do not
+wrap; an initiative's page inside a workspace names the initiative once,
+and its card carries no link to itself.
+
+The two acceptance checks section 6 of the brief gained with 3c were not
+in the copy of the brief read at the checkpoint (`private/` held the
+earlier text); they are to be added here when read.
 
 ## Consequences
 

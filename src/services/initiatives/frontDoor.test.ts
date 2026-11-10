@@ -4,7 +4,7 @@ import type { Citation, DataSource, PendingMeterApplications, ReportedNationalMe
 import type { MarketplaceRepository } from "../../repositories/ports/marketplace.ts";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
 import type { MinigridPortfolioView, SiteCardView } from "../minigrid/views.ts";
-import { chargingHubs, initiativeFigures, minigridSummary, nationalMeteringRate, pendingApplications, sitesAgreeing } from "./figures.ts";
+import { chargingHubs, initiativeFigures, minigridSummary, nationalMeteringRate, pendingApplications, sitesAgreeing, workspaceFigures } from "./figures.ts";
 import { initialsOf, publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, workspaceHome, workspaceInitiative, type WorkspaceRecord } from "./frontDoor.ts";
 
 const CITATION: Citation = { id: "nerc-q2-2026", title: "NERC, Second Quarter 2026 Report", url: null, published: "2026-09-29", standing: "primary" };
@@ -22,9 +22,9 @@ const portfolio = (sites: SiteCardView[], completeness: MinigridPortfolioView["c
   ({ sites, completeness, agreementTolerance: 0.05, sourcing: { synthetic: true, sources: [] } }) as unknown as MinigridPortfolioView;
 
 const WORKSPACES: WorkspaceRecord[] = [
-  { id: "demo-utility", name: "Savanna Electricity Distribution (synthetic)", type: "utility", logo: null, demo: true, synthetic: true },
-  { id: "demo-regulator", name: "Demonstration Regulator (synthetic)", type: "regulator", logo: null, demo: true, synthetic: true },
-  { id: "demo-financier", name: "Demonstration Financier (synthetic)", type: "financier", logo: null, demo: true, synthetic: true },
+  { id: "demo-utility", name: "Savanna Electricity Distribution (synthetic)", type: "utility", logo: null, demo: true, synthetic: true, disco: "demo-disco" },
+  { id: "demo-regulator", name: "Demonstration Regulator (synthetic)", type: "regulator", logo: null, demo: true, synthetic: true, disco: null },
+  { id: "demo-financier", name: "Demonstration Financier (synthetic)", type: "financier", logo: null, demo: true, synthetic: true, disco: null },
 ];
 
 describe("the figures on the initiative cards", () => {
@@ -56,6 +56,34 @@ describe("the figures on the initiative cards", () => {
     assert.equal(pending.value, "1,125");
     assert.equal(pending.origin, "calculated");
     assert.equal(pending.synthetic, true);
+  });
+
+  it("scopes a DisCo's workspace to its own queue and labels the rate national; the public Home keeps every DisCo's total (brief 3c.3)", async () => {
+    const repo = marketplace([
+      { disco: "demo-disco", step: "submitted", count: 40, sourceId: "synthetic-x" },
+      { disco: "demo-disco", step: "assigned", count: 2, sourceId: "synthetic-x" },
+      { disco: "ibadan", step: "submitted", count: 120, sourceId: "synthetic-x" },
+      { disco: "kano", step: "verified", count: 9, sourceId: "synthetic-x" },
+    ]);
+    const publicFigures = await initiativeFigures({ published: published([NATIONAL]), marketplace: repo, minigrid: async () => portfolio([site(1, 0)]) });
+    assert.equal(publicFigures["metering.pending-applications"].value, "171");
+    assert.equal(publicFigures["metering.national-rate"].label, "Customers metered nationally");
+
+    const disco = await workspaceFigures(publicFigures, repo, { kind: "disco", disco: "demo-disco" });
+    assert.equal(disco["metering.pending-applications"].value, "42");
+    assert.equal(disco["metering.pending-applications"].label, "Applications pending at this DisCo");
+    assert.match(disco["metering.pending-applications"].basis, /this DisCo's own queue only/);
+    assert.equal(disco["metering.national-rate"].label, "National (NERC)");
+    assert.equal(disco["metering.national-rate"].value, "61.51%");
+
+    const other = await workspaceFigures(publicFigures, repo, { kind: "disco", disco: "nobody" });
+    assert.equal(other["metering.pending-applications"].value, "0");
+
+    const regulator = await workspaceFigures(publicFigures, repo, { kind: "all" });
+    assert.equal(regulator["metering.pending-applications"].value, "171");
+    assert.equal(regulator["metering.national-rate"].label, "National (NERC)");
+    // The public figures are not changed by a workspace's view of them.
+    assert.equal(publicFigures["metering.national-rate"].label, "Customers metered nationally");
   });
 
   it("does not mark pending applications synthetic when their source is not", async () => {
@@ -120,6 +148,7 @@ describe("the front door's view models", async () => {
       ["utility", "organization"],
       ["der", "organization"],
       ["financier", "organization"],
+      ["regulator", "organization"],
     ]);
     assert.equal(rolePicker("nowhere"), null);
   });

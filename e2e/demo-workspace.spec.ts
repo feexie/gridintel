@@ -21,6 +21,12 @@ test("an organization role's 'Open the demo workspace' lands in the workspace at
   const initiative = page.locator('[data-workspace-initiative="meter-every-customer"]');
   await expect(initiative.locator('[data-view="initiative.applications"]')).toContainText("Applications");
   await expect(initiative.locator('[data-figure="metering.pending-applications"]')).toContainText("Synthetic");
+  // The workspace counts its own DisCo's queue, and the national rate says it is national (brief 3c.3).
+  await expect(initiative.locator('[data-figure="metering.pending-applications"]')).toContainText("Applications pending at this DisCo");
+  await expect(initiative.locator('[data-figure="metering.national-rate"]')).toContainText("National (NERC)");
+  // The header names the initiative once; the card under it has no title and no link to itself.
+  await expect(page.getByText("Meter every customer", { exact: true })).toHaveCount(1);
+  await expect(initiative.locator("[data-card-open]")).toHaveCount(0);
 });
 
 test("each demo workspace has its name, the fallback mark, DEMO, and the rail of its type, with no Deliver or Customers", async ({ page }) => {

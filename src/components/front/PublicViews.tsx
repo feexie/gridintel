@@ -101,6 +101,12 @@ export function MeterApplicationShell({ discos, states, trackHref }: { discos: {
               Drop a pin on the map <span className="font-normal text-ink-4">(optional)</span>
             </p>
             <p className="mt-1 text-caption text-ink-4">Helps your DisCo find the right transformer and feeder. You never need to know them yourself.</p>
+            <div
+              className="mt-2 flex h-40 items-center justify-center rounded-tile border border-dashed border-line-bold bg-app text-sm text-ink-4"
+              data-map-placeholder
+            >
+              Map for your pin: not open yet. It opens with the application form.
+            </div>
           </div>
           <label className="flex items-start gap-2 text-sm text-ink-2 sm:col-span-2">
             <input type="checkbox" name="consent" className="mt-1" />

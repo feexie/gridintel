@@ -38,7 +38,8 @@ test("a card opens 'Who are you?', and a customer goes straight to the meter app
   await page.locator('[data-initiative-card="meter-every-customer"] h2 a').click();
   await expect(page).toHaveURL(/\/preview\/initiatives\/meter-every-customer$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Who are you?");
-  await expect(page.locator("[data-role]")).toHaveCount(4);
+  await expect(page.locator("[data-role]")).toHaveCount(5);
+  await expect(page.locator('[data-role="regulator"]')).toHaveAttribute("data-audience", "organization");
 
   await page.locator('[data-role="customer"]').click();
   await expect(page).toHaveURL(/\/customer$/);
@@ -53,6 +54,7 @@ test("a card opens 'Who are you?', and a customer goes straight to the meter app
   await expect(form.getByLabel("Full name")).toBeDisabled();
   await expect(form.getByRole("button", { name: "Send application" })).toBeDisabled();
   await expect(form.locator("[data-not-open]")).toBeVisible();
+  await expect(form.locator("[data-map-placeholder]")).toHaveText("Map for your pin: not open yet. It opens with the application form.");
 
   await form.getByRole("link", { name: "Track my application →" }).click();
   await expect(page).toHaveURL(/\/preview\/track$/);
@@ -78,6 +80,10 @@ test("an organization role is sent to sign in, or to its demo workspace", async 
   await expect(handoff.locator("[data-sign-in-unset]")).toBeVisible();
   await expect(handoff).toContainText("Savanna Electricity Distribution (synthetic)");
   await expect(handoff.locator("[data-open-demo]")).toHaveAttribute("href", "/preview/workspace/demo-utility/initiatives/meter-every-customer");
+
+  await page.goto("/preview/initiatives/meter-every-customer/regulator");
+  await expect(page.locator('[data-sign-in-handoff="regulator"]')).toContainText("Demonstration Regulator (synthetic)");
+  await expect(page.locator("[data-open-demo]")).toHaveAttribute("href", "/preview/workspace/demo-regulator/initiatives/meter-every-customer");
 });
 
 test("no public page links to a report, and none has a sign-in page of its own", async ({ page, request }) => {

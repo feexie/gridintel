@@ -5,17 +5,20 @@ import { Basis, FigureRow, Headline, ProgressBar } from "./Figure";
 /* The initiative cards and the role picker (ADR 0021). The same card serves the public Home and
    a workspace's Home; only its link differs, and the service sets it. */
 
-export function InitiativeCard({ card }: { card: InitiativeCardView }) {
+/** `onItsPage`: the card on the initiative's own page, under a header that already names it: no title, summary or link to itself. */
+export function InitiativeCard({ card, onItsPage = false }: { card: InitiativeCardView; onItsPage?: boolean }) {
   return (
     <article className="flex flex-col gap-3 rounded-panel border border-line bg-panel p-4 shadow-panel" data-initiative-card={card.id}>
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight text-ink">
-          <Link href={card.href} className="hover:underline">
-            {card.title}
-          </Link>
-        </h2>
-        <p className="mt-1 text-sm leading-snug text-ink-3">{card.summary}</p>
-      </div>
+      {onItsPage ? null : (
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-ink">
+            <Link href={card.href} className="hover:underline">
+              {card.title}
+            </Link>
+          </h2>
+          <p className="mt-1 text-sm leading-snug text-ink-3">{card.summary}</p>
+        </div>
+      )}
       <Headline figure={card.headline} />
       {card.progress ? <ProgressBar figure={card.progress} /> : null}
       <Basis figure={card.headline} />
@@ -25,11 +28,13 @@ export function InitiativeCard({ card }: { card: InitiativeCardView }) {
           <Basis figure={card.secondary} />
         </div>
       ) : null}
-      <div className="mt-auto pt-1">
-        <Link href={card.href} className="text-sm font-medium text-link hover:text-link-hover hover:underline">
-          Open →
-        </Link>
-      </div>
+      {onItsPage ? null : (
+        <div className="mt-auto pt-1">
+          <Link href={card.href} className="text-sm font-medium text-link hover:text-link-hover hover:underline" data-card-open>
+            Open →
+          </Link>
+        </div>
+      )}
     </article>
   );
 }
