@@ -23,11 +23,11 @@ export function PublicFrame({ signInHref, children }: { signInHref: string | nul
           <div className="flex items-center gap-3">
             <ThemeToggle />
             {signInHref ? (
-              <a href={signInHref} className="gi-tap rounded-tile bg-brand-strong px-3 py-1.5 text-sm font-medium text-white hover:opacity-90" data-sign-in>
+              <a href={signInHref} className="gi-tap whitespace-nowrap rounded-tile bg-brand-strong px-3 py-1.5 text-sm font-medium text-white hover:opacity-90" data-sign-in>
                 Sign in
               </a>
             ) : (
-              <span className="rounded-tile border border-line-strong px-3 py-1.5 text-sm text-ink-4" title="The sign-in address is not set on this site." data-sign-in data-sign-in-unset>
+              <span className="whitespace-nowrap rounded-tile border border-line-strong px-3 py-1.5 text-sm text-ink-4" title="The sign-in address is not set on this site." data-sign-in data-sign-in-unset>
                 Sign in
               </span>
             )}

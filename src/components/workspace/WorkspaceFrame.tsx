@@ -39,13 +39,13 @@ function Switcher({ frame }: { frame: WorkspaceFrameView }) {
   return (
     <details className="relative" data-switcher>
       <summary className="gi-tap cursor-pointer list-none rounded-tile border border-line-strong px-2.5 py-1 text-sm text-ink-2 hover:border-line-bold">Switch workspace ▾</summary>
-      <ul className="absolute right-0 z-[1100] mt-1 w-72 rounded-panel border border-line bg-panel p-1 shadow-pop">
+      <ul className="absolute right-0 z-[1100] mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-panel border border-line bg-panel p-1 shadow-pop">
         {frame.others.map((other) => (
           <li key={other.id}>
             <Link href={other.href} className="flex items-center gap-2 rounded-tile px-2 py-1.5 text-sm text-ink-2 hover:bg-line/60" data-switch-to={other.id}>
               <WorkspaceMark workspace={other} size="sm" />
               <span className="min-w-0">
-                <span className="block truncate">{other.name}</span>
+                <span className="block">{other.name}</span>
                 <span className="block text-micro text-ink-4">
                   {other.typeLabel}
                   {other.demo ? " · demo" : ""}

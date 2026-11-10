@@ -67,7 +67,7 @@ describe("the figures on the initiative cards", () => {
     const hubs = chargingHubs();
     assert.equal(hubs.status, "not_available");
     assert.equal(hubs.value, null);
-    assert.match(hubs.basis, /^Not yet available/);
+    assert.match(hubs.basis, /no charging hub records yet/);
   });
 
   it("counts the mini-grid sites whose report agrees with their records", () => {

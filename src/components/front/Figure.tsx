@@ -9,7 +9,7 @@ const ORIGIN_WORD: Record<NonNullable<InitiativeFigureView["origin"]>, string> =
 export function Marks({ figure }: { figure: InitiativeFigureView }) {
   return (
     <span className="inline-flex flex-wrap gap-1">
-      {figure.origin ? <Mark>{ORIGIN_WORD[figure.origin]}</Mark> : <Mark>Not yet available</Mark>}
+      {figure.origin ? <Mark>{ORIGIN_WORD[figure.origin]}</Mark> : null}
       {figure.synthetic ? <Mark strong>Synthetic</Mark> : null}
     </span>
   );

@@ -75,7 +75,7 @@ export async function pendingApplications(marketplace: MarketplaceRepository): P
 }
 
 export function chargingHubs(): InitiativeFigureView {
-  return notAvailable("charging.hubs", "Charging and swap hubs", "Not yet available: GridIntel holds no charging hub records yet. They come with the E-mobility planner.");
+  return notAvailable("charging.hubs", "Charging and swap hubs", "GridIntel holds no charging hub records yet. They come with the E-mobility planner.");
 }
 
 /** A site whose report states figures and all of them agree with its records, within the tolerance. */
