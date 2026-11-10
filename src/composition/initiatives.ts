@@ -9,6 +9,7 @@ import { publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, worksp
 import { TENANT_ORGANIZATIONS } from "./identityFixture.ts";
 import { minigrid } from "./minigrid.ts";
 import { deploymentMode } from "./mode.ts";
+import { tenantSignInHref } from "./signIn.ts";
 import { DEMO_ORGANIZATION_ID } from "../repositories/demo/sources.ts";
 import { MINIGRID_ORGANIZATION_ID } from "../repositories/demo/minigrid/design.ts";
 
@@ -51,17 +52,7 @@ let figures: ReturnType<typeof initiativeFigures> | null = null;
 /** The cards' figures, once per process: published figures and designed records that do not change while it runs. */
 const cardFigures = () => (figures ??= initiativeFigures({ published, marketplace, minigrid: minigrid.portfolioView }));
 
-/** The tenant deployment's sign-in page; null when it is not set, or is not an https address. */
-export function tenantSignInHref(): string | null {
-  const value = process.env.GRIDINTEL_TENANT_SIGN_IN_URL;
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
+export { tenantSignInHref };
 
 const workspace = (id: string) => DEMO_WORKSPACES.find((one) => one.id === id) ?? null;
 

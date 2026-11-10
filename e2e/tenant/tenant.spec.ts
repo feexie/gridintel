@@ -200,3 +200,14 @@ test("signing out ends the session", async ({ page }) => {
   await page.goto("/dashboard/minigrid");
   await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fminigrid$/);
 });
+
+test("a tenant deployment serves no front door: /preview leads to signing in, and is not found once signed in (ADR 0021)", async ({ page, request }) => {
+  const anonymous = await request.get("/preview", { maxRedirects: 0 });
+  expect(anonymous.status()).toBe(307);
+  expect(anonymous.headers().location).toBe(`/login?next=${encodeURIComponent("/preview")}`);
+  await signIn(page, TEST_PEOPLE.discoAdmin);
+  for (const route of ["/preview", "/preview/initiatives/meter-every-customer", "/preview/initiatives/meter-every-customer/customer", "/preview/track"]) {
+    const response = await page.goto(route);
+    expect(response?.status(), route).toBe(404);
+  }
+});
