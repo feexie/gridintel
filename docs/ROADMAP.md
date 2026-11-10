@@ -3,7 +3,9 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-10-20. Status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-11-10. **Phase NAV-A is at its checkpoint** (branch
+`phase-nav-a`; ADR 0021, draft): the public front door and the demo
+workspaces as a prototype under `/preview`. Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2249,6 +2251,43 @@ Made again with
   reports keep "not checked against a template" (Founder, 2026-10-20: no
   action).
 - Phone printing was checked in Chromium at phone width, not on a phone.
+
+## Phase NAV: the platform restructure (approved 2026-11-08; NAV-A at its checkpoint)
+
+**Why (Founder, 5 and 8 November 2026).** GridIntel serves households,
+riders, DisCos, mini-grid and DER companies, financiers and regulators.
+The menu grew by sector. The restructure gives it a public front door
+(initiatives, then "Who are you?"), and branded organization workspaces
+with a slimmed rail (Home, Intelligence, Plan, Finance, Oversight;
+Reports, Help and the account at its foot). ADR 0021 (draft).
+
+### Phase NAV-A: the front door and the demo workspaces, as a prototype (at its checkpoint 2026-11-10; branch `phase-nav-a`)
+
+| Built | Where |
+| --- | --- |
+| The initiative catalogue (no figure held; each figure named by id), the workspace types, the slimmed rail and its Views, the role routing | `constants/initiatives.ts`, `constants/workspaces.ts`, `constants/frontDoor.ts` |
+| The card figures with status and source: NERC's reported national metering rate with a bar, pending applications (synthetic), charging hubs not yet available, mini-grid sites agreeing with their records (synthetic) | `services/initiatives`, `composition/initiatives.ts`; `pending()` on the marketplace port |
+| The public front door under `/preview`: Home, Who are you?, the meter application and Track my application (shown, submitting off), the charging network (no data yet), the mini-grid summary, the sign-in hand-off | `app/preview`, `components/front` |
+| Five demo workspaces, one per type, read-only, synthetic, badged DEMO: header, switcher, rail; one existing screen shown per type | `app/preview/workspace`, `components/workspace` |
+| Sign in leads to the tenant's sign-in page, from `GRIDINTEL_TENANT_SIGN_IN_URL` (https only) | `composition/signIn.ts` |
+| A tenant deployment serves none of `/preview` | `app/preview/front.ts`; a tenant browser test |
+
+Nothing moved: `/` still leads to `/dashboard`, the menu and every address
+are unchanged, and `npm run geh:figures` gives all 101 figures unchanged.
+The proposed address of every current screen is in
+`docs/design/NAV-A-ADDRESSES.md`. Screenshots in
+`docs/screenshots/phase-nav-a` (not committed), to be attached to the
+release of the phase's tag.
+
+**Not in NAV-A.** Moving screens, keys and redirects (NAV-B, after Phase
+8A merges); the meter application and tracking working (MTR-A: in-app
+rate limiting, captcha and SMS as stubs); the Applications queue (MTR-B);
+action permissions (the database brief).
+
+### Phase NAV-B, MTR-A, MTR-B, EMOB-A, EMOB-B (planned)
+
+As in the Founder's briefs of 5 and 8 November 2026 (kept outside the
+repository) and ADR 0021.
 
 ## Phase 11: AI / MCP intelligence
 

@@ -1,7 +1,7 @@
 # Phase NAV-A plan: public front door, role picker, branded workspace shell
 
 Date: 2026-11-08. Branch `phase-nav-a` (from `main` at `0045ec6`).
-Status: **awaiting the Founder's approval. No screen is built until then.**
+Status: **approved by the Founder on 2026-11-08; built, at its checkpoint on 2026-11-10.** Where the build differs from this plan: the routes are in `src/app/preview` with no route group (the dashboard layout wraps only `/dashboard`, so none was needed); the routing is in `src/constants/frontDoor.ts`; the pending count comes from `pending()` on the marketplace port; Sign in's address is read by `src/composition/signIn.ts`.
 Decision record: ADR 0021 (draft).
 
 NAV-A is a clickable shell on synthetic data. It moves nothing: `/` still
