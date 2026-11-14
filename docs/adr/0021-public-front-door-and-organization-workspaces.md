@@ -244,9 +244,10 @@ space) without rebuilding what Odyssey does.
   only. Built at the checkpoint, with a unit test; the public Home keeps
   the total across every DisCo.
 - **3c.4 Regulator** is a role on Meter every customer ("I oversee the
-  programme across DisCos"), routed to sign in, with the demo regulator
-  workspace. Built at the checkpoint (its description on screen reads "I
-  oversee the metering programme across the DisCos.").
+  metering programme across the DisCos"), routed to sign in, with the demo
+  regulator workspace. Built at the checkpoint. The Founder kept the
+  screen's wording over the brief's earlier "I oversee the programme
+  across DisCos" (14 November 2026).
 - **3c.5 Not built here, by design:** programme finance, tenders,
   results-based disbursement and data rooms stay on Odyssey. GridIntel may
   later import that data (a separate brief, with a decision gate).
