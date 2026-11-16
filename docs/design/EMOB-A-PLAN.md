@@ -44,16 +44,18 @@ Every input is held once, with its status and source, in the inputs table of
 
 | Input | Value | Status | Source or basis |
 | --- | --- | --- | --- |
-| Diesel price | ₦1,750 a litre | Reported | TechCabal, 30 July 2026, as the brief records it. It stays "reported" only with that cited, dated source; replaced by an NBS Diesel Price Watch month if the Founder prefers (open question 3). Without a citation it would be an assumption |
+| Diesel price, base case | ₦3,277.47 a litre | Reported | NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price (Founder, checkpoint review, 16 November 2026) |
+| Diesel price, low case | ₦1,750 a litre | Reported | TechCabal, 30 July 2026, as the brief records it; labelled the low case |
 | Diesel yield | 3 kWh a litre | Assumption | Small generator at part load; to confirm with an operator |
-| **Diesel cost per kWh, fuel only** | **₦583.33/kWh** | **Calculated** | ₦1,750 ÷ 3 kWh a litre. Labelled "fuel only": genset O&M and replacement are excluded |
+| **Diesel cost per kWh, fuel only** | **₦1,092.49/kWh base; ₦583.33/kWh low** | **Calculated** | Each price ÷ 3 kWh a litre. Labelled "fuel only": genset O&M and replacement are excluded. Every costed option shows both |
 | Grid tariff | the band of each hub's feeder | Reported | NERC September 2026 orders, Table 3, non-MD class, read from `src/repositories/published/nerc.ts`. The synthetic DisCo sits near Yola, so it takes Yola DisCo's order: A ₦209.50, B ₦63.33, C ₦52.51, D ₦50.01 (no Band E in that order). Which order the synthetic DisCo takes is a dataset assumption, stated |
 | Grid hours of supply | each hub's feeder | Calculated, on synthetic outages | `calculateSupplyHours`, unchanged: about 21.5 / 17.7 / 13.8 / 9.3 h a day on Market Road (A), Government Avenue (B), Old Town (C), Farm Road (D). The band is never read as hours |
 | Band minimum hours | 20 / 16 / 12 / 8 / 4 | Reported | NERC Service-Based Tariff, already in `SUPPLY_HOURS_REFERENCE` |
 | Peak sun hours, each hub | 5.73 h a day (annual); 4.73 h (rainy-season case, August) | Reported (satellite climatology) | NASA POWER Climatology API v2.10.1, `ALLSKY_SFC_SW_DWN`, January 2001 to December 2025, at 9.25° N, 12.47° E, retrieved 16 November 2026. Every synthetic hub lies in the same 1° cell, so all take this figure; each hub still carries its own value and source. Horizontal irradiance; tilt gain is not counted. Replaces the brief's 4.5 h assumption |
 | PV performance ratio | 0.80 | Assumption | Losses from heat, dust, wiring and the inverter |
 | BESS depth of discharge | 90% | Assumption | Lithium iron phosphate |
-| Daytime charging share | 50% | Assumption (added in the build) | Share of the day's charging done in sun hours: sizes PV for solar + grid, and the BESS for the energy charged outside sun hours. BESS losses are not counted in 0.1.0 |
+| Daytime charging share | 50% | Assumption (added in the build) | Share of the day's charging done in sun hours: sizes PV for solar + grid, and the BESS for the energy charged outside sun hours |
+| BESS round-trip efficiency | 90% | Assumption (checkpoint review) | Applied to the energy that passes through the BESS: PV makes the daytime share plus the rest ÷ 0.90 |
 | PV and BESS installed cost | **not set** | **Placeholder** | Until the Founder supplies an EPC quote. Every figure that needs it (solar options' cost per kWh, payback) is `null` with the reason "placeholder: no EPC quote", never 0 |
 
 ### Emissions
@@ -66,7 +68,8 @@ Every input is held once, with its status and source, in the inputs table of
 | Petrol tricycle fuel economy | 30 km a litre | Assumption | Commercial tricycle in town use |
 | Electric motorcycle range per kWh | 25 km a kWh | Assumption | About 40 Wh a km |
 | Electric tricycle range per kWh | 12 km a kWh | Assumption | About 83 Wh a km |
-| Grid emission factor | **not available** | Not available | No cited source is held. Every avoided-CO2 figure that needs it is `null` with that reason, never 0 (open question 4) |
+| Grid emission factor | 0.395 kg CO2 a kWh | Reported | IFI Harmonized Grid Emission Factors v2.0 (July 2019), Nigeria, combined margin, firm energy, 0.395 tCO2/MWh. The dataset dates from 2019, and the view says so |
+| Material CO2 difference | ±10% of the petrol figure | Assumption (checkpoint review) | Within it, the result reads "no material saving under these assumptions", with the vehicles' fuel economy and range beside it, never a precise figure |
 | Solar emissions in operation | 0 kg a kWh | Stated rule | Operating emissions only; manufacture is not counted, and the result says so |
 
 Avoided CO2 per swap = petrol the same distance would burn × 2.31 kg − the hub's power-source
@@ -77,7 +80,7 @@ charge on return)) × km a kWh.
 
 | Input | Value | Status | Source or basis |
 | --- | --- | --- | --- |
-| Adoption, slow / base / fast | 15% / 35% / 60% a year growth in vehicles served | Assumption | Each stated on its own line; never shown as a forecast |
+| Adoption, slow / base / fast | 15% / 35% / 60% a year growth in vehicles served | Placeholder | Placeholder scenarios, each on its own line; never shown as a forecast |
 | Swaps a vehicle a day | 1.5 (motorcycle), 2 (tricycle) | Assumption | Commercial riders; to confirm with an operator |
 | Hub charging window | the feeder's hours of supply on grid; 14 h a day off grid | Assumption | Operating day of a hub |
 | Existing load growth on a DT | 5% a year | Assumption | Applied to the DT's observed peak at 12, 24 and 48 months |
@@ -149,17 +152,20 @@ solar is sized to the annual figure, and the rainy-season shortfall is met by th
 backup and shown.
 - Grid with diesel backup: the grid supplies what fits in its hours and headroom at the
   feeder's band tariff; diesel the rest.
-- Diesel only: ₦583.33/kWh fuel only; litres a day = kWh ÷ 3.
+- Diesel only: ₦1,092.49/kWh fuel only at the base price (₦583.33 at the low price); litres a
+  day = kWh ÷ 3.
 - Solar + grid: PV kWp = kWh a day ÷ (peak sun hours × performance ratio), less what the grid
   supplies; the grid covers what PV does not, within its hours and headroom; diesel what is left.
-- Solar + BESS: PV sized as above for the whole day's energy; BESS kWh = energy charged outside
-  sun hours ÷ depth of discharge; diesel backup for the rainy-season shortfall.
+- Solar + BESS: PV sized for the whole day's energy, the share charged outside sun hours
+  grossed up for the BESS's 90% round-trip efficiency; BESS kWh = energy charged outside sun
+  hours ÷ depth of discharge; diesel backup for the rainy-season shortfall.
 - Hybrid: solar + BESS + grid, diesel for what is left.
 - For each: energy by source (kWh a day), cost per kWh and per swap where it can be costed
   (fuel and tariff only; solar options `null` until the EPC cost, since their backup's fuel
-  alone would make them look free; once supplied, shown beside the installed cost and payback), diesel litres a day, CO2 per
-  swap avoided against petrol vehicles (`null` for any option drawing on the grid, until a grid
-  factor is cited), and payback against diesel = installed cost ÷ (daily diesel fuel cost − the
+  alone would make them look free; once supplied, shown beside the installed cost and payback),
+  at the base and the low diesel price, diesel litres a day, CO2 per swap avoided against petrol
+  vehicles (the grid at 0.395 kg a kWh; "no material saving under these assumptions" within
+  ±10% of the petrol figure, with the fuel-economy and range assumptions beside it), and payback against diesel = installed cost ÷ (daily diesel fuel cost − the
   option's daily running cost) ÷ 30.4, `null` while the cost is a placeholder or the option
   saves nothing.
 
@@ -167,7 +173,14 @@ backup and shown.
 the hub's synthetic cost at a funder's return = the shared `monthsToRepayWithReturn`. Matching:
 pledges ordered as the Marketplace orders them (lowest return first, then fewest areas, then
 id); each pledge funds hubs it is allowed to (area, tenor long enough at its return) in hub-id
-order; whatever it cannot place is queued, and unfunded hubs are listed as waiting. Every
+order; whatever it cannot place is queued with the reason (no costed hub on its feeders; tenor
+shorter than any hub's payback; every hub it could fund already funded; or the money left less
+than any hub it could still fund), and unfunded hubs are listed as waiting. A hub is offered
+for funding only on a power option that works at its site through 24 months (checkpoint
+review): the grid where it fits; the grid after a DT upgrade, named with the DT and the month
+it is needed by, where only the DT rating fails (the upgrade's cost is not in the hub's); solar
++ BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's, so it
+waits for the EPC quote. No hub is funded on a grid option it fails. Every
 figure built on a hub's cost carries the synthetic status. Hubs only; rider and vehicle finance
 are out of scope (Founder, 5 November 2026).
 
@@ -231,13 +244,15 @@ calculated" line. Fuel costs say "fuel only". No KPI is left for a screen to com
 - `headroom`: **a hub that fits a DT now but not at 24 months**; a DT with no observed peak
   gives `null`, not a fit; **a feeder with too few supply hours for grid-only charging**, with
   the reason "supply hours".
-- `powerSource`: diesel ₦583.33/kWh fuel only and 250 litres a day for 750 kWh; each hub priced
+- `powerSource`: diesel ₦1,092.49/kWh (₦583.33 low) fuel only and 250 litres a day for 750 kWh;
+  the BESS's round-trip losses in the PV size; no material CO2 saving within ±10%; each hub priced
   at its own band's tariff; solar cost and payback `null` with no EPC cost; **diesel against
   solar + BESS once a cost is supplied** (a test-only cost, never shipped); the rainy-season
   case leaves a shortfall met by backup; avoided CO2 against petrol, and `null` for a grid
   option with no grid factor.
 - `swapFinance`: months to repay at 0% and at a return; **a pledge that cannot place its money
-  (queued)**; ordering matches the Marketplace rule; cost figures carry the synthetic status.
+  (queued), and the 3-month pledge queued with "tenor shorter than any hub's payback"**; the
+  funding basis (grid, grid after a DT upgrade, solar + BESS); ordering matches the Marketplace rule; cost figures carry the synthetic status.
 - `siteScore`: ordering and reasons; an option with no cost never ranks as cheapest.
 - `loan`: the moved functions give the same numbers as before; Marketplace tests unchanged.
 - Repository: every record is synthetic; no real company name appears.
@@ -266,9 +281,9 @@ tests and the key figures they give.
 
 1. **Buses and cars.** Types only, no figures, until inputs are supplied (the plan's
    recommendation; build proceeds on it).
-2. **Adoption curves.** 15% / 35% / 60% a year are placeholders, labelled assumptions. A
-   preferred source replaces them.
-3. **Diesel price source.** Keep TechCabal, 30 July 2026, or replace it with an NBS Diesel
-   Price Watch month?
-4. **Grid emission factor.** Not available until a source is chosen; grid options show no
-   avoided CO2 until then.
+2. **Adoption curves.** Settled at the checkpoint review: 15% / 35% / 60% a year stay as
+   labelled placeholder scenarios.
+3. **Diesel price source.** Settled: NBS Diesel Price Watch, May 2026, ₦3,277.47 a litre, the
+   base case; TechCabal ₦1,750 the low case.
+4. **Grid emission factor.** Settled: IFI Harmonized Grid Emission Factors v2.0 (July 2019),
+   Nigeria combined margin, firm energy, 0.395 tCO2/MWh, noted as a 2019 dataset.
