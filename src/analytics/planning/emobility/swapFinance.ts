@@ -1,4 +1,5 @@
 import type { FunderKind } from "@/domain";
+import type { HeadroomLimit } from "./headroom.ts";
 import type { Methodology } from "../../core/methodology.ts";
 import { REFERENCE_DISCLAIMER } from "../../core/methodology.ts";
 import { monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "../loan.ts";
@@ -19,7 +20,17 @@ import { monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "../
      within the pledge's tenor at its return. Hubs are taken by id;
      each is funded once. What a pledge cannot place is queued; hubs
      left unfunded are waiting. A hub with no cost cannot be matched
-     and is named, never matched at 0.
+     and is named, never matched at 0. Each queued pledge says why:
+     no costed hub on its feeders; its tenor shorter than any hub's
+     payback; every hub it could fund already funded; or the money
+     left less than the cost of any hub it could still fund.
+   - A hub is funded only on a power option that works at its site
+     through the site order's horizon (24 months): the grid where it
+     fits; the grid after a DT upgrade, named with the month it is
+     needed by, where only the DT rating fails; solar + BESS where the
+     feeder's hours of supply fail. The DT upgrade's cost is not in
+     the hub's cost; solar + BESS adds its PV and BESS cost, so a hub
+     on it waits for that cost and is never matched without it.
    Hubs and their batteries only: rider and vehicle finance are out
    of scope.
 ========================================================== */
@@ -60,6 +71,37 @@ export interface HubPledgeInput {
   feeders: readonly string[];
 }
 
+export type FundingPower = "grid" | "grid_after_dt_upgrade" | "solar_bess";
+
+export interface FundingBasis {
+  /** null when the grid fit is not known, so no power option can be named. */
+  power: FundingPower | null;
+  /** Months from now by which the DT upgrade is needed; null unless the power is grid after a DT upgrade. */
+  dtUpgradeBy: number | null;
+  reason: string;
+}
+
+/** The power option a hub is funded on: the grid only where it fits at every horizon up to `upToMonths`. */
+export function hubFundingBasis(horizons: readonly { months: number; fits: boolean | null; limits: readonly HeadroomLimit[] }[], upToMonths = 24): FundingBasis {
+  const studied = horizons.filter((row) => row.months <= upToMonths);
+  if (studied.length === 0 || studied.some((row) => row.fits === null)) return { power: null, dtUpgradeBy: null, reason: "grid fit not known" };
+  const failing = studied.filter((row) => row.fits === false);
+  if (failing.length === 0) return { power: "grid", dtUpgradeBy: null, reason: `fits on the grid through ${upToMonths} months` };
+  if (failing.some((row) => row.limits.includes("supply hours"))) {
+    const first = failing.find((row) => row.limits.includes("supply hours"))!;
+    return { power: "solar_bess", dtUpgradeBy: null, reason: `the feeder's hours of supply fail ${first.months === 0 ? "now" : `at ${first.months} months`}` };
+  }
+  const by = failing[0].months;
+  return { power: "grid_after_dt_upgrade", dtUpgradeBy: by, reason: `the DT rating fails ${by === 0 ? "now" : `at ${by} months`}` };
+}
+
+/** The cost a pledge must fund: the hub's own cost, plus PV and BESS on solar + BESS; null when either is missing. */
+export function hubFundingCost(hubCost: number | null, basis: FundingBasis, solarBessCost: number | null): number | null {
+  if (hubCost === null || basis.power === null) return null;
+  if (basis.power === "solar_bess") return solarBessCost === null ? null : hubCost + solarBessCost;
+  return hubCost;
+}
+
 export function escrowPerDay(swapsPerDay: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number {
   return Math.max(0, swapsPerDay) * parameters.addOnPerSwap;
 }
@@ -91,8 +133,8 @@ export interface HubMatch {
 
 export interface HubMatchResult {
   matches: HubMatch[];
-  /** By pledge id: money placed, money queued, hubs funded. */
-  pledges: Record<string, { placed: number; queued: number; hubs: number }>;
+  /** By pledge id: money placed, money queued, hubs funded, and why money is queued (null when none is). */
+  pledges: Record<string, { placed: number; queued: number; hubs: number; queuedReason: string | null }>;
   /** Hubs with a cost that no pledge funded. */
   waiting: string[];
   /** Hubs with no cost, which cannot be matched. */
@@ -116,7 +158,7 @@ export function matchHubPledges(pledges: readonly HubPledgeInput[], hubs: readon
       count += 1;
       matches.push({ pledgeId: pledge.id, hubId: hub.id, naira: hub.cost });
     }
-    result[pledge.id] = { placed: pledge.amountNaira - money, queued: money, hubs: count };
+    result[pledge.id] = { placed: pledge.amountNaira - money, queued: money, hubs: count, queuedReason: money > 1e-6 ? queuedReason(pledge, byId, funded, parameters) : null };
   }
   return {
     matches,
@@ -124,4 +166,14 @@ export function matchHubPledges(pledges: readonly HubPledgeInput[], hubs: readon
     waiting: byId.filter((hub) => hub.cost !== null && hub.cost > 0 && !funded.has(hub.id)).map((hub) => hub.id),
     notCosted: byId.filter((hub) => hub.cost === null || hub.cost <= 0).map((hub) => hub.id),
   };
+}
+
+/** Why a pledge keeps money queued once matching is done. */
+function queuedReason(pledge: HubPledgeInput, hubs: readonly HubFinanceInput[], funded: ReadonlySet<string>, parameters: SwapFinanceParameters): string {
+  const onFeeders = hubs.filter((hub) => pledge.feeders.includes(hub.feederId) && hub.cost !== null && hub.cost > 0);
+  if (onFeeders.length === 0) return "no costed hub on its feeders";
+  const repayable = onFeeders.filter((hub) => canFundHub(pledge, hub, parameters));
+  if (repayable.length === 0) return "tenor shorter than any hub's payback";
+  if (repayable.every((hub) => funded.has(hub.id))) return "every hub it could fund is already funded";
+  return "the money left is less than the cost of any hub it could still fund";
 }

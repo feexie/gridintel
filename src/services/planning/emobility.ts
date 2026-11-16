@@ -6,14 +6,14 @@ import type { Methodology } from "../../analytics/core/methodology.ts";
 import { LOADING_REFERENCE } from "../../analytics/core/methodology.ts";
 import { dayEnergy, EMOBILITY_DEMAND_REFERENCE, energyPerSwap, HORIZONS, projectDemand } from "../../analytics/planning/emobility/demand.ts";
 import { EMOBILITY_HEADROOM_REFERENCE, headroomOverTime, type HeadroomAt } from "../../analytics/planning/emobility/headroom.ts";
-import { comparePowerSources, EMOBILITY_POWER_SOURCE_REFERENCE, type OptionResult, type PowerOption } from "../../analytics/planning/emobility/powerSource.ts";
+import { comparePowerSources, dieselCostPerKwh, EMOBILITY_POWER_SOURCE_REFERENCE, type OptionDay, type OptionResult, type PowerOption } from "../../analytics/planning/emobility/powerSource.ts";
 import { EMOBILITY_SITE_SCORE_REFERENCE, rankSites } from "../../analytics/planning/emobility/siteScore.ts";
-import { EMOBILITY_SWAP_FINANCE_REFERENCE, escrowPerDay, hubMonthsToRepay, matchHubPledges } from "../../analytics/planning/emobility/swapFinance.ts";
+import { EMOBILITY_SWAP_FINANCE_REFERENCE, escrowPerDay, hubFundingBasis, hubFundingCost, hubMonthsToRepay, matchHubPledges, type FundingBasis } from "../../analytics/planning/emobility/swapFinance.ts";
 import { EMOBILITY_VERIFY_REFERENCE, hubAgainstPlan } from "../../analytics/planning/emobility/verify.ts";
 import { assetLoading } from "../analytics/loading.ts";
 import { scopeReliability } from "../analytics/reliability.ts";
 import { loadTopology } from "../analytics/topology.ts";
-import { emobilityInputs, INSTALLED_COSTS, SYNTHETIC_DISCO_TARIFF_ORDER } from "./emobilityInputs.ts";
+import { EMOBILITY_INPUT_CITATIONS, emobilityInputs, INSTALLED_COSTS, SYNTHETIC_DISCO_TARIFF_ORDER } from "./emobilityInputs.ts";
 import type { EmobilityFigure, EmobilityView, MethodView, PowerOptionView } from "./emobilityViews.ts";
 import { formatNaira } from "./metering.ts";
 
@@ -71,6 +71,7 @@ export async function emobilityView(runtime: OperationsRuntime, published: Publi
   const sources = new Map<string, DataSource>(emobSources.map((source) => [source.id, source]));
   const citationsUsed = new Map<string, Citation>();
   for (const citation of citations) citationsUsed.set(citation.id, citation);
+  for (const citation of EMOBILITY_INPUT_CITATIONS) citationsUsed.set(citation.id, citation);
 
   const threshold = LOADING_REFERENCE.parameters.overloadThreshold;
   const pf = EMOBILITY_HEADROOM_REFERENCE.parameters.hubPowerFactor;
@@ -225,11 +226,32 @@ function sitesView(studies: HubStudy[]): EmobilityView["sites"] {
   };
 }
 
-function optionView(result: OptionResult): PowerOptionView {
+const power = EMOBILITY_POWER_SOURCE_REFERENCE.parameters;
+const SEGMENT_NAME = { motorcycle: "motorcycle", tricycle: "tricycle (keke)" } as const;
+
+/** The fuel-economy and range assumptions behind a hub's CO2 result, for the segments it serves. */
+function co2Assumptions(hub: Hub): string {
+  const parts = (["motorcycle", "tricycle"] as const)
+    .filter((segment) => (hub.plannedSwapsPerDay[segment] ?? 0) > 0)
+    .map((segment) => `petrol ${SEGMENT_NAME[segment]} ${power.petrolKmPerLitre[segment]} km a litre, electric ${power.evKmPerKwh[segment]} km a kWh`);
+  return `assumptions: ${parts.join("; ")}`;
+}
+
+function co2Figure(day: OptionDay, hub: Hub): EmobilityFigure {
+  const label = "CO2 avoided against petrol vehicles";
+  const assumptions = co2Assumptions(hub);
+  if (day.kgCo2AvoidedPerDay === null || day.co2Finding === null) return { key: "co2", label, value: "Not available: no grid emission factor", status: "not_available", basis: "No cited grid emission factor is held." };
+  const basis = `Petrol the same distance would burn × ${power.petrolKgCo2PerLitre} kg a litre (${whole(day.petrolKgCo2PerDay)} kg a day), less the hub's diesel × ${power.dieselKgCo2PerLitre} kg a litre (IPCC 2006) and its grid kWh × ${power.gridKgCo2PerKwh} kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material.`;
+  if (day.co2Finding === "no_material_saving") return { key: "co2", label, value: `No material saving under these assumptions (${assumptions})`, status: "calculated", basis };
+  const amount = `${whole(Math.abs(day.kgCo2AvoidedPerDay))} kg a day (${two(Math.abs(day.kgCo2AvoidedPerSwap ?? 0))} kg a swap)`;
+  return { key: "co2", label, value: day.co2Finding === "saving" ? `${amount} (${assumptions})` : `More CO2 than petrol vehicles: ${amount} (${assumptions})`, status: "calculated", basis };
+}
+
+function optionView(result: OptionResult, hub: Hub): PowerOptionView {
   const label = OPTION_LABEL[result.option];
   const unstudied = (key: string, name: string): EmobilityFigure => ({ key, label: name, value: `Not available: ${result.reasons.join("; ")}`, status: "not_available", basis: "The option cannot be studied without the feeder's figures." });
   if (result.days === null) {
-    return { option: label, energy: "Not available", rainySeason: "Not available", costPerKwh: unstudied("costPerKwh", "Cost per kWh"), costPerSwap: unstudied("costPerSwap", "Cost per swap"), dieselLitres: "Not available", co2Avoided: unstudied("co2", "CO2 avoided"), sizes: "—", payback: unstudied("payback", "Payback against diesel") };
+    return { option: label, energy: "Not available", rainySeason: "Not available", costPerKwh: unstudied("costPerKwh", "Cost per kWh"), costPerSwap: unstudied("costPerSwap", "Cost per swap"), costAtLowDiesel: unstudied("costLowDiesel", "Cost at the low diesel price"), dieselLitres: "Not available", co2Avoided: unstudied("co2", "CO2 avoided"), sizes: "—", payback: unstudied("payback", "Payback against diesel") };
   }
   const average = result.days.average;
   const rainy = result.days.rainy_season;
@@ -237,11 +259,12 @@ function optionView(result: OptionResult): PowerOptionView {
   const cost = (value: number | null, key: string, name: string, unit: (v: number) => string): EmobilityFigure =>
     value === null
       ? { key, label: name, value: "Placeholder: no EPC quote", status: "placeholder", basis: "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free." }
-      : { key, label: name, value: unit(value), status: "calculated", basis: "Fuel and tariff only: diesel at the reported price ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff." };
-  const co2: EmobilityFigure =
-    average.kgCo2AvoidedPerDay === null
-      ? { key: "co2", label: "CO2 avoided against petrol vehicles", value: "Not available: no grid emission factor", status: "not_available", basis: "No cited grid emission factor is held." }
-      : { key: "co2", label: "CO2 avoided against petrol vehicles", value: `${whole(average.kgCo2AvoidedPerDay)} kg a day (${two(average.kgCo2AvoidedPerSwap ?? 0)} kg a swap)`, status: "calculated", basis: "Petrol the same distance would burn × 2.31 kg a litre, less the hub's diesel × 2.68 kg a litre (IPCC 2006). Solar counts operating emissions only." };
+      : { key, label: name, value: unit(value), status: "calculated", basis: "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff." };
+  const low: EmobilityFigure =
+    average.costPerKwhLowDiesel === null || average.costPerSwapLowDiesel === null
+      ? cost(null, "costLowDiesel", "Cost at the low diesel price", nairaKwh)
+      : { key: "costLowDiesel", label: "Cost at the low diesel price, fuel and tariff only", value: `${nairaKwh(average.costPerKwhLowDiesel)}, ₦${whole(average.costPerSwapLowDiesel)} a swap`, status: "calculated", basis: "As the base case, with diesel at the low price (TechCabal, 30 July 2026)." };
+  const co2 = co2Figure(average, hub);
   const payback: EmobilityFigure =
     result.paybackMonths !== null
       ? { key: "payback", label: "Payback against diesel", value: `${one(result.paybackMonths)} months`, status: "calculated", basis: "Installed cost ÷ the fuel saved a day against diesel only ÷ 30.4." }
@@ -255,6 +278,7 @@ function optionView(result: OptionResult): PowerOptionView {
     rainySeason: `Solar ${whole(rainy.solarKwh)}, grid ${whole(rainy.gridKwh)}, diesel ${whole(rainy.dieselKwh)} kWh a day`,
     costPerKwh: cost(average.costPerKwh, "costPerKwh", "Cost per kWh, fuel and tariff only", nairaKwh),
     costPerSwap: cost(average.costPerSwap, "costPerSwap", "Cost per swap, fuel and tariff only", (v) => `₦${whole(v)}`),
+    costAtLowDiesel: low,
     dieselLitres: `${whole(average.dieselLitres)} litres a day (${whole(rainy.dieselLitres)} in the rainy season)`,
     co2Avoided: co2,
     sizes: sizes === "" ? "—" : sizes,
@@ -268,7 +292,7 @@ function powerView(studies: HubStudy[]): EmobilityView["power"] {
     hub: study.hub.name,
     energy: `${whole(study.kwhNow)} kWh a day for ${whole(study.swapsNow)} swaps`,
     peakSunHours: `${two(study.hub.solar.annualPeakSunHours)} h a day on average; ${two(study.hub.solar.rainySeasonPeakSunHours)} h in ${study.hub.solar.rainySeasonMonth} (reported: NASA POWER)`,
-    options: study.options.map(optionView),
+    options: study.options.map((option) => optionView(option, study.hub)),
   }));
   const demo = studies.find((study) => study.hub.id === DEMONSTRATION_HUB);
   const diesel = demo?.options.find((option) => option.option === "diesel")?.days?.average.costPerKwh ?? null;
@@ -277,19 +301,48 @@ function powerView(studies: HubStudy[]): EmobilityView["power"] {
     headline:
       demo === undefined || diesel === null || grid === null
         ? "The demonstration hub's options cannot all be costed."
-        : `At the demonstration hub, diesel costs ${nairaKwh(diesel)} in fuel against ${nairaKwh(grid)} on the Band ${demo.band} grid with diesel backup; solar options wait for an EPC quote.`,
-    how: "How this is calculated: each hub at its own feeder's band tariff and hours of supply; diesel ₦1,750 a litre (reported) ÷ 3 kWh a litre (assumption), fuel only; PV sized to the average day at the hub's peak sun hours × 0.80, so a rainy-season day leaves a shortfall the backup meets; CO2 avoided against petrol vehicles over the same distance. Synthetic hubs.",
+        : `At the demonstration hub, diesel costs ${nairaKwh(diesel)} in fuel (${nairaKwh(dieselCostPerKwh(power, "low"))} at the low price) against ${nairaKwh(grid)} on the Band ${demo.band} grid with diesel backup; solar options wait for an EPC quote.`,
+    how: "How this is calculated: each hub at its own feeder's band tariff and hours of supply; diesel ₦3,277.47 a litre (NBS, May 2026), with ₦1,750 (TechCabal, July 2026) as the low case, ÷ 3 kWh a litre (assumption), fuel only; PV sized to the average day at the hub's peak sun hours × 0.80, making up the BESS's 90% round-trip efficiency, so a rainy-season day leaves a shortfall the backup meets; CO2 avoided against petrol vehicles over the same distance, the grid at 0.395 kg a kWh (IFI, 2019 dataset). Synthetic hubs.",
     hubs,
     method: method(EMOBILITY_POWER_SOURCE_REFERENCE),
   };
 }
 
+const FUNDING_HORIZON = 24;
+
+/** The power option a hub is offered for funding on, in words, with what it needs. */
+function fundingPower(study: HubStudy, basis: FundingBasis): { power: string; reason: string } {
+  switch (basis.power) {
+    case "grid":
+      return { power: OPTION_LABEL.grid_diesel, reason: `Fits on the grid through ${FUNDING_HORIZON} months.` };
+    case "grid_after_dt_upgrade": {
+      const by = basis.dtUpgradeBy ?? 0;
+      const row = study.base.find((one) => one.months === by);
+      const short = row?.headroomKva == null || row.hubDrawKva == null ? null : row.hubDrawKva - row.headroomKva;
+      const when = by === 0 ? "now" : `by ${by} months`;
+      const rating = study.ratingKva === null ? "" : ` (${whole(study.ratingKva)} kVA)`;
+      return {
+        power: `${OPTION_LABEL.grid_diesel}, after a DT upgrade`,
+        reason: `DT upgrade needed on ${study.hub.transformerId}${rating} ${when}${short === null ? "" : `: the hub's draw exceeds the headroom by ${one(short)} kVA`}. The upgrade's cost is not in the hub's cost and is not available.`,
+      };
+    }
+    case "solar_bess":
+      return { power: OPTION_LABEL.solar_bess, reason: `The grid does not work here: ${basis.reason}. The hub's cost includes PV and BESS, a placeholder until an EPC quote, so it cannot be matched yet.` };
+    default:
+      return { power: "None named", reason: `No power option can be named: ${basis.reason}.` };
+  }
+}
+
 function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityRepository["pledges"]>>): EmobilityView["finance"] {
   const fundable = studies.filter((study) => study.hub.status !== "installed" && study.feederId !== null);
-  const inputs = fundable.map((study) => ({ id: study.hub.id, feederId: study.feederId!, cost: study.hub.costNaira, swapsPerDay: study.swapsNow }));
+  const rows = fundable.map((study) => {
+    const basis = hubFundingBasis(study.base, FUNDING_HORIZON);
+    const solarBess = study.options.find((option) => option.option === "solar_bess")?.installedCost ?? null;
+    return { study, basis, input: { id: study.hub.id, feederId: study.feederId!, cost: hubFundingCost(study.hub.costNaira, basis, solarBess), swapsPerDay: study.swapsNow } };
+  });
   const result = matchHubPledges(
     pledges.map((pledge) => ({ id: pledge.id, kind: pledge.kind, amountNaira: pledge.amountNaira, returnPercent: pledge.returnPercent, tenorMonths: pledge.tenorMonths, feeders: pledge.feeders })),
-    inputs,
+    rows.map((row) => row.input),
   );
   const funderOf = new Map(result.matches.map((match) => [match.hubId, match.pledgeId]));
   const pledgeById = new Map(pledges.map((pledge) => [pledge.id, pledge]));
@@ -297,11 +350,14 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
   const placed = Object.values(result.pledges).reduce((sum, row) => sum + row.placed, 0);
   const queued = Object.values(result.pledges).reduce((sum, row) => sum + row.queued, 0);
   const pledged = pledges.reduce((sum, pledge) => sum + pledge.amountNaira, 0);
+  const upgrades = rows.filter((row) => row.basis.power === "grid_after_dt_upgrade").length;
+  const onSolar = rows.filter((row) => row.basis.power === "solar_bess").length;
+  const conditions = [upgrades > 0 ? `${upgrades} of the hubs offered need a DT upgrade` : null, onSolar > 0 ? `${onSolar} wait${onSolar === 1 ? "s" : ""} for the PV and BESS cost` : null].filter((part) => part !== null);
   return {
-    headline: `${formatNaira(placed)} of the ${formatNaira(pledged)} pledged is placed on ${result.matches.length} hubs; ${formatNaira(queued)} is queued.`,
-    how: "How this is calculated: each swap's ₦1,000 add-on (reported) goes into escrow; months to repay = the hub's cost repaid from escrow at the funder's return. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.",
+    headline: `${formatNaira(placed)} of the ${formatNaira(pledged)} pledged is placed on ${result.matches.length} hubs; ${formatNaira(queued)} is queued.${conditions.length === 0 ? "" : ` ${conditions.join("; ")}.`.replace(/^ ./, (start) => start.toUpperCase())}`,
+    how: `How this is calculated: each swap's ₦1,000 add-on (reported) goes into escrow; months to repay = the hub's cost repaid from escrow at the funder's return. A hub is offered on a power option that works at its site through ${FUNDING_HORIZON} months: the grid where it fits; the grid after a named DT upgrade where only the DT rating fails; solar + BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.`,
     pledges: pledges.map((pledge) => {
-      const row = result.pledges[pledge.id] ?? { placed: 0, queued: pledge.amountNaira, hubs: 0 };
+      const row = result.pledges[pledge.id] ?? { placed: 0, queued: pledge.amountNaira, hubs: 0, queuedReason: null };
       return {
         id: pledge.id,
         funder: pledge.funder,
@@ -314,22 +370,33 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
         placed: formatNaira(row.placed),
         queued: row.queued > 0 ? `Queued for the next allocation: ${formatNaira(row.queued)}` : "Nothing queued",
         hasQueued: row.queued > 0,
+        queuedReason: row.queuedReason,
       };
     }),
-    hubs: inputs.map((input) => {
+    hubs: rows.map(({ study, basis, input }) => {
       const pledgeId = funderOf.get(input.id);
       const pledge = pledgeId === undefined ? undefined : pledgeById.get(pledgeId);
       const months = pledge === undefined ? null : hubMonthsToRepay(input, pledge.returnPercent / 100);
+      const { power, reason } = fundingPower(study, basis);
+      const own = study.hub.costNaira;
+      const cost: EmobilityFigure =
+        own === null
+          ? { key: "cost", label: "Hub cost", value: "Not available", status: "not_available", basis: "No cost is held for the hub." }
+          : basis.power === "solar_bess" && input.cost === null
+            ? { key: "cost", label: "Hub cost with PV and BESS", value: `${formatNaira(own)} (synthetic) + PV and BESS: placeholder, no EPC quote`, status: "placeholder", basis: "The hub's synthetic cost plus its PV and BESS, which have no cost until an EPC quote. Not matched until then." }
+            : { key: "cost", label: "Hub cost", value: `${formatNaira(input.cost ?? own)} (synthetic)`, status: "synthetic", basis: "A synthetic round figure to exercise the matching. Not an investment figure." };
       return {
         hubId: input.id,
         hub: names.get(input.id) ?? input.id,
-        cost: input.cost === null ? { key: "cost", label: "Hub cost", value: "Not available", status: "not_available" as const, basis: "No cost is held for the hub." } : { key: "cost", label: "Hub cost", value: `${formatNaira(input.cost)} (synthetic)`, status: "synthetic" as const, basis: "A synthetic round figure to exercise the matching. Not an investment figure." },
+        power,
+        powerReason: reason,
+        cost,
         escrowPerDay: `${formatNaira(escrowPerDay(input.swapsPerDay))} a day`,
-        fundedBy: pledge === undefined ? "Waiting" : pledge.funder,
+        fundedBy: pledge === undefined ? (input.cost === null ? "Not offered until costed" : "Waiting") : pledge.funder,
         monthsToRepay: months === null ? "—" : `${one(months)} months at ${pledge!.returnPercent}%`,
       };
     }),
-    waiting: result.waiting.map((id) => names.get(id) ?? id),
+    waiting: [...result.waiting, ...result.notCosted].map((id) => names.get(id) ?? id),
     method: method(EMOBILITY_SWAP_FINANCE_REFERENCE),
   };
 }

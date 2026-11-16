@@ -21,6 +21,8 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.ok(view.sourcing.sources.some((source) => source.id === "synthetic-emobility"));
     assert.ok(view.sourcing.citations.some((citation) => citation.id.startsWith("nasa-power")));
     assert.ok(view.sourcing.citations.some((citation) => /NERC/.test(citation.title)));
+    assert.ok(view.sourcing.citations.some((citation) => citation.id === "nbs-diesel-price-watch-2026-05"));
+    assert.ok(view.sourcing.citations.some((citation) => citation.id === "ifi-harmonized-gef-v2-2019"));
   });
 
   it("gives every input a status and a source or basis", () => {
@@ -29,9 +31,21 @@ describe("the e-mobility planner on the synthetic hubs", () => {
       assert.ok(input.basis.length > 0, input.key);
     }
     assert.equal(view.inputs.find((one) => one.key === "pvCost")?.status, "placeholder");
-    assert.equal(view.inputs.find((one) => one.key === "gridCo2")?.status, "not_available");
-    assert.equal(view.inputs.find((one) => one.key === "dieselPerKwh")?.value, "₦583.33/kWh");
-    assert.match(view.inputs.find((one) => one.key === "dieselPerKwh")!.basis, /Fuel only/);
+    const input = (key: string) => view.inputs.find((one) => one.key === key)!;
+    assert.equal(input("gridCo2").status, "reported");
+    assert.equal(input("gridCo2").value, "0.395 kg CO2 a kWh");
+    assert.match(input("gridCo2").basis, /IFI Harmonized Grid Emission Factors, v2\.0 \(July 2019\), Nigeria, combined margin, firm energy.*dates from 2019/);
+    assert.equal(input("dieselPrice").value, "₦3,277.47 a litre");
+    assert.match(input("dieselPrice").basis, /NBS Diesel Price Watch, May 2026 \(published 24 June 2026\)/);
+    assert.equal(input("dieselLowPrice").value, "₦1,750 a litre");
+    assert.match(input("dieselLowPrice").basis, /TechCabal, 30 July 2026.*low case/);
+    assert.equal(input("dieselPerKwh").value, "₦1,092.49/kWh");
+    assert.equal(input("dieselPerKwhLow").value, "₦583.33/kWh");
+    assert.match(input("dieselPerKwh").basis, /Fuel only/);
+    assert.match(input("dieselPerKwhLow").basis, /Fuel only/);
+    assert.equal(input("bessEfficiency").value, "90%");
+    assert.equal(input("bessEfficiency").status, "assumption");
+    assert.equal(input("adoption").status, "placeholder");
   });
 
   it("answers demand: 750 kWh a day at the demonstration hub, 1,000 at full depletion", () => {
@@ -55,20 +69,28 @@ describe("the e-mobility planner on the synthetic hubs", () => {
   it("answers power source at each hub's own band tariff, with no solar cost or payback before an EPC quote", () => {
     const demo = view.power.hubs.find((hub) => hub.hubId === "HUB-02")!;
     const option = (name: string) => demo.options.find((one) => one.option === name)!;
-    assert.equal(option("Diesel only").costPerKwh.value, "₦583.33/kWh");
+    assert.equal(option("Diesel only").costPerKwh.value, "₦1,092.49/kWh");
+    assert.equal(option("Diesel only").costAtLowDiesel.value, "₦583.33/kWh, ₦1,458 a swap");
     assert.equal(option("Grid with diesel backup").costPerKwh.value, "₦63.33/kWh");
     assert.equal(option("Solar + BESS").costPerKwh.status, "placeholder");
     assert.equal(option("Solar + BESS").payback.status, "placeholder");
-    assert.equal(option("Grid with diesel backup").co2Avoided.status, "not_available");
+    assert.equal(option("Grid with diesel backup").co2Avoided.status, "calculated");
     assert.equal(option("Solar + BESS").co2Avoided.status, "calculated");
     assert.match(view.power.headline, /Band B grid/);
   });
 
-  it("answers finance: a pledge that cannot place its money is queued, and hub costs are synthetic", () => {
+  it("reports no material CO2 saving for the tricycle hub on diesel, with its assumptions beside it", () => {
+    const keke = view.power.hubs.find((hub) => hub.hubId === "HUB-06")!.options.find((one) => one.option === "Diesel only")!;
+    assert.equal(keke.co2Avoided.value, "No material saving under these assumptions (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)");
+  });
+
+  it("answers finance: the 3-month pledge is queued with its reason, and hub costs are synthetic or a placeholder", () => {
     const short = view.finance.pledges.find((pledge) => pledge.id === "PL-SHORT")!;
     assert.equal(short.hasQueued, true);
     assert.equal(short.placed, "₦0");
-    for (const hub of view.finance.hubs) assert.equal(hub.cost.status, "synthetic");
+    assert.equal(short.hubs, "None");
+    assert.equal(short.queuedReason, "tenor shorter than any hub's payback");
+    for (const hub of view.finance.hubs) assert.ok(hub.cost.status === "synthetic" || hub.cost.status === "placeholder", hub.hubId);
     assert.ok(!view.finance.hubs.some((hub) => hub.hubId === "HUB-05"), "an installed hub is not offered for funding");
   });
 
@@ -76,5 +98,25 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.equal(view.verify.hubs.length, 1);
     const figures: EmobilityFigure[] = view.verify.hubs[0].figures;
     assert.deepEqual(figures.map((figure) => figure.status), ["synthetic", "synthetic", "synthetic"]);
+  });
+
+  it("funds no hub on a grid option it fails: a named DT upgrade, or solar + BESS waiting for its cost", () => {
+    const hub = (id: string) => view.finance.hubs.find((one) => one.hubId === id)!;
+    assert.equal(hub("HUB-01").power, "Grid with diesel backup");
+    assert.equal(hub("HUB-02").power, "Grid with diesel backup, after a DT upgrade");
+    assert.match(hub("HUB-02").powerReason, /^DT upgrade needed on DT-GOV-4 \(300 kVA\) by 24 months/);
+    assert.match(hub("HUB-04").powerReason, /^DT upgrade needed on DT-OLD-2 \(100 kVA\) now/);
+    for (const id of ["HUB-03", "HUB-06"]) {
+      assert.equal(hub(id).power, "Solar + BESS");
+      assert.equal(hub(id).cost.status, "placeholder");
+      assert.equal(hub(id).fundedBy, "Not offered until costed");
+    }
+    // Every hub that does not fit on the grid through 24 months is funded only after a named DT upgrade, or not at all.
+    for (const site of view.sites.hubs) {
+      const financed = view.finance.hubs.find((one) => one.hubId === site.hubId);
+      if (financed === undefined || financed.fundedBy === "Waiting" || financed.fundedBy === "Not offered until costed") continue;
+      const failsBy24 = site.horizons.filter((row) => Number(row.months) <= 24).some((row) => row.fits !== "Fits");
+      if (failsBy24) assert.match(financed.power, /after a DT upgrade/, site.hubId);
+    }
   });
 });

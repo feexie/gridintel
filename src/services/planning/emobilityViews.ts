@@ -74,6 +74,8 @@ export interface PowerOptionView {
   rainySeason: string;
   costPerKwh: EmobilityFigure;
   costPerSwap: EmobilityFigure;
+  /** Cost per kWh and per swap at the low diesel price. */
+  costAtLowDiesel: EmobilityFigure;
   dieselLitres: string;
   co2Avoided: EmobilityFigure;
   sizes: string;
@@ -98,8 +100,19 @@ export interface PowerView {
 export interface FinanceView {
   headline: string;
   how: string;
-  pledges: { id: string; funder: string; kind: string; pledged: string; returnAsked: string; tenor: string; feeders: string; hubs: string; placed: string; queued: string; hasQueued: boolean }[];
-  hubs: { hubId: string; hub: string; cost: EmobilityFigure; escrowPerDay: string; fundedBy: string; monthsToRepay: string }[];
+  pledges: { id: string; funder: string; kind: string; pledged: string; returnAsked: string; tenor: string; feeders: string; hubs: string; placed: string; queued: string; hasQueued: boolean; queuedReason: string | null }[];
+  hubs: {
+    hubId: string;
+    hub: string;
+    /** The power option the hub is offered for funding on, e.g. "Grid with diesel backup, after a DT upgrade". */
+    power: string;
+    /** Why that option, and what it needs (a named DT upgrade, or the PV and BESS cost). */
+    powerReason: string;
+    cost: EmobilityFigure;
+    escrowPerDay: string;
+    fundedBy: string;
+    monthsToRepay: string;
+  }[];
   waiting: string[];
   method: MethodView;
 }

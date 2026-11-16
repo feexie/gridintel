@@ -11,8 +11,8 @@ const option = (which: PowerOption, costPerSwap: number | null): OptionResult =>
   paybackMonths: null,
   reasons: [],
   days: {
-    average: { sun: "average", solarKwh: 0, gridKwh: 0, dieselKwh: 0, dieselLitres: 0, fuelAndTariffPerDay: 0, costPerKwh: null, costPerSwap, hubKgCo2PerDay: null, kgCo2AvoidedPerDay: null, kgCo2AvoidedPerSwap: null, dieselLitresAvoidedPerDay: 0 },
-    rainy_season: { sun: "rainy_season", solarKwh: 0, gridKwh: 0, dieselKwh: 0, dieselLitres: 0, fuelAndTariffPerDay: 0, costPerKwh: null, costPerSwap, hubKgCo2PerDay: null, kgCo2AvoidedPerDay: null, kgCo2AvoidedPerSwap: null, dieselLitresAvoidedPerDay: 0 },
+    average: { sun: "average", solarKwh: 0, gridKwh: 0, dieselKwh: 0, dieselLitres: 0, fuelAndTariffPerDay: 0, costPerKwh: null, costPerSwap, costPerKwhLowDiesel: null, costPerSwapLowDiesel: null, hubKgCo2PerDay: null, kgCo2AvoidedPerDay: null, kgCo2AvoidedPerSwap: null, petrolKgCo2PerDay: 0, co2Finding: null, dieselLitresAvoidedPerDay: 0 },
+    rainy_season: { sun: "rainy_season", solarKwh: 0, gridKwh: 0, dieselKwh: 0, dieselLitres: 0, fuelAndTariffPerDay: 0, costPerKwh: null, costPerSwap, costPerKwhLowDiesel: null, costPerSwapLowDiesel: null, hubKgCo2PerDay: null, kgCo2AvoidedPerDay: null, kgCo2AvoidedPerSwap: null, petrolKgCo2PerDay: 0, co2Finding: null, dieselLitresAvoidedPerDay: 0 },
   },
 });
 
