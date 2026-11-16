@@ -1,6 +1,7 @@
 import type { DiscoId, FunderKind, MarketplaceBand } from "@/domain";
 import type { Methodology } from "../core/methodology.ts";
 import { REFERENCE_DISCLAIMER } from "../core/methodology.ts";
+import { monthsToRepayAt, monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "./loan.ts";
 
 /* ==========================================================
    ANALYTICS — THE METERING MARKETPLACE: MATCHING PLEDGES TO DEMAND
@@ -63,17 +64,12 @@ export function allowedBands(kind: FunderKind): readonly MarketplaceBand[] {
 
 /** Months to repay a meter from its daily charge; null when the band is exempt (no charge). */
 export function monthsToRepay(meterCost: number, chargePerDay: number | null, methodology = MARKETPLACE_REFERENCE): number | null {
-  return chargePerDay === null || chargePerDay <= 0 ? null : meterCost / (chargePerDay * methodology.parameters.daysPerMonth);
+  return monthsToRepayAt(meterCost, chargePerDay, methodology.parameters.daysPerMonth);
 }
 
 /** Months for a monthly charge to repay a meter's cost as a loan at a yearly rate (monthly compounding); null when the charge never repays it. */
 export function monthsToRepayWithReturn(meterCost: number, chargePerDay: number | null, ratePerYear: number, methodology = MARKETPLACE_REFERENCE): number | null {
-  if (ratePerYear <= 0) return monthsToRepay(meterCost, chargePerDay, methodology);
-  if (chargePerDay === null || chargePerDay <= 0) return null;
-  const perMonth = chargePerDay * methodology.parameters.daysPerMonth;
-  const rate = ratePerYear / 12;
-  const owedShare = (meterCost * rate) / perMonth;
-  return owedShare >= 1 ? null : -Math.log(1 - owedShare) / Math.log(1 + rate);
+  return monthsToRepayWithReturnAt(meterCost, chargePerDay, ratePerYear, methodology.parameters.daysPerMonth);
 }
 
 /** A band whose charge repays only part of the meter: what the customer repays over the period, and the top-up that covers the rest. */
@@ -90,17 +86,7 @@ export function takeAtRecharge(owed: number, recharge: number, methodology = MAR
 
 /** Month by month: the charge a month into escrow until the meter's cost, with the funder's return on the balance, is repaid; the last month pays only what is left. */
 export function repaymentSchedule(meterCost: number, chargePerDay: number, ratePerYear = 0, methodology = MARKETPLACE_REFERENCE): { month: number; paid: number; balance: number }[] {
-  const perMonth = chargePerDay * methodology.parameters.daysPerMonth;
-  if (perMonth <= 0 || meterCost <= 0 || meterCost * (ratePerYear / 12) >= perMonth) return [];
-  const rows: { month: number; paid: number; balance: number }[] = [];
-  let balance = meterCost;
-  for (let month = 1; balance > 1e-6; month++) {
-    balance *= 1 + ratePerYear / 12;
-    const paid = Math.min(perMonth, balance);
-    balance -= paid;
-    rows.push({ month, paid, balance: balance < 1e-6 ? 0 : balance });
-  }
-  return rows;
+  return repaymentScheduleAt(meterCost, chargePerDay, ratePerYear, methodology.parameters.daysPerMonth);
 }
 
 export interface BandTerms {
@@ -160,7 +146,7 @@ export function canFund(pledge: PledgeInput, terms: BandTerms, methodology = MAR
 export function matchPledges(pledges: readonly PledgeInput[], demand: readonly DemandInput[], terms: readonly BandTerms[], discoOrder: readonly DiscoId[], methodology = MARKETPLACE_REFERENCE): MatchResult {
   const left = new Map(demand.map((row) => [`${row.disco}:${row.band}`, row.approved]));
   const termsOf = new Map(terms.map((one) => [one.band, one]));
-  const ordered = [...pledges].sort((a, b) => a.returnPercent - b.returnPercent || a.discos.length - b.discos.length || a.id.localeCompare(b.id));
+  const ordered = [...pledges].sort(pledgeOrder<PledgeInput>((pledge) => pledge.discos.length));
   const matches: Match[] = [];
   const result: MatchResult["pledges"] = {};
   for (const pledge of ordered) {
