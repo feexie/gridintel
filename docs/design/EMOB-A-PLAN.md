@@ -53,6 +53,7 @@ Every input is held once, with its status and source, in the inputs table of
 | Peak sun hours, each hub | 5.73 h a day (annual); 4.73 h (rainy-season case, August) | Reported (satellite climatology) | NASA POWER Climatology API v2.10.1, `ALLSKY_SFC_SW_DWN`, January 2001 to December 2025, at 9.25° N, 12.47° E, retrieved 16 November 2026. Every synthetic hub lies in the same 1° cell, so all take this figure; each hub still carries its own value and source. Horizontal irradiance; tilt gain is not counted. Replaces the brief's 4.5 h assumption |
 | PV performance ratio | 0.80 | Assumption | Losses from heat, dust, wiring and the inverter |
 | BESS depth of discharge | 90% | Assumption | Lithium iron phosphate |
+| Daytime charging share | 50% | Assumption (added in the build) | Share of the day's charging done in sun hours: sizes PV for solar + grid, and the BESS for the energy charged outside sun hours. BESS losses are not counted in 0.1.0 |
 | PV and BESS installed cost | **not set** | **Placeholder** | Until the Founder supplies an EPC quote. Every figure that needs it (solar options' cost per kWh, payback) is `null` with the reason "placeholder: no EPC quote", never 0 |
 
 ### Emissions
@@ -153,7 +154,8 @@ backup and shown.
   sun hours ÷ depth of discharge; diesel backup for the rainy-season shortfall.
 - Hybrid: solar + BESS + grid, diesel for what is left.
 - For each: energy by source (kWh a day), cost per kWh and per swap where it can be costed
-  (fuel and tariff only; solar options `null` until the EPC cost), diesel litres a day, CO2 per
+  (fuel and tariff only; solar options `null` until the EPC cost, since their backup's fuel
+  alone would make them look free; once supplied, shown beside the installed cost and payback), diesel litres a day, CO2 per
   swap avoided against petrol vehicles (`null` for any option drawing on the grid, until a grid
   factor is cited), and payback against diesel = installed cost ÷ (daily diesel fuel cost − the
   option's daily running cost) ÷ 30.4, `null` while the cost is a placeholder or the option
