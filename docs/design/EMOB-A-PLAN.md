@@ -208,8 +208,12 @@ every record with synthetic provenance, invented names only, no real company.
 - **Hub costs:** synthetic, one per hub, labelled synthetic, used only by the matcher.
 - **Pledges:** three or four, including one that **cannot place its money** (its tenor is too
   short at its return for any hub), which ends queued.
-- **Swaps:** 30 days of daily swap records for the installed hub, seeded, with reduced
-  availability on the feeder's own outage days.
+- **Swaps:** 30 days of daily swap records for the installed hub, seeded, with a few seeded
+  days of reduced availability (the adapter records; it does not read the outage log).
+- **As built:** HUB-01 on DT-MKT-8 (fits through 48 months); HUB-02, the demonstration hub, on
+  DT-GOV-4 (fits now, not at 24 months); HUB-03 on DT-FRM-1 (too few supply hours); HUB-04 on
+  DT-OLD-2 (already over rating); HUB-05 on DT-MKT-1 (installed); HUB-06 on DT-OLD-10
+  (tricycles). Picked from the DTs' observed peaks; no assumption was changed.
 
 ## 7. Services
 
