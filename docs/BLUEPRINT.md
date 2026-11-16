@@ -33,6 +33,15 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > - **Three builds**: `build`, `build:request` and `build:tenant`, each with
 >   its browser tests.
 
+> **E-mobility engine (EMOB-A, 2026-11-16; branch `phase-emob-a`, not merged).** A planning
+> engine with no screen: domain `emobility.ts`; six pure methods in
+> `analytics/planning/emobility/`; the loan arithmetic shared with the Metering Marketplace in
+> `analytics/planning/loan.ts` (Marketplace results unchanged); an `EmobilityRepository` port
+> with a synthetic adapter on the Savanna network; services in `services/planning/emobility*.ts`
+> that read DT peaks and feeder hours through the existing loading and reliability services and
+> tariffs from the published NERC orders; `composition/emobility.ts`. See
+> `docs/emobility/DESIGN.md`.
+
 > **State at the Phase REPORTS-B checkpoint (2026-10-20; branch
 > `phase-reports-b`, not merged; ADR 0019 and its REPORTS-B amendment).**
 > All five reports are built, each a configuration of the one service:

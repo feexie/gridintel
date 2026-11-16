@@ -99,6 +99,8 @@ src/analytics/planning/emobility/headroom.ts    gridintel.planning.emobility-hea
 src/analytics/planning/emobility/powerSource.ts gridintel.planning.emobility-power-source 0.1.0
 src/analytics/planning/emobility/swapFinance.ts gridintel.planning.emobility-swap-finance 0.1.0
 src/analytics/planning/emobility/siteScore.ts   gridintel.planning.emobility-site-score 0.1.0
+src/analytics/planning/emobility/verify.ts      gridintel.planning.emobility-verify 0.1.0 (added in the build: the
+                                                Verify sums are a method, not service arithmetic)
   each with a *.test.ts beside it
 src/repositories/ports/emobility.ts             EmobilityRepository (records only)
 src/repositories/demo/emobility.ts              the synthetic dataset (+ test)

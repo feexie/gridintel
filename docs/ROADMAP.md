@@ -2250,6 +2250,31 @@ Made again with
   action).
 - Phone printing was checked in Chromium at phone width, not on a phone.
 
+## Phase EMOB: the E-mobility planner (EMOB-A at its checkpoint 2026-11-16; branch `phase-emob-a`, not merged)
+
+**Goal.** Plan battery-swap and charging hubs for electric two- and three-wheelers: demand,
+sites and DT headroom, power source, finance from a per-swap add-on, and verification
+(Founder's brief, November 2026; plan in `docs/design/EMOB-A-PLAN.md`).
+
+### EMOB-A: the engine (at its checkpoint; branch `phase-emob-a`)
+
+- Domain `src/domain/emobility.ts`; six methods in `src/analytics/planning/emobility/`
+  (`gridintel.planning.emobility-*` 0.1.0: demand, headroom, power source, swap finance, site
+  order, verify), pure, with fixed-input tests; the Marketplace's loan arithmetic moved to
+  `src/analytics/planning/loan.ts` with its results unchanged.
+- A synthetic dataset on the Savanna network (six hubs, two operators, four pledges, a month of
+  swaps), services for the five questions with every figure's status, and a composition root.
+  No screen.
+- Acceptance tests: a hub that fits a DT now but not at 24 months; a feeder with too few supply
+  hours for grid-only charging; diesel against solar + BESS once costs are supplied; a pledge
+  that cannot place its money (queued). Metering's 101 figures unchanged.
+- Technical design: `docs/emobility/DESIGN.md`.
+
+### EMOB-B: the screens (after NAV-B)
+
+DER → Plan → E-mobility, tabs Demand · Sites and headroom · Power source · Finance · Verify;
+an "E-mobility hubs" initiative card; presentation mode; key figures added to `geh:figures`.
+
 ## Phase 11: AI / MCP intelligence
 
 **Goal.** Natural-language query and explanation over services, **built per
