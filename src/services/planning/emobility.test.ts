@@ -49,6 +49,7 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.equal(farm.band, "Band D");
     assert.equal(farm.tariff, "₦50.01/kWh");
     assert.equal(view.sites.order.length, 6);
+    assert.deepEqual(view.sites.order[0].reasons, ["fits on the grid at 24 months", "cheapest costed option: Grid with diesel backup, ₦524 a swap", "headroom left at 24 months: 121 kVA"]);
   });
 
   it("answers power source at each hub's own band tariff, with no solar cost or payback before an EPC quote", () => {

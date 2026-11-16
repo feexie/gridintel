@@ -215,7 +215,11 @@ function sitesView(studies: HubStudy[]): EmobilityView["sites"] {
     headline: `${fitNow} of ${studies.length} hubs fit on the grid now; ${fit24} still fit at 24 months under base adoption.`,
     how: "How this is calculated: the DT's observed peak in the month, grown 5% a year, against its rating; the hub's draw (kWh a day ÷ the feeder's hours of supply, at most its chargers) ÷ power factor 0.95, taken at the DT's peak; and whether the chargers can take the day's energy in the feeder's hours. Hours of supply are calculated from the outage log, never read from the band. Synthetic network and hubs.",
     hubs,
-    order: ranked.map((row) => ({ rank: String(row.rank), hub: names.get(row.id) ?? row.id, reasons: row.reasons })),
+    order: ranked.map((row) => ({
+      rank: String(row.rank),
+      hub: names.get(row.id) ?? row.id,
+      reasons: row.reasons.map((reason) => (row.cheapest !== null && reason.startsWith("cheapest costed option:") ? `cheapest costed option: ${OPTION_LABEL[row.cheapest.option]}, ₦${whole(row.cheapest.costPerSwap)} a swap` : reason)),
+    })),
     orderHow: "How this is ordered: fit on the grid at 24 months first, then the cheapest option that can be costed (fuel and tariff only), then the DT headroom left at 24 months. No weights.",
     methods: [method(EMOBILITY_HEADROOM_REFERENCE), method(EMOBILITY_SITE_SCORE_REFERENCE)],
   };
