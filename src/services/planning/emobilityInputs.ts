@@ -29,14 +29,28 @@ export const SYNTHETIC_DISCO_TARIFF_ORDER: DiscoId = "yola";
 export const INSTALLED_COSTS = { pvNairaPerKwp: null, bessNairaPerKwh: null } as const;
 
 const TECHCABAL = "Reported: TechCabal, 30 July 2026 (a Lagos swap operator's published figures)";
-const NBS = "Reported: NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price a litre";
+const NBS = "Reported: NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price a litre; secondary reporting by Legit.ng and ThisDay";
 const IFI = "Reported: IFI Harmonized Grid Emission Factors, v2.0 (July 2019), Nigeria, combined margin, firm energy, 0.395 tCO2/MWh";
 
 /** The documents the planner's reported inputs come from, besides NASA POWER (in the records) and NERC (published figures). */
 export const EMOBILITY_INPUT_CITATIONS: Citation[] = [
-  { id: "nbs-diesel-price-watch-2026-05", title: "National Bureau of Statistics, Diesel Price Watch, May 2026", url: null, published: "2026-06-24", standing: "primary", locator: "Average retail price of diesel a litre, May 2026: ₦3,277.47" },
-  { id: "techcabal-2026-07-30", title: "TechCabal, report of a Lagos battery-swap operator's figures, 30 July 2026", url: null, published: "2026-07-30", standing: "secondary", locator: "Diesel ₦1,750 a litre; swap price ₦3,000; add-on ₦1,000 a swap" },
-  { id: "ifi-harmonized-gef-v2-2019", title: "IFI Technical Working Group on GHG Accounting, Harmonized Grid Emission Factor data set, v2.0, July 2019", url: null, published: null, standing: "primary", locator: "Nigeria, combined margin, firm energy: 0.395 tCO2/MWh. The dataset dates from 2019." },
+  {
+    id: "nbs-diesel-price-watch-2026-05",
+    title: "National Bureau of Statistics, Diesel Price Watch, May 2026 (published 24 June 2026), as reported by Legit.ng",
+    url: "https://www.legit.ng/business-economy/energy/1716140-nbs-diesel-price-rises-8640-n3277litre-2026/",
+    published: "2026-06-24",
+    standing: "secondary",
+    locator: "Average retail price of diesel a litre, May 2026: ₦3,277.47. Also reported by ThisDay, 30 June 2026: https://www.thisdaylive.com/2026/06/30/fuel-inflation-persists-as-diesel-soars-86-petrol-climbs-55-kerosene-up-37-in-one-year/",
+  },
+  {
+    id: "techcabal-2026-07-30",
+    title: "TechCabal, \"Swap is turning petrol three-wheelers electric—with diesel generators\", 30 July 2026",
+    url: "https://techcabal.com/2026/07/30/nigerias-petrol-three-wheelers-are-going-electric-with-batteries/",
+    published: "2026-07-30",
+    standing: "secondary",
+    locator: "Diesel ₦1,750 a litre, bought by a Lagos swap station (date and price checked against the article, 16 November 2026). The swap price (₦3,000) and add-on (₦1,000 a swap) are as the brief records them; not checked against the article",
+  },
+  { id: "ifi-harmonized-gef-v2-2019", title: "IFI Technical Working Group on GHG Accounting, Harmonized Grid Emission Factor data set, v2.0, July 2019", url: "https://unfccc.int/sites/default/files/resource/Harmonized_Grid_Emission_factor_data_set.pdf", published: null, standing: "primary", locator: "Nigeria, combined margin, firm energy: 0.395 tCO2/MWh. The dataset dates from 2019." },
 ];
 const IPCC = "IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol. 2";
 

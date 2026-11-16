@@ -22,7 +22,10 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.ok(view.sourcing.citations.some((citation) => citation.id.startsWith("nasa-power")));
     assert.ok(view.sourcing.citations.some((citation) => /NERC/.test(citation.title)));
     assert.ok(view.sourcing.citations.some((citation) => citation.id === "nbs-diesel-price-watch-2026-05"));
-    assert.ok(view.sourcing.citations.some((citation) => citation.id === "ifi-harmonized-gef-v2-2019"));
+    const url = (id: string) => view.sourcing.citations.find((citation) => citation.id === id)?.url;
+    assert.equal(url("ifi-harmonized-gef-v2-2019"), "https://unfccc.int/sites/default/files/resource/Harmonized_Grid_Emission_factor_data_set.pdf");
+    assert.match(url("nbs-diesel-price-watch-2026-05") ?? "", /^https:\/\/www\.legit\.ng\//);
+    assert.match(url("techcabal-2026-07-30") ?? "", /^https:\/\/techcabal\.com\/2026\/07\/30\//);
   });
 
   it("gives every input a status and a source or basis", () => {
@@ -63,7 +66,9 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.equal(farm.band, "Band D");
     assert.equal(farm.tariff, "₦50.01/kWh");
     assert.equal(view.sites.order.length, 6);
-    assert.deepEqual(view.sites.order[0].reasons, ["fits on the grid at 24 months", "cheapest costed option: Grid with diesel backup, ₦524 a swap", "headroom left at 24 months: 121 kVA"]);
+    assert.deepEqual(view.sites.order[0].reasons, ["fits on the grid at 24 months", "cheapest feasible option: Grid with diesel backup, ₦524 a swap", "headroom left at 24 months: 121 kVA"]);
+    const demo = view.sites.order.find((row) => row.hub.startsWith("Government Avenue"))!;
+    assert.deepEqual(demo.reasons, ["does not fit on the grid at 24 months", "grid options not feasible without a DT upgrade (4.9 kVA short)", "cheapest feasible option: Diesel only, ₦2,731 a swap", "headroom left at 24 months: -5 kVA"]);
   });
 
   it("answers power source at each hub's own band tariff, with no solar cost or payback before an EPC quote", () => {

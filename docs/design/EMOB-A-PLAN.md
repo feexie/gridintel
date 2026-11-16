@@ -44,8 +44,8 @@ Every input is held once, with its status and source, in the inputs table of
 
 | Input | Value | Status | Source or basis |
 | --- | --- | --- | --- |
-| Diesel price, base case | ₦3,277.47 a litre | Reported | NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price (Founder, checkpoint review, 16 November 2026) |
-| Diesel price, low case | ₦1,750 a litre | Reported | TechCabal, 30 July 2026, as the brief records it; labelled the low case |
+| Diesel price, base case | ₦3,277.47 a litre | Reported | NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price (Founder, checkpoint review, 16 November 2026). Linked through secondary reporting: Legit.ng, with ThisDay (30 June 2026) as a second |
+| Diesel price, low case | ₦1,750 a litre | Reported | TechCabal, 30 July 2026, "Swap is turning petrol three-wheelers electric—with diesel generators": a Lagos swap station's diesel price. Date and price checked against the article (2026, not 2025); labelled the low case |
 | Diesel yield | 3 kWh a litre | Assumption | Small generator at part load; to confirm with an operator |
 | **Diesel cost per kWh, fuel only** | **₦1,092.49/kWh base; ₦583.33/kWh low** | **Calculated** | Each price ÷ 3 kWh a litre. Labelled "fuel only": genset O&M and replacement are excluded. Every costed option shows both |
 | Grid tariff | the band of each hub's feeder | Reported | NERC September 2026 orders, Table 3, non-MD class, read from `src/repositories/published/nerc.ts`. The synthetic DisCo sits near Yola, so it takes Yola DisCo's order: A ₦209.50, B ₦63.33, C ₦52.51, D ₦50.01 (no Band E in that order). Which order the synthetic DisCo takes is a dataset assumption, stated |
@@ -68,7 +68,7 @@ Every input is held once, with its status and source, in the inputs table of
 | Petrol tricycle fuel economy | 30 km a litre | Assumption | Commercial tricycle in town use |
 | Electric motorcycle range per kWh | 25 km a kWh | Assumption | About 40 Wh a km |
 | Electric tricycle range per kWh | 12 km a kWh | Assumption | About 83 Wh a km |
-| Grid emission factor | 0.395 kg CO2 a kWh | Reported | IFI Harmonized Grid Emission Factors v2.0 (July 2019), Nigeria, combined margin, firm energy, 0.395 tCO2/MWh. The dataset dates from 2019, and the view says so |
+| Grid emission factor | 0.395 kg CO2 a kWh | Reported | IFI Harmonized Grid Emission Factors v2.0 (July 2019), Nigeria, combined margin, firm energy, 0.395 tCO2/MWh (UNFCCC-hosted data set). The dataset dates from 2019, and the view says so |
 | Material CO2 difference | ±10% of the petrol figure | Assumption (checkpoint review) | Within it, the result reads "no material saving under these assumptions", with the vehicles' fuel economy and range beside it, never a precise figure |
 | Solar emissions in operation | 0 kg a kWh | Stated rule | Operating emissions only; manufacture is not counted, and the result says so |
 
@@ -185,8 +185,11 @@ figure built on a hub's cost carries the synthetic status. Hubs only; rider and 
 are out of scope (Founder, 5 November 2026).
 
 **`siteScore.ts`.** No weighted score, so no invented weights. Candidates are ordered by: fits
-on grid at 24 months (yes first), then cost per swap of the cheapest option that can be costed,
-then headroom left at 24 months, then id. Each rank carries the reason it sits there.
+on grid at 24 months (yes first), then cost per swap of the cheapest feasible option that can be
+costed, then headroom left at 24 months, then id. Where the hub does not fit on the grid at 24
+months, the options that draw on the grid are not feasible and never named cheapest: "not
+feasible without a DT upgrade (X kVA short)", or "not feasible: too few hours of supply"
+(Founder, checkpoint approval, 16 November 2026). Each rank carries the reason it sits there.
 
 ## 5. Reuse, and keeping Metering's results identical
 

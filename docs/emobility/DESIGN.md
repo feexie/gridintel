@@ -23,7 +23,7 @@ Technical only. The plan, with every input's status and source, is
 | `gridintel.planning.emobility-headroom` | 0.1.0 | The DT's observed peak grown a year against rating × the loading threshold, plus the hub's draw at the DT's peak; whether the chargers take the day's energy in the feeder's hours of supply; names the limit that fails |
 | `gridintel.planning.emobility-power-source` | 0.1.0 | Grid with diesel backup, diesel, solar + grid, solar + BESS, hybrid on an average and a rainy-season day: energy by source, fuel and tariff cost at the base and the low diesel price, diesel litres, CO2 avoided against petrol vehicles (not material within ±10%), payback against diesel; PV sized with the BESS's round-trip losses |
 | `gridintel.planning.emobility-swap-finance` | 0.1.0 | Per-swap add-on into escrow; months to repay at a funder's return; the power option a hub is funded on (grid, grid after a DT upgrade, solar + BESS); pledges matched to hubs in the Marketplace's order, never beyond a pledge's tenor; unplaced money queued with its reason |
-| `gridintel.planning.emobility-site-score` | 0.1.0 | Candidate order: fit at 24 months, cheapest costed option, headroom left, id; no weights |
+| `gridintel.planning.emobility-site-score` | 0.1.0 | Candidate order: fit at 24 months, cheapest feasible costed option (no grid option where the grid fails at 24 months), headroom left, id; no weights |
 | `gridintel.planning.emobility-verify` | 0.1.0 | An installed hub's swaps, energy and availability against its plan |
 
 ## Rules the engine keeps

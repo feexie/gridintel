@@ -206,6 +206,7 @@ function sitesView(studies: HubStudy[]): EmobilityView["sites"] {
       return {
         id: study.hub.id,
         fitsOnGridAt24: at24.fits,
+        limitsAt24: at24.limits,
         headroomLeftAt24Kva: at24.headroomKva === null || at24.hubDrawKva === null ? null : at24.headroomKva - at24.hubDrawKva,
         options: study.options,
       };
@@ -219,9 +220,9 @@ function sitesView(studies: HubStudy[]): EmobilityView["sites"] {
     order: ranked.map((row) => ({
       rank: String(row.rank),
       hub: names.get(row.id) ?? row.id,
-      reasons: row.reasons.map((reason) => (row.cheapest !== null && reason.startsWith("cheapest costed option:") ? `cheapest costed option: ${OPTION_LABEL[row.cheapest.option]}, ₦${whole(row.cheapest.costPerSwap)} a swap` : reason)),
+      reasons: row.reasons.map((reason) => (row.cheapest !== null && reason.startsWith("cheapest feasible option:") ? `cheapest feasible option: ${OPTION_LABEL[row.cheapest.option]}, ₦${whole(row.cheapest.costPerSwap)} a swap` : reason)),
     })),
-    orderHow: "How this is ordered: fit on the grid at 24 months first, then the cheapest option that can be costed (fuel and tariff only), then the DT headroom left at 24 months. No weights.",
+    orderHow: "How this is ordered: fit on the grid at 24 months first, then the cheapest feasible option that can be costed (fuel and tariff only; an option that draws on the grid is not feasible where the hub does not fit on the grid at 24 months), then the DT headroom left at 24 months. No weights.",
     methods: [method(EMOBILITY_HEADROOM_REFERENCE), method(EMOBILITY_SITE_SCORE_REFERENCE)],
   };
 }
