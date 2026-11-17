@@ -8,7 +8,7 @@ import { dayEnergy, EMOBILITY_DEMAND_REFERENCE, energyPerSwap, HORIZONS, project
 import { EMOBILITY_HEADROOM_REFERENCE, headroomOverTime, type HeadroomAt } from "../../analytics/planning/emobility/headroom.ts";
 import { comparePowerSources, dieselCostPerKwh, EMOBILITY_POWER_SOURCE_REFERENCE, type OptionDay, type OptionResult, type PowerOption } from "../../analytics/planning/emobility/powerSource.ts";
 import { EMOBILITY_SITE_SCORE_REFERENCE, rankSites } from "../../analytics/planning/emobility/siteScore.ts";
-import { EMOBILITY_SWAP_FINANCE_REFERENCE, escrowPerDay, hubFundingBasis, hubFundingCost, hubMonthsToRepay, matchHubPledges, type FundingBasis } from "../../analytics/planning/emobility/swapFinance.ts";
+import { EMOBILITY_SWAP_FINANCE_REFERENCE, escrowPerDay, hubFundingBasis, hubFundingCost, hubMonthsToRepay, hubRepaymentPerSwap, marginPerSwap, matchHubPledges, type FundingBasis } from "../../analytics/planning/emobility/swapFinance.ts";
 import { EMOBILITY_VERIFY_REFERENCE, hubAgainstPlan } from "../../analytics/planning/emobility/verify.ts";
 import { assetLoading } from "../analytics/loading.ts";
 import { scopeReliability } from "../analytics/reliability.ts";
@@ -248,11 +248,28 @@ function co2Figure(day: OptionDay, hub: Hub): EmobilityFigure {
   return { key: "co2", label, value: day.co2Finding === "saving" ? `${amount} (${assumptions})` : `More CO2 than petrol vehicles: ${amount} (${assumptions})`, status: "calculated", basis };
 }
 
+const finance = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters;
+
+/** A margin a swap in words: "₦2,242", or "loses ₦331 a swap on this power source". */
+function marginWords(margin: number): string {
+  return margin > 0 ? `₦${whole(margin)} a swap` : `loses ₦${whole(-margin)} a swap on this power source`;
+}
+
+/** The hub's margin a swap at the base and the low diesel price, from the energy cost a swap of one option. */
+function marginFigure(energyBase: number | null, energyLow: number | null, placeholder: boolean): EmobilityFigure {
+  const label = "Margin a swap (swap price less energy and non-energy opex)";
+  const base = marginPerSwap(energyBase);
+  const low = marginPerSwap(energyLow);
+  const basis = `₦${whole(finance.swapPrice)} swap price (reported) − energy cost a swap (calculated) − ₦${whole(finance.swapPrice * finance.nonEnergyOpexShare)} non-energy opex (assumption: ${Math.round(finance.nonEnergyOpexShare * 100)}% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it.`;
+  if (base === null) return placeholder ? { key: "margin", label, value: "Placeholder: no EPC quote", status: "placeholder", basis } : { key: "margin", label, value: "Not available: no energy cost", status: "not_available", basis };
+  return { key: "margin", label, value: `${marginWords(base)}${low === null ? "" : `; ${marginWords(low)} at the low diesel price`}`, status: "calculated", basis };
+}
+
 function optionView(result: OptionResult, hub: Hub): PowerOptionView {
   const label = OPTION_LABEL[result.option];
   const unstudied = (key: string, name: string): EmobilityFigure => ({ key, label: name, value: `Not available: ${result.reasons.join("; ")}`, status: "not_available", basis: "The option cannot be studied without the feeder's figures." });
   if (result.days === null) {
-    return { option: label, energy: "Not available", rainySeason: "Not available", costPerKwh: unstudied("costPerKwh", "Cost per kWh"), costPerSwap: unstudied("costPerSwap", "Cost per swap"), costAtLowDiesel: unstudied("costLowDiesel", "Cost at the low diesel price"), dieselLitres: "Not available", co2Avoided: unstudied("co2", "CO2 avoided"), sizes: "—", payback: unstudied("payback", "Payback against diesel") };
+    return { option: label, energy: "Not available", rainySeason: "Not available", costPerKwh: unstudied("costPerKwh", "Cost per kWh"), costPerSwap: unstudied("costPerSwap", "Cost per swap"), costAtLowDiesel: unstudied("costLowDiesel", "Cost at the low diesel price"), margin: unstudied("margin", "Margin a swap"), dieselLitres: "Not available", co2Avoided: unstudied("co2", "CO2 avoided"), sizes: "—", payback: unstudied("payback", "Payback against diesel") };
   }
   const average = result.days.average;
   const rainy = result.days.rainy_season;
@@ -266,6 +283,7 @@ function optionView(result: OptionResult, hub: Hub): PowerOptionView {
       ? cost(null, "costLowDiesel", "Cost at the low diesel price", nairaKwh)
       : { key: "costLowDiesel", label: "Cost at the low diesel price, fuel and tariff only", value: `${nairaKwh(average.costPerKwhLowDiesel)}, ₦${whole(average.costPerSwapLowDiesel)} a swap`, status: "calculated", basis: "As the base case, with diesel at the low price (TechCabal, 30 July 2026)." };
   const co2 = co2Figure(average, hub);
+  const margin = marginFigure(average.costPerSwap, average.costPerSwapLowDiesel, placeholder);
   const payback: EmobilityFigure =
     result.paybackMonths !== null
       ? { key: "payback", label: "Payback against diesel", value: `${one(result.paybackMonths)} months`, status: "calculated", basis: "Installed cost ÷ the fuel saved a day against diesel only ÷ 30.4." }
@@ -280,6 +298,7 @@ function optionView(result: OptionResult, hub: Hub): PowerOptionView {
     costPerKwh: cost(average.costPerKwh, "costPerKwh", "Cost per kWh, fuel and tariff only", nairaKwh),
     costPerSwap: cost(average.costPerSwap, "costPerSwap", "Cost per swap, fuel and tariff only", (v) => `₦${whole(v)}`),
     costAtLowDiesel: low,
+    margin,
     dieselLitres: `${whole(average.dieselLitres)} litres a day (${whole(rainy.dieselLitres)} in the rainy season)`,
     co2Avoided: co2,
     sizes: sizes === "" ? "—" : sizes,
@@ -339,7 +358,16 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
   const rows = fundable.map((study) => {
     const basis = hubFundingBasis(study.base, FUNDING_HORIZON);
     const solarBess = study.options.find((option) => option.option === "solar_bess")?.installedCost ?? null;
-    return { study, basis, input: { id: study.hub.id, feederId: study.feederId!, cost: hubFundingCost(study.hub.costNaira, basis, solarBess), swapsPerDay: study.swapsNow } };
+    const option = basis.power === null ? undefined : study.options.find((one) => one.option === (basis.power === "solar_bess" ? "solar_bess" : "grid_diesel"));
+    const average = option?.days?.average ?? null;
+    const placeholder = option?.reasons.includes("placeholder: no EPC quote") ?? false;
+    return {
+      study,
+      basis,
+      energyLow: average?.costPerSwapLowDiesel ?? null,
+      placeholder,
+      input: { id: study.hub.id, feederId: study.feederId!, cost: hubFundingCost(study.hub.costNaira, basis, solarBess), swapsPerDay: study.swapsNow, energyCostPerSwap: average?.costPerSwap ?? null },
+    };
   });
   const result = matchHubPledges(
     pledges.map((pledge) => ({ id: pledge.id, kind: pledge.kind, amountNaira: pledge.amountNaira, returnPercent: pledge.returnPercent, tenorMonths: pledge.tenorMonths, feeders: pledge.feeders })),
@@ -353,11 +381,10 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
   const pledged = pledges.reduce((sum, pledge) => sum + pledge.amountNaira, 0);
   const upgrades = rows.filter((row) => row.basis.power === "grid_after_dt_upgrade").length;
   const onSolar = rows.filter((row) => row.basis.power === "solar_bess").length;
-  const noStream = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters.hubRepaymentPerSwap === null;
   const conditions = [upgrades > 0 ? `${upgrades} of the hubs offered need a DT upgrade` : null, onSolar > 0 ? `${onSolar} wait${onSolar === 1 ? "s" : ""} for the PV and BESS cost` : null].filter((part) => part !== null);
   return {
-    headline: `${formatNaira(placed)} of the ${formatNaira(pledged)} pledged is placed on ${result.matches.length} hub${result.matches.length === 1 ? "" : "s"}; ${formatNaira(queued)} is queued.${noStream ? " No repayment stream for a hub is cited, so only a grant can place money." : ""}${conditions.length === 0 ? "" : ` ${conditions.join("; ")}.`.replace(/^ ./, (start) => start.toUpperCase())}`,
-    how: `How this is calculated: a hub's funder is repaid from a per-swap amount into escrow; months to repay = the hub's cost repaid from escrow at the funder's return. No source for that amount is cited, so escrow and months to repay are not available and only a grant, which is not repaid, can fund a hub. The ₦1,000 deducted from each swap (reported) repays the rider's conversion loan and is never counted as hub revenue. A hub is offered on a power option that works at its site through ${FUNDING_HORIZON} months: the grid where it fits; the grid after a named DT upgrade where only the DT rating fails; solar + BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.`,
+    headline: `${formatNaira(placed)} of the ${formatNaira(pledged)} pledged is placed on ${result.matches.length} hub${result.matches.length === 1 ? "" : "s"}; ${formatNaira(queued)} is queued.${conditions.length === 0 ? "" : ` ${conditions.join("; ")}.`.replace(/^ ./, (start) => start.toUpperCase())}`,
+    how: `How this is calculated: margin a swap = the ₦3,000 swap price (reported) − the energy cost a swap on the hub's power option (calculated, at the base diesel price) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear); half the margin (assumption) goes into escrow and repays the hub's funder; months to repay = the hub's cost repaid from escrow at the funder's return. A hub whose margin is 0 or less cannot repay on that power option and no repaid pledge is matched to it. The ₦1,000 deducted from each swap (reported) repays the rider's conversion loan and is never counted as hub revenue. A hub is offered on a power option that works at its site through ${FUNDING_HORIZON} months: the grid where it fits; the grid after a named DT upgrade where only the DT rating fails; solar + BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.`,
     pledges: pledges.map((pledge) => {
       const row = result.pledges[pledge.id] ?? { placed: 0, queued: pledge.amountNaira, hubs: 0, queuedReason: null };
       return {
@@ -375,7 +402,8 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
         queuedReason: row.queuedReason,
       };
     }),
-    hubs: rows.map(({ study, basis, input }) => {
+    hubs: rows.map(({ study, basis, input, energyLow, placeholder }) => {
+      const margin = marginPerSwap(input.energyCostPerSwap);
       const pledgeId = funderOf.get(input.id);
       const pledge = pledgeId === undefined ? undefined : pledgeById.get(pledgeId);
       const months = pledge === undefined ? null : hubMonthsToRepay(input, pledge.returnPercent / 100);
@@ -393,12 +421,22 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
         power,
         powerReason: reason,
         cost,
+        margin: marginFigure(input.energyCostPerSwap, energyLow, placeholder),
         escrowPerDay: (() => {
-          const escrow = escrowPerDay(input.swapsPerDay);
-          return escrow === null ? "Not available: no cited repayment stream for a hub" : `${formatNaira(escrow)} a day`;
+          const escrow = escrowPerDay(input);
+          if (escrow === null || margin === null) return placeholder ? "Placeholder: no energy cost until an EPC quote" : "Not available: no energy cost";
+          if (margin <= 0) return `None: the hub ${marginWords(margin)}`;
+          return `${formatNaira(escrow)} a day (₦${whole(hubRepaymentPerSwap(input.energyCostPerSwap) ?? 0)} a swap, half the margin)`;
         })(),
         fundedBy: pledge === undefined ? (input.cost === null ? "Not offered until costed" : "Waiting") : pledge.funder,
-        monthsToRepay: pledge?.tenorMonths === null ? "Not repaid: a grant" : months === null ? (noStream ? "Not available: no cited repayment stream" : "—") : `${one(months)} months at ${pledge!.returnPercent}%`,
+        monthsToRepay:
+          pledge?.tenorMonths === null
+            ? "Not repaid: a grant"
+            : margin !== null && margin <= 0
+              ? `Cannot repay: the hub ${marginWords(margin)}`
+              : months === null
+                ? "—"
+                : `${one(months)} months at ${pledge!.returnPercent}%`,
       };
     }),
     waiting: [...result.waiting, ...result.notCosted].map((id) => names.get(id) ?? id),

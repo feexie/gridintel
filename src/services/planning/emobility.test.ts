@@ -92,15 +92,22 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.equal(keke.co2Avoided.value, "No material saving under these assumptions (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)");
   });
 
-  it("answers finance: with no cited hub repayment stream, the 3-month pledge is queued with that reason, and hub costs are synthetic or a placeholder", () => {
+  it("answers finance: hubs repay from half their margin a swap; the 3-month pledge is queued with its reason, and hub costs are synthetic or a placeholder", () => {
     const short = view.finance.pledges.find((pledge) => pledge.id === "PL-SHORT")!;
     assert.equal(short.hasQueued, true);
     assert.equal(short.placed, "₦0");
     assert.equal(short.hubs, "None");
-    assert.equal(short.queuedReason, "no cited repayment stream for a hub (the ₦1,000 a swap repays the rider's loan)");
-    assert.equal(view.finance.headline, "₦30.0 million of the ₦340.0 million pledged is placed on 1 hub; ₦310.0 million is queued. No repayment stream for a hub is cited, so only a grant can place money. 2 of the hubs offered need a DT upgrade; 2 wait for the PV and BESS cost.");
-    assert.equal(view.finance.hubs.find((hub) => hub.hubId === "HUB-04")!.monthsToRepay, "Not repaid: a grant");
-    for (const hub of view.finance.hubs) assert.equal(hub.escrowPerDay, "Not available: no cited repayment stream for a hub", hub.hubId);
+    assert.equal(short.queuedReason, "tenor shorter than any hub's payback");
+    assert.equal(view.finance.headline, "₦165.0 million of the ₦340.0 million pledged is placed on 3 hubs; ₦175.0 million is queued. 2 of the hubs offered need a DT upgrade; 2 wait for the PV and BESS cost.");
+    const hub = (id: string) => view.finance.hubs.find((one) => one.hubId === id)!;
+    // ₦3,000 − ₦158 energy − ₦600 opex = ₦2,242; half into escrow.
+    assert.equal(hub("HUB-02").margin.value, "₦2,242 a swap; ₦2,242 a swap at the low diesel price");
+    assert.equal(hub("HUB-02").escrowPerDay, "₦336,251 a day (₦1,121 a swap, half the margin)");
+    // Old Town has no DT headroom today, so its grid option runs on diesel and loses money a swap: only the grant funds it.
+    assert.equal(hub("HUB-04").escrowPerDay, "None: the hub loses ₦331 a swap on this power source");
+    assert.equal(hub("HUB-04").fundedBy, "Public clean-transport grant (synthetic)");
+    assert.equal(hub("HUB-04").monthsToRepay, "Not repaid: a grant");
+    for (const id of ["HUB-03", "HUB-06"]) assert.equal(hub(id).margin.status, "placeholder", id);
     for (const hub of view.finance.hubs) assert.ok(hub.cost.status === "synthetic" || hub.cost.status === "placeholder", hub.hubId);
     assert.ok(!view.finance.hubs.some((hub) => hub.hubId === "HUB-05"), "an installed hub is not offered for funding");
   });

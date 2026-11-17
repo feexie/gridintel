@@ -7,11 +7,18 @@ import { monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "../
 /* ==========================================================
    ANALYTICS — E-MOBILITY: FUNDING HUBS FROM A PER-SWAP ADD-ON
 
-   - A hub's funder is repaid from a per-swap amount into escrow:
-     escrow a day = hub repayment a swap × swaps a day. No source for
-     that amount is cited, so it is null: escrow, months to repay and
-     every repaid pledge's match are not available until one is. A
-     grant, which is not repaid, can still fund a hub.
+   - A hub's funder is repaid from the hub's margin a swap (Founder,
+     17 November 2026):
+       margin a swap = swap price (reported) − energy cost a swap
+         (calculated, for the hub's power option) − non-energy opex a
+         swap (assumption: 20% of the swap price; staff, site and
+         battery wear);
+       hub repayment a swap = 50% of the margin (assumption);
+       escrow a day = hub repayment a swap × swaps a day.
+     Where the margin is 0 or less the hub cannot repay on that power
+     option: no repaid pledge is matched to it. Without an energy cost
+     (a placeholder) there is no margin, so no escrow. A grant, which
+     is not repaid, can fund a hub either way.
    - The ₦1,000 deducted from each swap repays the rider's conversion
      loan until it is repaid (reported). It is rider loan repayment,
      never hub revenue: it is held as its own parameter and no
@@ -43,8 +50,12 @@ import { monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "../
 ========================================================== */
 
 export interface SwapFinanceParameters {
-  /** ₦ a swap into escrow to repay a hub's funder; null while no source is cited. */
-  hubRepaymentPerSwap: number | null;
+  /** ₦ a swap, reported. */
+  swapPrice: number;
+  /** Share of the swap price spent on staff, site and battery wear. Assumption. */
+  nonEnergyOpexShare: number;
+  /** Share of the margin a swap paid into escrow to the hub's funder. Assumption. */
+  hubRepaymentShareOfMargin: number;
   /**
    * ₦ a swap deducted toward the rider's conversion loan until it is repaid. Reported
    * (cited by the service). Rider loan repayment, never hub revenue: no hub calculation reads it.
@@ -58,11 +69,11 @@ export const EMOBILITY_SWAP_FINANCE_REFERENCE: Methodology<SwapFinanceParameters
   version: "0.1.0",
   name: "GridIntel reference matching of pledges to swap hubs",
   description:
-    "A per-swap amount into escrow repays a hub's cost at the funder's return (not available until a source is cited; the ₦1,000 a swap repays the rider's loan, never the hub); pledges matched to hubs by return, feeders named, tenor and the hub's whole cost; what cannot be placed is queued.",
+    "Half the hub's margin a swap (swap price less energy and non-energy opex) goes into escrow and repays the hub's cost at the funder's return (the ₦1,000 a swap repays the rider's loan, never the hub); pledges matched to hubs by return, feeders named, tenor and the hub's whole cost; what cannot be placed is queued.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
-  parameters: { hubRepaymentPerSwap: null, riderLoanRepaymentPerSwap: 1_000, daysPerMonth: 30.4 },
+  parameters: { swapPrice: 3_000, nonEnergyOpexShare: 0.2, hubRepaymentShareOfMargin: 0.5, riderLoanRepaymentPerSwap: 1_000, daysPerMonth: 30.4 },
 };
 
 export interface HubFinanceInput {
@@ -71,6 +82,8 @@ export interface HubFinanceInput {
   /** ₦; null when no cost is held. */
   cost: number | null;
   swapsPerDay: number;
+  /** ₦ a swap for energy on the hub's power option; null while it cannot be costed. */
+  energyCostPerSwap: number | null;
 }
 
 export interface HubPledgeInput {
@@ -114,26 +127,45 @@ export function hubFundingCost(hubCost: number | null, basis: FundingBasis, sola
   return hubCost;
 }
 
-/** ₦ a day into the hub's escrow; null while no hub repayment a swap is cited. Never the rider's loan deduction. */
-export function escrowPerDay(swapsPerDay: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
-  if (parameters.hubRepaymentPerSwap === null) return null;
-  return Math.max(0, swapsPerDay) * parameters.hubRepaymentPerSwap;
+/** ₦ a swap left after energy and non-energy opex; null without an energy cost. Negative when the hub loses money a swap. */
+export function marginPerSwap(energyCostPerSwap: number | null, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
+  if (energyCostPerSwap === null) return null;
+  return parameters.swapPrice - energyCostPerSwap - parameters.swapPrice * parameters.nonEnergyOpexShare;
+}
+
+/** ₦ a swap into escrow: the share of a positive margin; 0 when the hub loses money a swap; null without a margin. */
+export function hubRepaymentPerSwap(energyCostPerSwap: number | null, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
+  const margin = marginPerSwap(energyCostPerSwap, parameters);
+  if (margin === null) return null;
+  return margin > 0 ? margin * parameters.hubRepaymentShareOfMargin : 0;
+}
+
+/** ₦ a day into the hub's escrow; null without a margin. Never the rider's loan deduction. */
+export function escrowPerDay(hub: Pick<HubFinanceInput, "swapsPerDay" | "energyCostPerSwap">, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
+  const repayment = hubRepaymentPerSwap(hub.energyCostPerSwap, parameters);
+  return repayment === null ? null : Math.max(0, hub.swapsPerDay) * repayment;
+}
+
+/** Whether the hub can repay a funder on its power option: a positive margin a swap. */
+export function hubCanRepay(hub: Pick<HubFinanceInput, "swapsPerDay" | "energyCostPerSwap">, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): boolean {
+  const escrow = escrowPerDay(hub, parameters);
+  return escrow !== null && escrow > 0;
 }
 
 /** Months for the hub's escrow to repay its cost at a yearly return; null without a cost or an escrow, or when the escrow never repays it. */
 export function hubMonthsToRepay(hub: HubFinanceInput, ratePerYear: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
-  const escrow = escrowPerDay(hub.swapsPerDay, parameters);
-  if (hub.cost === null || hub.cost <= 0 || escrow === null) return null;
+  const escrow = escrowPerDay(hub, parameters);
+  if (hub.cost === null || hub.cost <= 0 || escrow === null || escrow <= 0) return null;
   return monthsToRepayWithReturnAt(hub.cost, escrow, ratePerYear, parameters.daysPerMonth);
 }
 
 export function hubRepaymentSchedule(hub: HubFinanceInput, ratePerYear: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters) {
-  const escrow = escrowPerDay(hub.swapsPerDay, parameters);
-  if (hub.cost === null || hub.cost <= 0 || escrow === null) return [];
+  const escrow = escrowPerDay(hub, parameters);
+  if (hub.cost === null || hub.cost <= 0 || escrow === null || escrow <= 0) return [];
   return repaymentScheduleAt(hub.cost, escrow, ratePerYear, parameters.daysPerMonth);
 }
 
-/** Whether a pledge may fund a hub: its feeder, and (unless a grant) repaid within the tenor at the pledge's return. */
+/** Whether a pledge may fund a hub: its feeder, and (unless a grant) a positive margin that repays within the tenor at the pledge's return. */
 export function canFundHub(pledge: HubPledgeInput, hub: HubFinanceInput, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): boolean {
   if (!pledge.feeders.includes(hub.feederId) || hub.cost === null || hub.cost <= 0) return false;
   if (pledge.tenorMonths === null) return true;
@@ -188,7 +220,7 @@ export function matchHubPledges(pledges: readonly HubPledgeInput[], hubs: readon
 function queuedReason(pledge: HubPledgeInput, hubs: readonly HubFinanceInput[], funded: ReadonlySet<string>, parameters: SwapFinanceParameters): string {
   const onFeeders = hubs.filter((hub) => pledge.feeders.includes(hub.feederId) && hub.cost !== null && hub.cost > 0);
   if (onFeeders.length === 0) return "no costed hub on its feeders";
-  if (pledge.tenorMonths !== null && parameters.hubRepaymentPerSwap === null) return "no cited repayment stream for a hub (the ₦1,000 a swap repays the rider's loan)";
+  if (pledge.tenorMonths !== null && !onFeeders.some((hub) => hubCanRepay(hub, parameters))) return "no hub on its feeders has a margin to repay from on its power source";
   const repayable = onFeeders.filter((hub) => canFundHub(pledge, hub, parameters));
   if (repayable.length === 0) return "tenor shorter than any hub's payback";
   if (repayable.every((hub) => funded.has(hub.id))) return "every hub it could fund is already funded";

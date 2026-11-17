@@ -22,7 +22,7 @@ Technical only. The plan, with every input's status and source, is
 | `gridintel.planning.emobility-demand` | 0.1.0 | kWh a swap = pack × (1 − state of charge on return) ÷ charging efficiency, full depletion as the upper case; swaps grown at slow, base and fast adoption to 12, 24, 48 months; vehicles served; charging kW |
 | `gridintel.planning.emobility-headroom` | 0.1.0 | The DT's observed peak grown a year against rating × the loading threshold, plus the hub's draw at the DT's peak; whether the chargers take the day's energy in the feeder's hours of supply; names the limit that fails |
 | `gridintel.planning.emobility-power-source` | 0.1.0 | Grid with diesel backup, diesel, solar + grid, solar + BESS, hybrid on an average and a rainy-season day: energy by source, fuel and tariff cost at the base and the low diesel price, diesel litres, CO2 avoided against petrol vehicles (not material within ±10%), payback against diesel; PV sized with the BESS's round-trip losses |
-| `gridintel.planning.emobility-swap-finance` | 0.1.0 | Per-swap hub repayment into escrow (not available: no source cited); the ₦1,000 rider loan deduction held apart and never read; months to repay at a funder's return; the power option a hub is funded on (grid, grid after a DT upgrade, solar + BESS); pledges matched to hubs in the Marketplace's order, never beyond a pledge's tenor; unplaced money queued with its reason |
+| `gridintel.planning.emobility-swap-finance` | 0.1.0 | Half the hub's margin a swap (swap price − energy cost a swap − 20% non-energy opex) into escrow; no repaid pledge on a hub that loses money a swap; the ₦1,000 rider loan deduction held apart and never read; months to repay at a funder's return; the power option a hub is funded on (grid, grid after a DT upgrade, solar + BESS); pledges matched to hubs in the Marketplace's order, never beyond a pledge's tenor; unplaced money queued with its reason |
 | `gridintel.planning.emobility-site-score` | 0.1.0 | Candidate order: fit at 24 months; for hubs that do not fit, checks failed (fewer first) then kVA short; cheapest feasible costed option (no grid option where the grid fails at 24 months), headroom left, id; no weights |
 | `gridintel.planning.emobility-verify` | 0.1.0 | An installed hub's swaps, energy and availability against its plan |
 
@@ -51,10 +51,16 @@ Technical only. The plan, with every input's status and source, is
 - The ₦1,000 deducted from each swap repays the rider's conversion loan until it is repaid
   (edgeX, republishing TechCabal, 30 July 2026). It is rider loan repayment, never hub revenue:
   `riderLoanRepaymentPerSwap` is held apart and no calculation reads it, and a test holds that
-  changing it changes no escrow and no match. No source is cited for a per-swap amount that
-  repays a hub's funder (`hubRepaymentPerSwap` is `null`), so escrow and months to repay are not
-  available, every repaid pledge is queued with that reason, and only a grant places money
-  (Founder, 17 November 2026).
+  changing it changes no escrow and no match.
+- A hub's funder is repaid from the hub's margin (Founder, 17 November 2026): margin a swap =
+  the ₦3,000 swap price (reported) − the energy cost a swap on the hub's power option
+  (calculated, at the base diesel price) − non-energy opex of 20% of the swap price, ₦600
+  (assumption: staff, site and battery wear). Half the margin (assumption) goes into escrow;
+  the repayment a swap is calculated. Where the margin is 0 or less the hub "loses ₦X a swap on
+  this power source" and no repaid pledge is matched to it; a grant, not repaid, still can be.
+  Every option shows its margin at the base and the low diesel price.
+- The energy cost behind a hub funded on "the grid after a DT upgrade" is today's: the upgraded
+  DT's rating is not in the inputs, so a hub with no headroom now (Old Town) is costed on diesel.
 - Among hubs that do not fit on the grid at 24 months, the site order puts fewer failed checks
   (DT rating, supply hours) first, then the fewest kVA short, before cost (Founder, 17 November
   2026).

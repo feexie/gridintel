@@ -68,9 +68,11 @@ const pct = (fraction: number) => `${Math.round(fraction * 100)}%`;
 
 export function emobilityInputs(): EmobilityFigure[] {
   return [
-    { key: "swapPrice", label: "Swap price", value: `${naira(3_000)} standard (${naira(2_000)} to ${naira(2_800)} also seen)`, status: "reported", basis: `${EDGEX}. Context only; no method uses it.` },
+    { key: "swapPrice", label: "Swap price", value: `${naira(3_000)} standard (${naira(2_000)} to ${naira(2_800)} also seen)`, status: "reported", basis: `${EDGEX}. The standard price is used for the hub's margin a swap.` },
     { key: "riderLoan", label: "Deduction toward the rider's conversion loan", value: `${naira(finance.riderLoanRepaymentPerSwap)} a swap, until the loan is repaid`, status: "reported", basis: `${EDGEX}. Rider loan repayment, never hub revenue: no hub calculation uses it.` },
-    { key: "hubRepayment", label: "Repayment a swap to a hub's funder", value: "Not available", status: "not_available", basis: "No cited source. Escrow and months to repay a hub wait for one; until then only a grant can fund a hub." },
+    { key: "nonEnergyOpex", label: "Non-energy opex a swap", value: `${pct(finance.nonEnergyOpexShare)} of the swap price (${naira(finance.swapPrice * finance.nonEnergyOpexShare)})`, status: "assumption", basis: "Staff, site and battery wear; to confirm with an operator." },
+    { key: "hubRepayment", label: "Repayment a swap to a hub's funder", value: `${pct(finance.hubRepaymentShareOfMargin)} of the hub's margin a swap`, status: "calculated", basis: "Margin a swap = swap price − energy cost a swap on the hub's power option − non-energy opex. The share is an assumption. Where the margin is 0 or less the hub cannot repay on that option and no repaid pledge is matched to it." },
+    { key: "hubRepaymentShare", label: "Share of the margin paid to a hub's funder", value: pct(finance.hubRepaymentShareOfMargin), status: "assumption", basis: "The rest of the margin is the operator's." },
     { key: "dieselBought", label: "Diesel bought at a Lagos (Ikorodu) swap station", value: "About 1,000 litres every 3 to 4 days", status: "reported", basis: `${EDGEX}. A cross-check only: 250 to 333 litres a day at 3 kWh a litre is 750 to 1,000 kWh a day, the demonstration hub's range.` },
     { key: "dieselPrice", label: "Diesel price, base case", value: `${naira(power.dieselPricePerLitre, 2)} a litre`, status: "reported", basis: `${NBS}.` },
     { key: "dieselLowPrice", label: "Diesel price, low case", value: `${naira(power.dieselLowPricePerLitre)} a litre`, status: "reported", basis: `${TECHCABAL}. The low case.` },

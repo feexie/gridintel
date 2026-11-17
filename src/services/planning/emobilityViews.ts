@@ -76,6 +76,8 @@ export interface PowerOptionView {
   costPerSwap: EmobilityFigure;
   /** Cost per kWh and per swap at the low diesel price. */
   costAtLowDiesel: EmobilityFigure;
+  /** The hub's margin a swap on this option, at the base and the low diesel price. */
+  margin: EmobilityFigure;
   dieselLitres: string;
   co2Avoided: EmobilityFigure;
   sizes: string;
@@ -109,6 +111,8 @@ export interface FinanceView {
     /** Why that option, and what it needs (a named DT upgrade, or the PV and BESS cost). */
     powerReason: string;
     cost: EmobilityFigure;
+    /** The margin a swap on the power option the hub is offered on, at the base and the low diesel price. */
+    margin: EmobilityFigure;
     escrowPerDay: string;
     fundedBy: string;
     monthsToRepay: string;
