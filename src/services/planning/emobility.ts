@@ -222,7 +222,7 @@ function sitesView(studies: HubStudy[]): EmobilityView["sites"] {
       hub: names.get(row.id) ?? row.id,
       reasons: row.reasons.map((reason) => (row.cheapest !== null && reason.startsWith("cheapest feasible option:") ? `cheapest feasible option: ${OPTION_LABEL[row.cheapest.option]}, ₦${whole(row.cheapest.costPerSwap)} a swap` : reason)),
     })),
-    orderHow: "How this is ordered: fit on the grid at 24 months first, then the cheapest feasible option that can be costed (fuel and tariff only; an option that draws on the grid is not feasible where the hub does not fit on the grid at 24 months), then the DT headroom left at 24 months. No weights.",
+    orderHow: "How this is ordered: fit on the grid at 24 months first; among hubs that do not fit, fewer checks failed (DT rating, supply hours) first, then the fewest kVA short; then the cheapest feasible option that can be costed (fuel and tariff only; an option that draws on the grid is not feasible where the hub does not fit on the grid at 24 months), then the DT headroom left at 24 months. No weights.",
     methods: [method(EMOBILITY_HEADROOM_REFERENCE), method(EMOBILITY_SITE_SCORE_REFERENCE)],
   };
 }
@@ -353,10 +353,11 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
   const pledged = pledges.reduce((sum, pledge) => sum + pledge.amountNaira, 0);
   const upgrades = rows.filter((row) => row.basis.power === "grid_after_dt_upgrade").length;
   const onSolar = rows.filter((row) => row.basis.power === "solar_bess").length;
+  const noStream = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters.hubRepaymentPerSwap === null;
   const conditions = [upgrades > 0 ? `${upgrades} of the hubs offered need a DT upgrade` : null, onSolar > 0 ? `${onSolar} wait${onSolar === 1 ? "s" : ""} for the PV and BESS cost` : null].filter((part) => part !== null);
   return {
-    headline: `${formatNaira(placed)} of the ${formatNaira(pledged)} pledged is placed on ${result.matches.length} hubs; ${formatNaira(queued)} is queued.${conditions.length === 0 ? "" : ` ${conditions.join("; ")}.`.replace(/^ ./, (start) => start.toUpperCase())}`,
-    how: `How this is calculated: each swap's ₦1,000 add-on (reported) goes into escrow; months to repay = the hub's cost repaid from escrow at the funder's return. A hub is offered on a power option that works at its site through ${FUNDING_HORIZON} months: the grid where it fits; the grid after a named DT upgrade where only the DT rating fails; solar + BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.`,
+    headline: `${formatNaira(placed)} of the ${formatNaira(pledged)} pledged is placed on ${result.matches.length} hub${result.matches.length === 1 ? "" : "s"}; ${formatNaira(queued)} is queued.${noStream ? " No repayment stream for a hub is cited, so only a grant can place money." : ""}${conditions.length === 0 ? "" : ` ${conditions.join("; ")}.`.replace(/^ ./, (start) => start.toUpperCase())}`,
+    how: `How this is calculated: a hub's funder is repaid from a per-swap amount into escrow; months to repay = the hub's cost repaid from escrow at the funder's return. No source for that amount is cited, so escrow and months to repay are not available and only a grant, which is not repaid, can fund a hub. The ₦1,000 deducted from each swap (reported) repays the rider's conversion loan and is never counted as hub revenue. A hub is offered on a power option that works at its site through ${FUNDING_HORIZON} months: the grid where it fits; the grid after a named DT upgrade where only the DT rating fails; solar + BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.`,
     pledges: pledges.map((pledge) => {
       const row = result.pledges[pledge.id] ?? { placed: 0, queued: pledge.amountNaira, hubs: 0, queuedReason: null };
       return {
@@ -392,9 +393,12 @@ function financeView(studies: HubStudy[], pledges: Awaited<ReturnType<EmobilityR
         power,
         powerReason: reason,
         cost,
-        escrowPerDay: `${formatNaira(escrowPerDay(input.swapsPerDay))} a day`,
+        escrowPerDay: (() => {
+          const escrow = escrowPerDay(input.swapsPerDay);
+          return escrow === null ? "Not available: no cited repayment stream for a hub" : `${formatNaira(escrow)} a day`;
+        })(),
         fundedBy: pledge === undefined ? (input.cost === null ? "Not offered until costed" : "Waiting") : pledge.funder,
-        monthsToRepay: months === null ? "—" : `${one(months)} months at ${pledge!.returnPercent}%`,
+        monthsToRepay: pledge?.tenorMonths === null ? "Not repaid: a grant" : months === null ? (noStream ? "Not available: no cited repayment stream" : "—") : `${one(months)} months at ${pledge!.returnPercent}%`,
       };
     }),
     waiting: [...result.waiting, ...result.notCosted].map((id) => names.get(id) ?? id),

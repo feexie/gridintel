@@ -22,8 +22,8 @@ Technical only. The plan, with every input's status and source, is
 | `gridintel.planning.emobility-demand` | 0.1.0 | kWh a swap = pack × (1 − state of charge on return) ÷ charging efficiency, full depletion as the upper case; swaps grown at slow, base and fast adoption to 12, 24, 48 months; vehicles served; charging kW |
 | `gridintel.planning.emobility-headroom` | 0.1.0 | The DT's observed peak grown a year against rating × the loading threshold, plus the hub's draw at the DT's peak; whether the chargers take the day's energy in the feeder's hours of supply; names the limit that fails |
 | `gridintel.planning.emobility-power-source` | 0.1.0 | Grid with diesel backup, diesel, solar + grid, solar + BESS, hybrid on an average and a rainy-season day: energy by source, fuel and tariff cost at the base and the low diesel price, diesel litres, CO2 avoided against petrol vehicles (not material within ±10%), payback against diesel; PV sized with the BESS's round-trip losses |
-| `gridintel.planning.emobility-swap-finance` | 0.1.0 | Per-swap add-on into escrow; months to repay at a funder's return; the power option a hub is funded on (grid, grid after a DT upgrade, solar + BESS); pledges matched to hubs in the Marketplace's order, never beyond a pledge's tenor; unplaced money queued with its reason |
-| `gridintel.planning.emobility-site-score` | 0.1.0 | Candidate order: fit at 24 months, cheapest feasible costed option (no grid option where the grid fails at 24 months), headroom left, id; no weights |
+| `gridintel.planning.emobility-swap-finance` | 0.1.0 | Per-swap hub repayment into escrow (not available: no source cited); the ₦1,000 rider loan deduction held apart and never read; months to repay at a funder's return; the power option a hub is funded on (grid, grid after a DT upgrade, solar + BESS); pledges matched to hubs in the Marketplace's order, never beyond a pledge's tenor; unplaced money queued with its reason |
+| `gridintel.planning.emobility-site-score` | 0.1.0 | Candidate order: fit at 24 months; for hubs that do not fit, checks failed (fewer first) then kVA short; cheapest feasible costed option (no grid option where the grid fails at 24 months), headroom left, id; no weights |
 | `gridintel.planning.emobility-verify` | 0.1.0 | An installed hub's swaps, energy and availability against its plan |
 
 ## Rules the engine keeps
@@ -48,8 +48,26 @@ Technical only. The plan, with every input's status and source, is
 - PV is sized to the average day, making up the BESS's 90% round-trip efficiency on the energy
   that passes through it; no option is solar every day.
 - Hub costs are synthetic and used only by the matcher; they are never investment figures.
+- The ₦1,000 deducted from each swap repays the rider's conversion loan until it is repaid
+  (edgeX, republishing TechCabal, 30 July 2026). It is rider loan repayment, never hub revenue:
+  `riderLoanRepaymentPerSwap` is held apart and no calculation reads it, and a test holds that
+  changing it changes no escrow and no match. No source is cited for a per-swap amount that
+  repays a hub's funder (`hubRepaymentPerSwap` is `null`), so escrow and months to repay are not
+  available, every repaid pledge is queued with that reason, and only a grant places money
+  (Founder, 17 November 2026).
+- Among hubs that do not fit on the grid at 24 months, the site order puts fewer failed checks
+  (DT rating, supply hours) first, then the fewest kVA short, before cost (Founder, 17 November
+  2026).
 - The Metering Marketplace's results are unchanged by the shared loan module (its tests and
   `npm run geh:figures`, all 101 figures unchanged).
+
+## Cross-check: the demonstration hub's energy
+
+The same article reports that the Ikorodu swap station buys about 1,000 litres of diesel every
+3 to 4 days (reported). That is 250 to 333 litres a day; at the assumed 3 kWh a litre, 750 to
+1,000 kWh a day: the demonstration hub's calculated range (750 kWh base, 1,000 kWh at full
+depletion). The two agree; no figure is changed by it. The yield is an assumption, so the
+agreement checks the order of magnitude, not the yield.
 
 ## Inputs
 

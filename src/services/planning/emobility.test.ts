@@ -66,6 +66,9 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.equal(farm.band, "Band D");
     assert.equal(farm.tariff, "₦50.01/kWh");
     assert.equal(view.sites.order.length, 6);
+    // Hubs that fail fewer checks first, then the fewest kVA short (Founder, 17 November 2026).
+    const order = ["Market Road hub", "Market Road North hub", "Government Avenue hub", "Old Town hub", "Farm Road hub", "Old Town tricycle hub"];
+    view.sites.order.forEach((row, index) => assert.ok(row.hub.startsWith(order[index]), `${index}: ${row.hub}`));
     assert.deepEqual(view.sites.order[0].reasons, ["fits on the grid at 24 months", "cheapest feasible option: Grid with diesel backup, ₦524 a swap", "headroom left at 24 months: 121 kVA"]);
     const demo = view.sites.order.find((row) => row.hub.startsWith("Government Avenue"))!;
     assert.deepEqual(demo.reasons, ["does not fit on the grid at 24 months", "grid options not feasible without a DT upgrade (4.9 kVA short)", "cheapest feasible option: Diesel only, ₦2,731 a swap", "headroom left at 24 months: -5 kVA"]);
@@ -89,12 +92,15 @@ describe("the e-mobility planner on the synthetic hubs", () => {
     assert.equal(keke.co2Avoided.value, "No material saving under these assumptions (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)");
   });
 
-  it("answers finance: the 3-month pledge is queued with its reason, and hub costs are synthetic or a placeholder", () => {
+  it("answers finance: with no cited hub repayment stream, the 3-month pledge is queued with that reason, and hub costs are synthetic or a placeholder", () => {
     const short = view.finance.pledges.find((pledge) => pledge.id === "PL-SHORT")!;
     assert.equal(short.hasQueued, true);
     assert.equal(short.placed, "₦0");
     assert.equal(short.hubs, "None");
-    assert.equal(short.queuedReason, "tenor shorter than any hub's payback");
+    assert.equal(short.queuedReason, "no cited repayment stream for a hub (the ₦1,000 a swap repays the rider's loan)");
+    assert.equal(view.finance.headline, "₦30.0 million of the ₦340.0 million pledged is placed on 1 hub; ₦310.0 million is queued. No repayment stream for a hub is cited, so only a grant can place money. 2 of the hubs offered need a DT upgrade; 2 wait for the PV and BESS cost.");
+    assert.equal(view.finance.hubs.find((hub) => hub.hubId === "HUB-04")!.monthsToRepay, "Not repaid: a grant");
+    for (const hub of view.finance.hubs) assert.equal(hub.escrowPerDay, "Not available: no cited repayment stream for a hub", hub.hubId);
     for (const hub of view.finance.hubs) assert.ok(hub.cost.status === "synthetic" || hub.cost.status === "placeholder", hub.hubId);
     assert.ok(!view.finance.hubs.some((hub) => hub.hubId === "HUB-05"), "an installed hub is not offered for funding");
   });

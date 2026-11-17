@@ -14,7 +14,7 @@ It adds no screen, no route and no navigation entry. Screens are EMOB-B, after N
 | 1 | Demand | `demand.ts` | Vehicles, swaps a day, kWh a day and charging kW at 0, 12, 24 and 48 months, under slow, base and fast adoption |
 | 2 | Sites and headroom | `headroom.ts` | The DT that supplies the hub, its headroom in kVA, the feeder's band, tariff and hours of supply, and whether the hub fits now and at 12, 24 and 48 months |
 | 3 | Power source | `powerSource.ts` | For grid with diesel backup, diesel only, solar + grid, solar + BESS and hybrid: cost per kWh and per swap (fuel and tariff only), diesel litres a day, CO2 avoided against petrol vehicles, payback against diesel (only once costs are supplied) |
-| 4 | Finance | `swapFinance.ts` | Pledges matched to hubs (hubs and their batteries only), repaid from the per-swap add-on into escrow; months to repay at each funder's return; money that cannot be placed is queued |
+| 4 | Finance | `swapFinance.ts` | Pledges matched to hubs (hubs and their batteries only), repaid from a per-swap amount into escrow (not available until a source is cited; the ₦1,000 a swap repays the rider's loan, never the hub); months to repay at each funder's return; money that cannot be placed is queued |
 | 5 | Verify | service only | Swaps, energy and uptime against plan for installed hubs; synthetic until a pilot |
 
 `siteScore.ts` ranks candidate hubs from the answers to 2 and 3.
@@ -29,8 +29,10 @@ Every input is held once, with its status and source, in the inputs table of
 
 | Input | Value | Status | Source or basis |
 | --- | --- | --- | --- |
-| Swap price | ₦3,000 a swap | Reported | TechCabal, 30 July 2026 (a Lagos swap operator's published price) |
-| Add-on to recover the asset | ₦1,000 a swap | Reported | Same article |
+| Swap price | ₦3,000 a swap standard (₦2,000 to ₦2,800 also seen) | Reported | edgeX, republishing TechCabal, 30 July 2026 (Founder, 17 November 2026) |
+| Deduction toward the rider's conversion loan | ₦1,000 a swap, until the loan is repaid | Reported | edgeX, republishing TechCabal, 30 July 2026. Rider loan repayment, never hub revenue; no hub calculation uses it |
+| Repayment a swap to a hub's funder | Not available | Not available | No source cited; escrow and months to repay wait for one (Founder, 17 November 2026) |
+| Diesel bought, Ikorodu swap station | About 1,000 litres every 3 to 4 days | Reported | Same article. A cross-check only (750 to 1,000 kWh a day at 3 kWh a litre) |
 | Battery, motorcycle | 3 kWh | Assumption | To confirm with an operator |
 | Battery, tricycle | 5 kWh | Assumption | To confirm with an operator |
 | State of charge on return | 25% | Assumption | A battery comes back a quarter full on average |
@@ -169,7 +171,10 @@ backup and shown.
   option's daily running cost) ÷ 30.4, `null` while the cost is a placeholder or the option
   saves nothing.
 
-**`swapFinance.ts`.** Per hub: charge a day into escrow = add-on × swaps a day; months to repay
+**`swapFinance.ts`.** Per hub: charge a day into escrow = hub repayment a swap × swaps a day,
+not available while no source for that amount is cited (the ₦1,000 a swap repays the rider's
+conversion loan and is never counted as hub revenue; Founder, 17 November 2026), so only a
+grant, which is not repaid, can be matched; months to repay
 the hub's synthetic cost at a funder's return = the shared `monthsToRepayWithReturn`. Matching:
 pledges ordered as the Marketplace orders them (lowest return first, then fewest areas, then
 id); each pledge funds hubs it is allowed to (area, tenor long enough at its return) in hub-id
@@ -186,7 +191,9 @@ are out of scope (Founder, 5 November 2026).
 
 **`siteScore.ts`.** No weighted score, so no invented weights. Candidates are ordered by: fits
 on grid at 24 months (yes first), then cost per swap of the cheapest feasible option that can be
-costed, then headroom left at 24 months, then id. Where the hub does not fit on the grid at 24
+costed, then headroom left at 24 months, then id; among hubs that do not fit, fewer failed
+checks (DT rating, supply hours) come first, then the fewest kVA short, before cost (Founder,
+17 November 2026). Where the hub does not fit on the grid at 24
 months, the options that draw on the grid are not feasible and never named cheapest: "not
 feasible without a DT upgrade (X kVA short)", or "not feasible: too few hours of supply"
 (Founder, checkpoint approval, 16 November 2026). Each rank carries the reason it sits there.

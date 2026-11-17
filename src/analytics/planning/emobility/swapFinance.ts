@@ -7,8 +7,15 @@ import { monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "../
 /* ==========================================================
    ANALYTICS — E-MOBILITY: FUNDING HUBS FROM A PER-SWAP ADD-ON
 
-   - Each swap carries an add-on that goes into escrow and repays the
-     hub's funder: escrow a day = add-on × swaps a day.
+   - A hub's funder is repaid from a per-swap amount into escrow:
+     escrow a day = hub repayment a swap × swaps a day. No source for
+     that amount is cited, so it is null: escrow, months to repay and
+     every repaid pledge's match are not available until one is. A
+     grant, which is not repaid, can still fund a hub.
+   - The ₦1,000 deducted from each swap repays the rider's conversion
+     loan until it is repaid (reported). It is rider loan repayment,
+     never hub revenue: it is held as its own parameter and no
+     calculation here reads it.
    - Months to repay the hub = its cost ÷ (escrow a day × days a
      month); with a funder's return, the months for that escrow to
      repay the cost as a loan at that rate (the arithmetic the
@@ -36,8 +43,13 @@ import { monthsToRepayWithReturnAt, pledgeOrder, repaymentScheduleAt } from "../
 ========================================================== */
 
 export interface SwapFinanceParameters {
-  /** ₦ a swap into escrow. Reported (cited by the service). */
-  addOnPerSwap: number;
+  /** ₦ a swap into escrow to repay a hub's funder; null while no source is cited. */
+  hubRepaymentPerSwap: number | null;
+  /**
+   * ₦ a swap deducted toward the rider's conversion loan until it is repaid. Reported
+   * (cited by the service). Rider loan repayment, never hub revenue: no hub calculation reads it.
+   */
+  riderLoanRepaymentPerSwap: number;
   daysPerMonth: number;
 }
 
@@ -46,11 +58,11 @@ export const EMOBILITY_SWAP_FINANCE_REFERENCE: Methodology<SwapFinanceParameters
   version: "0.1.0",
   name: "GridIntel reference matching of pledges to swap hubs",
   description:
-    "A per-swap add-on into escrow repays a hub's cost at the funder's return; pledges matched to hubs by return, feeders named, tenor and the hub's whole cost; what cannot be placed is queued.",
+    "A per-swap amount into escrow repays a hub's cost at the funder's return (not available until a source is cited; the ₦1,000 a swap repays the rider's loan, never the hub); pledges matched to hubs by return, feeders named, tenor and the hub's whole cost; what cannot be placed is queued.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
-  parameters: { addOnPerSwap: 1_000, daysPerMonth: 30.4 },
+  parameters: { hubRepaymentPerSwap: null, riderLoanRepaymentPerSwap: 1_000, daysPerMonth: 30.4 },
 };
 
 export interface HubFinanceInput {
@@ -102,19 +114,23 @@ export function hubFundingCost(hubCost: number | null, basis: FundingBasis, sola
   return hubCost;
 }
 
-export function escrowPerDay(swapsPerDay: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number {
-  return Math.max(0, swapsPerDay) * parameters.addOnPerSwap;
+/** ₦ a day into the hub's escrow; null while no hub repayment a swap is cited. Never the rider's loan deduction. */
+export function escrowPerDay(swapsPerDay: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
+  if (parameters.hubRepaymentPerSwap === null) return null;
+  return Math.max(0, swapsPerDay) * parameters.hubRepaymentPerSwap;
 }
 
-/** Months for the hub's escrow to repay its cost at a yearly return; null without a cost, or when the escrow never repays it. */
+/** Months for the hub's escrow to repay its cost at a yearly return; null without a cost or an escrow, or when the escrow never repays it. */
 export function hubMonthsToRepay(hub: HubFinanceInput, ratePerYear: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters): number | null {
-  if (hub.cost === null || hub.cost <= 0) return null;
-  return monthsToRepayWithReturnAt(hub.cost, escrowPerDay(hub.swapsPerDay, parameters), ratePerYear, parameters.daysPerMonth);
+  const escrow = escrowPerDay(hub.swapsPerDay, parameters);
+  if (hub.cost === null || hub.cost <= 0 || escrow === null) return null;
+  return monthsToRepayWithReturnAt(hub.cost, escrow, ratePerYear, parameters.daysPerMonth);
 }
 
 export function hubRepaymentSchedule(hub: HubFinanceInput, ratePerYear: number, parameters = EMOBILITY_SWAP_FINANCE_REFERENCE.parameters) {
-  if (hub.cost === null || hub.cost <= 0) return [];
-  return repaymentScheduleAt(hub.cost, escrowPerDay(hub.swapsPerDay, parameters), ratePerYear, parameters.daysPerMonth);
+  const escrow = escrowPerDay(hub.swapsPerDay, parameters);
+  if (hub.cost === null || hub.cost <= 0 || escrow === null) return [];
+  return repaymentScheduleAt(hub.cost, escrow, ratePerYear, parameters.daysPerMonth);
 }
 
 /** Whether a pledge may fund a hub: its feeder, and (unless a grant) repaid within the tenor at the pledge's return. */
@@ -172,6 +188,7 @@ export function matchHubPledges(pledges: readonly HubPledgeInput[], hubs: readon
 function queuedReason(pledge: HubPledgeInput, hubs: readonly HubFinanceInput[], funded: ReadonlySet<string>, parameters: SwapFinanceParameters): string {
   const onFeeders = hubs.filter((hub) => pledge.feeders.includes(hub.feederId) && hub.cost !== null && hub.cost > 0);
   if (onFeeders.length === 0) return "no costed hub on its feeders";
+  if (pledge.tenorMonths !== null && parameters.hubRepaymentPerSwap === null) return "no cited repayment stream for a hub (the ₦1,000 a swap repays the rider's loan)";
   const repayable = onFeeders.filter((hub) => canFundHub(pledge, hub, parameters));
   if (repayable.length === 0) return "tenor shorter than any hub's payback";
   if (repayable.every((hub) => funded.has(hub.id))) return "every hub it could fund is already funded";

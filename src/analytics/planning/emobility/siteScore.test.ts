@@ -46,4 +46,13 @@ describe("e-mobility site order", () => {
     assert.deepEqual(ranked.cheapest, { option: "diesel", costPerSwap: 2731 });
     assert.deepEqual(ranked.reasons, ["does not fit on the grid at 24 months", "grid options not feasible without a DT upgrade (4.9 kVA short)", "cheapest feasible option: diesel", "headroom left at 24 months: -5 kVA"]);
   });
+
+  it("ranks hubs that do not fit by checks failed, then kVA short, before cost", () => {
+    const ranked = rankSites([
+      { id: "two-failures-near", fitsOnGridAt24: false, limitsAt24: ["DT rating", "supply hours"], headroomLeftAt24Kva: -1.9, options: [option("diesel", 2000)] },
+      { id: "one-failure-far", fitsOnGridAt24: false, limitsAt24: ["DT rating"], headroomLeftAt24Kva: -68.3, options: [option("diesel", 2731)] },
+      { id: "one-failure-near", fitsOnGridAt24: false, limitsAt24: ["DT rating"], headroomLeftAt24Kva: -4.9, options: [option("diesel", 2731)] },
+    ]);
+    assert.deepEqual(ranked.map((one) => one.id), ["one-failure-near", "one-failure-far", "two-failures-near"]);
+  });
 });

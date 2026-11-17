@@ -10,16 +10,19 @@ import type { OptionResult, PowerOption } from "./powerSource.ts";
    order by, in turn:
    1. whether the hub fits on the grid at 24 months (DT rating and
       supply hours): yes, then not known, then no;
-   2. the cost per swap of the cheapest feasible option that can be
+   2. among hubs that do not fit, the number of checks failed (DT
+      rating, supply hours), fewer first, then the kVA short, least
+      first (Founder, 17 November 2026);
+   3. the cost per swap of the cheapest feasible option that can be
       costed on an average day (an option with no cost is never the
       cheapest). An option that draws on the grid is not feasible where
       the hub does not fit on the grid at 24 months: "not feasible
       without a DT upgrade (X kVA short)" where the DT rating fails,
       "not feasible: too few hours of supply" where the hours fail.
       None known goes last;
-   3. the DT's headroom left at 24 months after the hub, the most
+   4. the DT's headroom left at 24 months after the hub, the most
       first; none known goes last;
-   4. the id.
+   5. the id.
    Each place carries the reasons it sits there.
 ========================================================== */
 
@@ -27,7 +30,7 @@ export const EMOBILITY_SITE_SCORE_REFERENCE: Methodology<Record<string, never>> 
   id: "gridintel.planning.emobility-site-score",
   version: "0.1.0",
   name: "GridIntel reference order of candidate hub sites",
-  description: "Candidate hubs in order of fit on the grid at 24 months, then the cheapest cost per swap of a feasible option that can be costed, then DT headroom left at 24 months, then id; no weights.",
+  description: "Candidate hubs in order of fit on the grid at 24 months, then (for hubs that do not fit) the number of checks failed and the kVA short, then the cheapest cost per swap of a feasible option that can be costed, then DT headroom left at 24 months, then id; no weights.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
@@ -93,6 +96,9 @@ export function rankSites(candidates: readonly SiteCandidate[]): RankedSite[] {
   scored.sort(
     (a, b) =>
       fitOrder(a.fitsOnGridAt24) - fitOrder(b.fitsOnGridAt24) ||
+      (a.fitsOnGridAt24 === false && b.fitsOnGridAt24 === false
+        ? a.limitsAt24.length - b.limitsAt24.length || nullLast(a.headroomLeftAt24Kva, b.headroomLeftAt24Kva, false)
+        : 0) ||
       nullLast(a.cheapest?.costPerSwap ?? null, b.cheapest?.costPerSwap ?? null, true) ||
       nullLast(a.headroomLeftAt24Kva, b.headroomLeftAt24Kva, false) ||
       a.id.localeCompare(b.id),

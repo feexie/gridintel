@@ -29,6 +29,7 @@ export const SYNTHETIC_DISCO_TARIFF_ORDER: DiscoId = "yola";
 export const INSTALLED_COSTS = { pvNairaPerKwp: null, bessNairaPerKwh: null } as const;
 
 const TECHCABAL = "Reported: TechCabal, 30 July 2026 (a Lagos swap operator's published figures)";
+const EDGEX = "Reported: edgeX, republishing TechCabal, 30 July 2026";
 const NBS = "Reported: NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price a litre; secondary reporting by Legit.ng and ThisDay";
 const IFI = "Reported: IFI Harmonized Grid Emission Factors, v2.0 (July 2019), Nigeria, combined margin, firm energy, 0.395 tCO2/MWh";
 
@@ -48,7 +49,15 @@ export const EMOBILITY_INPUT_CITATIONS: Citation[] = [
     url: "https://techcabal.com/2026/07/30/nigerias-petrol-three-wheelers-are-going-electric-with-batteries/",
     published: "2026-07-30",
     standing: "secondary",
-    locator: "Diesel ₦1,750 a litre, bought by a Lagos swap station (date and price checked against the article, 16 November 2026). The swap price (₦3,000) and add-on (₦1,000 a swap) are as the brief records them; not checked against the article",
+    locator: "Diesel ₦1,750 a litre, bought by a Lagos swap station (date and price checked against the article, 16 November 2026). The swap price and the ₦1,000 a swap toward the rider's loan are cited from edgeX's republication",
+  },
+  {
+    id: "edgex-techcabal-2026-07-30",
+    title: "edgeX, republication of TechCabal, \"Swap is turning petrol three-wheelers electric—with diesel generators\", 30 July 2026",
+    url: "https://pro.edgex.exchange/en-US/news/article/swap-electric-keke-battery-swap-nigeria",
+    published: "2026-07-30",
+    standing: "secondary",
+    locator: "Standard swap price ₦3,000 (₦2,000 to ₦2,800 also seen); ₦1,000 a swap deducted toward the driver's conversion loan until it is repaid; the Ikorodu station buys about 1,000 litres of diesel every 3 to 4 days (Founder, 17 November 2026)",
   },
   { id: "ifi-harmonized-gef-v2-2019", title: "IFI Technical Working Group on GHG Accounting, Harmonized Grid Emission Factor data set, v2.0, July 2019", url: "https://unfccc.int/sites/default/files/resource/Harmonized_Grid_Emission_factor_data_set.pdf", published: null, standing: "primary", locator: "Nigeria, combined margin, firm energy: 0.395 tCO2/MWh. The dataset dates from 2019." },
 ];
@@ -59,8 +68,10 @@ const pct = (fraction: number) => `${Math.round(fraction * 100)}%`;
 
 export function emobilityInputs(): EmobilityFigure[] {
   return [
-    { key: "swapPrice", label: "Swap price", value: naira(3_000), status: "reported", basis: `${TECHCABAL}. Context only; no method uses it.` },
-    { key: "addOn", label: "Add-on to recover the asset", value: `${naira(finance.addOnPerSwap)} a swap`, status: "reported", basis: `${TECHCABAL}. Goes into escrow and repays the hub's funder.` },
+    { key: "swapPrice", label: "Swap price", value: `${naira(3_000)} standard (${naira(2_000)} to ${naira(2_800)} also seen)`, status: "reported", basis: `${EDGEX}. Context only; no method uses it.` },
+    { key: "riderLoan", label: "Deduction toward the rider's conversion loan", value: `${naira(finance.riderLoanRepaymentPerSwap)} a swap, until the loan is repaid`, status: "reported", basis: `${EDGEX}. Rider loan repayment, never hub revenue: no hub calculation uses it.` },
+    { key: "hubRepayment", label: "Repayment a swap to a hub's funder", value: "Not available", status: "not_available", basis: "No cited source. Escrow and months to repay a hub wait for one; until then only a grant can fund a hub." },
+    { key: "dieselBought", label: "Diesel bought at a Lagos (Ikorodu) swap station", value: "About 1,000 litres every 3 to 4 days", status: "reported", basis: `${EDGEX}. A cross-check only: 250 to 333 litres a day at 3 kWh a litre is 750 to 1,000 kWh a day, the demonstration hub's range.` },
     { key: "dieselPrice", label: "Diesel price, base case", value: `${naira(power.dieselPricePerLitre, 2)} a litre`, status: "reported", basis: `${NBS}.` },
     { key: "dieselLowPrice", label: "Diesel price, low case", value: `${naira(power.dieselLowPricePerLitre)} a litre`, status: "reported", basis: `${TECHCABAL}. The low case.` },
     { key: "dieselYield", label: "Diesel yield", value: `${power.dieselKwhPerLitre} kWh a litre`, status: "assumption", basis: "Small generator at part load; to confirm with an operator." },
