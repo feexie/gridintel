@@ -98,5 +98,9 @@ describe("the RMG01 reference site's views", async () => {
     assert.match(notice.summary, /portfolio shown on the other screens is synthetic/);
     assert.match(notice.citation, /Kemabonta.*Geoffrey.*v1\.0\.2/);
     assert.equal(notice.url, "https://doi.org/10.5281/zenodo.24098636");
+    assert.deepEqual(notice.context, [
+      { term: "Records cover", value: "26 August 2020 to 25 January 2025" },
+      { term: "Published", value: "24 October 2026" },
+    ]);
   });
 });

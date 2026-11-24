@@ -44,6 +44,8 @@ export interface ReferenceSiteRecords {
 export interface ReferenceCatalogueEntry {
   siteId: string;
   source: DataSource;
+  /** The first and last day of the site's daily records, as the publisher states them. */
+  covers: { start: string; end: string };
 }
 
 export interface ReferenceSiteRepository {

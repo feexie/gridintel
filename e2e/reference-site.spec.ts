@@ -88,6 +88,9 @@ test("the data bar says the reference page is published real data, with the cita
   const citation = bar.locator("[data-bar-citation]");
   await expect(citation).toContainText("Kemabonta, T. & Geoffrey, A. (2026)");
   await expect(citation).toHaveAttribute("href", "https://doi.org/10.5281/zenodo.24098636");
+  // The bar gives the records' own span, not the synthetic dataset's reporting period.
+  await expect(bar.locator("[data-context]")).toContainText("Records cover26 August 2020 to 25 January 2025");
+  await expect(bar).not.toContainText("Reporting period");
 
   // The Sites screen beside it, and any other screen, keep the synthetic banner as it was.
   for (const route of [SITES, "/dashboard/minigrid"]) {

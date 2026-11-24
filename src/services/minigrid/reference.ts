@@ -319,7 +319,7 @@ export async function referenceSiteView(repo: ReferenceSiteRepository, siteId: s
     of the site's dataset. Built from the catalogue, so the published files are not read. */
 export async function referenceBarNotices(repo: ReferenceSiteRepository): Promise<Record<string, ReferenceBarNotice>> {
   return Object.fromEntries(
-    (await repo.catalogue()).map(({ siteId, source }) => {
+    (await repo.catalogue()).map(({ siteId, source, covers }) => {
       const credit = attributionOf(source);
       return [
         `${REFERENCE_SITE_PATH}/${siteId}`,
@@ -328,6 +328,10 @@ export async function referenceBarNotices(repo: ReferenceSiteRepository): Promis
           summary: `This page is a real mini-grid's published records, under ${credit.licence}. The operator's portfolio shown on the other screens is synthetic; this site is not part of it.`,
           citation: credit.citation,
           url: credit.url,
+          context: [
+            { term: "Records cover", value: `${dateText(covers.start)} to ${dateText(covers.end)}` },
+            ...(source.dated ? [{ term: "Published", value: dateText(source.dated) }] : []),
+          ],
         },
       ];
     }),

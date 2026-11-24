@@ -57,8 +57,11 @@ customer meters record 17.9% less than the site meter", not "the site meter is
 
 Above a reference site's page the dashboard's bar reads "PUBLISHED DATA":
 the page is a real site's published records, the operator's portfolio on the
-other screens is synthetic, and the dataset's citation links to its DOI. On
-every other screen the bar is unchanged. The layout takes the notices from
+other screens is synthetic, and the dataset's citation links to its DOI. In
+place of the synthetic reporting period it gives the span the records cover
+(26 August 2020 to 25 January 2025, as the publisher states it, checked
+against the file) and the publication date. On every other screen the bar is
+unchanged. The layout takes the notices from
 `catalogue()`, so the CSVs are read only on the mini-grid screens that show
 the data (`e2e/reference-site.spec.ts` checks both cases).
 

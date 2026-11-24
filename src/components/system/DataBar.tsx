@@ -80,8 +80,8 @@ export function DataBar({ context }: { context: DataContext }) {
         </>
       ) : null}
       <dl className="flex flex-wrap gap-x-4 gap-y-0.5 text-caption sm:ml-auto" data-context>
-        {published ? (
-          PUBLISHED_FIGURES_NOTICE.context.map((item) => (
+        {referenceNotice || published ? (
+          (referenceNotice?.context ?? PUBLISHED_FIGURES_NOTICE.context).map((item) => (
             <div key={item.term} className="flex gap-1.5">
               <dt className="opacity-80">{item.term}</dt>
               <dd className="font-mono">{item.value}</dd>

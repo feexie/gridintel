@@ -140,6 +140,8 @@ export interface ReferenceBarNotice {
   summary: string;
   citation: string;
   url: string;
+  /** In place of the synthetic dataset's reporting period: what the site's records cover, and when they were published. */
+  context: { term: string; value: string }[];
 }
 
 export interface ReferenceSitesView {

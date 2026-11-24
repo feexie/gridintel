@@ -292,7 +292,8 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
     }));
 
   return {
-    catalogue: async () => [{ siteId: SITE_ID, source: RMG01_SOURCE }],
+    // Caveats C14: meter readings and Site_Daily from 2020-08-26 to 2025-01-25 (checked against the file by a test).
+    catalogue: async () => [{ siteId: SITE_ID, source: RMG01_SOURCE, covers: { start: "2020-08-26", end: "2025-01-25" } }],
     sites: async () => [(await records()).site],
     sources: async () => [RMG01_SOURCE],
     records: async (siteId) => (siteId === SITE_ID ? records() : null),
