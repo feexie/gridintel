@@ -40,7 +40,15 @@ export interface ReferenceSiteRecords {
   claims: readonly ReferenceClaim[];
 }
 
+/** Which reference site is held and the dataset it comes from, known without reading the records. */
+export interface ReferenceCatalogueEntry {
+  siteId: string;
+  source: DataSource;
+}
+
 export interface ReferenceSiteRepository {
+  /** Every site held and its dataset, without reading the published files. */
+  catalogue(): Promise<readonly ReferenceCatalogueEntry[]>;
   /** Every reference site held, by id. */
   sites(): Promise<readonly ReferenceSite[]>;
   /** The datasets the sites come from. */

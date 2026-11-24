@@ -17,7 +17,7 @@ CITATION.cff, README.md); `SOURCE.md` beside it lists every SHA-256, checked by
 | Layer | File | What it does |
 | --- | --- | --- |
 | Domain | `src/domain/reference.ts` | `ReferenceSite`, its days, meter-days, customers, payments, outages, reported indices, tariffs and events, caveats, claims |
-| Port | `src/repositories/ports/reference.ts` | `ReferenceSiteRepository`: `sites()`, `sources()`, `records(siteId)` |
+| Port | `src/repositories/ports/reference.ts` | `ReferenceSiteRepository`: `catalogue()` (ids and datasets, no file read), `sites()`, `sources()`, `records(siteId)` |
 | Adapter | `src/repositories/reference/rmg01/index.ts`, `../csv.ts` | Reads the CSVs as published; transcribes the publisher's own figures as claims |
 | Analytics | `src/analytics/reference/` | The methods below, pure, with fixed-input tests |
 | Services | `src/services/minigrid/reference.ts`, `referenceViews.ts` | The Sites cards and the reference page, formatted, with the credit; the verification line in `src/services/initiatives/figures.ts` |
@@ -52,6 +52,15 @@ compared at two decimals.
 Wording: the dataset's 17.9% is (site − meters) ÷ site, so it is shown as "the
 customer meters record 17.9% less than the site meter", not "the site meter is
 17.9% above the meters" (which would be about 21.8%).
+
+## The data bar
+
+Above a reference site's page the dashboard's bar reads "PUBLISHED DATA":
+the page is a real site's published records, the operator's portfolio on the
+other screens is synthetic, and the dataset's citation links to its DOI. On
+every other screen the bar is unchanged. The layout takes the notices from
+`catalogue()`, so the CSVs are read only on the mini-grid screens that show
+the data (`e2e/reference-site.spec.ts` checks both cases).
 
 ## What is not derived
 

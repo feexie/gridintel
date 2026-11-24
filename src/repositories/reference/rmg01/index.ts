@@ -292,6 +292,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
     }));
 
   return {
+    catalogue: async () => [{ siteId: SITE_ID, source: RMG01_SOURCE }],
     sites: async () => [(await records()).site],
     sources: async () => [RMG01_SOURCE],
     records: async (siteId) => (siteId === SITE_ID ? records() : null),

@@ -4,10 +4,12 @@ import { OPERATIONS, ROUTES } from "./routes";
 /** The tile of a headline figure, by the figure's label. */
 const tile = (page: Page, label: string) => page.locator(`[data-metric="${label}"]`).first();
 
-test("every screen carries the SYNTHETIC DATA label", async ({ page }) => {
+test("every screen of the synthetic dataset carries the SYNTHETIC DATA label", async ({ page }) => {
+  // A reference site's page is published real data, and its bar says so (e2e/reference-site.spec.ts).
+  const synthetic = ROUTES.filter((route) => !route.includes("/sites/reference/"));
   // One navigation per route, in a real browser and beside the other tests: allow for each.
-  test.setTimeout(ROUTES.length * 6_000);
-  for (const route of ROUTES) {
+  test.setTimeout(synthetic.length * 6_000);
+  for (const route of synthetic) {
     await page.goto(route);
     await expect(page.getByRole("note").getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();
     await expect(page.getByRole("note"), route).toContainText("describes no real network");

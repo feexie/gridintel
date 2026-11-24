@@ -33,7 +33,7 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > - **Three builds**: `build`, `build:request` and `build:tenant`, each with
 >   its browser tests.
 
-> **Reference sites (MG-REAL, 2026-11-24; branch `phase-mg-real`; ADR 0022).** A third kind
+> **Reference sites (MG-REAL, 2026-11-24; tag `phase-mg-real`; ADR 0022, accepted).** A third kind
 > of record beside an organization's own and published figures: a real operator's records,
 > published by someone else under a licence. Domain `reference.ts`; a `ReferenceSiteRepository`
 > port returning a list of sites; adapters under `repositories/reference/` (RMG01, vendored

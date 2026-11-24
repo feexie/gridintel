@@ -1,9 +1,9 @@
 # ADR 0022: Reference sites from published data
 
 Date: 2026-11-24
-Status: **Proposed** at the MG-REAL checkpoint. The scope and the answers to
-the plan's open questions are the Founder's (24 November 2026,
-`docs/design/MG-PLAN.md`, section 6).
+Status: **Accepted** (Founder, 24 November 2026, at the MG-REAL review). The
+scope and the answers to the plan's open questions are the Founder's
+(`docs/design/MG-PLAN.md`, section 6).
 
 ## Context
 
@@ -57,7 +57,16 @@ beside a portfolio and later used to plan new sites (MG-PLAN-A).
 7. **Codes are counted, never shown.** The publisher's meter, customer and
    agent codes are pseudonymous; they are used to count and group, and no view
    shows one. Where a caveat quotes a code, the view replaces it with "[code]"
-   and says so.
+   and says so. The publisher's numbering ranges (such as "codes C0001 to
+   C0245" in a fact note) name no one and are kept as published (Founder,
+   24 November 2026).
+8. **The data bar says what the page is.** Above a reference site's page
+   the dashboard's bar reads "PUBLISHED DATA": the page is a real site's
+   published records, the operator's portfolio on the other screens is
+   synthetic, and the dataset's citation links to its DOI. Every other
+   screen's bar is unchanged. The bar takes the notices from the
+   repository's catalogue (site ids and their datasets), so the published
+   files are not read on every screen (Founder, 24 November 2026).
 
 ## Consequences
 

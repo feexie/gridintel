@@ -1,6 +1,6 @@
 import { rmg01Reference } from "../repositories/reference/rmg01/index.ts";
-import { referenceSiteIds, referenceSitesView, referenceSiteView } from "../services/minigrid/reference.ts";
-import type { ReferenceSitesView, ReferenceSiteView } from "../services/minigrid/referenceViews.ts";
+import { referenceBarNotices, referenceSiteIds, referenceSitesView, referenceSiteView } from "../services/minigrid/reference.ts";
+import type { ReferenceBarNotice, ReferenceSitesView, ReferenceSiteView } from "../services/minigrid/referenceViews.ts";
 
 /* ==========================================================
    COMPOSITION — REFERENCE SITES (Phase MG-REAL)
@@ -18,6 +18,7 @@ import type { ReferenceSitesView, ReferenceSiteView } from "../services/minigrid
 
 const repo = rmg01Reference();
 let sites: Promise<ReferenceSitesView> | null = null;
+let notices: Promise<Record<string, ReferenceBarNotice>> | null = null;
 const site = new Map<string, Promise<ReferenceSiteView | null>>();
 
 /* A failed build is not kept: the next call builds again. */
@@ -36,6 +37,8 @@ export const reference = {
     if (!found) site.set(siteId, (found = keep(referenceSiteView(repo, siteId), () => site.delete(siteId))));
     return found;
   },
+  /** By page address, what the dashboard's data bar says above each reference site's page. */
+  barNotices: (): Promise<Record<string, ReferenceBarNotice>> => (notices ??= keep(referenceBarNotices(repo), () => (notices = null))),
   /** Every reference site's id, for building its page ahead of time. */
   siteIds: () => referenceSiteIds(repo),
 };

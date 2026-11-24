@@ -134,6 +134,14 @@ export interface ReferenceSiteCardView {
   attribution: ReferenceAttributionView;
 }
 
+/** What the bar above a reference site's page says: the operator's portfolio is synthetic, this page is published real data. */
+export interface ReferenceBarNotice {
+  label: string;
+  summary: string;
+  citation: string;
+  url: string;
+}
+
 export interface ReferenceSitesView {
   heading: string;
   note: string;

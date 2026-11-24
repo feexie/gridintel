@@ -76,3 +76,25 @@ test("the mini-grid demo workspace's Sites view carries the reference site too",
   await page.goto("/preview/workspace/demo-minigrid/intelligence");
   await credited(page.locator('[data-reference-site="rmg01"]'));
 });
+
+test("the data bar says the reference page is published real data, with the citation, and is unchanged elsewhere", async ({ page }) => {
+  const bar = page.getByRole("note", { name: "About the data on this screen" });
+  await page.goto(PAGE);
+  await expect(bar).toHaveAttribute("data-bar-kind", "published");
+  await expect(bar.getByText("PUBLISHED DATA", { exact: true })).toBeVisible();
+  await expect(bar).not.toContainText("SYNTHETIC DATA");
+  await expect(bar).not.toContainText("describes no real network");
+  await expect(bar).toContainText("The operator's portfolio shown on the other screens is synthetic");
+  const citation = bar.locator("[data-bar-citation]");
+  await expect(citation).toContainText("Kemabonta, T. & Geoffrey, A. (2026)");
+  await expect(citation).toHaveAttribute("href", "https://doi.org/10.5281/zenodo.24098636");
+
+  // The Sites screen beside it, and any other screen, keep the synthetic banner as it was.
+  for (const route of [SITES, "/dashboard/minigrid"]) {
+    await page.goto(route);
+    await expect(bar, route).not.toHaveAttribute("data-bar-kind", "published");
+    await expect(bar.getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();
+    await expect(bar, route).toContainText("describes no real network");
+    await expect(bar.locator("[data-bar-citation]"), route).toHaveCount(0);
+  }
+});

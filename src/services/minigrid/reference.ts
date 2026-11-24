@@ -8,6 +8,7 @@ import type { ReferenceSiteRecords, ReferenceSiteRepository } from "../../reposi
 import type { SourcingView } from "../operations/views.ts";
 import type {
   ReferenceAttributionView,
+  ReferenceBarNotice,
   ReferenceClaimView,
   ReferenceFactView,
   ReferenceReliabilityMonthView,
@@ -312,6 +313,25 @@ export async function referenceSitesView(repo: ReferenceSiteRepository): Promise
 export async function referenceSiteView(repo: ReferenceSiteRepository, siteId: string): Promise<ReferenceSiteView | null> {
   const records = await repo.records(siteId);
   return records === null ? null : siteView(records);
+}
+
+/** By the address of each reference site's page, what the bar above it says, with the citation
+    of the site's dataset. Built from the catalogue, so the published files are not read. */
+export async function referenceBarNotices(repo: ReferenceSiteRepository): Promise<Record<string, ReferenceBarNotice>> {
+  return Object.fromEntries(
+    (await repo.catalogue()).map(({ siteId, source }) => {
+      const credit = attributionOf(source);
+      return [
+        `${REFERENCE_SITE_PATH}/${siteId}`,
+        {
+          label: "PUBLISHED DATA",
+          summary: `This page is a real mini-grid's published records, under ${credit.licence}. The operator's portfolio shown on the other screens is synthetic; this site is not part of it.`,
+          citation: credit.citation,
+          url: credit.url,
+        },
+      ];
+    }),
+  );
 }
 
 /** Every reference site's id, for building its page ahead of time. */

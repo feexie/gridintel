@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { rmg01Reference } from "../../repositories/reference/rmg01/index.ts";
-import { referenceSiteIds, referenceSitesView, referenceSiteView } from "./reference.ts";
+import { referenceBarNotices, referenceSiteIds, referenceSitesView, referenceSiteView } from "./reference.ts";
 
 /* The reference site's views on the vendored dataset: every figure the publisher states is set
    beside GridIntel's calculation, and the differences found are kept as found. */
@@ -86,5 +86,17 @@ describe("the RMG01 reference site's views", async () => {
     assert.equal(sites.sourcing.synthetic, false);
     assert.deepEqual(await referenceSiteIds(repo), ["rmg01"]);
     assert.equal(await referenceSiteView(repo, "another"), null);
+  });
+
+  it("gives the data bar above each reference page its notice and the dataset's citation, without reading the files", async () => {
+    const reads: string[] = [];
+    const notices = await referenceBarNotices({ ...repo, records: async (id) => (reads.push(id), null), sites: async () => (reads.push("sites"), []) });
+    assert.deepEqual(reads, []);
+    assert.deepEqual(Object.keys(notices), ["/dashboard/minigrid/sites/reference/rmg01"]);
+    const notice = notices["/dashboard/minigrid/sites/reference/rmg01"];
+    assert.equal(notice.label, "PUBLISHED DATA");
+    assert.match(notice.summary, /portfolio shown on the other screens is synthetic/);
+    assert.match(notice.citation, /Kemabonta.*Geoffrey.*v1\.0\.2/);
+    assert.equal(notice.url, "https://doi.org/10.5281/zenodo.24098636");
   });
 });
