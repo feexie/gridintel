@@ -11,6 +11,7 @@ export function Marks({ figure }: { figure: InitiativeFigureView }) {
     <span className="inline-flex flex-wrap gap-1">
       {figure.origin ? <Mark>{ORIGIN_WORD[figure.origin]}</Mark> : null}
       {figure.synthetic ? <Mark strong>Synthetic</Mark> : null}
+      {figure.attribution ? <Mark>Published data</Mark> : null}
     </span>
   );
 }
@@ -57,6 +58,24 @@ export function FigureRow({ figure }: { figure: InitiativeFigureView }) {
         <Marks figure={figure} />
       </span>
     </div>
+  );
+}
+
+/** The credit a published dataset's licence requires, under a figure that comes from it. */
+export function Attribution({ figure }: { figure: InitiativeFigureView }) {
+  if (!figure.attribution) return null;
+  return (
+    <p className="text-caption leading-snug text-ink-4" data-reference-attribution>
+      Data:{" "}
+      <a href={figure.attribution.url} className="text-link hover:text-link-hover hover:underline" rel="noreferrer">
+        {figure.attribution.citation}
+      </a>
+      . Licence:{" "}
+      <a href={figure.attribution.licenceUrl} className="text-link hover:text-link-hover hover:underline" rel="license noreferrer" data-licence-link>
+        {figure.attribution.licence}
+      </a>
+      .
+    </p>
   );
 }
 

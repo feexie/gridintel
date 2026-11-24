@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Executive } from "@/components/executive/Executive";
 import { MinigridPortfolio } from "@/components/minigrid/Portfolio";
+import { ReferenceSites } from "@/components/minigrid/Reference";
 import { Marketplace } from "@/components/planning/Marketplace";
 import { Monitoring } from "@/components/planning/Monitoring";
 import { PlannerPlanned } from "@/components/planning/PlannerPlanned";
@@ -9,6 +10,7 @@ import { RailItemPage } from "@/components/workspace/WorkspacePages";
 import { executive } from "@/composition/executive";
 import { frontDoor } from "@/composition/initiatives";
 import { minigrid } from "@/composition/minigrid";
+import { reference } from "@/composition/reference";
 import { planning } from "@/composition/planning";
 import { plannerOf } from "@/constants/planning";
 import type { ViewId } from "@/constants/workspaces";
@@ -20,7 +22,13 @@ export const generateStaticParams = frontDoorParams(() => frontDoor.railItems())
    component and view model: nothing is re-implemented and no figure is calculated again. */
 async function filledView(id: ViewId | null) {
   if (id === "utility.executive") return <Executive view={await executive.view("top")} />;
-  if (id === "minigrid.sites") return <MinigridPortfolio view={await minigrid.portfolioView()} />;
+  if (id === "minigrid.sites")
+    return (
+      <div className="space-y-4">
+        <MinigridPortfolio view={await minigrid.portfolioView()} />
+        <ReferenceSites view={await reference.sitesView()} />
+      </div>
+    );
   if (id === "finance.marketplace") return <Marketplace view={await planning.marketplace()} />;
   if (id === "oversight.monitoring") return <Monitoring view={await planning.monitoring({})} />;
   if (id === "plan.charging-hubs") {

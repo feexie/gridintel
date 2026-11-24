@@ -33,7 +33,16 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > - **Three builds**: `build`, `build:request` and `build:tenant`, each with
 >   its browser tests.
 
-> **E-mobility engine (EMOB-A, 2026-11-16; branch `phase-emob-a`, not merged).** A planning
+> **Reference sites (MG-REAL, 2026-11-24; branch `phase-mg-real`; ADR 0022).** A third kind
+> of record beside an organization's own and published figures: a real operator's records,
+> published by someone else under a licence. Domain `reference.ts`; a `ReferenceSiteRepository`
+> port returning a list of sites; adapters under `repositories/reference/` (RMG01, vendored
+> unchanged and checksummed); `DataSource` kind `published_dataset` with `licenceUrl`; four
+> methods in `analytics/reference/`; `services/minigrid/reference.ts`;
+> `composition/reference.ts`, served in both deployments with no gate of its own. Never added to
+> a portfolio's counts or totals; credited wherever shown. See `docs/minigrid/DESIGN.md`.
+
+> **E-mobility engine (EMOB-A, 2026-11-16; merged 2026-11-24, tag `phase-emob-a`).** A planning
 > engine with no screen: domain `emobility.ts`; six pure methods in
 > `analytics/planning/emobility/`; the loan arithmetic shared with the Metering Marketplace in
 > `analytics/planning/loan.ts` (Marketplace results unchanged); an `EmobilityRepository` port

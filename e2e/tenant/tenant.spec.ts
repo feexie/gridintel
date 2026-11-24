@@ -119,6 +119,14 @@ test("the mini-grid operator's administrator sees the operator only, its map dra
   // The list of every report holds the operator's own.
   await page.goto("/dashboard/reports");
   await expect(page.locator("[data-report]")).toHaveCount(2);
+  // The reference site is public reference data: shown read-only, credited, and not among the operator's sites (Phase MG-REAL).
+  await page.goto("/dashboard/minigrid/sites");
+  const reference = page.locator('[data-reference-site="rmg01"]');
+  await expect(reference.locator("[data-reference-attribution]")).toContainText("Kemabonta, T. & Geoffrey, A. (2026)");
+  await expect(reference.locator("[data-licence-link]")).toHaveText("CC BY 4.0");
+  await expect(page.locator('[data-sites] [data-site="rmg01"]')).toHaveCount(0);
+  await page.goto("/dashboard/minigrid/sites/reference/rmg01");
+  await expect(page.locator('[data-reference-page="rmg01"] [data-reference-attribution]').first()).toContainText("CC BY 4.0");
 });
 
 test("a member of the revenue department opens their three screens, and the links in them are cut to that", async ({ page }) => {

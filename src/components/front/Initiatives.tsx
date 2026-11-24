@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { InitiativeCardView, RolePickerView } from "@/services/initiatives/views";
-import { Basis, FigureRow, Headline, ProgressBar } from "./Figure";
+import { Attribution, Basis, FigureRow, Headline, ProgressBar } from "./Figure";
 
 /* The initiative cards and the role picker (ADR 0021). The same card serves the public Home and
    a workspace's Home; only its link differs, and the service sets it. */
@@ -26,6 +26,13 @@ export function InitiativeCard({ card, onItsPage = false }: { card: InitiativeCa
         <div className="space-y-1 border-t border-line pt-3">
           <FigureRow figure={card.secondary} />
           <Basis figure={card.secondary} />
+        </div>
+      ) : null}
+      {card.reference ? (
+        <div className="space-y-1 rounded-tile border border-dashed border-line-strong px-3 py-2" data-card-reference>
+          <FigureRow figure={card.reference} />
+          <Basis figure={card.reference} />
+          <Attribution figure={card.reference} />
         </div>
       ) : null}
       {onItsPage ? null : (
