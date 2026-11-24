@@ -1,0 +1,18 @@
+event_id,source_entry,date,start_time,end_time,crosses_midnight,duration_h_recorded,duration_h_from_times,cause_recorded,cause_category,customers_interrupted,customers_served,customer_hours,notes
+1,1,2020-12-06,20:00,22:00,no,2,2,Line to line fault,line to line fault,144,144,288,
+2,2,2020-12-25,05:30,08:00,no,2.5,2.5,Battery bank ran out,battery bank depleted,200,200,500,
+3,3,2020-12-30,05:15,09:30,no,4.25,4.25,Battery bank depleted,battery bank depleted,202,202,858.5,
+4,4,2021-01-10,09:50,11:20,no,2.5,1.5,Panels disconnected from inverter,PV-side fault,202,202,505,Recorded duration (2.5 h) does not match the start and end times (1.50 h). The recorded values are kept as in the source.
+5,5,2021-01-28,06:00,09:00,no,3,3,Battery bank depleted,battery bank depleted,202,202,606,
+6,6,2021-01-31,07:15,07:45,no,0.5,0.5,Short circuit of panel cables,PV-side fault,202,202,101,
+7,7,2021-02-12,06:10,07:00,no,0.83,0.83,Battery bank ran out,battery bank depleted,202,202,168.3,
+8,8,2021-02-14,07:30,09:20,no,1.83,1.83,Line to line fault,line to line fault,202,202,370.3,
+9,9,2021-02-14,09:20,11:30,no,2.17,2.17,Line to line fault,line to line fault,30,30,65,
+10,10,2021-03-13,01:43,07:00,no,5.72,5.28,Battery bank ran out,battery bank depleted,193,193,1103.3,Recorded duration (5.72 h) does not match the start and end times (5.28 h). The recorded values are kept as in the source.
+11,11,2021-03-27,08:15,21:18,no,1.22,13.05,Battery bank ran out,battery bank depleted,185,185,225.1,Recorded duration (1.22 h) does not match the start and end times (13.05 h). The recorded values are kept as in the source.
+12,12,2021-04-04,05:00,08:30,no,3.5,3.5,Battery bank ran out,battery bank depleted,185,185,647.5,
+13,15,2021-07-12,02:00,10:00,no,8,8,Battery bank ran out,battery bank depleted,189,189,1512,
+14,17,2021-08-18,21:00,08:45,yes,11.75,11.75,Battery bank ran out,battery bank depleted,178,178,2091.5,The event continues past midnight into the next date.
+15,20,2021-11-20,19:50,20:08,no,0.3,0.3,Error 33 recorded on the inverter,inverter error,174,174,52.2,
+16,21,2021-11-21,05:30,08:00,no,2.5,2.5,Battery bank ran out,battery bank depleted,174,174,435,
+17,22,2021-11-21,22:00,17:18,yes,19.3,19.3,Line to line fault,line to line fault,174,174,3358.2,The event continues past midnight into the next date.

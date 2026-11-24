@@ -1,0 +1,12 @@
+period,item,category,amount,unit,scope,notes,source
+2023,"Operating cost, single figure",total,28,USD per month,Site,One figure in the project description; no breakdown is given.,Operator project description (2023)
+2022,Grid maintenance,maintenance,572024,NGN per year,Company accounts line,Recorded as a direct cost. The mini-grid was the only grid asset in the company accounts. Accounting year is January to December.,"Company annual accounts, 2022 to 2024"
+2023,Grid maintenance,maintenance,128000,NGN per year,Company accounts line,Recorded as a direct cost. The mini-grid was the only grid asset in the company accounts. Accounting year is January to December.,"Company annual accounts, 2022 to 2024"
+2024,Grid maintenance,maintenance,1245500,NGN per year,Company accounts line,Recorded as a direct cost. The mini-grid was the only grid asset in the company accounts. Accounting year is January to December.,"Company annual accounts, 2022 to 2024"
+2022,Direct materials,materials,796250,NGN per year,Company accounts line,Recorded as a direct cost. Accounting year is January to December.,"Company annual accounts, 2022 to 2024"
+2023,Direct materials,materials,657554,NGN per year,Company accounts line,Recorded as a direct cost. Accounting year is January to December.,"Company annual accounts, 2022 to 2024"
+2024,Direct materials,materials,241000,NGN per year,Company accounts line,Recorded as a direct cost. Accounting year is January to December.,"Company annual accounts, 2022 to 2024"
+2022-09,Maintenance service of the hybrid system,maintenance,107500,"NGN, one-off (incl. VAT)",Site,Service invoice dated 19 Sep 2022.,Operator repair cost sheet (Dec 2022)
+2022-11 to 2022-12,Repair of 1 inverter and replacement with 2 new inverters,repair and replacement,5599015,"NGN, one-off",Site,"Repair of 1 inverter (NGN 954,815), purchase and installation of 2 new inverters (NGN 4,418,000) and materials (NGN 226,200, the remainder). This is a one-off cost, not a recurring operating cost.",Operator repair cost sheet (Dec 2022)
+,Labor,labor,,,,"Blank: salaries are recorded for the whole company and are not split by site, so no site labor cost exists in the sources.",
+,Metering platform fees,software,,,,Blank: fees exist but the amount is not recorded in the files used.,

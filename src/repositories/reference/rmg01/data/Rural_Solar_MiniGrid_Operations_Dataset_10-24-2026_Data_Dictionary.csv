@@ -1,0 +1,130 @@
+sheet,column,type,unit,description,source,notes
+Site_Daily,date,date,YYYY-MM-DD,Calendar day. One row per day from 2020-08-26 to 2025-01-25.,Derived,"Day labels are local dates (UTC+01:00 (West Africa Time)). Per-meter day labels are taken as the local date because the platform's reporting windows start at 00:00 local time. Community chart time stamps are shown in US Eastern time in the export; they were converted to the matching UTC midnight date, which agrees with the per-meter day label. Payments are assigned to the local date of the transaction."
+Site_Daily,site_kwh_community_series,number,kWh per day,"Daily site energy: the site-level total measured at the site data concentrator, as shown in the platform's community-level Electricity chart.",Community Electricity chart; site data concentrator daily energy export,"Available 2022-06-06 to 2025-01-25 except the 38-day gap (2023-04-26 to 2023-06-02); blank otherwise. It is higher than the sum of meters on 798 of 927 overlapping days; see Caveats. Confirmed by an independent export of the daily energy at the site data concentrator for 2024-01-30 to 2025-01-25 (362 days): values identical on every day, 4,659.8 kWh in total. That export has time stamps at 17:00 (2024-01-29 to 2025-01-24), a time-zone shift; the same +1 day alignment as for the community series was applied and checked against the per-meter dates (daily correlation with the per-meter sum 0.97 with the shift, 0.46 without). No separate column is added because the values are identical. The site total includes the load of the air conditioning of the enclosure that houses the batteries and inverters, which was never metered and is not on any customer meter (operator's first-hand observation); see Caveats."
+Site_Daily,site_kwh_sum_of_meters,number,kWh per day,Sum of the daily kWh of all meters with a reading that day (Meter_Daily).,Per-meter daily usage files,"Blank on the 38 days with no data. Under-counts the community series by 17.9% over the 927 overlapping days (13,537.4 kWh against 16,494.6 kWh); the gap was largest in 2022 (meters 68.8% of the chart), 84.5% in 2023, 89.7% in 2024, and not visible in the available data after 2024-09-19 (the cause is not determined). For 2024-01-30 to 2025-01-25 (362 days) the sum is 4,259.6 kWh, 8.6% below the site total of 4,659.8 kWh. Operator observations (first-hand): the air conditioning of the enclosure that houses the batteries and inverters was never metered, so its load is in the site total but not on any customer meter; and the operator observed customers stealing electricity and bypassing the meter. The export does not allow the gap to be split between the two."
+Site_Daily,meters_reporting,integer,count,"Number of meters with a daily reading row that day, including rows of 0 kWh.",Per-meter daily usage files,Blank on gap days.
+Site_Daily,cash_payments_NGN,number,NGN,Sum of payments of type PAY (cash paid in through agents) on the day.,Payment transactions,"0 means no PAY payment was recorded that day. Types UCU, REV, NBA and SUB are excluded. Payment records start 2020-07-17, so the 73,900 NGN of PAY before 2020-08-26 and 3,000 NGN after 2025-01-25 appear in Payments but not in this sheet."
+Site_Daily,payment_count,integer,count,Number of PAY payments on the day.,Payment transactions,0 means none recorded.
+Site_Daily,reversals_NGN,number,NGN,"Sum of payments of type REV (reversals) on the day, shown as negative values as in the source.",Payment transactions,0 means none recorded.
+Site_Daily,data_flag,text,,Semicolon-separated data quality labels for the day; empty if none.,Derived,"gap_no_meter_data: no per-meter readings. stale_repeated_total: day is part of a run of 3 or more consecutive days with an identical site total (probably repeated readings). low_use_window: 2023-03-20 to 2023-07-02, almost no usage. no_recorded_payments: day inside the 2023-04-26 to 2023-07-02 payment gap. meter_spike_over_4.2kWh: at least one meter above 4.2 kWh that day (the platform's spike threshold)."
+Site_Monthly,month,text,,Calendar month (YYYY-MM). 2020 starts on 08-26 and 2025 ends on 01-25.,Derived from Site_Daily,
+Site_Monthly,days_in_period,integer,days,Days of the period inside the dataset coverage.,Derived,
+Site_Monthly,days_with_meter_data,integer,days,Days with per-meter readings.,Derived,Days in period minus gap days.
+Site_Monthly,days_with_community_series,integer,days,Days with a community series value.,Derived,The series starts 2022-06-06.
+Site_Monthly,site_kwh_community_series,number,kWh,Sum of the community series over the days that have a value.,Derived,Blank if no day of the period has a value. Partial for 2022 and for months with a gap.
+Site_Monthly,site_kwh_sum_of_meters,number,kWh,Sum of site_kwh_sum_of_meters over the days with data.,Derived,Blank if no day has data (May 2023).
+Site_Monthly,mean_daily_kwh_sum_of_meters,number,kWh per day,Mean of the daily sum of meters over the days with data.,Derived,
+Site_Monthly,mean_meters_reporting,number,count,Mean number of meters reporting per day with data.,Derived,
+Site_Monthly,cash_payments_NGN,number,NGN,Sum of PAY payments.,Derived,Covers days inside the Site_Daily range only.
+Site_Monthly,payment_count,integer,count,Number of PAY payments.,Derived,
+Site_Monthly,reversals_NGN,number,NGN,Sum of REV payments (negative).,Derived,
+Site_Yearly,year,integer,,Calendar year. 2020 starts on 08-26 and 2025 ends on 01-25.,Derived from Site_Daily,
+Site_Yearly,days_in_period,integer,days,Days of the period inside the dataset coverage.,Derived,
+Site_Yearly,days_with_meter_data,integer,days,Days with per-meter readings.,Derived,Days in period minus gap days.
+Site_Yearly,days_with_community_series,integer,days,Days with a community series value.,Derived,The series starts 2022-06-06.
+Site_Yearly,site_kwh_community_series,number,kWh,Sum of the community series over the days that have a value.,Derived,Blank if no day of the period has a value. Partial for 2022 and for months with a gap.
+Site_Yearly,site_kwh_sum_of_meters,number,kWh,Sum of site_kwh_sum_of_meters over the days with data.,Derived,Blank if no day has data (May 2023).
+Site_Yearly,mean_daily_kwh_sum_of_meters,number,kWh per day,Mean of the daily sum of meters over the days with data.,Derived,
+Site_Yearly,mean_meters_reporting,number,count,Mean number of meters reporting per day with data.,Derived,
+Site_Yearly,cash_payments_NGN,number,NGN,Sum of PAY payments.,Derived,Covers days inside the Site_Daily range only.
+Site_Yearly,payment_count,integer,count,Number of PAY payments.,Derived,
+Site_Yearly,reversals_NGN,number,NGN,Sum of REV payments (negative).,Derived,
+Meter_Daily,date,date,YYYY-MM-DD,"Day of the reading (local date, see Site_Daily).",Per-meter daily usage files,Only meter-days that exist in the source are listed. Rows duplicated across overlapping source files were removed; the duplicates were identical.
+Meter_Daily,meter_code,text,,"Pseudonymous meter code, format RMG01-Mnnnn.",Assigned,See Coding_Convention below. Real meter numbers are withheld.
+Meter_Daily,kwh,number,kWh,"Energy used by the meter on the day, as recorded.",Per-meter daily usage files,Values are rounded to 7 decimals. 0 is a recorded zero. 24.7% of meter-days are zero.
+Meter_Daily,customer_class,text,,Class of the customer linked to the meter at the export date: residential or non-residential.,Customer file,"Meters whose customer has no class in the source, and the 2 meters with no linked customer, were treated as residential by the dataset authors. See Customers for the class definition."
+Customers,customer_code,text,,"Pseudonymous customer code, format RMG01-Cnnnn.",Assigned,Codes C0001 to C0245 are the customers in the customer file; C0246 to C0248 appear only in payment records (type UCU) and have no attributes.
+Customers,customer_class,text,,"residential (source code RES, and customers with no class in the source); non-residential (merges source codes BUS and INS).",Customer file,"Customers with no class in the source (119 customers in the customer file) and the 3 customer codes that appear only in payment records were treated as residential by the dataset authors. Originally 108 customers were labeled RES and 119 had a blank class; all 227 are now residential, plus the 3 payment-only codes, 230 in total. Original codes BUS (business) and INS (institution) were merged into non-residential to avoid small groups (18 customers)."
+Customers,year_created,integer,year,Year the customer account was created.,Customer file,Year only. Blank for the 3 customers that are not in the customer file.
+Customers,meters_linked_count,integer,count,Number of meters linked to the customer at the export date.,Customer file,1 or 0. The 142 customers with 1 are listed with their meter codes in Meter_Customer_Link.
+Meter_Customer_Link,meter_code,text,,"Pseudonymous meter code, format RMG01-Mnnnn. For the 131 meters with readings it is the same code as in Meter_Daily and Meter_Uptime. The 11 linked meters without readings have codes RMG01-M0135 to RMG01-M0145 that appear only in this table.",Assigned,One row per linked meter; each meter code appears once. See Coding_Convention and Caveats C28. Real meter numbers are withheld.
+Meter_Customer_Link,customer_code,text,,"Pseudonymous customer code, format RMG01-Cnnnn (the same codes as Customers and Payments).",Assigned,Each customer code appears once (a customer has at most one meter). The 142 codes are the customers with meters_linked_count = 1 in Customers. The link is the status at the export date.
+Meter_Customer_Link,meter_has_readings,text,yes/no,yes if the meter has at least one daily reading in Meter_Daily; no if it has none.,Derived from Meter_Daily,131 yes and 11 no. The 2 meters with readings that have no linked customer (RMG01-M0080 and RMG01-M0132) and RMG01-M0134 (Meter_Uptime only) are not listed because they have no linked customer. See Caveats C28.
+Payments,date,date,YYYY-MM-DD,Local date of the transaction.,Payment transactions,Time of day is not included.
+Payments,amount_NGN,number,NGN,Transaction amount.,Payment transactions,"PAY is positive, REV is negative. UCU can be positive or negative."
+Payments,type,text,,PAY: payment (cash paid in through an agent). UCU: credit adjustment recorded without an agent. REV: reversal of a payment.,Payment transactions,"Type codes are not defined in the export; descriptions are inferred from the amounts and agent fields. Revenue = PAY only. UCU and REV are listed but should not be added to cash revenue. NBA (14,648 records, 694,255.98 NGN in total, median 5.98 NGN) was excluded: the amounts are small fractional values that do not resemble cash receipts. SUB (1 record, -600 NGN) was excluded as a single unexplained record."
+Payments,agent_code,text,,"Pseudonymous code of the agent that took the payment, format RMG01-Axx.",Payment transactions,"Blank for UCU and REV, which have no agent. 6 agents."
+Payments,customer_code,text,,Pseudonymous customer code (see Customers).,Payment transactions,
+Tariffs_and_Events,record_type,text,,"tariff, event or data_note.",Compiled,
+Tariffs_and_Events,period_start,text,date or year,"Start of the period (YYYY, YYYY-MM or YYYY-MM-DD).",Compiled,
+Tariffs_and_Events,period_end,text,date or year,"End of the period, or ""open"".",Compiled,
+Tariffs_and_Events,description,text,,What the record describes.,Compiled,
+Tariffs_and_Events,value,number,see unit,Tariff value or customer count.,Compiled,
+Tariffs_and_Events,unit,text,,Unit of value.,Compiled,
+Tariffs_and_Events,source,text,,Where the information comes from.,Compiled,
+Tariffs_and_Events,notes,text,,Additional notes.,Compiled,
+Caveats,id / topic / description / quantification,text,,Known limitations of the data.,Compiled,
+README_Overview,field / value,text,,Overview of the dataset.,Compiled,
+Site_Daily,logged_outage_flag,integer,0 or 1,1 if an outage event from the operator fault log (Reliability_Outages) started on this date or continued past midnight into this date; 0 if the date is inside the fault-log period and no event is logged; blank outside the fault-log period.,Operator reliability report (fault log and reliability indices),"The fault-log period is 2020-12-01 to 2021-11-30 (blank before and after). 0 does not prove supply was complete: it means no event is logged. Outage days outside this period can partly be inferred from the platform data (days with near-zero site kWh, few meters reporting or no payments); see data_flag and Caveats. No inference is made in this column."
+Site_Description,item,text,,Name of the site characteristic.,Compiled,"One row per characteristic. Where documents disagree, there is one row per reported value and one reference row (battery capacity)."
+Site_Description,value,text,,"Value of the characteristic, stored as text because some values are ranges or phrases.",Compiled,Blank where the value is not recorded.
+Site_Description,unit,text,,Unit of the value.,Compiled,
+Site_Description,status,text,,"Reported (stated in a document), Conflicting values, Not recorded, Planning figure, or Derived from this dataset.",Compiled,
+Site_Description,notes,text,,"Explanation, conflicts and limits.",Compiled,
+Site_Description,source,text,,Type of document the value comes from (document titles are generic; file names are not given).,Compiled,
+Equipment,component,text,,Equipment item or design document.,Compiled,
+Equipment,status,text,,"as built, or design only (pre-construction design; not built as drawn).",Compiled,Design-only rows are shown for comparison and differ from the as-built system.
+Equipment,quantity,text,count,"Number of units, where recorded.",Compiled,Blank where not recorded.
+Equipment,rating_per_unit,text,see rating_unit,Rating of one unit.,Compiled,
+Equipment,rating_unit,text,,Unit of rating_per_unit.,Compiled,
+Equipment,total_capacity,text,see total_unit,Total capacity of the item.,Compiled,Blank where not recorded.
+Equipment,total_unit,text,,Unit of total_capacity.,Compiled,
+Equipment,type_or_model,text,,Type or model as quoted in the documents.,Compiled,
+Equipment,notes,text,,Explanation and limits.,Compiled,
+Equipment,source,text,,Type of document the information comes from.,Compiled,
+CAPEX,record,text,,"actual_cost (actual build cost by category), actual_cost_derived (calculated from the total), or pre_construction_estimate (2019 estimate, design only).",Compiled,The 2019 estimate is not the actual cost.
+CAPEX,category,text,,"Cost category. Actual cost is grouped into storage, generation, distribution and metering, shared balance of system and soft costs. The grouping is the data owner's grouping of the source line items.",Compiled,Line-item prices are not published.
+CAPEX,items_included,text,,Source line items included in the category.,Compiled,"The source item labeled with an abbreviation is shown as ""other""."
+CAPEX,cost_NGN,number,NGN,Cost in Nigerian naira.,Project cost breakdown,"Actual cost total 35,071,810.50 NGN equals the sum of the five categories."
+CAPEX,cost_USD,number,USD,Cost in US dollars: cost_NGN divided by exchange_rate_NGN_per_USD.,Calculated,"A fixed rate was used, not the rate on each purchase date."
+CAPEX,share_of_total_pct,number,percent,Share of the total of the same record type.,Calculated,Rounded to 0.1.
+CAPEX,exchange_rate_NGN_per_USD,number,NGN per USD,Exchange rate used: 350 for actual cost (the 2019 rate used in the source cost breakdown); 360 for the 2019 estimate (the NGN total divided by the USD total in the source).,Project cost breakdown,
+CAPEX,price_year,integer,year,Year of the exchange rate and prices.,Compiled,
+CAPEX,notes,text,,Explanation.,Compiled,
+CAPEX,source,text,,Type of document the figure comes from.,Compiled,
+OPEX,period,text,year or month,"Accounting year (January to December), month, or month range of the cost. Blank where the line has no recorded period.",Compiled,
+OPEX,item,text,,Operating cost line as named in the source.,Compiled,Only lines that exist in the sources are listed. Lines with blank amounts are listed to show that no value exists.
+OPEX,category,text,,"maintenance, materials, repair and replacement, labor, software or total.",Compiled,
+OPEX,amount,number,see unit,Amount.,Compiled,Blank where no value exists.
+OPEX,unit,text,,"Unit of the amount (NGN per year, USD per month, or NGN one-off).",Compiled,
+OPEX,scope,text,,"Site (recorded for the site) or Company accounts line (recorded in company accounts, not split by site).",Compiled,Company-level lines may include costs outside this mini-grid.
+OPEX,notes,text,,Explanation and limits.,Compiled,
+OPEX,source,text,,Type of document the figure comes from.,Compiled,
+Tariffs,record_type,text,,tariff (price stated by the operator) or note (a note on who is charged which rate).,Compiled,
+Tariffs,period_start,text,year or month,Start of the period (YYYY or YYYY-MM).,Compiled,The start of a tariff is not always known; see notes. Tariff starts are months: 350 from July 2023 and about 500 from about February 2024; the exact start days are not recorded.
+Tariffs,period_end,text,"year, month or open","End of the period, or ""open"".",Compiled,
+Tariffs,price_low_NGN_per_kWh,integer,NGN per kWh,Lowest price of the tariff.,Compiled,"Tariffs are the rates charged to customers. Sales agents were charged a lower rate than customers. The lower rate is not recorded in this dataset. The energy price field of the customer file is not included: customers were not split between the 350 and 500 rates, and the values in that field are not concurrent prices."
+Tariffs,price_high_NGN_per_kWh,integer,NGN per kWh,Highest price of the tariff. Equal to the low value because each tariff has one price.,Compiled,
+Tariffs,basis,text,,What the record is based on.,Compiled,
+Tariffs,status,text,,"Reported, or Reported (approximate) for the about NGN 500 tariff.",Compiled,
+Tariffs,notes,text,,Explanation and limits.,Compiled,
+Reliability_Outages,event_id,integer,,"Number of the logged outage event, 1 to 17, in date order.",Operator fault log,"The source log has 22 entries; 5 of them record ""no outages"" for a month and are not events."
+Reliability_Outages,source_entry,integer,,Entry number in the source fault log.,Operator fault log,
+Reliability_Outages,date,date,YYYY-MM-DD,Local date on which the event started.,Operator fault log,
+Reliability_Outages,start_time,text,HH:MM,Local start time as recorded.,Operator fault log,
+Reliability_Outages,end_time,text,HH:MM,Local end time as recorded.,Operator fault log,
+Reliability_Outages,crosses_midnight,text,yes/no,"yes if the end time is earlier than the start time, so the event ends on the next date.",Derived,2 events.
+Reliability_Outages,duration_h_recorded,number,hours,Duration as recorded in the log. Used for customer_hours and for the monthly indices.,Operator fault log,
+Reliability_Outages,duration_h_from_times,number,hours,Duration calculated from start_time and end_time.,Derived,"Differs from the recorded duration for events 4, 10 and 11; see notes. Neither value was corrected."
+Reliability_Outages,cause_recorded,text,,Description as recorded in the log.,Operator fault log,Minor spelling and capitalisation were tidied.
+Reliability_Outages,cause_category,text,,"Grouping of the description: battery bank depleted (10 events), line to line fault (4), PV-side fault (2) or inverter error (1).",Derived,Grouping by the data owner; the log gives no further analysis of causes.
+Reliability_Outages,customers_interrupted,integer,customers,Customers interrupted as recorded.,Operator fault log,
+Reliability_Outages,customers_served,integer,customers,Customers served at the time as recorded.,Operator fault log,
+Reliability_Outages,customer_hours,number,customer-hours,"Customers interrupted times duration, as recorded.",Operator fault log,
+Reliability_Outages,notes,text,,Explanation.,Compiled,
+Reliability_Indices,month,text,YYYY-MM,Calendar month. The fault log covers December 2020 to November 2021 (12 months).,Operator reliability report,
+Reliability_Indices,events_logged,integer,count,Number of logged outage events starting in the month.,Derived from Reliability_Outages,
+Reliability_Indices,saidi_h,number,hours,"System average interruption duration index of the month, as computed in the source.",Operator reliability report,Customer-hours of interruption divided by customers served. Blank for months with no logged outage (indices not reported).
+Reliability_Indices,caidi_h,number,hours,"Customer average interruption duration index (SAIDI divided by SAIFI), as in the source.",Operator reliability report,
+Reliability_Indices,saifi,number,interruptions per customer,"System average interruption frequency index, as in the source.",Operator reliability report,
+Reliability_Indices,caifi,number,,"Customer average interruption frequency index, as in the source.",Operator reliability report,The source gives no definition; values are shown as reported.
+Reliability_Indices,ciii,number,customers,Name as in the source. In all 8 months it equals the mean number of customers interrupted per event.,Operator reliability report,Checked against Reliability_Outages.
+Reliability_Indices,maifi,number,,Momentary average interruption frequency index; 0 in every reported month.,Operator reliability report,
+Reliability_Indices,asai_pct_as_reported,number,percent,Average service availability index as reported in the source.,Operator reliability report,"The source divides the monthly SAIDI by 8,760 hours (a whole year), so it understates monthly unavailability. See the next column."
+Reliability_Indices,asai_pct_hours_in_month,number,percent,Availability recalculated as 100 x (1 - SAIDI / hours in the month).,Derived,For December 2020 this is 98.904 against 99.907 as reported. Both are shown.
+Reliability_Indices,notes,text,,Explanation.,Compiled,
+Meter_Uptime,report_window,integer,1 to 6,"Which of the six consecutive uptime reports of the management platform: 1 = 2020-08-26 to 2021-09-30, 2 = 2021-09-30 to 2022-11-04, 3 = 2022-11-04 to 2023-12-09, 4 = 2023-12-09 to 2025-01-12, 5 = 2025-01-12 to 2026-02-16, 6 = 2026-02-16 to 2026-10-24.",Meter uptime reports,Each window starts on the date the previous one ends. Windows 5 and 6 fall after the end of the usage and payment data (January 2025).
+Meter_Uptime,window_start,date,YYYY-MM-DD,First date of the report window (the report states UTC times; only dates are shown).,Meter uptime reports,
+Meter_Uptime,window_end,date,YYYY-MM-DD,Last date of the report window.,Meter uptime reports,
+Meter_Uptime,meter_code,text,,"Pseudonymous meter code, format RMG01-Mnnnn (same codes as Meter_Daily).",Assigned,"134 meters appear in each report: the 133 meters with readings and RMG01-M0134, a meter that has no daily readings."
+Meter_Uptime,communications_uptime_pct,number,percent,"Share of the report window in which the meter communicated with the platform, as reported.",Meter uptime reports,"Blank where the report shows ""n/a"" (41 meters in window 1, 35 in window 2, 14 in window 3, none in windows 4 and 5, all 134 in window 6). 0.00 is a reported zero. This is communications uptime only, not power availability or outage data: the reports show power uptime and overall uptime as n/a for every meter and window, so those columns are not included. The platform's calculation method is not documented."

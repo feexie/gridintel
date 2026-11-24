@@ -1,0 +1,13 @@
+item,description
+Site code,"RMG01 = rural mini-grid 01. Further sites can be added later as RMG02, RMG03 and so on."
+Meter code,RMG01-Mnnnn (for example RMG01-M0001). Numbered in order of each meter's first reading date; meters with the same first date are ordered at random with a fixed seed.
+Customer code,RMG01-Cnnnn. Numbered in order of the year the account was created; customers created in the same year are ordered at random with a fixed seed. Codes for the 3 customers without a creation year come last.
+Agent code,RMG01-Axx (for example RMG01-A01). Numbered in order of the agent's first payment date; ties are ordered at random with a fixed seed.
+Random order,The random order uses a fixed seed (20261024) so that the coding can be reproduced by the data custodian.
+Real identifiers,"The real meter numbers, customer identifiers and agent identifiers are withheld. The mapping key is held privately by the data custodian and is not part of this dataset."
+Consistency,The same codes are used in every sheet and every CSV file.
+Ordering and identity,"The order of the numbers follows only coarse dates (first reading date, creation year, first payment date). It does not carry any personal information."
+Meter codes in Meter_Uptime,The same meter codes as in Meter_Daily. RMG01-M0134 is the one meter in the uptime reports that has no daily readings; it is numbered after the 133 meters with readings.
+Class codes,"Source code RES is shown as ""residential"". Source codes BUS and INS are merged into ""non-residential"". A blank source class, and the 3 payment-only customer codes, are treated as residential by the dataset authors."
+Meter-customer link,"Meter_Customer_Link pairs a meter code with a customer code and uses only the codes of this convention. It is built from the same code mapping as the other tables: each pair comes from the link recorded in the platform's customer file and meter file (the two files agree), written with the codes that Meter_Daily, Meter_Uptime, Customers and Payments already use. Each code was matched to its platform record by comparing the coded tables with the platform export (daily readings for meters; year created, class, number of linked meters and payments for customers). The mapping key, the real meter numbers and the real customer identifiers are not part of the dataset."
+Codes for linked meters without readings,"The 131 linked meters with readings keep their Meter_Daily codes. The 11 linked meters that have no daily readings have no code in the other tables; they are numbered RMG01-M0135 to RMG01-M0145, continuing after RMG01-M0134, in the order of their linked customer codes. These 11 codes appear only in Meter_Customer_Link."
