@@ -42,7 +42,7 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > `composition/reference.ts`, served in both deployments with no gate of its own. Never added to
 > a portfolio's counts or totals; credited wherever shown. See `docs/minigrid/DESIGN.md`.
 
-> **Mini-grid planning engine (MG-PLAN-A, 2026-11-24; branch `phase-mg-plan-a`).** No screen.
+> **Mini-grid planning engine (MG-PLAN-A, 2026-11-24; tag `phase-mg-plan-a`).** No screen.
 > Domain `minigridPlanning.ts` (`PlannedCommunity`, `ReferenceBasis`); six methods at 0.1.0 in
 > `analytics/planning/minigrid/` (reference basis, demand, sizing, tariff response, subsidy gap,
 > productive-use gap), every benchmark taken across a list of reference sites with its count;

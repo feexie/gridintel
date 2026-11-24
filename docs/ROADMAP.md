@@ -15,9 +15,9 @@ signed in on the real Supabase project, before NAV-B. **Phase MG-REAL is
 approved and merged to `main`** (Founder, 2026-11-24, with one fix: the data
 bar above a reference page says it is published real data; ADR 0022
 accepted; tag `phase-mg-real`): a real, published mini-grid (site RMG01) as
-a reference site beside the portfolio. **MG-PLAN-A is at its checkpoint**
-(2026-11-24; branch `phase-mg-plan-a`): the mini-grid planning engine, no
-screen. Earlier status: **Phase 10 (Mini-grid Intelligence) is
+a reference site beside the portfolio. **MG-PLAN-A is merged to `main`**
+(Founder, 2026-11-24, with two modelling fixes; tag `phase-mg-plan-a`): the
+mini-grid planning engine, no screen. Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2340,7 +2340,7 @@ sites and DT headroom, power source, finance from a per-swap add-on, and verific
 DER → Plan → E-mobility, tabs Demand · Sites and headroom · Power source · Finance · Verify;
 an "E-mobility hubs" initiative card; presentation mode; key figures added to `geh:figures`.
 
-## Phase MG: real reference sites and mini-grid planning (plan approved 2026-11-24 with one change; MG-REAL merged, tag `phase-mg-real`; MG-PLAN-A at its checkpoint)
+## Phase MG: real reference sites and mini-grid planning (plan approved 2026-11-24 with one change; MG-REAL merged, tag `phase-mg-real`; MG-PLAN-A merged, tag `phase-mg-plan-a`)
 
 **Goal.** Bring a real, published mini-grid into GridIntel as a reference
 site, then plan new mini-grids from reference sites (plan
@@ -2362,7 +2362,7 @@ Founder's Supabase sign-in (Founder, 24 November 2026).
 Technical design: `docs/minigrid/DESIGN.md`. `npm run geh:figures`: all 101
 unchanged.
 
-### MG-PLAN-A: the planning engine (at its checkpoint 2026-11-24; branch `phase-mg-plan-a`)
+### MG-PLAN-A: the planning engine (approved 2026-11-24 with fixes; merged, tag `phase-mg-plan-a`)
 
 | Built | Where |
 | --- | --- |
