@@ -36,6 +36,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# a settings file saved without its leading dot, or with a trailing dot (it happened on Windows,
+# 24 November 2026): never committed either
+env.local
+*.local.
 
 # vercel
 .vercel

@@ -8,14 +8,16 @@ There are two Vercel projects from the same repository:
 
 | | Public demonstration | Pilot (tenant) |
 | --- | --- | --- |
-| Vercel project | the existing one | a new Hobby project |
+| Vercel project | the existing one (`gridintel-iota.vercel.app`) | `gridintel-pilot`, a Hobby project (`gridintel-pilot.vercel.app`) |
 | Login | none | invited people, password and authenticator code |
 | Environment variables | none of GridIntel's | the four below |
 
 ## 1. Supabase
 
-1. Create a project on the free plan, region **Paris (eu-west-3)**. Keep
-   the database password somewhere safe; nothing below needs it.
+1. Create a project named **`gridintel-pilot`** on the free plan, region
+   **West EU (Ireland), eu-west-1**. Keep the database password somewhere
+   safe; nothing below needs it. (The pilot's project is in eu-west-1, not
+   Paris.)
 2. **SQL Editor**: paste the whole of `supabase/migrations/0001_identity.sql`
    and run it. It is safe to run again.
 3. **Authentication > Sign In / Providers**: turn **off** "Allow new users
@@ -30,7 +32,9 @@ There are two Vercel projects from the same repository:
 
 ## 2. Vercel: the tenant project
 
-**Add New > Project**, and import the same GitHub repository.
+**Add New > Project**, import the same GitHub repository, and name the
+project **`gridintel-pilot`** (its address is then
+`https://gridintel-pilot.vercel.app`).
 
 | Setting | Value |
 | --- | --- |
@@ -48,7 +52,8 @@ Do **not** use `npm run build:tenant`: that is for the browser tests. It
 switches to the in-memory test accounts, which refuse to run on Vercel,
 and builds into a folder Vercel does not look in.
 
-**Environment variables** (Settings > Environment Variables). Tick
+**Environment variables** (Settings > Environment Variables). Add all four
+as the **Secret** type (the value cannot be read back once saved), and tick
 **Production** and **Preview** for each one:
 
 | Name | Value |
@@ -56,21 +61,22 @@ and builds into a folder Vercel does not look in.
 | `GRIDINTEL_MODE` | `tenant` |
 | `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_...` |
-| `SUPABASE_SECRET_KEY` | `sb_secret_...` (mark it **Sensitive**) |
+| `SUPABASE_SECRET_KEY` | `sb_secret_...` |
+
+A Secret's value is hidden after saving, so a variable saved empty or with
+a stray space is easy to miss. Its symptom is the tenant answering
+**"not configured safely" (503)** on every page: see "If something fails".
 
 Set nothing else of GridIntel's: no `GRIDINTEL_AUTH`, `GRIDINTEL_RENDER`,
 `GRIDINTEL_DIST_DIR` or `GRIDINTEL_E2E_HTTP`. An environment variable takes
 effect only on the next deployment. After you change one, **redeploy**.
 
-**Production Branch, until Phase 8A is merged.** The tenant code is only on
-the `phase-8a` branch for now. In the tenant project, under **Settings > Git
-> Production Branch**, enter `phase-8a`. Set it back to `main` after the
-merge. (A `main` build without Phase 8A would ignore `GRIDINTEL_MODE` and
-publish the plain public demonstration at the pilot's address.)
+**Production Branch: `main`** (Settings > Git > Production Branch), the
+same as the demo project. Phase 8A is in `main`, so a `main` build reads
+`GRIDINTEL_MODE`.
 
 **What the tenant project has that the demo project does not:** the four
-variables above, and, for now, the production branch. Its build and install
-settings are the same.
+variables above. Its branch, build and install settings are the same.
 
 ## 3. Vercel: the demo project
 
@@ -84,19 +90,37 @@ secret.
 Under Settings > Secrets and variables > Actions, add `SUPABASE_URL` and
 `SUPABASE_SECRET_KEY`. A free Supabase project is paused after a week with
 no database activity, and `.github/workflows/keep-awake.yml` writes one row
-a day to prevent it. GitHub runs scheduled jobs only from `main`, so the job
-starts after the merge. Until then, signing in counts as activity.
+a day to prevent it. Run it once by hand (Actions > Keep the Supabase
+project awake > Run workflow, or `gh workflow run keep-awake.yml`); its log
+should show `HTTP 200` and a time. If either secret is missing the job
+**fails**, and GitHub reports it: a paused project is the cost of a silent
+one.
 
 ## 5. Your machine: `.env.local`
 
-In the repository folder, create `.env.local`. It is never committed (git
-ignores `.env*`).
+In the repository folder, create `.env.local`: the name starts with a dot
+and has no extension. It is never committed (git ignores `.env*`, and, as a
+guard, `env.local` and `*.local.`).
 
 ```text
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SUPABASE_SECRET_KEY=sb_secret_...
 ```
+
+**On Windows**, File Explorer and Notepad make that name hard to get right:
+Explorer may drop the leading dot or keep a trailing one (`env.local.`), and
+Notepad adds `.txt`. Make the file from a terminal in the repository folder
+instead:
+
+```text
+PowerShell:  New-Item -ItemType File -Name .env.local; notepad .env.local
+Git Bash:    touch .env.local
+```
+
+In Notepad keep "Save as type: All files". Check the name with
+`Get-ChildItem -Force .env*` (PowerShell) or `ls -a` (Git Bash). If it came
+out wrong, rename it, e.g. `mv "env.local." .env.local` in Git Bash.
 
 ## 6. Check the setup
 
@@ -113,8 +137,9 @@ It only reads. It prints PASS, FAIL or NOT CHECKED for each item:
 - sign-up is off;
 - the demonstration holds no secret. The demo project's settings cannot be
   read from your machine. Instead the script checks that the demonstration
-  serves: it refuses every request if the secret key is set. This covers
-  its running production deployment, not its Preview settings;
+  serves `/dashboard`: it refuses every request if the secret key is set,
+  and a redirect to `/login` means the address given is a tenant build.
+  This covers its running production deployment, not its Preview settings;
 - the tenant asks for sign-in, which shows it was built as a tenant.
 
 ## 7. The first administrator
@@ -133,7 +158,8 @@ account menu. For the mini-grid operator, run it again with
 
 | What you see | Usual cause |
 | --- | --- |
-| The tenant answers "not configured safely" (503) | `GRIDINTEL_MODE` was not set before the build, or a Supabase variable is missing. Set them and redeploy |
-| The tenant shows the dashboards without a login | The deployment was built from `main` before the merge, or `GRIDINTEL_MODE` is unset |
+| The tenant answers "not configured safely" (503) | A variable is missing or **empty** (a Secret saved blank is not visible afterwards), or `GRIDINTEL_MODE` was not set before the build. Set or re-enter them and redeploy |
+| The tenant shows the dashboards without a login | `GRIDINTEL_MODE` is unset, or the deployment predates Phase 8A. Set it and redeploy |
+| The keep-awake job fails with "is not set" | `SUPABASE_URL` or `SUPABASE_SECRET_KEY` is missing from the GitHub Actions secrets. Add it and run the job again |
 | The demo answers 503 | It has `SUPABASE_SECRET_KEY`. Remove it and redeploy |
 | An invitation link says it has expired | It is more than a day old or has been used. Invite again |
