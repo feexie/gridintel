@@ -42,6 +42,15 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > `composition/reference.ts`, served in both deployments with no gate of its own. Never added to
 > a portfolio's counts or totals; credited wherever shown. See `docs/minigrid/DESIGN.md`.
 
+> **Mini-grid planning engine (MG-PLAN-A, 2026-11-24; branch `phase-mg-plan-a`).** No screen.
+> Domain `minigridPlanning.ts` (`PlannedCommunity`, `ReferenceBasis`); six methods at 0.1.0 in
+> `analytics/planning/minigrid/` (reference basis, demand, sizing, tariff response, subsidy gap,
+> productive-use gap), every benchmark taken across a list of reference sites with its count;
+> the solar and storage sizing shared with EMOB-A in `analytics/planning/solar.ts` (EMOB-A's
+> results pinned unchanged); port `PlannedCommunityRepository` with a synthetic community;
+> `services/planning/minigrid.ts`, `minigridInputs.ts`, `minigridViews.ts`;
+> `composition/minigridPlanning.ts`. See `docs/minigrid/DESIGN.md`.
+
 > **E-mobility engine (EMOB-A, 2026-11-16; merged 2026-11-24, tag `phase-emob-a`).** A planning
 > engine with no screen: domain `emobility.ts`; six pure methods in
 > `analytics/planning/emobility/`; the loan arithmetic shared with the Metering Marketplace in

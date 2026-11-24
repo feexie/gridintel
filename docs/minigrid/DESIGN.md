@@ -72,3 +72,59 @@ part of the meters report, the tariff dates are approximate); no split of the
 meter gap between its causes; no generation, battery or voltage figure; no
 reliability outside December 2020 to November 2021; nothing within the day; no
 map point or sun hours (the location is withheld). The page lists these.
+
+# Mini-grid: the planning engine (MG-PLAN-A)
+
+Technical design of Phase MG-PLAN-A: a plan for a community a mini-grid is
+planned for, from reference sites. Plan: `docs/design/MG-PLAN.md`, section 3.
+No route, screen or menu entry: the screens follow NAV-B.
+
+## Layers
+
+| Layer | File | What it does |
+| --- | --- | --- |
+| Domain | `src/domain/minigridPlanning.ts` | `PlannedCommunity`, `ReferenceBasis` (what one reference site gives a plan), `ReferenceTariffChange`, `ReferenceCapex` |
+| Analytics | `src/analytics/planning/minigrid/` | The six methods below, pure, with fixed-input tests on the plan's test community |
+| Shared | `src/analytics/planning/solar.ts` | Solar and storage sizing, moved from EMOB-A's power-source comparison; EMOB-A's results pinned unchanged (`src/services/planning/emobility.pinned.test.ts`) |
+| Port | `src/repositories/ports/minigridPlanning.ts` | `PlannedCommunityRepository`: communities, citations, sources |
+| Adapter | `src/repositories/demo/minigridPlanning.ts` | One synthetic community (Cassava Creek, 232 residential and 18 non-residential customers), with NASA POWER climatology at its point |
+| Services | `src/services/planning/minigrid.ts`, `minigridInputs.ts`, `minigridViews.ts` | The reference bases, the inputs table, the plan view |
+| Composition | `src/composition/minigridPlanning.ts` | Built once per process |
+
+The RMG01 adapter also reads `CAPEX` now (as published, every line).
+
+## Methods (0.1.0)
+
+| Method | Rule |
+| --- | --- |
+| `gridintel.planning.minigrid-reference-basis` | 365-day years of operation from the first day with meter data; days with no meter data, in the low-use window or with a stale repeated total left out by the publisher's flags, zero meter-days kept; per day, sum of the meters ÷ meters reporting, P50 and P90 per year by linear interpolation between ranks; class factor = class share of energy ÷ class share of meter-days; class P90 meter-day over the whole record; ramp and buying share by calendar year from the first; each tariff change with up to 182 kept days either side, its month left out of both, and what else changed; the 2019 build cost by category with the PV, battery (136 kWh, the reference value) and meters bought (220) |
+| `gridintel.planning.minigrid-demand` | Σ customers × class factor × site kWh per reporting meter-day (P50, P90) × ramp × buying share × (1 + losses); the no-diversity upper bound on the class P90 meter-days, labelled; an uplift as a separate line; "served demand, a floor on true demand" |
+| `gridintel.planning.minigrid-sizing` | The shared solar rule on the design day (the highest diversified P90 of years 1 to 5); utilisation = PV energy the demand needs ÷ PV energy on an average day; the rainy season's share made and share served; "oversized" when year-1 P50 utilisation is below 60%, naming year 1's ramp and buying share |
+| `gridintel.planning.minigrid-tariff-response` | kWh(t) = kWh(t₀) × (t ÷ t₀)^e; scenarios for e = −1, each reference change's own e (with its windows and confounders) and the user's; where the changes differ in sign, the range and never a single figure |
+| `gridintel.planning.minigrid-subsidy-gap` | Capex − net revenue (kWh sold × tariff − opex) over the period, years after 5 holding year 5; months to repay on year 5's net at 0% and at a return (`loan.ts`); a reference build cost scaled by kWh, kWp and connection, the rest in proportion, labelled "2019 reference cost, scaled" |
+| `gridintel.planning.minigrid-pue-gap` | Target × PV energy on an average day − PV energy the year's demand needs; daytime, direct from PV |
+
+A benchmark across reference sites is the plain mean of the sites that have
+the figure, with their number and ids (`benchmark.ts`); with one site it is
+that site's figure, labelled "1 reference site".
+
+## On RMG01
+
+| Figure | Years 1 to 5 |
+| --- | --- |
+| Site kWh per reporting meter-day, P50 | 0.231, 0.222, 0.163, 0.147, 0.122 |
+| Site kWh per reporting meter-day, P90 | 0.296, 0.275, 0.235, 0.261, 0.163 |
+| Connection ramp | 0.85, 0.96, 0.97, 1.00, 1.00 |
+| Buying share | 0.56, 0.60, 0.57, 0.50, 0.51 |
+
+135 days are left out (38 with no meter data, 105 in the low-use window, 83
+with a stale repeated total; a day can carry more than one flag). The two
+tariff changes give e = +0.53 (₦165 to ₦350, after the 2023 interruption,
+meters reporting 90 to 110) and e = −2.10 (₦350 to ₦500, zero meter-days
+19.9% to 27.0%): they disagree, so the planner gives the range −2.10 to +0.53
+and no single figure.
+
+For the synthetic community (4.43 sun hours, 3.64 in July): design day year 2,
+42.10 kWh; 13.14 kWp and 50.52 kWh of lead-acid; not oversized (year 1 P50
+uses 69.4%). The subsidy gap is not given until the planner sets an opex a
+day and a factor bringing 2019 prices to today.

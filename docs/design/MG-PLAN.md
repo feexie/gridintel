@@ -380,8 +380,10 @@ Expected figures (hand-checked):
 | Utilisation P90 | 72.9% | 100.0% | 97.0% | 83.6% | 76.2% |
 
 - `sizeSystem` on the design day (year 2 diversified P90, 41.77 kWh): PV energy needed
-  46.19 kWh a day, **11.55 kWp**, battery **50.13 kWh**. The rainy season covers 80.0% of
-  the design day. The no-diversity bound would have needed 15.81 kWp and 68.62 kWh. Year-1
+  46.19 kWh a day, **11.55 kWp**, battery **50.12 kWh** (50.13 in the first hand check, a
+  rounding: 25.062 ÷ 0.5 = 50.124). On a rainy-season day PV makes 80.0% of what the design
+  day needs, and serves 81.2% of it (the day share direct, the rest through the battery),
+  7.85 kWh short. The no-diversity bound would have needed 15.81 kWp and 68.62 kWh. Year-1
   P50 utilisation of 54.7% is still below the 60% threshold, so the result is flagged
   **oversized in year 1**. The cause is now the connection ramp and buying share of year 1,
   not the sizing basis, and the flag says which year and why.
@@ -391,7 +393,8 @@ Expected figures (hand-checked):
   (₦7,180.7); at e = 0, ₦8,750 and ₦12,500. Two events with e = +0.4 and e = −2.0 return
   the range −2.0 to +0.4 with "the reference events disagree", and no single e.
 - `subsidyGap` with capex ₦30,000,000, tariff ₦350, opex ₦3,000 a day, 10 years, no tariff
-  response, P50: kWh sold 20.76, 29.54, 28.65, 24.13, 21.39 a day; net revenue over 10
+  response, P50: kWh sold 20.76, 29.53, 28.65, 24.13, 21.39 a day (29.54 in the first hand
+  check, from the rounded 32.49; the method's 29.535 is right); net revenue over 10
   years ₦18,615,713; **gap ₦11,384,287, ₦45,537 a connection**. With opex ₦1,500 a day:
   gap ₦5,909,287, ₦23,637 a connection. At year 5's net of ₦4,487.30 a day, capex repays in
   219.9 months at 0% and **never** at 10% a year.
