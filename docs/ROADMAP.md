@@ -2372,9 +2372,12 @@ unchanged.
 | Solar and storage sizing shared with EMOB-A, its results pinned unchanged | `src/analytics/planning/solar.ts`, `src/services/planning/emobility.pinned.test.ts` |
 | The inputs table, the plan for a synthetic community on RMG01, the composition root; no screen | `src/services/planning/minigrid*.ts`, `src/composition/minigridPlanning.ts` |
 
-The test community's expected figures all agree, but two hand-check roundings
-(MG-PLAN.md 3.6). On RMG01 the two tariff changes disagree (+0.53, −2.10),
-so the planner gives the range. Screens after NAV-B, under Mini-grid
+Fixed at review (Founder, 24 November 2026): demand from RMG01's years at a
+single tariff (₦165) held flat, its own confounded curve kept as an "as
+happened" scenario; a positive elasticity (₦165 to ₦350, +0.53) shown and
+used in no scenario; opex a day and today's ₦ a dollar as planner inputs with
+their sources. The test community's expected figures, re-derived, all agree
+(MG-PLAN.md 3.6). Screens after NAV-B, under Mini-grid
 workspace → Plan → Unserved and Productive use. The Zenodo 22149102 dataset
 is later, as its own decision gate.
 
