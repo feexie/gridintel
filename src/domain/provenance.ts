@@ -22,6 +22,12 @@ export type DataSourceKind =
   | "api"
   | "gis"
   /**
+   * A dataset someone else published under a licence (e.g. a mini-grid's
+   * operations dataset on Zenodo). Real, not synthetic; its licence and
+   * attribution are set on the source and shown wherever it is used.
+   */
+  | "published_dataset"
+  /**
    * A deliberately designed, internally consistent demonstration dataset
    * that exercises the analytics engine. It describes no real network,
    * customer or transaction. Every result derived from it must say so.
@@ -42,6 +48,8 @@ export interface DataSource {
    * organization's own systems.
    */
   licence?: string;
+  /** Where the licence's text is published. */
+  licenceUrl?: string;
   attribution?: string;
   url?: string;
   release?: string;
