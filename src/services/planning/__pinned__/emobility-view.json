@@ -1,0 +1,3143 @@
+{
+ "demand": {
+  "headline": "The demonstration hub draws 750 kWh a day for 300 swaps (1,000 kWh if every battery came back empty), and 1,367 kWh at 24 months under base adoption.",
+  "how": "How this is calculated: kWh a swap = pack kWh × (1 − state of charge on return) ÷ charging efficiency; swaps grow at the adoption case's rate, compounding yearly; charging power = kWh a day ÷ the feeder's hours of supply. Adoption cases are assumptions, not forecasts. Every hub is synthetic.",
+  "hubs": [
+   {
+    "hubId": "HUB-01",
+    "hub": "Market Road hub (synthetic)",
+    "status": "candidate",
+    "swapsNow": "150",
+    "kwhPerSwap": "2.50 kWh a motorcycle swap, 4.17 a tricycle swap (3.33 and 5.56 at full depletion)",
+    "rows": [
+     {
+      "adoption": "slow",
+      "months": "0",
+      "swapsPerDay": "150",
+      "vehicles": "100",
+      "kwhPerDay": "375",
+      "kwhPerDayUpper": "500",
+      "chargingKw": "17.4"
+     },
+     {
+      "adoption": "slow",
+      "months": "12",
+      "swapsPerDay": "173",
+      "vehicles": "115",
+      "kwhPerDay": "431",
+      "kwhPerDayUpper": "575",
+      "chargingKw": "20.0"
+     },
+     {
+      "adoption": "slow",
+      "months": "24",
+      "swapsPerDay": "198",
+      "vehicles": "132",
+      "kwhPerDay": "496",
+      "kwhPerDayUpper": "661",
+      "chargingKw": "23.0"
+     },
+     {
+      "adoption": "slow",
+      "months": "48",
+      "swapsPerDay": "262",
+      "vehicles": "175",
+      "kwhPerDay": "656",
+      "kwhPerDayUpper": "875",
+      "chargingKw": "30.5"
+     },
+     {
+      "adoption": "base",
+      "months": "0",
+      "swapsPerDay": "150",
+      "vehicles": "100",
+      "kwhPerDay": "375",
+      "kwhPerDayUpper": "500",
+      "chargingKw": "17.4"
+     },
+     {
+      "adoption": "base",
+      "months": "12",
+      "swapsPerDay": "203",
+      "vehicles": "135",
+      "kwhPerDay": "506",
+      "kwhPerDayUpper": "675",
+      "chargingKw": "23.5"
+     },
+     {
+      "adoption": "base",
+      "months": "24",
+      "swapsPerDay": "273",
+      "vehicles": "182",
+      "kwhPerDay": "683",
+      "kwhPerDayUpper": "911",
+      "chargingKw": "31.7"
+     },
+     {
+      "adoption": "base",
+      "months": "48",
+      "swapsPerDay": "498",
+      "vehicles": "332",
+      "kwhPerDay": "1,246",
+      "kwhPerDayUpper": "1,661",
+      "chargingKw": "57.8"
+     },
+     {
+      "adoption": "fast",
+      "months": "0",
+      "swapsPerDay": "150",
+      "vehicles": "100",
+      "kwhPerDay": "375",
+      "kwhPerDayUpper": "500",
+      "chargingKw": "17.4"
+     },
+     {
+      "adoption": "fast",
+      "months": "12",
+      "swapsPerDay": "240",
+      "vehicles": "160",
+      "kwhPerDay": "600",
+      "kwhPerDayUpper": "800",
+      "chargingKw": "27.9"
+     },
+     {
+      "adoption": "fast",
+      "months": "24",
+      "swapsPerDay": "384",
+      "vehicles": "256",
+      "kwhPerDay": "960",
+      "kwhPerDayUpper": "1,280",
+      "chargingKw": "44.6"
+     },
+     {
+      "adoption": "fast",
+      "months": "48",
+      "swapsPerDay": "983",
+      "vehicles": "655",
+      "kwhPerDay": "2,458",
+      "kwhPerDayUpper": "3,277",
+      "chargingKw": "114.1"
+     }
+    ],
+    "notCounted": null
+   },
+   {
+    "hubId": "HUB-02",
+    "hub": "Government Avenue hub (synthetic)",
+    "status": "planned",
+    "swapsNow": "300",
+    "kwhPerSwap": "2.50 kWh a motorcycle swap, 4.17 a tricycle swap (3.33 and 5.56 at full depletion)",
+    "rows": [
+     {
+      "adoption": "slow",
+      "months": "0",
+      "swapsPerDay": "300",
+      "vehicles": "200",
+      "kwhPerDay": "750",
+      "kwhPerDayUpper": "1,000",
+      "chargingKw": "42.5"
+     },
+     {
+      "adoption": "slow",
+      "months": "12",
+      "swapsPerDay": "345",
+      "vehicles": "230",
+      "kwhPerDay": "863",
+      "kwhPerDayUpper": "1,150",
+      "chargingKw": "48.8"
+     },
+     {
+      "adoption": "slow",
+      "months": "24",
+      "swapsPerDay": "397",
+      "vehicles": "264",
+      "kwhPerDay": "992",
+      "kwhPerDayUpper": "1,322",
+      "chargingKw": "56.2"
+     },
+     {
+      "adoption": "slow",
+      "months": "48",
+      "swapsPerDay": "525",
+      "vehicles": "350",
+      "kwhPerDay": "1,312",
+      "kwhPerDayUpper": "1,749",
+      "chargingKw": "74.3"
+     },
+     {
+      "adoption": "base",
+      "months": "0",
+      "swapsPerDay": "300",
+      "vehicles": "200",
+      "kwhPerDay": "750",
+      "kwhPerDayUpper": "1,000",
+      "chargingKw": "42.5"
+     },
+     {
+      "adoption": "base",
+      "months": "12",
+      "swapsPerDay": "405",
+      "vehicles": "270",
+      "kwhPerDay": "1,013",
+      "kwhPerDayUpper": "1,350",
+      "chargingKw": "57.3"
+     },
+     {
+      "adoption": "base",
+      "months": "24",
+      "swapsPerDay": "547",
+      "vehicles": "365",
+      "kwhPerDay": "1,367",
+      "kwhPerDayUpper": "1,823",
+      "chargingKw": "77.4"
+     },
+     {
+      "adoption": "base",
+      "months": "48",
+      "swapsPerDay": "996",
+      "vehicles": "664",
+      "kwhPerDay": "2,491",
+      "kwhPerDayUpper": "3,322",
+      "chargingKw": "141.0"
+     },
+     {
+      "adoption": "fast",
+      "months": "0",
+      "swapsPerDay": "300",
+      "vehicles": "200",
+      "kwhPerDay": "750",
+      "kwhPerDayUpper": "1,000",
+      "chargingKw": "42.5"
+     },
+     {
+      "adoption": "fast",
+      "months": "12",
+      "swapsPerDay": "480",
+      "vehicles": "320",
+      "kwhPerDay": "1,200",
+      "kwhPerDayUpper": "1,600",
+      "chargingKw": "67.9"
+     },
+     {
+      "adoption": "fast",
+      "months": "24",
+      "swapsPerDay": "768",
+      "vehicles": "512",
+      "kwhPerDay": "1,920",
+      "kwhPerDayUpper": "2,560",
+      "chargingKw": "108.7"
+     },
+     {
+      "adoption": "fast",
+      "months": "48",
+      "swapsPerDay": "1,966",
+      "vehicles": "1,311",
+      "kwhPerDay": "4,915",
+      "kwhPerDayUpper": "6,554",
+      "chargingKw": "278.3"
+     }
+    ],
+    "notCounted": null
+   },
+   {
+    "hubId": "HUB-03",
+    "hub": "Farm Road hub (synthetic)",
+    "status": "candidate",
+    "swapsNow": "120",
+    "kwhPerSwap": "2.50 kWh a motorcycle swap, 4.17 a tricycle swap (3.33 and 5.56 at full depletion)",
+    "rows": [
+     {
+      "adoption": "slow",
+      "months": "0",
+      "swapsPerDay": "120",
+      "vehicles": "80",
+      "kwhPerDay": "300",
+      "kwhPerDayUpper": "400",
+      "chargingKw": "32.4"
+     },
+     {
+      "adoption": "slow",
+      "months": "12",
+      "swapsPerDay": "138",
+      "vehicles": "92",
+      "kwhPerDay": "345",
+      "kwhPerDayUpper": "460",
+      "chargingKw": "37.3"
+     },
+     {
+      "adoption": "slow",
+      "months": "24",
+      "swapsPerDay": "159",
+      "vehicles": "106",
+      "kwhPerDay": "397",
+      "kwhPerDayUpper": "529",
+      "chargingKw": "42.9"
+     },
+     {
+      "adoption": "slow",
+      "months": "48",
+      "swapsPerDay": "210",
+      "vehicles": "140",
+      "kwhPerDay": "525",
+      "kwhPerDayUpper": "700",
+      "chargingKw": "56.7"
+     },
+     {
+      "adoption": "base",
+      "months": "0",
+      "swapsPerDay": "120",
+      "vehicles": "80",
+      "kwhPerDay": "300",
+      "kwhPerDayUpper": "400",
+      "chargingKw": "32.4"
+     },
+     {
+      "adoption": "base",
+      "months": "12",
+      "swapsPerDay": "162",
+      "vehicles": "108",
+      "kwhPerDay": "405",
+      "kwhPerDayUpper": "540",
+      "chargingKw": "43.8"
+     },
+     {
+      "adoption": "base",
+      "months": "24",
+      "swapsPerDay": "219",
+      "vehicles": "146",
+      "kwhPerDay": "547",
+      "kwhPerDayUpper": "729",
+      "chargingKw": "59.1"
+     },
+     {
+      "adoption": "base",
+      "months": "48",
+      "swapsPerDay": "399",
+      "vehicles": "266",
+      "kwhPerDay": "996",
+      "kwhPerDayUpper": "1,329",
+      "chargingKw": "107.7"
+     },
+     {
+      "adoption": "fast",
+      "months": "0",
+      "swapsPerDay": "120",
+      "vehicles": "80",
+      "kwhPerDay": "300",
+      "kwhPerDayUpper": "400",
+      "chargingKw": "32.4"
+     },
+     {
+      "adoption": "fast",
+      "months": "12",
+      "swapsPerDay": "192",
+      "vehicles": "128",
+      "kwhPerDay": "480",
+      "kwhPerDayUpper": "640",
+      "chargingKw": "51.9"
+     },
+     {
+      "adoption": "fast",
+      "months": "24",
+      "swapsPerDay": "307",
+      "vehicles": "205",
+      "kwhPerDay": "768",
+      "kwhPerDayUpper": "1,024",
+      "chargingKw": "83.0"
+     },
+     {
+      "adoption": "fast",
+      "months": "48",
+      "swapsPerDay": "786",
+      "vehicles": "524",
+      "kwhPerDay": "1,966",
+      "kwhPerDayUpper": "2,621",
+      "chargingKw": "212.6"
+     }
+    ],
+    "notCounted": null
+   },
+   {
+    "hubId": "HUB-04",
+    "hub": "Old Town hub (synthetic)",
+    "status": "candidate",
+    "swapsNow": "100",
+    "kwhPerSwap": "2.50 kWh a motorcycle swap, 4.17 a tricycle swap (3.33 and 5.56 at full depletion)",
+    "rows": [
+     {
+      "adoption": "slow",
+      "months": "0",
+      "swapsPerDay": "100",
+      "vehicles": "67",
+      "kwhPerDay": "250",
+      "kwhPerDayUpper": "333",
+      "chargingKw": "18.1"
+     },
+     {
+      "adoption": "slow",
+      "months": "12",
+      "swapsPerDay": "115",
+      "vehicles": "77",
+      "kwhPerDay": "287",
+      "kwhPerDayUpper": "383",
+      "chargingKw": "20.8"
+     },
+     {
+      "adoption": "slow",
+      "months": "24",
+      "swapsPerDay": "132",
+      "vehicles": "88",
+      "kwhPerDay": "331",
+      "kwhPerDayUpper": "441",
+      "chargingKw": "23.9"
+     },
+     {
+      "adoption": "slow",
+      "months": "48",
+      "swapsPerDay": "175",
+      "vehicles": "117",
+      "kwhPerDay": "437",
+      "kwhPerDayUpper": "583",
+      "chargingKw": "31.6"
+     },
+     {
+      "adoption": "base",
+      "months": "0",
+      "swapsPerDay": "100",
+      "vehicles": "67",
+      "kwhPerDay": "250",
+      "kwhPerDayUpper": "333",
+      "chargingKw": "18.1"
+     },
+     {
+      "adoption": "base",
+      "months": "12",
+      "swapsPerDay": "135",
+      "vehicles": "90",
+      "kwhPerDay": "338",
+      "kwhPerDayUpper": "450",
+      "chargingKw": "24.4"
+     },
+     {
+      "adoption": "base",
+      "months": "24",
+      "swapsPerDay": "182",
+      "vehicles": "122",
+      "kwhPerDay": "456",
+      "kwhPerDayUpper": "608",
+      "chargingKw": "33.0"
+     },
+     {
+      "adoption": "base",
+      "months": "48",
+      "swapsPerDay": "332",
+      "vehicles": "221",
+      "kwhPerDay": "830",
+      "kwhPerDayUpper": "1,107",
+      "chargingKw": "60.1"
+     },
+     {
+      "adoption": "fast",
+      "months": "0",
+      "swapsPerDay": "100",
+      "vehicles": "67",
+      "kwhPerDay": "250",
+      "kwhPerDayUpper": "333",
+      "chargingKw": "18.1"
+     },
+     {
+      "adoption": "fast",
+      "months": "12",
+      "swapsPerDay": "160",
+      "vehicles": "107",
+      "kwhPerDay": "400",
+      "kwhPerDayUpper": "533",
+      "chargingKw": "28.9"
+     },
+     {
+      "adoption": "fast",
+      "months": "24",
+      "swapsPerDay": "256",
+      "vehicles": "171",
+      "kwhPerDay": "640",
+      "kwhPerDayUpper": "853",
+      "chargingKw": "46.3"
+     },
+     {
+      "adoption": "fast",
+      "months": "48",
+      "swapsPerDay": "655",
+      "vehicles": "437",
+      "kwhPerDay": "1,638",
+      "kwhPerDayUpper": "2,185",
+      "chargingKw": "118.5"
+     }
+    ],
+    "notCounted": null
+   },
+   {
+    "hubId": "HUB-05",
+    "hub": "Market Road North hub (synthetic)",
+    "status": "installed",
+    "swapsNow": "200",
+    "kwhPerSwap": "2.50 kWh a motorcycle swap, 4.17 a tricycle swap (3.33 and 5.56 at full depletion)",
+    "rows": [
+     {
+      "adoption": "slow",
+      "months": "0",
+      "swapsPerDay": "200",
+      "vehicles": "127",
+      "kwhPerDay": "567",
+      "kwhPerDayUpper": "756",
+      "chargingKw": "26.3"
+     },
+     {
+      "adoption": "slow",
+      "months": "12",
+      "swapsPerDay": "230",
+      "vehicles": "146",
+      "kwhPerDay": "652",
+      "kwhPerDayUpper": "869",
+      "chargingKw": "30.3"
+     },
+     {
+      "adoption": "slow",
+      "months": "24",
+      "swapsPerDay": "264",
+      "vehicles": "168",
+      "kwhPerDay": "749",
+      "kwhPerDayUpper": "999",
+      "chargingKw": "34.8"
+     },
+     {
+      "adoption": "slow",
+      "months": "48",
+      "swapsPerDay": "350",
+      "vehicles": "222",
+      "kwhPerDay": "991",
+      "kwhPerDayUpper": "1,321",
+      "chargingKw": "46.0"
+     },
+     {
+      "adoption": "base",
+      "months": "0",
+      "swapsPerDay": "200",
+      "vehicles": "127",
+      "kwhPerDay": "567",
+      "kwhPerDayUpper": "756",
+      "chargingKw": "26.3"
+     },
+     {
+      "adoption": "base",
+      "months": "12",
+      "swapsPerDay": "270",
+      "vehicles": "171",
+      "kwhPerDay": "765",
+      "kwhPerDayUpper": "1,020",
+      "chargingKw": "35.5"
+     },
+     {
+      "adoption": "base",
+      "months": "24",
+      "swapsPerDay": "365",
+      "vehicles": "231",
+      "kwhPerDay": "1,033",
+      "kwhPerDayUpper": "1,377",
+      "chargingKw": "48.0"
+     },
+     {
+      "adoption": "base",
+      "months": "48",
+      "swapsPerDay": "664",
+      "vehicles": "421",
+      "kwhPerDay": "1,882",
+      "kwhPerDayUpper": "2,510",
+      "chargingKw": "87.4"
+     },
+     {
+      "adoption": "fast",
+      "months": "0",
+      "swapsPerDay": "200",
+      "vehicles": "127",
+      "kwhPerDay": "567",
+      "kwhPerDayUpper": "756",
+      "chargingKw": "26.3"
+     },
+     {
+      "adoption": "fast",
+      "months": "12",
+      "swapsPerDay": "320",
+      "vehicles": "203",
+      "kwhPerDay": "907",
+      "kwhPerDayUpper": "1,209",
+      "chargingKw": "42.1"
+     },
+     {
+      "adoption": "fast",
+      "months": "24",
+      "swapsPerDay": "512",
+      "vehicles": "324",
+      "kwhPerDay": "1,451",
+      "kwhPerDayUpper": "1,934",
+      "chargingKw": "67.4"
+     },
+     {
+      "adoption": "fast",
+      "months": "48",
+      "swapsPerDay": "1,311",
+      "vehicles": "830",
+      "kwhPerDay": "3,714",
+      "kwhPerDayUpper": "4,952",
+      "chargingKw": "172.4"
+     }
+    ],
+    "notCounted": null
+   },
+   {
+    "hubId": "HUB-06",
+    "hub": "Old Town tricycle hub (synthetic)",
+    "status": "candidate",
+    "swapsNow": "150",
+    "kwhPerSwap": "2.50 kWh a motorcycle swap, 4.17 a tricycle swap (3.33 and 5.56 at full depletion)",
+    "rows": [
+     {
+      "adoption": "slow",
+      "months": "0",
+      "swapsPerDay": "150",
+      "vehicles": "75",
+      "kwhPerDay": "625",
+      "kwhPerDayUpper": "833",
+      "chargingKw": "45.2"
+     },
+     {
+      "adoption": "slow",
+      "months": "12",
+      "swapsPerDay": "173",
+      "vehicles": "86",
+      "kwhPerDay": "719",
+      "kwhPerDayUpper": "958",
+      "chargingKw": "52.0"
+     },
+     {
+      "adoption": "slow",
+      "months": "24",
+      "swapsPerDay": "198",
+      "vehicles": "99",
+      "kwhPerDay": "827",
+      "kwhPerDayUpper": "1,102",
+      "chargingKw": "59.8"
+     },
+     {
+      "adoption": "slow",
+      "months": "48",
+      "swapsPerDay": "262",
+      "vehicles": "131",
+      "kwhPerDay": "1,093",
+      "kwhPerDayUpper": "1,458",
+      "chargingKw": "79.1"
+     },
+     {
+      "adoption": "base",
+      "months": "0",
+      "swapsPerDay": "150",
+      "vehicles": "75",
+      "kwhPerDay": "625",
+      "kwhPerDayUpper": "833",
+      "chargingKw": "45.2"
+     },
+     {
+      "adoption": "base",
+      "months": "12",
+      "swapsPerDay": "203",
+      "vehicles": "101",
+      "kwhPerDay": "844",
+      "kwhPerDayUpper": "1,125",
+      "chargingKw": "61.0"
+     },
+     {
+      "adoption": "base",
+      "months": "24",
+      "swapsPerDay": "273",
+      "vehicles": "137",
+      "kwhPerDay": "1,139",
+      "kwhPerDayUpper": "1,519",
+      "chargingKw": "82.4"
+     },
+     {
+      "adoption": "base",
+      "months": "48",
+      "swapsPerDay": "498",
+      "vehicles": "249",
+      "kwhPerDay": "2,076",
+      "kwhPerDayUpper": "2,768",
+      "chargingKw": "150.1"
+     },
+     {
+      "adoption": "fast",
+      "months": "0",
+      "swapsPerDay": "150",
+      "vehicles": "75",
+      "kwhPerDay": "625",
+      "kwhPerDayUpper": "833",
+      "chargingKw": "45.2"
+     },
+     {
+      "adoption": "fast",
+      "months": "12",
+      "swapsPerDay": "240",
+      "vehicles": "120",
+      "kwhPerDay": "1,000",
+      "kwhPerDayUpper": "1,333",
+      "chargingKw": "72.3"
+     },
+     {
+      "adoption": "fast",
+      "months": "24",
+      "swapsPerDay": "384",
+      "vehicles": "192",
+      "kwhPerDay": "1,600",
+      "kwhPerDayUpper": "2,133",
+      "chargingKw": "115.7"
+     },
+     {
+      "adoption": "fast",
+      "months": "48",
+      "swapsPerDay": "983",
+      "vehicles": "492",
+      "kwhPerDay": "4,096",
+      "kwhPerDayUpper": "5,461",
+      "chargingKw": "296.2"
+     }
+    ],
+    "notCounted": null
+   }
+  ],
+  "method": {
+   "id": "gridintel.planning.emobility-demand",
+   "version": "0.1.0",
+   "name": "GridIntel reference e-mobility swap demand",
+   "disclaimer": "GridIntel reference calculation — not a regulatory figure."
+  }
+ },
+ "sites": {
+  "headline": "4 of 6 hubs fit on the grid now; 2 still fit at 24 months under base adoption.",
+  "how": "How this is calculated: the DT's observed peak in the month, grown 5% a year, against its rating; the hub's draw (kWh a day ÷ the feeder's hours of supply, at most its chargers) ÷ power factor 0.95, taken at the DT's peak; and whether the chargers can take the day's energy in the feeder's hours. Hours of supply are calculated from the outage log, never read from the band. Synthetic network and hubs.",
+  "hubs": [
+   {
+    "hubId": "HUB-01",
+    "hub": "Market Road hub (synthetic)",
+    "transformer": "DT-MKT-8",
+    "rating": "500 kVA",
+    "observedPeak": "313.2 kVA",
+    "feeder": "Market Road 11 kV feeder",
+    "band": "Band A",
+    "tariff": "₦209.50/kWh",
+    "hoursOfSupply": "21.5 h a day",
+    "horizons": [
+     {
+      "months": "0",
+      "dtLoad": "313.2 kVA",
+      "headroom": "186.8 kVA",
+      "hubDraw": "18.3 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "12",
+      "dtLoad": "328.8 kVA",
+      "headroom": "171.2 kVA",
+      "hubDraw": "24.7 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "24",
+      "dtLoad": "345.3 kVA",
+      "headroom": "154.7 kVA",
+      "hubDraw": "33.4 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "48",
+      "dtLoad": "380.7 kVA",
+      "headroom": "119.3 kVA",
+      "hubDraw": "60.9 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     }
+    ],
+    "finding": "Fits now and at 48 months"
+   },
+   {
+    "hubId": "HUB-02",
+    "hub": "Government Avenue hub (synthetic)",
+    "transformer": "DT-GOV-4",
+    "rating": "300 kVA",
+    "observedPeak": "202.7 kVA",
+    "feeder": "Government Avenue 11 kV feeder",
+    "band": "Band B",
+    "tariff": "₦63.33/kWh",
+    "hoursOfSupply": "17.7 h a day",
+    "horizons": [
+     {
+      "months": "0",
+      "dtLoad": "202.7 kVA",
+      "headroom": "97.3 kVA",
+      "hubDraw": "44.7 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "12",
+      "dtLoad": "212.8 kVA",
+      "headroom": "87.2 kVA",
+      "hubDraw": "60.3 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "24",
+      "dtLoad": "223.4 kVA",
+      "headroom": "76.6 kVA",
+      "hubDraw": "81.5 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating"
+     },
+     {
+      "months": "48",
+      "dtLoad": "246.3 kVA",
+      "headroom": "53.7 kVA",
+      "hubDraw": "126.3 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     }
+    ],
+    "finding": "Fits now; not at 24 months (DT rating)"
+   },
+   {
+    "hubId": "HUB-03",
+    "hub": "Farm Road hub (synthetic)",
+    "transformer": "DT-FRM-1",
+    "rating": "100 kVA",
+    "observedPeak": "63.8 kVA",
+    "feeder": "Farm Road 11 kV feeder",
+    "band": "Band D",
+    "tariff": "₦50.01/kWh",
+    "hoursOfSupply": "9.2 h a day",
+    "horizons": [
+     {
+      "months": "0",
+      "dtLoad": "63.8 kVA",
+      "headroom": "36.2 kVA",
+      "hubDraw": "31.6 kVA",
+      "fits": "Does not fit",
+      "limits": "supply hours"
+     },
+     {
+      "months": "12",
+      "dtLoad": "67.0 kVA",
+      "headroom": "33.0 kVA",
+      "hubDraw": "31.6 kVA",
+      "fits": "Does not fit",
+      "limits": "supply hours"
+     },
+     {
+      "months": "24",
+      "dtLoad": "70.3 kVA",
+      "headroom": "29.7 kVA",
+      "hubDraw": "31.6 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     },
+     {
+      "months": "48",
+      "dtLoad": "77.5 kVA",
+      "headroom": "22.5 kVA",
+      "hubDraw": "31.6 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     }
+    ],
+    "finding": "Does not fit now (supply hours)"
+   },
+   {
+    "hubId": "HUB-04",
+    "hub": "Old Town hub (synthetic)",
+    "transformer": "DT-OLD-2",
+    "rating": "100 kVA",
+    "observedPeak": "121.2 kVA",
+    "feeder": "Old Town 11 kV feeder",
+    "band": "Band C",
+    "tariff": "₦52.51/kWh",
+    "hoursOfSupply": "13.8 h a day",
+    "horizons": [
+     {
+      "months": "0",
+      "dtLoad": "121.2 kVA",
+      "headroom": "-21.2 kVA",
+      "hubDraw": "19.0 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating"
+     },
+     {
+      "months": "12",
+      "dtLoad": "127.2 kVA",
+      "headroom": "-27.2 kVA",
+      "hubDraw": "25.7 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating"
+     },
+     {
+      "months": "24",
+      "dtLoad": "133.6 kVA",
+      "headroom": "-33.6 kVA",
+      "hubDraw": "34.7 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating"
+     },
+     {
+      "months": "48",
+      "dtLoad": "147.3 kVA",
+      "headroom": "-47.3 kVA",
+      "hubDraw": "42.1 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     }
+    ],
+    "finding": "Does not fit now (DT rating)"
+   },
+   {
+    "hubId": "HUB-05",
+    "hub": "Market Road North hub (synthetic)",
+    "transformer": "DT-MKT-1",
+    "rating": "300 kVA",
+    "observedPeak": "180.2 kVA",
+    "feeder": "Market Road 11 kV feeder",
+    "band": "Band A",
+    "tariff": "₦209.50/kWh",
+    "hoursOfSupply": "21.5 h a day",
+    "horizons": [
+     {
+      "months": "0",
+      "dtLoad": "180.2 kVA",
+      "headroom": "119.8 kVA",
+      "hubDraw": "27.7 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "12",
+      "dtLoad": "189.2 kVA",
+      "headroom": "110.8 kVA",
+      "hubDraw": "37.4 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "24",
+      "dtLoad": "198.6 kVA",
+      "headroom": "101.4 kVA",
+      "hubDraw": "50.5 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "48",
+      "dtLoad": "219.0 kVA",
+      "headroom": "81.0 kVA",
+      "hubDraw": "84.2 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     }
+    ],
+    "finding": "Fits now; not at 48 months (DT rating and supply hours)"
+   },
+   {
+    "hubId": "HUB-06",
+    "hub": "Old Town tricycle hub (synthetic)",
+    "transformer": "DT-OLD-10",
+    "rating": "300 kVA",
+    "observedPeak": "228.1 kVA",
+    "feeder": "Old Town 11 kV feeder",
+    "band": "Band C",
+    "tariff": "₦52.51/kWh",
+    "hoursOfSupply": "13.8 h a day",
+    "horizons": [
+     {
+      "months": "0",
+      "dtLoad": "228.1 kVA",
+      "headroom": "71.9 kVA",
+      "hubDraw": "47.6 kVA",
+      "fits": "Fits",
+      "limits": "—"
+     },
+     {
+      "months": "12",
+      "dtLoad": "239.5 kVA",
+      "headroom": "60.5 kVA",
+      "hubDraw": "63.2 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     },
+     {
+      "months": "24",
+      "dtLoad": "251.4 kVA",
+      "headroom": "48.6 kVA",
+      "hubDraw": "63.2 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     },
+     {
+      "months": "48",
+      "dtLoad": "277.2 kVA",
+      "headroom": "22.8 kVA",
+      "hubDraw": "63.2 kVA",
+      "fits": "Does not fit",
+      "limits": "DT rating, supply hours"
+     }
+    ],
+    "finding": "Fits now; not at 12 months (DT rating and supply hours)"
+   }
+  ],
+  "order": [
+   {
+    "rank": "1",
+    "hub": "Market Road hub (synthetic)",
+    "reasons": [
+     "fits on the grid at 24 months",
+     "cheapest feasible option: Grid with diesel backup, ₦524 a swap",
+     "headroom left at 24 months: 121 kVA"
+    ]
+   },
+   {
+    "rank": "2",
+    "hub": "Market Road North hub (synthetic)",
+    "reasons": [
+     "fits on the grid at 24 months",
+     "cheapest feasible option: Grid with diesel backup, ₦594 a swap",
+     "headroom left at 24 months: 51 kVA"
+    ]
+   },
+   {
+    "rank": "3",
+    "hub": "Government Avenue hub (synthetic)",
+    "reasons": [
+     "does not fit on the grid at 24 months",
+     "grid options not feasible without a DT upgrade (4.9 kVA short)",
+     "cheapest feasible option: Diesel only, ₦2,731 a swap",
+     "headroom left at 24 months: -5 kVA"
+    ]
+   },
+   {
+    "rank": "4",
+    "hub": "Old Town hub (synthetic)",
+    "reasons": [
+     "does not fit on the grid at 24 months",
+     "grid options not feasible without a DT upgrade (68.3 kVA short)",
+     "cheapest feasible option: Diesel only, ₦2,731 a swap",
+     "headroom left at 24 months: -68 kVA"
+    ]
+   },
+   {
+    "rank": "5",
+    "hub": "Farm Road hub (synthetic)",
+    "reasons": [
+     "does not fit on the grid at 24 months",
+     "grid options not feasible without a DT upgrade (1.9 kVA short); too few hours of supply",
+     "cheapest feasible option: Diesel only, ₦2,731 a swap",
+     "headroom left at 24 months: -2 kVA"
+    ]
+   },
+   {
+    "rank": "6",
+    "hub": "Old Town tricycle hub (synthetic)",
+    "reasons": [
+     "does not fit on the grid at 24 months",
+     "grid options not feasible without a DT upgrade (14.6 kVA short); too few hours of supply",
+     "cheapest feasible option: Diesel only, ₦4,552 a swap",
+     "headroom left at 24 months: -15 kVA"
+    ]
+   }
+  ],
+  "orderHow": "How this is ordered: fit on the grid at 24 months first; among hubs that do not fit, fewer checks failed (DT rating, supply hours) first, then the fewest kVA short; then the cheapest feasible option that can be costed (fuel and tariff only; an option that draws on the grid is not feasible where the hub does not fit on the grid at 24 months), then the DT headroom left at 24 months. No weights.",
+  "methods": [
+   {
+    "id": "gridintel.planning.emobility-headroom",
+    "version": "0.1.0",
+    "name": "GridIntel reference hub fit on a distribution transformer and feeder",
+    "disclaimer": "GridIntel reference calculation — not a regulatory figure."
+   },
+   {
+    "id": "gridintel.planning.emobility-site-score",
+    "version": "0.1.0",
+    "name": "GridIntel reference order of candidate hub sites",
+    "disclaimer": "GridIntel reference calculation — not a regulatory figure."
+   }
+  ]
+ },
+ "power": {
+  "headline": "At the demonstration hub, diesel costs ₦1,092.49/kWh in fuel (₦583.33/kWh at the low price) against ₦63.33/kWh on the Band B grid with diesel backup; solar options wait for an EPC quote.",
+  "how": "How this is calculated: each hub at its own feeder's band tariff and hours of supply; diesel ₦3,277.47 a litre (NBS, May 2026), with ₦1,750 (TechCabal, July 2026) as the low case, ÷ 3 kWh a litre (assumption), fuel only; PV sized to the average day at the hub's peak sun hours × 0.80, making up the BESS's 90% round-trip efficiency, so a rainy-season day leaves a shortfall the backup meets; CO2 avoided against petrol vehicles over the same distance, the grid at 0.395 kg a kWh (IFI, 2019 dataset). Synthetic hubs.",
+  "hubs": [
+   {
+    "hubId": "HUB-01",
+    "hub": "Market Road hub (synthetic)",
+    "energy": "375 kWh a day for 150 swaps",
+    "peakSunHours": "5.73 h a day on average; 4.73 h in August (reported: NASA POWER)",
+    "options": [
+     {
+      "option": "Grid with diesel backup",
+      "energy": "Solar 0, grid 375, diesel 0 kWh a day",
+      "rainySeason": "Solar 0, grid 375, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦209.50/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦524",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦209.50/kWh, ₦524 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "₦1,876 a swap; ₦1,876 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "339 kg a day (2.26 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (487 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Diesel only",
+      "energy": "Solar 0, grid 0, diesel 375 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 375 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦2,731",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦1,458 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦331 a swap on this power source; ₦942 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "125 litres a day (125 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "152 kg a day (1.02 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (487 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Solar + grid",
+      "energy": "Solar 188, grid 188, diesel 0 kWh a day",
+      "rainySeason": "Solar 155, grid 220, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "413 kg a day (2.75 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (487 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 40.9 kWp",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Solar + BESS",
+      "energy": "Solar 375, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 313, grid 0, diesel 62 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (21 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "487 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (487 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 86.4 kWp, BESS 208.3 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Hybrid (solar + BESS + grid)",
+      "energy": "Solar 375, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 313, grid 62, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "487 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (487 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 86.4 kWp, BESS 208.3 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     }
+    ]
+   },
+   {
+    "hubId": "HUB-02",
+    "hub": "Government Avenue hub (synthetic)",
+    "energy": "750 kWh a day for 300 swaps",
+    "peakSunHours": "5.73 h a day on average; 4.73 h in August (reported: NASA POWER)",
+    "options": [
+     {
+      "option": "Grid with diesel backup",
+      "energy": "Solar 0, grid 750, diesel 0 kWh a day",
+      "rainySeason": "Solar 0, grid 750, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦63.33/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦158",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦63.33/kWh, ₦158 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "₦2,242 a swap; ₦2,242 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "678 kg a day (2.26 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (975 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Diesel only",
+      "energy": "Solar 0, grid 0, diesel 750 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 750 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦2,731",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦1,458 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦331 a swap on this power source; ₦942 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "250 litres a day (250 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "305 kg a day (1.02 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (975 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Solar + grid",
+      "energy": "Solar 375, grid 375, diesel 0 kWh a day",
+      "rainySeason": "Solar 310, grid 440, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "826 kg a day (2.75 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (975 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 81.8 kWp",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Solar + BESS",
+      "energy": "Solar 750, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 626, grid 0, diesel 124 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (41 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "975 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (975 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 172.7 kWp, BESS 416.7 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Hybrid (solar + BESS + grid)",
+      "energy": "Solar 750, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 626, grid 124, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "975 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (975 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 172.7 kWp, BESS 416.7 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     }
+    ]
+   },
+   {
+    "hubId": "HUB-03",
+    "hub": "Farm Road hub (synthetic)",
+    "energy": "300 kWh a day for 120 swaps",
+    "peakSunHours": "5.73 h a day on average; 4.73 h in August (reported: NASA POWER)",
+    "options": [
+     {
+      "option": "Grid with diesel backup",
+      "energy": "Solar 0, grid 277, diesel 23 kWh a day",
+      "rainySeason": "Solar 0, grid 277, diesel 23 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦128.22/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦321",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦90.02/kWh, ₦225 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "₦2,079 a swap; ₦2,175 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "8 litres a day (8 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "260 kg a day (2.17 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (390 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Diesel only",
+      "energy": "Solar 0, grid 0, diesel 300 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 300 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦2,731",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦1,458 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦331 a swap on this power source; ₦942 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "100 litres a day (100 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "122 kg a day (1.02 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (390 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Solar + grid",
+      "energy": "Solar 150, grid 150, diesel 0 kWh a day",
+      "rainySeason": "Solar 124, grid 176, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "331 kg a day (2.75 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (390 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 32.7 kWp",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Solar + BESS",
+      "energy": "Solar 300, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 250, grid 0, diesel 50 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (17 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "390 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (390 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 69.1 kWp, BESS 166.7 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Hybrid (solar + BESS + grid)",
+      "energy": "Solar 300, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 250, grid 50, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "390 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (390 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 69.1 kWp, BESS 166.7 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     }
+    ]
+   },
+   {
+    "hubId": "HUB-04",
+    "hub": "Old Town hub (synthetic)",
+    "energy": "250 kWh a day for 100 swaps",
+    "peakSunHours": "5.73 h a day on average; 4.73 h in August (reported: NASA POWER)",
+    "options": [
+     {
+      "option": "Grid with diesel backup",
+      "energy": "Solar 0, grid 0, diesel 250 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 250 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦2,731",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦1,458 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦331 a swap on this power source; ₦942 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "83 litres a day (83 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "102 kg a day (1.02 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (325 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Diesel only",
+      "energy": "Solar 0, grid 0, diesel 250 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 250 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦2,731",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦1,458 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦331 a swap on this power source; ₦942 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "83 litres a day (83 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "102 kg a day (1.02 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (325 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Solar + grid",
+      "energy": "Solar 125, grid 0, diesel 125 kWh a day",
+      "rainySeason": "Solar 103, grid 0, diesel 147 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "42 litres a day (49 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "213 kg a day (2.13 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (325 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 27.3 kWp",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Solar + BESS",
+      "energy": "Solar 250, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 209, grid 0, diesel 41 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (14 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "325 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (325 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 57.6 kWp, BESS 138.9 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Hybrid (solar + BESS + grid)",
+      "energy": "Solar 250, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 209, grid 0, diesel 41 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (14 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "325 kg a day (3.25 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (325 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 57.6 kWp, BESS 138.9 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     }
+    ]
+   },
+   {
+    "hubId": "HUB-05",
+    "hub": "Market Road North hub (synthetic)",
+    "energy": "567 kWh a day for 200 swaps",
+    "peakSunHours": "5.73 h a day on average; 4.73 h in August (reported: NASA POWER)",
+    "options": [
+     {
+      "option": "Grid with diesel backup",
+      "energy": "Solar 0, grid 567, diesel 0 kWh a day",
+      "rainySeason": "Solar 0, grid 567, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦209.50/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦594",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦209.50/kWh, ₦594 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "₦1,806 a swap; ₦1,806 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "435 kg a day (2.17 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh; petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (658 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Diesel only",
+      "energy": "Solar 0, grid 0, diesel 567 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 567 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦3,095",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦1,653 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦695 a swap on this power source; ₦747 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "189 litres a day (189 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "152 kg a day (0.76 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh; petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (658 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Solar + grid",
+      "energy": "Solar 283, grid 283, diesel 0 kWh a day",
+      "rainySeason": "Solar 234, grid 333, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "546 kg a day (2.73 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh; petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (658 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 61.8 kWp",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Solar + BESS",
+      "energy": "Solar 567, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 473, grid 0, diesel 94 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (31 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "658 kg a day (3.29 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh; petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (658 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 130.5 kWp, BESS 314.8 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Hybrid (solar + BESS + grid)",
+      "energy": "Solar 567, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 473, grid 94, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "658 kg a day (3.29 kg a swap) (assumptions: petrol motorcycle 40 km a litre, electric 25 km a kWh; petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (658 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 130.5 kWp, BESS 314.8 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     }
+    ]
+   },
+   {
+    "hubId": "HUB-06",
+    "hub": "Old Town tricycle hub (synthetic)",
+    "energy": "625 kWh a day for 150 swaps",
+    "peakSunHours": "5.73 h a day on average; 4.73 h in August (reported: NASA POWER)",
+    "options": [
+     {
+      "option": "Grid with diesel backup",
+      "energy": "Solar 0, grid 625, diesel 0 kWh a day",
+      "rainySeason": "Solar 0, grid 625, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦52.51/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦219",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦52.51/kWh, ₦219 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "₦2,181 a swap; ₦2,181 a swap at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "273 kg a day (1.82 kg a swap) (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (520 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Diesel only",
+      "energy": "Solar 0, grid 0, diesel 625 kWh a day",
+      "rainySeason": "Solar 0, grid 0, diesel 625 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "₦1,092.49/kWh",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "₦4,552",
+       "status": "calculated",
+       "basis": "Fuel and tariff only: diesel at the base price (NBS, May 2026) ÷ the assumed yield, excluding genset O&M and replacement; grid at the feeder's band tariff."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price, fuel and tariff only",
+       "value": "₦583.33/kWh, ₦2,431 a swap",
+       "status": "calculated",
+       "basis": "As the base case, with diesel at the low price (TechCabal, 30 July 2026)."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "loses ₦2,152 a swap on this power source; loses ₦31 a swap on this power source at the low diesel price",
+       "status": "calculated",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "208 litres a day (208 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "No material saving under these assumptions (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (520 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "—",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "No installed cost counted",
+       "status": "not_available",
+       "basis": "The option's own equipment cost is not in the inputs."
+      }
+     },
+     {
+      "option": "Solar + grid",
+      "energy": "Solar 313, grid 313, diesel 0 kWh a day",
+      "rainySeason": "Solar 258, grid 367, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "396 kg a day (2.64 kg a swap) (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (520 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 68.2 kWp",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Solar + BESS",
+      "energy": "Solar 625, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 521, grid 0, diesel 104 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (35 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "520 kg a day (3.47 kg a swap) (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (520 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 143.9 kWp, BESS 347.2 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     },
+     {
+      "option": "Hybrid (solar + BESS + grid)",
+      "energy": "Solar 625, grid 0, diesel 0 kWh a day",
+      "rainySeason": "Solar 521, grid 104, diesel 0 kWh a day",
+      "costPerKwh": {
+       "key": "costPerKwh",
+       "label": "Cost per kWh, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costPerSwap": {
+       "key": "costPerSwap",
+       "label": "Cost per swap, fuel and tariff only",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "costAtLowDiesel": {
+       "key": "costLowDiesel",
+       "label": "Cost at the low diesel price",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "A solar option's cost is not shown until its installed cost is supplied: its backup's fuel alone would make it look free."
+      },
+      "margin": {
+       "key": "margin",
+       "label": "Margin a swap (swap price less energy and non-energy opex)",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+      },
+      "dieselLitres": "0 litres a day (0 in the rainy season)",
+      "co2Avoided": {
+       "key": "co2",
+       "label": "CO2 avoided against petrol vehicles",
+       "value": "520 kg a day (3.47 kg a swap) (assumptions: petrol tricycle (keke) 30 km a litre, electric 12 km a kWh)",
+       "status": "calculated",
+       "basis": "Petrol the same distance would burn × 2.31 kg a litre (520 kg a day), less the hub's diesel × 2.68 kg a litre (IPCC 2006) and its grid kWh × 0.395 kg (IFI, 2019 dataset). Solar counts operating emissions only. Within ±10% of the petrol figure the difference is not material."
+      },
+      "sizes": "PV 143.9 kWp, BESS 347.2 kWh",
+      "payback": {
+       "key": "payback",
+       "label": "Payback against diesel",
+       "value": "Placeholder: no EPC quote",
+       "status": "placeholder",
+       "basis": "No payback is shown until the PV and BESS cost is supplied."
+      }
+     }
+    ]
+   }
+  ],
+  "method": {
+   "id": "gridintel.planning.emobility-power-source",
+   "version": "0.1.0",
+   "name": "GridIntel reference power-source comparison for a swap hub",
+   "disclaimer": "GridIntel reference calculation — not a regulatory figure."
+  }
+ },
+ "finance": {
+  "headline": "₦165.0 million of the ₦340.0 million pledged is placed on 3 hubs; ₦175.0 million is queued. 2 of the hubs offered need a DT upgrade; 2 wait for the PV and BESS cost.",
+  "how": "How this is calculated: margin a swap = the ₦3,000 swap price (reported) − the energy cost a swap on the hub's power option (calculated, at the base diesel price) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear); half the margin (assumption) goes into escrow and repays the hub's funder; months to repay = the hub's cost repaid from escrow at the funder's return. A hub whose margin is 0 or less cannot repay on that power option and no repaid pledge is matched to it. The ₦1,000 deducted from each swap (reported) repays the rider's conversion loan and is never counted as hub revenue. A hub is offered on a power option that works at its site through 24 months: the grid where it fits; the grid after a named DT upgrade where only the DT rating fails; solar + BESS where the feeder's hours of supply fail, its PV and BESS cost added to the hub's. Pledges are placed lowest return first, then fewer feeders, then id; a pledge funds a hub on a feeder it names, when it has the whole cost left and the hub repays within its tenor. Hub costs are synthetic, only to exercise the matching; they are not investment figures.",
+  "pledges": [
+   {
+    "id": "PL-GRANT",
+    "funder": "Public clean-transport grant (synthetic)",
+    "kind": "public",
+    "pledged": "₦40.0 million",
+    "returnAsked": "0% a year",
+    "tenor": "Grant: not repaid",
+    "feeders": "FD-FRM, FD-OLD",
+    "hubs": "Old Town hub (synthetic)",
+    "placed": "₦30.0 million",
+    "queued": "Queued for the next allocation: ₦10.0 million",
+    "hasQueued": true,
+    "queuedReason": "every hub it could fund is already funded"
+   },
+   {
+    "id": "PL-DFI",
+    "funder": "Development finance institution (synthetic)",
+    "kind": "dfi",
+    "pledged": "₦150.0 million",
+    "returnAsked": "9% a year",
+    "tenor": "36 months",
+    "feeders": "FD-MKT, FD-GOV, FD-OLD, FD-FRM",
+    "hubs": "Market Road hub (synthetic), Government Avenue hub (synthetic)",
+    "placed": "₦135.0 million",
+    "queued": "Queued for the next allocation: ₦15.0 million",
+    "hasQueued": true,
+    "queuedReason": "every hub it could fund is already funded"
+   },
+   {
+    "id": "PL-PRIVATE",
+    "funder": "Private asset fund (synthetic)",
+    "kind": "private",
+    "pledged": "₦100.0 million",
+    "returnAsked": "20% a year",
+    "tenor": "18 months",
+    "feeders": "FD-OLD, FD-GOV",
+    "hubs": "None",
+    "placed": "₦0",
+    "queued": "Queued for the next allocation: ₦100.0 million",
+    "hasQueued": true,
+    "queuedReason": "every hub it could fund is already funded"
+   },
+   {
+    "id": "PL-SHORT",
+    "funder": "Short-term lender (synthetic)",
+    "kind": "private",
+    "pledged": "₦50.0 million",
+    "returnAsked": "24% a year",
+    "tenor": "3 months",
+    "feeders": "FD-MKT",
+    "hubs": "None",
+    "placed": "₦0",
+    "queued": "Queued for the next allocation: ₦50.0 million",
+    "hasQueued": true,
+    "queuedReason": "tenor shorter than any hub's payback"
+   }
+  ],
+  "hubs": [
+   {
+    "hubId": "HUB-01",
+    "hub": "Market Road hub (synthetic)",
+    "power": "Grid with diesel backup",
+    "powerReason": "Fits on the grid through 24 months.",
+    "cost": {
+     "key": "cost",
+     "label": "Hub cost",
+     "value": "₦45.0 million (synthetic)",
+     "status": "synthetic",
+     "basis": "A synthetic round figure to exercise the matching. Not an investment figure."
+    },
+    "margin": {
+     "key": "margin",
+     "label": "Margin a swap (swap price less energy and non-energy opex)",
+     "value": "₦1,876 a swap; ₦1,876 a swap at the low diesel price",
+     "status": "calculated",
+     "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+    },
+    "escrowPerDay": "₦140,719 a day (₦938 a swap, half the margin)",
+    "fundedBy": "Development finance institution (synthetic)",
+    "monthsToRepay": "11.0 months at 9%"
+   },
+   {
+    "hubId": "HUB-02",
+    "hub": "Government Avenue hub (synthetic)",
+    "power": "Grid with diesel backup, after a DT upgrade",
+    "powerReason": "DT upgrade needed on DT-GOV-4 (300 kVA) by 24 months: the hub's draw exceeds the headroom by 4.9 kVA. The upgrade's cost is not in the hub's cost and is not available.",
+    "cost": {
+     "key": "cost",
+     "label": "Hub cost",
+     "value": "₦90.0 million (synthetic)",
+     "status": "synthetic",
+     "basis": "A synthetic round figure to exercise the matching. Not an investment figure."
+    },
+    "margin": {
+     "key": "margin",
+     "label": "Margin a swap (swap price less energy and non-energy opex)",
+     "value": "₦2,242 a swap; ₦2,242 a swap at the low diesel price",
+     "status": "calculated",
+     "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+    },
+    "escrowPerDay": "₦336,251 a day (₦1,121 a swap, half the margin)",
+    "fundedBy": "Development finance institution (synthetic)",
+    "monthsToRepay": "9.1 months at 9%"
+   },
+   {
+    "hubId": "HUB-03",
+    "hub": "Farm Road hub (synthetic)",
+    "power": "Solar + BESS",
+    "powerReason": "The grid does not work here: the feeder's hours of supply fail now. The hub's cost includes PV and BESS, a placeholder until an EPC quote, so it cannot be matched yet.",
+    "cost": {
+     "key": "cost",
+     "label": "Hub cost with PV and BESS",
+     "value": "₦36.0 million (synthetic) + PV and BESS: placeholder, no EPC quote",
+     "status": "placeholder",
+     "basis": "The hub's synthetic cost plus its PV and BESS, which have no cost until an EPC quote. Not matched until then."
+    },
+    "margin": {
+     "key": "margin",
+     "label": "Margin a swap (swap price less energy and non-energy opex)",
+     "value": "Placeholder: no EPC quote",
+     "status": "placeholder",
+     "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+    },
+    "escrowPerDay": "Placeholder: no energy cost until an EPC quote",
+    "fundedBy": "Not offered until costed",
+    "monthsToRepay": "—"
+   },
+   {
+    "hubId": "HUB-04",
+    "hub": "Old Town hub (synthetic)",
+    "power": "Grid with diesel backup, after a DT upgrade",
+    "powerReason": "DT upgrade needed on DT-OLD-2 (100 kVA) now: the hub's draw exceeds the headroom by 40.2 kVA. The upgrade's cost is not in the hub's cost and is not available.",
+    "cost": {
+     "key": "cost",
+     "label": "Hub cost",
+     "value": "₦30.0 million (synthetic)",
+     "status": "synthetic",
+     "basis": "A synthetic round figure to exercise the matching. Not an investment figure."
+    },
+    "margin": {
+     "key": "margin",
+     "label": "Margin a swap (swap price less energy and non-energy opex)",
+     "value": "loses ₦331 a swap on this power source; ₦942 a swap at the low diesel price",
+     "status": "calculated",
+     "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+    },
+    "escrowPerDay": "None: the hub loses ₦331 a swap on this power source",
+    "fundedBy": "Public clean-transport grant (synthetic)",
+    "monthsToRepay": "Not repaid: a grant"
+   },
+   {
+    "hubId": "HUB-06",
+    "hub": "Old Town tricycle hub (synthetic)",
+    "power": "Solar + BESS",
+    "powerReason": "The grid does not work here: the feeder's hours of supply fail at 12 months. The hub's cost includes PV and BESS, a placeholder until an EPC quote, so it cannot be matched yet.",
+    "cost": {
+     "key": "cost",
+     "label": "Hub cost with PV and BESS",
+     "value": "₦45.0 million (synthetic) + PV and BESS: placeholder, no EPC quote",
+     "status": "placeholder",
+     "basis": "The hub's synthetic cost plus its PV and BESS, which have no cost until an EPC quote. Not matched until then."
+    },
+    "margin": {
+     "key": "margin",
+     "label": "Margin a swap (swap price less energy and non-energy opex)",
+     "value": "Placeholder: no EPC quote",
+     "status": "placeholder",
+     "basis": "₦3,000 swap price (reported) − energy cost a swap (calculated) − ₦600 non-energy opex (assumption: 20% of the swap price, for staff, site and battery wear). The ₦1,000 rider loan deduction is not hub revenue and is not in it."
+    },
+    "escrowPerDay": "Placeholder: no energy cost until an EPC quote",
+    "fundedBy": "Not offered until costed",
+    "monthsToRepay": "—"
+   }
+  ],
+  "waiting": [
+   "Farm Road hub (synthetic)",
+   "Old Town tricycle hub (synthetic)"
+  ],
+  "method": {
+   "id": "gridintel.planning.emobility-swap-finance",
+   "version": "0.1.0",
+   "name": "GridIntel reference matching of pledges to swap hubs",
+   "disclaimer": "GridIntel reference calculation — not a regulatory figure."
+  }
+ },
+ "verify": {
+  "headline": "1 hub installed, with 30 days of synthetic swap records; real figures come with a pilot.",
+  "how": "How this is calculated: swaps, energy charged and minutes available over the days recorded, against the hub's plan. Synthetic until a pilot.",
+  "hubs": [
+   {
+    "hubId": "HUB-05",
+    "hub": "Market Road North hub (synthetic)",
+    "installedOn": "2026-08-03",
+    "days": "30",
+    "figures": [
+     {
+      "key": "swaps",
+      "label": "Swaps against plan",
+      "value": "5,330 of 6,000 planned (89%)",
+      "status": "synthetic",
+      "basis": "Synthetic swap records against the hub's planned swaps a day × days recorded."
+     },
+     {
+      "key": "energy",
+      "label": "Energy charged against plan",
+      "value": "15,355 of 17,000 kWh planned (90%)",
+      "status": "synthetic",
+      "basis": "Synthetic metered kWh against the planned day's kWh × days recorded."
+     },
+     {
+      "key": "availability",
+      "label": "Availability",
+      "value": "93%",
+      "status": "synthetic",
+      "basis": "Minutes the hub could swap ÷ minutes in the days recorded."
+     }
+    ]
+   }
+  ],
+  "method": {
+   "id": "gridintel.planning.emobility-verify",
+   "version": "0.1.0",
+   "name": "GridIntel reference hub performance against plan",
+   "disclaimer": "GridIntel reference calculation — not a regulatory figure."
+  }
+ },
+ "inputs": [
+  {
+   "key": "swapPrice",
+   "label": "Swap price",
+   "value": "₦3,000 standard (₦2,000 to ₦2,800 also seen)",
+   "status": "reported",
+   "basis": "Reported: edgeX, republishing TechCabal, 30 July 2026. The standard price is used for the hub's margin a swap."
+  },
+  {
+   "key": "riderLoan",
+   "label": "Deduction toward the rider's conversion loan",
+   "value": "₦1,000 a swap, until the loan is repaid",
+   "status": "reported",
+   "basis": "Reported: edgeX, republishing TechCabal, 30 July 2026. Rider loan repayment, never hub revenue: no hub calculation uses it."
+  },
+  {
+   "key": "nonEnergyOpex",
+   "label": "Non-energy opex a swap",
+   "value": "20% of the swap price (₦600)",
+   "status": "assumption",
+   "basis": "Staff, site and battery wear; to confirm with an operator."
+  },
+  {
+   "key": "hubRepayment",
+   "label": "Repayment a swap to a hub's funder",
+   "value": "50% of the hub's margin a swap",
+   "status": "calculated",
+   "basis": "Margin a swap = swap price − energy cost a swap on the hub's power option − non-energy opex. The share is an assumption. Where the margin is 0 or less the hub cannot repay on that option and no repaid pledge is matched to it."
+  },
+  {
+   "key": "hubRepaymentShare",
+   "label": "Share of the margin paid to a hub's funder",
+   "value": "50%",
+   "status": "assumption",
+   "basis": "The rest of the margin is the operator's."
+  },
+  {
+   "key": "dieselBought",
+   "label": "Diesel bought at a Lagos (Ikorodu) swap station",
+   "value": "About 1,000 litres every 3 to 4 days",
+   "status": "reported",
+   "basis": "Reported: edgeX, republishing TechCabal, 30 July 2026. A cross-check only: 250 to 333 litres a day at 3 kWh a litre is 750 to 1,000 kWh a day, the demonstration hub's range."
+  },
+  {
+   "key": "dieselPrice",
+   "label": "Diesel price, base case",
+   "value": "₦3,277.47 a litre",
+   "status": "reported",
+   "basis": "Reported: NBS Diesel Price Watch, May 2026 (published 24 June 2026), average retail price a litre; secondary reporting by Legit.ng and ThisDay."
+  },
+  {
+   "key": "dieselLowPrice",
+   "label": "Diesel price, low case",
+   "value": "₦1,750 a litre",
+   "status": "reported",
+   "basis": "Reported: TechCabal, 30 July 2026 (a Lagos swap operator's published figures). The low case."
+  },
+  {
+   "key": "dieselYield",
+   "label": "Diesel yield",
+   "value": "3 kWh a litre",
+   "status": "assumption",
+   "basis": "Small generator at part load; to confirm with an operator."
+  },
+  {
+   "key": "dieselPerKwh",
+   "label": "Diesel cost per kWh, fuel only, base case",
+   "value": "₦1,092.49/kWh",
+   "status": "calculated",
+   "basis": "Base diesel price ÷ diesel yield. Fuel only: genset O&M and replacement are excluded."
+  },
+  {
+   "key": "dieselPerKwhLow",
+   "label": "Diesel cost per kWh, fuel only, low case",
+   "value": "₦583.33/kWh",
+   "status": "calculated",
+   "basis": "Low diesel price ÷ diesel yield. Fuel only: genset O&M and replacement are excluded."
+  },
+  {
+   "key": "gridTariff",
+   "label": "Grid tariff",
+   "value": "The band of each hub's feeder",
+   "status": "reported",
+   "basis": "NERC September 2026 tariff orders, Table 3, non-MD class. The synthetic DisCo lies near Yola and takes Yola DisCo's order (a dataset assumption)."
+  },
+  {
+   "key": "batteryMotorcycle",
+   "label": "Battery, motorcycle",
+   "value": "3 kWh",
+   "status": "assumption",
+   "basis": "To confirm with an operator."
+  },
+  {
+   "key": "batteryTricycle",
+   "label": "Battery, tricycle",
+   "value": "5 kWh",
+   "status": "assumption",
+   "basis": "To confirm with an operator."
+  },
+  {
+   "key": "soc",
+   "label": "State of charge on return",
+   "value": "25%",
+   "status": "assumption",
+   "basis": "A battery comes back a quarter full on average."
+  },
+  {
+   "key": "efficiency",
+   "label": "Charging efficiency",
+   "value": "90%",
+   "status": "assumption",
+   "basis": "Charger and battery losses."
+  },
+  {
+   "key": "swapsPerVehicle",
+   "label": "Swaps a vehicle a day",
+   "value": "1.5 (motorcycle), 2 (tricycle)",
+   "status": "assumption",
+   "basis": "Commercial riders; to confirm with an operator."
+  },
+  {
+   "key": "adoption",
+   "label": "Adoption, slow / base / fast",
+   "value": "15% / 35% / 60% a year",
+   "status": "placeholder",
+   "basis": "Placeholder scenarios for growth in vehicles served, not forecasts, until adoption figures are supplied."
+  },
+  {
+   "key": "loadGrowth",
+   "label": "Existing load growth on a DT",
+   "value": "5% a year",
+   "status": "assumption",
+   "basis": "Applied to the DT's observed peak at 12, 24 and 48 months."
+  },
+  {
+   "key": "powerFactor",
+   "label": "Hub load power factor",
+   "value": "0.95",
+   "status": "assumption",
+   "basis": "Chargers with power-factor correction."
+  },
+  {
+   "key": "coincidence",
+   "label": "Hub charging coincides with the DT's peak",
+   "value": "Yes",
+   "status": "assumption",
+   "basis": "The cautious case; off-peak charging is not modelled."
+  },
+  {
+   "key": "peakSun",
+   "label": "Peak sun hours",
+   "value": "Each hub's own, with a rainy-season case",
+   "status": "reported",
+   "basis": "NASA POWER climatology at the hub (see each hub)."
+  },
+  {
+   "key": "pr",
+   "label": "PV performance ratio",
+   "value": "0.8",
+   "status": "assumption",
+   "basis": "Losses from heat, dust, wiring and the inverter."
+  },
+  {
+   "key": "dod",
+   "label": "BESS depth of discharge",
+   "value": "90%",
+   "status": "assumption",
+   "basis": "Lithium iron phosphate."
+  },
+  {
+   "key": "bessEfficiency",
+   "label": "BESS round-trip efficiency",
+   "value": "90%",
+   "status": "assumption",
+   "basis": "Applied to the energy that passes through the BESS; PV is sized to make up the loss."
+  },
+  {
+   "key": "daytimeShare",
+   "label": "Daytime charging share",
+   "value": "50%",
+   "status": "assumption",
+   "basis": "Share of the day's charging done in sun hours; sizes PV for solar + grid and the BESS."
+  },
+  {
+   "key": "pvCost",
+   "label": "PV and BESS installed cost",
+   "value": "Not set",
+   "status": "placeholder",
+   "basis": "Placeholder until an EPC quote is supplied. No solar cost per kWh and no payback are shown until then."
+  },
+  {
+   "key": "dieselCo2",
+   "label": "Diesel CO2",
+   "value": "2.68 kg a litre",
+   "status": "reported",
+   "basis": "IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol. 2, Ch. 2, Table 2.2: 74,100 kg CO2/TJ × 43.0 TJ/Gg × 0.84 kg/L."
+  },
+  {
+   "key": "petrolCo2",
+   "label": "Petrol CO2",
+   "value": "2.31 kg a litre",
+   "status": "reported",
+   "basis": "IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol. 2, Ch. 3, Table 3.2.1: 69,300 kg CO2/TJ × 44.3 TJ/Gg × 0.753 kg/L."
+  },
+  {
+   "key": "petrolEconomy",
+   "label": "Petrol vehicle fuel economy",
+   "value": "40 km a litre (motorcycle), 30 (tricycle)",
+   "status": "assumption",
+   "basis": "Commercial vehicles in town use."
+  },
+  {
+   "key": "evRange",
+   "label": "Electric vehicle range per kWh",
+   "value": "25 km a kWh (motorcycle), 12 (tricycle)",
+   "status": "assumption",
+   "basis": "About 40 and 83 Wh a km."
+  },
+  {
+   "key": "gridCo2",
+   "label": "Grid emission factor",
+   "value": "0.395 kg CO2 a kWh",
+   "status": "reported",
+   "basis": "Reported: IFI Harmonized Grid Emission Factors, v2.0 (July 2019), Nigeria, combined margin, firm energy, 0.395 tCO2/MWh. The dataset dates from 2019."
+  },
+  {
+   "key": "co2Material",
+   "label": "Material CO2 difference",
+   "value": "More than ±10% of the petrol figure",
+   "status": "assumption",
+   "basis": "Within it, the result is reported as no material saving under these assumptions, not as a precise figure."
+  },
+  {
+   "key": "hubCost",
+   "label": "Hub cost (swap cabinets and battery stock)",
+   "value": "Each hub's own",
+   "status": "synthetic",
+   "basis": "Synthetic round figures, only to exercise pledge matching. Not investment figures."
+  },
+  {
+   "key": "spiro",
+   "label": "Spiro Nigeria",
+   "value": "About 84,000 swaps; Ogun, Lagos, Oyo, Benue",
+   "status": "reported",
+   "basis": "Reported: edgeX, 9 October 2026. Reference only; used in no calculation."
+  }
+ ],
+ "sourcing": {
+  "synthetic": true,
+  "sources": [
+   {
+    "id": "synthetic-emobility",
+    "name": "Synthetic e-mobility hubs (designed hubs, operators, pledges and swaps)",
+    "kind": "synthetic"
+   },
+   {
+    "id": "synthetic-outages",
+    "name": "Synthetic outage log",
+    "kind": "synthetic"
+   },
+   {
+    "id": "synthetic-registry",
+    "name": "Synthetic asset registry",
+    "kind": "synthetic"
+   },
+   {
+    "id": "synthetic-scada",
+    "name": "Synthetic telemetry",
+    "kind": "synthetic"
+   }
+  ],
+  "citations": [
+   {
+    "id": "nasa-power-climatology-9.25N-12.47E",
+    "title": "NASA POWER Climatology API v2.10.1, ALLSKY_SFC_SW_DWN (all-sky surface shortwave downward irradiance, kWh/m²/day), January 2001 to December 2025, at 9.25° N, 12.47° E; retrieved 16 November 2026",
+    "url": "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=12.47&latitude=9.25&format=JSON"
+   },
+   {
+    "id": "nbs-diesel-price-watch-2026-05",
+    "title": "National Bureau of Statistics, Diesel Price Watch, May 2026 (published 24 June 2026), as reported by Legit.ng",
+    "url": "https://www.legit.ng/business-economy/energy/1716140-nbs-diesel-price-rises-8640-n3277litre-2026/"
+   },
+   {
+    "id": "techcabal-2026-07-30",
+    "title": "TechCabal, \"Swap is turning petrol three-wheelers electric—with diesel generators\", 30 July 2026",
+    "url": "https://techcabal.com/2026/07/30/nigerias-petrol-three-wheelers-are-going-electric-with-batteries/"
+   },
+   {
+    "id": "edgex-techcabal-2026-07-30",
+    "title": "edgeX, republication of TechCabal, \"Swap is turning petrol three-wheelers electric—with diesel generators\", 30 July 2026",
+    "url": "https://pro.edgex.exchange/en-US/news/article/swap-electric-keke-battery-swap-nigeria"
+   },
+   {
+    "id": "ifi-harmonized-gef-v2-2019",
+    "title": "IFI Technical Working Group on GHG Accounting, Harmonized Grid Emission Factor data set, v2.0, July 2019",
+    "url": "https://unfccc.int/sites/default/files/resource/Harmonized_Grid_Emission_factor_data_set.pdf"
+   },
+   {
+    "id": "nerc-myto-2026-09-yedc",
+    "title": "NERC, YEDC MYTO September 2026 (supplementary order, effective 1 September 2026)",
+    "url": "https://nerc.gov.ng/wp-content/uploads/2026/09/YEDC_HOLDCO_YSS_September_2026_098.pdf"
+   }
+  ]
+ }
+}
