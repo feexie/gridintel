@@ -5,12 +5,11 @@
 
      node --env-file=.env.local scripts/pilot-check.ts [demo-address] [tenant-address]
 
-   e.g. node --env-file=.env.local scripts/pilot-check.ts https://gridintel.vercel.app https://gridintel-pilot.vercel.app
+   e.g. node --env-file=.env.local scripts/pilot-check.ts https://gridintel-iota.vercel.app https://gridintel-pilot.vercel.app
 
    It prints PASS, FAIL or NOT CHECKED for each item, and exits with 1 if any item failed. */
 
-// A module (it imports nothing), so that it may await at the top level.
-export {};
+import { demoVerdict, tenantVerdict } from "./pilot-check-outcomes.ts";
 
 const [demoAddress, tenantAddress] = process.argv.slice(2);
 const url = process.env.SUPABASE_URL;
@@ -98,25 +97,20 @@ for (const table of ["organizations", "memberships"]) {
 
 // 5. The public demonstration holds no secret. Its environment cannot be read from here, but a
 //    demonstration with SUPABASE_SECRET_KEY set refuses every request with 503 (composition/mode.ts).
-if (!demoAddress) {
-  report("NOT CHECKED", "Demo holds no secret", "no demo address given");
-} else {
-  const response = await fetch(new URL("/", demoAddress), { redirect: "manual" });
-  if (response.status === 503) report("FAIL", "Demo holds no secret", "the demonstration refuses to serve (503): remove SUPABASE_SECRET_KEY from its project and redeploy");
-  else if (response.ok) report("PASS", "Demo holds no secret", `serves (HTTP ${response.status}), so its running deployment has no SUPABASE_SECRET_KEY. Its Preview environment is not seen from here`);
-  else report("FAIL", "Demo holds no secret", `unexpected HTTP ${response.status} from ${demoAddress}`);
-}
-
+//    It is asked for /dashboard: its / only redirects there.
 // 6. The tenant deployment was built as one and asks who is signed in.
-if (!tenantAddress) {
-  report("NOT CHECKED", "Tenant asks for sign-in", "no tenant address given");
-} else {
-  const response = await fetch(new URL("/dashboard", tenantAddress), { redirect: "manual" });
-  const location = response.headers.get("location") ?? "";
-  if (response.status >= 300 && response.status < 400 && new URL(location, tenantAddress).pathname === "/login") report("PASS", "Tenant asks for sign-in", "/dashboard leads to /login");
-  else if (response.status === 503) report("FAIL", "Tenant asks for sign-in", "the tenant refuses to serve (503): check GRIDINTEL_MODE=tenant was set before the build, and SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY; then redeploy");
-  else if (response.ok) report("FAIL", "Tenant asks for sign-in", "/dashboard is shown to someone not signed in: this is not a tenant build (GRIDINTEL_MODE unset, or the branch has no Phase 8A)");
-  else report("FAIL", "Tenant asks for sign-in", `unexpected HTTP ${response.status} from ${tenantAddress}`);
+const deployments = [
+  { item: "Demo holds no secret", address: demoAddress, judge: demoVerdict },
+  { item: "Tenant asks for sign-in", address: tenantAddress, judge: tenantVerdict },
+];
+for (const { item, address, judge } of deployments) {
+  if (!address) {
+    report("NOT CHECKED", item, `no ${item.startsWith("Demo") ? "demo" : "tenant"} address given`);
+    continue;
+  }
+  const response = await fetch(new URL("/dashboard", address), { redirect: "manual" });
+  const { outcome, detail } = judge({ status: response.status, location: response.headers.get("location") ?? "" }, address);
+  report(outcome, item, detail);
 }
 
 console.log(failed ? "\nSome items failed." : "\nNo item failed.");
