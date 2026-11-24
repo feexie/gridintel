@@ -1,6 +1,7 @@
 import type { VehicleSegment } from "@/domain";
 import type { Methodology } from "../../core/methodology.ts";
 import { REFERENCE_DISCLAIMER } from "../../core/methodology.ts";
+import { sizeSolar, solarMakesKwh, solarServesKwh } from "../solar.ts";
 import { EMOBILITY_DEMAND_REFERENCE, energyUsedPerSwap, type DemandParameters, type SwapSegment } from "./demand.ts";
 
 /* ==========================================================
@@ -22,6 +23,8 @@ import { EMOBILITY_DEMAND_REFERENCE, energyUsedPerSwap, type DemandParameters, t
    No option is solar every day: PV is sized to the average day, and
    a rainy-season day leaves a shortfall the backup meets.
 
+   The sizing below is the shared rule in analytics/planning/solar.ts
+   (moved there for the mini-grid planner; results unchanged).
    PV kWp = energy PV is to make ÷ (peak sun hours × performance
    ratio). With a BESS, the energy charged outside sun hours passes
    through it and loses (1 − round-trip efficiency): PV makes the
@@ -252,13 +255,20 @@ export function comparePowerSources(facts: HubPowerFacts, parameters = EMOBILITY
     }
     const withBess = option === "solar_bess" || option === "hybrid";
     const solarOption = withBess || option === "solar_grid";
-    const daytime = energy * parameters.daytimeChargingShare;
-    const throughBess = withBess ? energy - daytime : 0;
     const eta = parameters.bessRoundTripEfficiency;
-    // PV makes the daytime charging, plus what passes through the BESS grossed up for its losses.
-    const pvMakes = solarOption ? daytime + throughBess / eta : 0;
-    const pvKwp = solarOption ? pvMakes / (sunHours.average * pr) : null;
-    const bessKwh = withBess ? throughBess / parameters.bessDepthOfDischarge : null;
+    // The shared sizing (analytics/planning/solar.ts): PV for the daytime charging, plus what passes through the BESS grossed up for its losses.
+    const sizing = sizeSolar({
+      energyKwhPerDay: energy,
+      daytimeShare: parameters.daytimeChargingShare,
+      withStorage: withBess,
+      peakSunHours: sunHours.average,
+      performanceRatio: pr,
+      depthOfDischarge: parameters.bessDepthOfDischarge,
+      roundTripEfficiency: eta,
+    });
+    const { daytimeKwh: daytime, throughStorageKwh: throughBess } = sizing;
+    const pvKwp = solarOption ? sizing.pvKwp : null;
+    const bessKwh = sizing.storageKwh;
     const pvCost = pvKwp === null ? 0 : facts.installed.pvNairaPerKwp === null ? null : pvKwp * facts.installed.pvNairaPerKwp;
     const bessCost = bessKwh === null ? 0 : facts.installed.bessNairaPerKwh === null ? null : bessKwh * facts.installed.bessNairaPerKwh;
     const installedCost = !solarOption || pvCost === null || bessCost === null ? null : pvCost + bessCost;
@@ -267,9 +277,8 @@ export function comparePowerSources(facts: HubPowerFacts, parameters = EMOBILITY
 
     const days = {} as Record<SunCase, OptionDay>;
     for (const sun of ["average", "rainy_season"] as const) {
-      const made = pvKwp === null ? 0 : pvKwp * sunHours[sun] * pr;
-      const direct = Math.min(daytime, made);
-      const solarKwh = direct + Math.min(throughBess, Math.max(0, made - direct) * eta);
+      const made = pvKwp === null ? 0 : solarMakesKwh(pvKwp, sunHours[sun], pr);
+      const solarKwh = solarServesKwh(made, daytime, throughBess, eta);
       days[sun] = day(sun, solarKwh, usesGrid, solarOption, installedCost !== null);
     }
     const saving = dieselOnlyCost - days.average.fuelAndTariffPerDay;
