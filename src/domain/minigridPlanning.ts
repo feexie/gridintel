@@ -94,4 +94,8 @@ export interface PlannedCommunity {
   latitude: number;
   longitude: number;
   customers: Record<PlanningClass, number>;
+  /** NASA POWER climatology at the planned site: the annual mean and the lowest month, with the citation's id. */
+  solar: { averagePeakSunHours: number; rainySeasonPeakSunHours: number; rainySeasonMonth: string; citationId: string };
+  /** `DataSource.id` of the record. */
+  sourceId: string;
 }

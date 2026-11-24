@@ -31,7 +31,7 @@ const TEST_BASIS: ReferenceBasis = {
   tariffs: [165, 350, 500],
 };
 
-const COMMUNITY: PlannedCommunity = { id: "test-community", name: "Test community", latitude: 5.45, longitude: 6.3, customers: { residential: 232, non_residential: 18 } };
+const COMMUNITY: PlannedCommunity = { id: "test-community", name: "Test community", latitude: 5.45, longitude: 6.3, customers: { residential: 232, non_residential: 18 }, solar: { averagePeakSunHours: 5, rainySeasonPeakSunHours: 4, rainySeasonMonth: "fixture", citationId: "fixture" }, sourceId: "test" };
 const SUN = { average: 5.0, rainySeason: 4.0 };
 const two = (values: readonly (number | null)[]) => values.map((value) => (value === null ? null : Number(value.toFixed(2))));
 const pct = (values: readonly (number | null)[]) => values.map((value) => (value === null ? null : Number((value * 100).toFixed(1))));
@@ -129,7 +129,7 @@ describe("mini-grid planning on the test community (MG-PLAN.md 3.6)", () => {
     assert.equal(result.agreement, "disagree");
     assert.equal(result.range?.low.toFixed(1), "-2.0");
     assert.equal(result.range?.high.toFixed(1), "0.4");
-    assert.match(result.note ?? "", new RegExp(EVENTS_DISAGREE));
+    assert.match(result.note ?? "", new RegExp(EVENTS_DISAGREE, "i"));
     assert.equal(Object.hasOwn(result, "elasticity"), false, "no single combined e");
     assert.deepEqual(
       result.scenarios.filter((one) => one.kind === "reference_change").map((one) => one.elasticity.toFixed(1)),

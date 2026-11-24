@@ -1,5 +1,6 @@
 import type {
   DataSource,
+  ReferenceCapexLine,
   ReferenceCaveat,
   ReferenceClaim,
   ReferenceCustomer,
@@ -37,6 +38,8 @@ export interface ReferenceSiteRecords {
   reportedIndices: readonly ReferenceReportedIndices[];
   tariffEvents: readonly ReferenceTariffEvent[];
   caveats: readonly ReferenceCaveat[];
+  /** The build cost lines as published (CAPEX). */
+  capex: readonly ReferenceCapexLine[];
   claims: readonly ReferenceClaim[];
 }
 

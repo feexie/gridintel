@@ -119,7 +119,7 @@ export function tariffResponse(input: { baseKwh: number; baseTariff: number; tar
     scenarios,
     agreement,
     range: fitted.length < 2 ? null : { low: Math.min(...fitted), high: Math.max(...fitted) },
-    note: agreement === "disagree" ? `${EVENTS_DISAGREE}: their elasticities run from ${Math.min(...fitted).toFixed(2)} to ${Math.max(...fitted).toFixed(2)}, and no single figure is given` : null,
+    note: agreement === "disagree" ? `The ${EVENTS_DISAGREE.replace(/^the /, "")}: their elasticities run from ${Math.min(...fitted).toFixed(2)} to ${Math.max(...fitted).toFixed(2)}, and no single figure is given` : null,
     referenceSites: sites.size,
     method: { id: MINIGRID_TARIFF_RESPONSE_REFERENCE.id, version: MINIGRID_TARIFF_RESPONSE_REFERENCE.version },
   };

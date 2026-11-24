@@ -17,6 +17,8 @@ import type { ReferenceBarNotice, ReferenceSitesView, ReferenceSiteView } from "
 ========================================================== */
 
 const repo = rmg01Reference();
+/** The reference sites, for the planners that take benchmarks from them (MG-PLAN-A). */
+export const referenceRepository = repo;
 let sites: Promise<ReferenceSitesView> | null = null;
 let notices: Promise<Record<string, ReferenceBarNotice>> | null = null;
 const site = new Map<string, Promise<ReferenceSiteView | null>>();

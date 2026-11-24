@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
   DataSource,
+  ReferenceCapexLine,
   ReferenceCaveat,
   ReferenceClaim,
   ReferenceCustomer,
@@ -66,7 +67,8 @@ type Table =
   | "Reliability_Outages"
   | "Reliability_Indices"
   | "Tariffs_and_Events"
-  | "Caveats";
+  | "Caveats"
+  | "CAPEX";
 
 const requiredNumber = (value: string | undefined, what: string): number => {
   const number = numberOrNull(value);
@@ -186,6 +188,16 @@ function tariffEvent(row: CsvRow): ReferenceTariffEvent {
   };
 }
 
+const capexLine = (row: CsvRow): ReferenceCapexLine => ({
+  siteId: SITE_ID,
+  record: row.record,
+  category: row.category,
+  itemsIncluded: textOrNull(row.items_included),
+  costNgn: numberOrNull(row.cost_NGN),
+  priceYear: numberOrNull(row.price_year),
+  notes: textOrNull(row.notes),
+});
+
 const caveat = (row: CsvRow): ReferenceCaveat => ({ siteId: SITE_ID, id: row.id, topic: row.topic, description: row.description });
 
 /**
@@ -259,7 +271,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
   let loaded: Promise<ReferenceSiteRecords> | null = null;
 
   const load = async (): Promise<ReferenceSiteRecords> => {
-    const [description, days, meterDays, customers, payments, outages, reported, tariffs, caveats] = await Promise.all([
+    const [description, days, meterDays, customers, payments, outages, reported, tariffs, caveats, capex] = await Promise.all([
       read("Site_Description"),
       read("Site_Daily"),
       read("Meter_Daily"),
@@ -269,6 +281,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
       read("Reliability_Indices"),
       read("Tariffs_and_Events"),
       read("Caveats"),
+      read("CAPEX"),
     ]);
     return {
       site: site(description),
@@ -281,6 +294,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
       reportedIndices: reported.map(indices),
       tariffEvents: tariffs.map(tariffEvent),
       caveats: caveats.map(caveat),
+      capex: capex.map(capexLine),
       claims: claims(description),
     };
   };

@@ -21,6 +21,8 @@ describe("the RMG01 reference adapter (the vendored dataset)", async () => {
   it("holds one site, real and published, with its licence and credit", async () => {
     assert.deepEqual((await repo.sites()).map((site) => site.code), ["RMG01"]);
     assert.deepEqual((await repo.catalogue()).map((entry) => [entry.siteId, entry.source.id]), [["rmg01", RMG01_SOURCE.id]]);
+    assert.equal(records.capex.find((line) => line.record === "actual_cost" && line.category === "Total")?.costNgn, 35_071_810.5);
+    assert.equal(records.capex.length, 17);
     assert.deepEqual((await repo.catalogue())[0].covers, { start: records.days[0].date, end: records.days.at(-1)?.date });
     assert.equal(RMG01_SOURCE.kind, "published_dataset");
     assert.equal(RMG01_SOURCE.licence, "CC BY 4.0");
