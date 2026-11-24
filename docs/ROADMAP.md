@@ -3,10 +3,15 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-11-10. **Phase NAV-A is accepted** (Founder, 2026-11-10,
-with fixes; tag `phase-nav-a`; ADR 0021 accepted): the public front door
-and the demo workspaces as a prototype under `/preview`. It merges to
-`main` once CI's full `verify` passes. Earlier status: **Phase 10 (Mini-grid Intelligence) is
+Last updated: 2026-11-24. **Phase NAV-A is merged to `main`**
+(2026-11-24; accepted by the Founder 2026-11-10 with fixes; tag
+`phase-nav-a`; ADR 0021 accepted): the public front door and the demo
+workspaces as a prototype under `/preview`. **Phase EMOB-A is merged to
+`main`** (2026-11-24; approved by the Founder 2026-11-17; tag
+`phase-emob-a`): the E-mobility engine, no screen. Both merged once CI's
+full `verify` passed, after a GitHub billing lock (16 to 24 November) had
+stopped CI. **Phase 8A stays at its checkpoint** until the Founder has
+signed in on the real Supabase project, before NAV-B. Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2262,7 +2267,7 @@ The menu grew by sector. The restructure gives it a public front door
 with a slimmed rail (Home, Intelligence, Plan, Finance, Oversight;
 Reports, Help and the account at its foot). ADR 0021 (accepted 2026-11-10).
 
-### Phase NAV-A: the front door and the demo workspaces, as a prototype (accepted 2026-11-10 with fixes; tag `phase-nav-a`; merged once CI's full `verify` passes)
+### Phase NAV-A: the front door and the demo workspaces, as a prototype (accepted 2026-11-10 with fixes; tag `phase-nav-a`; merged to `main` 2026-11-24)
 
 | Built | Where |
 | --- | --- |
@@ -2290,18 +2295,44 @@ inside a workspace names it once. The domain stays in Intelligence's
 addresses; NAV-B removes the three Phase 1 "Coming Soon" pages and moves
 One meter's journey and the Metering Plan report as the address table
 says. The initiative's own page with "Take part" (3c.1) and "Hosted by"
-(3c.2) are planned for NAV-B (`docs/design/NAV-B-PLAN.md`). The merge to
-`main` waits for CI's full `verify`, stopped by a GitHub billing lock.
+(3c.2) are planned for NAV-B (`docs/design/NAV-B-PLAN.md`). Merged to
+`main` on 2026-11-24, once CI's full `verify` passed (it had been stopped
+by a GitHub billing lock).
 
 **Not in NAV-A.** Moving screens, keys and redirects (NAV-B, after Phase
 8A merges); the meter application and tracking working (MTR-A: in-app
 rate limiting, captcha and SMS as stubs); the Applications queue (MTR-B);
 action permissions (the database brief).
 
-### Phase NAV-B, MTR-A, MTR-B, EMOB-A, EMOB-B (planned)
+### Phase NAV-B, MTR-A, MTR-B, EMOB-B (planned)
 
 As in the Founder's briefs of 5 and 8 November 2026 (kept outside the
 repository) and ADR 0021.
+
+## Phase EMOB: the E-mobility planner (EMOB-A approved 2026-11-17, merged 2026-11-24; tag `phase-emob-a`)
+
+**Goal.** Plan battery-swap and charging hubs for electric two- and three-wheelers: demand,
+sites and DT headroom, power source, finance from a per-swap add-on, and verification
+(Founder's brief, November 2026; plan in `docs/design/EMOB-A-PLAN.md`).
+
+### EMOB-A: the engine (approved 2026-11-17; merged to `main` 2026-11-24, tag `phase-emob-a`)
+
+- Domain `src/domain/emobility.ts`; six methods in `src/analytics/planning/emobility/`
+  (`gridintel.planning.emobility-*` 0.1.0: demand, headroom, power source, swap finance, site
+  order, verify), pure, with fixed-input tests; the Marketplace's loan arithmetic moved to
+  `src/analytics/planning/loan.ts` with its results unchanged.
+- A synthetic dataset on the Savanna network (six hubs, two operators, four pledges, a month of
+  swaps), services for the five questions with every figure's status, and a composition root.
+  No screen.
+- Acceptance tests: a hub that fits a DT now but not at 24 months; a feeder with too few supply
+  hours for grid-only charging; diesel against solar + BESS once costs are supplied; a pledge
+  that cannot place its money (queued). Metering's 101 figures unchanged.
+- Technical design: `docs/emobility/DESIGN.md`.
+
+### EMOB-B: the screens (after NAV-B)
+
+DER → Plan → E-mobility, tabs Demand · Sites and headroom · Power source · Finance · Verify;
+an "E-mobility hubs" initiative card; presentation mode; key figures added to `geh:figures`.
 
 ## Phase 11: AI / MCP intelligence
 
