@@ -216,6 +216,24 @@ function claims(description: CsvRow[]): ReferenceClaim[] {
       to: "2025-01-25",
       locator: "Caveats C05, C17",
     },
+    // Caveats C05: "By year the meters reach 69% (2022), 85% (2023) and 90% (2024) of the chart."
+    ...([
+      ["2022", 0.69],
+      ["2023", 0.85],
+      ["2024", 0.9],
+    ] as const).map(
+      ([year, value]): ReferenceClaim => ({
+        siteId: SITE_ID,
+        key: "meters_reached_share",
+        label: `Share of the site total the meters reach in ${year}`,
+        value,
+        unit: "fraction",
+        decimals: 2,
+        from: `${year}-01-01`,
+        to: `${year}-12-31`,
+        locator: "Caveats C05",
+      }),
+    ),
   ];
   for (const row of description) {
     const match = /^Customers with at least one PAY payment in (\d{4})$/.exec(row.item);

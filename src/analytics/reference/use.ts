@@ -38,7 +38,7 @@ export interface UseYear {
   zeroMeterDayShare: number | null;
 }
 
-export function useByYear(days: readonly ReferenceSiteDay[], meterDays: readonly ReferenceMeterDay[]): UseYear[] {
+export function meteredUseByYear(days: readonly ReferenceSiteDay[], meterDays: readonly ReferenceMeterDay[]): UseYear[] {
   const years = new Map<number, { daysInData: number; withData: number; kwh: number; meters: number; meterDays: number; zero: number }>();
   const year = (date: string) => Number(date.slice(0, 4));
   const at = (key: number) => {

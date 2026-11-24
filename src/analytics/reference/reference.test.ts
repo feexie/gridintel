@@ -5,7 +5,7 @@ import { accountsCreatedTo, creditBuyers, repeatBuyers } from "./buyers.ts";
 import { claimStanding } from "./claims.ts";
 import { meterGap, meterGapByYear } from "./meterGap.ts";
 import { indicesByMonth } from "./reliability.ts";
-import { useByYear } from "./use.ts";
+import { meteredUseByYear } from "./use.ts";
 
 const day = (date: string, communityKwh: number | null, sumOfMetersKwh: number | null, metersReporting: number | null = 10): ReferenceSiteDay => ({
   siteId: "s",
@@ -85,7 +85,7 @@ describe("metered use by year", () => {
   it("averages over the days with data and counts zero meter-days", () => {
     const days = [day("2021-01-01", null, 4, 8), day("2021-01-02", null, 6, 12), day("2021-01-03", null, null)];
     const meterDay = (kwh: number): ReferenceMeterDay => ({ siteId: "s", date: "2021-01-01", meterCode: "m", kwh, customerClass: "residential" });
-    const [year] = useByYear(days, [meterDay(0), meterDay(0.5), meterDay(0), meterDay(1)]);
+    const [year] = meteredUseByYear(days, [meterDay(0), meterDay(0.5), meterDay(0), meterDay(1)]);
     assert.equal(year.daysInData, 3);
     assert.equal(year.daysWithMeterData, 2);
     assert.equal(year.kwhPerDay, 5);
@@ -119,6 +119,7 @@ describe("reliability from a fault log", () => {
     assert.equal(Number(december.saidiHours?.toFixed(3)), 8.151);
     assert.equal(Number(december.saifi?.toFixed(3)), 2.703);
     assert.equal(december.durationDisagreements, 0);
+    assert.equal(Number(((december.asai ?? 0) * 100).toFixed(3)), 98.904);
   });
 
   it("names events whose recorded duration and times disagree, and gives months with no event no figure", () => {

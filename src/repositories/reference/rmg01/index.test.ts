@@ -71,6 +71,8 @@ describe("the RMG01 reference adapter (the vendored dataset)", async () => {
   it("transcribes the publisher's own figures as claims", () => {
     const gaps = records.claims.filter((claim) => claim.key === "meter_gap_share").map((claim) => claim.value);
     assert.deepEqual(gaps, [0.179, 0.086]);
+    const reached = records.claims.filter((claim) => claim.key === "meters_reached_share").map((claim) => claim.value);
+    assert.deepEqual(reached, [0.69, 0.85, 0.9]);
     const buying = records.claims.filter((claim) => claim.key === "customers_buying_credit").map((claim) => [claim.from.slice(0, 4), claim.value]);
     assert.deepEqual(buying, [
       ["2020", 116],

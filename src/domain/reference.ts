@@ -155,7 +155,7 @@ export interface ReferenceCaveat {
  */
 export interface ReferenceClaim {
   siteId: string;
-  key: "meter_gap_share" | "customers_buying_credit";
+  key: "meter_gap_share" | "meters_reached_share" | "customers_buying_credit";
   /** What the figure counts, in the publisher's terms. */
   label: string;
   value: number;

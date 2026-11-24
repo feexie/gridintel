@@ -8,6 +8,7 @@ import { DISCO_NAMES } from "../services/planning/metering.ts";
 import { publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, workspaceHome, workspaceInitiative, type WorkspaceRecord } from "../services/initiatives/frontDoor.ts";
 import { TENANT_ORGANIZATIONS } from "./identityFixture.ts";
 import { minigrid } from "./minigrid.ts";
+import { reference } from "./reference.ts";
 import { deploymentMode } from "./mode.ts";
 import { tenantSignInHref } from "./signIn.ts";
 import { DEMO_ORGANIZATION_ID } from "../repositories/demo/sources.ts";
@@ -50,7 +51,7 @@ const marketplace = createSyntheticMarketplace();
 
 let figures: ReturnType<typeof initiativeFigures> | null = null;
 /** The cards' figures, once per process: published figures and designed records that do not change while it runs. */
-const cardFigures = () => (figures ??= initiativeFigures({ published, marketplace, minigrid: minigrid.portfolioView }));
+const cardFigures = () => (figures ??= initiativeFigures({ published, marketplace, minigrid: minigrid.portfolioView, reference: reference.sitesView }));
 
 export { tenantSignInHref };
 
@@ -68,7 +69,7 @@ export const frontDoor = {
   cards: async () => publicCards(await cardFigures()),
   rolePicker: (initiativeId: string) => rolePicker(initiativeId),
   rolePage: (initiativeId: string, roleId: string) => rolePage(initiativeId, roleId, DEMO_WORKSPACES, tenantSignInHref()),
-  minigridSummary: async () => minigridSummary(await minigrid.portfolioView()),
+  minigridSummary: async () => minigridSummary(await minigrid.portfolioView(), await reference.sitesView()),
   /** The DisCos a customer may choose on the meter application. */
   discoOptions: () => Object.entries(DISCO_NAMES).map(([id, name]) => ({ id, name })),
   workspaceIds: () => DEMO_WORKSPACES.map((one) => one.id),

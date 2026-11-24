@@ -11,6 +11,7 @@ import { REFERENCE_DISCLAIMER } from "../core/methodology.ts";
      SAIDI = Σ customer-hours ÷ customers served
      SAIFI = Σ customers interrupted ÷ customers served
      CAIDI = SAIDI ÷ SAIFI
+     ASAI  = 1 − SAIDI ÷ hours in the month
 
    Customers served: the largest count logged against an event in the
    month (the log gives one per event, and the site grew and shrank).
@@ -42,8 +43,16 @@ export interface MonthIndices {
   saidiHours: number | null;
   saifi: number | null;
   caidiHours: number | null;
+  /** 1 − SAIDI ÷ the hours in the month. */
+  asai: number | null;
   /** Events whose recorded duration differs from their start and end times. */
   durationDisagreements: number;
+}
+
+/** Hours in a calendar month "YYYY-MM". */
+function hoursInMonth(month: string): number {
+  const [year, number] = month.split("-").map(Number);
+  return new Date(Date.UTC(year, number, 0)).getUTCDate() * 24;
 }
 
 export function indicesByMonth(outages: readonly ReferenceOutage[]): MonthIndices[] {
@@ -67,6 +76,7 @@ export function indicesByMonth(outages: readonly ReferenceOutage[]): MonthIndice
         saidiHours,
         saifi,
         caidiHours: saidiHours !== null && saifi !== null && saifi > 0 ? saidiHours / saifi : null,
+        asai: saidiHours === null ? null : 1 - saidiHours / hoursInMonth(month),
         durationDisagreements: events.filter(
           (event) => event.durationHoursRecorded !== null && event.durationHoursFromTimes !== null && Math.abs(event.durationHoursRecorded - event.durationHoursFromTimes) > 1e-9,
         ).length,
