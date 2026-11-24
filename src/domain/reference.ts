@@ -141,6 +141,33 @@ export interface ReferenceTariffEvent {
   notes: string | null;
 }
 
+/** One line of the site's build cost, as published: the actual cost by category, or the design-only estimate. */
+export interface ReferenceCapexLine {
+  siteId: string;
+  /** The publisher's record kind, e.g. "actual_cost", "actual_cost_derived", "pre_construction_estimate". */
+  record: string;
+  category: string;
+  itemsIncluded: string | null;
+  costNgn: number | null;
+  /** The rate the source converts at, ₦ a US dollar. */
+  ngnPerUsd: number | null;
+  priceYear: number | null;
+  notes: string | null;
+}
+
+/** One operating-cost line, as published (OPEX); blanks stay null. */
+export interface ReferenceOpexLine {
+  siteId: string;
+  period: string | null;
+  item: string;
+  category: string;
+  amount: number | null;
+  unit: string | null;
+  /** "Site", "Company accounts line", … as the publisher words it. */
+  scope: string | null;
+  notes: string | null;
+}
+
 /** A known gap or limitation, in the publisher's words. */
 export interface ReferenceCaveat {
   siteId: string;

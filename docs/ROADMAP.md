@@ -15,8 +15,9 @@ signed in on the real Supabase project, before NAV-B. **Phase MG-REAL is
 approved and merged to `main`** (Founder, 2026-11-24, with one fix: the data
 bar above a reference page says it is published real data; ADR 0022
 accepted; tag `phase-mg-real`): a real, published mini-grid (site RMG01) as
-a reference site beside the portfolio. **MG-PLAN-A is in progress** (branch
-`phase-mg-plan-a`). Earlier status: **Phase 10 (Mini-grid Intelligence) is
+a reference site beside the portfolio. **MG-PLAN-A is at its checkpoint**
+(2026-11-24; branch `phase-mg-plan-a`): the mini-grid planning engine, no
+screen. Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2339,7 +2340,7 @@ sites and DT headroom, power source, finance from a per-swap add-on, and verific
 DER → Plan → E-mobility, tabs Demand · Sites and headroom · Power source · Finance · Verify;
 an "E-mobility hubs" initiative card; presentation mode; key figures added to `geh:figures`.
 
-## Phase MG: real reference sites and mini-grid planning (plan approved 2026-11-24 with one change; MG-REAL merged, tag `phase-mg-real`)
+## Phase MG: real reference sites and mini-grid planning (plan approved 2026-11-24 with one change; MG-REAL merged, tag `phase-mg-real`; MG-PLAN-A at its checkpoint)
 
 **Goal.** Bring a real, published mini-grid into GridIntel as a reference
 site, then plan new mini-grids from reference sites (plan
@@ -2361,14 +2362,24 @@ Founder's Supabase sign-in (Founder, 24 November 2026).
 Technical design: `docs/minigrid/DESIGN.md`. `npm run geh:figures`: all 101
 unchanged.
 
-### MG-PLAN-A: the planning engine (in progress; branch `phase-mg-plan-a`)
+### MG-PLAN-A: the planning engine (at its checkpoint 2026-11-24; branch `phase-mg-plan-a`)
 
-`demandFromReference` (P50 and a diversified P90 from the reference site's
-daily totals, with a labelled no-diversity upper bound), `sizeSystem`,
-`tariffResponse` (scenarios; a range where the events disagree),
-`subsidyGap`, `pueGap`, each at 0.1.0 with fixed-input tests. Screens after
-NAV-B, under Mini-grid workspace → Plan → Unserved and Productive use. The
-Zenodo 22149102 dataset is later, as its own decision gate.
+| Built | Where |
+| --- | --- |
+| A reference site as a planning basis (P50 and P90 of kWh per reporting meter-day by year of operation, class factors, ramp, buying share, tariff changes, the 2019 build cost) | `src/analytics/planning/minigrid/reference.ts` |
+| `demandFromReference` (P50, diversified P90, labelled no-diversity upper bound, separate uplift line), `sizeSystem`, `tariffResponse` (scenarios; the range where the changes disagree), `subsidyGap` (with a scaled 2019 reference cost), `pueGap`, each at 0.1.0 | `src/analytics/planning/minigrid/` |
+| Benchmarks across a list of reference sites, each with its count | `benchmark.ts` |
+| Solar and storage sizing shared with EMOB-A, its results pinned unchanged | `src/analytics/planning/solar.ts`, `src/services/planning/emobility.pinned.test.ts` |
+| The inputs table, the plan for a synthetic community on RMG01, the composition root; no screen | `src/services/planning/minigrid*.ts`, `src/composition/minigridPlanning.ts` |
+
+Fixed at review (Founder, 24 November 2026): demand from RMG01's years at a
+single tariff (₦165) held flat, its own confounded curve kept as an "as
+happened" scenario; a positive elasticity (₦165 to ₦350, +0.53) shown and
+used in no scenario; opex a day and today's ₦ a dollar as planner inputs with
+their sources. The test community's expected figures, re-derived, all agree
+(MG-PLAN.md 3.6). Screens after NAV-B, under Mini-grid
+workspace → Plan → Unserved and Productive use. The Zenodo 22149102 dataset
+is later, as its own decision gate.
 
 ## Phase 11: AI / MCP intelligence
 

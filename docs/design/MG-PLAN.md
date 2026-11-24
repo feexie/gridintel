@@ -188,6 +188,15 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
 
 **1. `demandFromReference`**: the daily kWh of a planned community, years 1 to 5, P50 and P90.
 
+- **Demand basis (Founder, 24 November 2026, at the MG-PLAN-A review).** RMG01's per-meter
+  decline over years 1 to 5 (0.231 to 0.122 kWh) is confounded by the tariff rising from ₦165
+  to about ₦500, the April to July 2023 interruption and lighter later meters, so it is not
+  the default curve for a new site. The default is the per-meter P50 and P90 (and the class
+  factors) from the reference site's years at a single tariff (RMG01: years 1 and 2 at ₦165,
+  pooled), held flat across years 1 to 5, with the connection ramp and buying share applied.
+  The planned tariff acts only through `tariffResponse`, relative to that tariff. RMG01's own
+  curve is kept as a scenario labelled "As happened at RMG01 (tariff rises and an outage;
+  confounded)", never the default.
 - **P50 and P90 from the site's daily totals (Founder, 24 November 2026).** For each day,
   the sum of meters (Site_Daily) ÷ meters reporting gives the site's kWh per reporting
   meter-day, so the day's diversity between customers is in it. The P50 and the P90 are
@@ -258,7 +267,13 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
   fixed-budget fit is therefore not clean: the rebound after the interruption, the rising
   share of meters reporting, the shrinking meter gap and the unexplained fall in 2024 (C15)
   all overlap the tariff changes.
-- **Scenarios (Founder, 24 November 2026):** the method returns e = −1 (fixed budget), e
+- **Positive elasticities (Founder, 24 November 2026, at the MG-PLAN-A review).** An event
+  whose elasticity is positive (RMG01's ₦165 to ₦350, e = +0.53) is shown with its
+  confounders but left out of the scenarios and the range, labelled "not usable as a price
+  response". The scenarios are the fixed budget (e = −1) as the middle case, the ₦350 to
+  ₦500 event (e = −2.10) and the user's e. No scenario has a positive elasticity. This
+  replaces the "range where the events disagree" below.
+- **Scenarios (Founder, 24 November 2026, superseded in part above):** the method returns e = −1 (fixed budget), e
   fitted to each event separately, and the user's own e, side by side. Each fitted e carries
   its window, its number of days and its confounders. Where the events give elasticities
   of opposite sign, the method returns **the range** (the events' elasticities, low to high)
@@ -267,6 +282,12 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
 
 **4. `subsidyGap`**: capex minus net revenue over a stated period, per connection. Display only.
 
+- Capex bases (Founder, 24 November 2026): storage on 136 kWh and distribution and metering
+  on the 220 meters bought; the 245 accounts are shown beside the per-connection rate. The
+  factor to today is computed: 2019 ₦ to US dollars at the source's ₦350/$, then to ₦ at a
+  current rate the user enters and cites. Opex a day is a user input with its source; RMG01's
+  2022 to 2024 company-account lines are offered as a "reported floor, excluding labour and
+  platform fees", never as full opex. The demonstration's gap stays "not calculated".
 - Capex: the user's figure, or RMG01's actual cost scaled. Scaling: storage per kWh,
   generation per kWp and distribution and metering per connection, at RMG01's actual 2019
   cost of ₦35,071,810.50, with an **assumption** to bring it to today (a factor or a USD
@@ -299,7 +320,8 @@ values as parameters.
 
 | Input | Default | Status | Source or basis |
 | --- | --- | --- | --- |
-| Site kWh per reporting meter-day, by year of operation, P50 and P90 | From each reference | Calculated on reported data | Site_Daily (sum of meters ÷ meters reporting), with the exclusions listed |
+| Site kWh per reporting meter-day at a single tariff, P50 and P90, held flat | From each reference | Calculated on reported data | Site_Daily, the years wholly at the first tariff pooled (RMG01: years 1 and 2 at ₦165); the default |
+| Site kWh per reporting meter-day by year of operation, P50 and P90 | From each reference | Calculated on reported data | The "as happened" scenario only (confounded) |
 | Class factors (share of energy ÷ share of meter-days), by year | From each reference | Calculated on reported data | Meter_Daily |
 | Class P90 meter-day, for the no-diversity upper bound only | From each reference | Calculated on reported data | Meter_Daily |
 | Connection ramp, years 1 to 5 | From each reference | Calculated on reported data | Customers, year created |
@@ -315,8 +337,8 @@ values as parameters.
 | Tariff options | ₦165, ₦350, ₦500 /kWh and the user's own | Reported (RMG01's) and input | Tariffs |
 | Tariff elasticity | −1, fitted per event, user's | Assumption and calculated | 3.2 (3) |
 | Reference capex | ₦35,071,810.50 (2019) by category | Reported | CAPEX (C21) |
-| Capex scaling to today | User | Assumption | |
-| Opex a day | User | Assumption | C22: no reliable reference |
+| Capex factor to today | Today's ₦/$, entered and cited | Input | 2019 ₦ ÷ ₦350/$ (the source's rate) × today's rate |
+| Opex a day | User, with its source | Input | C22; RMG01's 2022 to 2024 company-account lines offered as a reported floor, excluding labour and platform fees |
 | Period, return | 10 years, 0% | Assumption | |
 | Target utilisation | 70% | Assumption | |
 | Productive equipment kW and hours | Examples | Assumption | Illustration only |
@@ -352,12 +374,14 @@ values as parameters.
 number held in the test, so the tests do not depend on the vendored file. The ramp and
 buying shares are rounded and close to RMG01's. The kWh figures and class shares are round
 numbers, **not** RMG01's. They were set before the expected figures were worked out
-(re-derived 24 November 2026 for the diversified P90).
+(re-derived 24 November 2026 for the diversified P90, then again for the single-tariff
+basis).
 
 | Input | Value |
 | --- | --- |
-| Site kWh per reporting meter-day, P50, years 1 to 5 | 0.18, 0.21, 0.21, 0.19, 0.17 |
-| Site kWh per reporting meter-day, P90, years 1 to 5 | 0.24, 0.27, 0.27, 0.25, 0.23 |
+| Site kWh per reporting meter-day at the single tariff (₦165), P50 and P90, held flat | 0.195 and 0.255 (the mean of the fixture's own years 1 and 2) |
+| Site kWh per reporting meter-day by year, P50, years 1 to 5 ("as happened" only) | 0.18, 0.21, 0.21, 0.19, 0.17 |
+| Same, P90 ("as happened" only) | 0.24, 0.27, 0.27, 0.25, 0.23 |
 | Class shares of meter-days and of energy | Residential 92% and 80%; non-residential 8% and 20% (factors 0.8696 and 2.5) |
 | Class P90 meter-day, for the no-diversity upper bound only | Residential 0.30, non-residential 1.20 |
 | Connection ramp, years 1 to 5 | 0.85, 0.95, 0.97, 0.99, 1.00 |
@@ -368,33 +392,36 @@ numbers, **not** RMG01's. They were set before the expected figures were worked 
 
 The community counts as 246.74 meter-equivalents (232 × 0.8696 + 18 × 2.5).
 
-Expected figures (hand-checked):
+Expected figures on the default (single-tariff) basis, worked out by a separate script
+before the method was run:
 
 | Figure | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 | --- | --- | --- | --- | --- | --- |
-| Demand P50, kWh/day | 22.84 | 32.49 | 31.51 | 26.55 | 23.53 |
-| Demand P90 (diversified), kWh/day | 30.45 | 41.77 | 40.52 | 34.93 | 31.84 |
+| Demand P50, kWh/day | 24.74 | 30.17 | 29.26 | 27.25 | 26.99 |
+| Demand P90 (diversified), kWh/day | 32.36 | 39.45 | 38.27 | 35.63 | 35.30 |
 | No-diversity upper bound, kWh/day | 46.90 | 57.18 | 55.47 | 51.64 | 51.16 |
-| With uplift 1.5, P50 | 34.26 | 48.73 | 47.27 | 39.82 | 35.30 |
-| Utilisation P50 | 54.7% | 77.8% | 75.4% | 63.6% | 56.3% |
-| Utilisation P90 | 72.9% | 100.0% | 97.0% | 83.6% | 76.2% |
+| With uplift 1.5, P50 | 37.11 | 45.25 | 43.89 | 40.87 | 40.49 |
+| Utilisation P50 | 62.7% | 76.5% | 74.2% | 69.1% | 68.4% |
+| Utilisation P90 | 82.0% | 100.0% | 97.0% | 90.3% | 89.5% |
 
-- `sizeSystem` on the design day (year 2 diversified P90, 41.77 kWh): PV energy needed
-  46.19 kWh a day, **11.55 kWp**, battery **50.13 kWh**. The rainy season covers 80.0% of
-  the design day. The no-diversity bound would have needed 15.81 kWp and 68.62 kWh. Year-1
-  P50 utilisation of 54.7% is still below the 60% threshold, so the result is flagged
-  **oversized in year 1**. The cause is now the connection ramp and buying share of year 1,
-  not the sizing basis, and the flag says which year and why.
-- `pueGap` to 70% in year 1 at P50: **7.08 kWh a day** of daytime productive load.
-- `tariffResponse` from 25 kWh a day at ₦165: at e = −1, 11.79 kWh at ₦350 and 8.25 kWh at
-  ₦500, revenue ₦4,125 a day throughout; at e = −0.5, 17.17 kWh (₦6,007.8) and 14.36 kWh
-  (₦7,180.7); at e = 0, ₦8,750 and ₦12,500. Two events with e = +0.4 and e = −2.0 return
-  the range −2.0 to +0.4 with "the reference events disagree", and no single e.
+- `sizeSystem` on the design day (year 2 diversified P90, 39.45 kWh): PV energy needed
+  43.63 kWh a day, **10.91 kWp**, battery **47.34 kWh**. On a rainy-season day PV makes
+  80.0% of what the design day needs and serves 81.2% of it, 7.42 kWh short. Year-1 P50
+  utilisation is 62.7%, above the 60% threshold: **no longer flagged oversized**.
+- `pueGap` to 70% in year 1 at P50: **3.18 kWh a day**.
+- `tariffResponse` from 25 kWh a day at ₦165: at e = −1 (the middle case), 11.79 kWh at
+  ₦350 and 8.25 kWh at ₦500, revenue ₦4,125 a day throughout; at e = −0.5, 17.17 kWh
+  (₦6,007.8) and 14.36 kWh (₦7,180.7); at e = 0, ₦8,750 and ₦12,500. Of two events with
+  e = +0.4 and e = −2.0, the +0.4 is shown, labelled "not usable as a price response", and
+  left out: the scenarios are −1 and −2.0, the range −2.0 to −1.0. A positive user e is
+  left out the same way.
 - `subsidyGap` with capex ₦30,000,000, tariff ₦350, opex ₦3,000 a day, 10 years, no tariff
-  response, P50: kWh sold 20.76, 29.54, 28.65, 24.13, 21.39 a day; net revenue over 10
-  years ₦18,615,713; **gap ₦11,384,287, ₦45,537 a connection**. With opex ₦1,500 a day:
-  gap ₦5,909,287, ₦23,637 a connection. At year 5's net of ₦4,487.30 a day, capex repays in
-  219.9 months at 0% and **never** at 10% a year.
+  response, P50: kWh sold 22.49, 27.43, 26.60, 24.77, 24.54 a day; net revenue over 10
+  years ₦20,798,316; **gap ₦9,201,684, ₦36,807 a connection**. With opex ₦1,500 a day:
+  gap ₦3,726,684, ₦14,907 a connection. At year 5's net of ₦5,588.37 a day, capex repays
+  in 176.6 months at 0% and **never** at 10% a year.
+- The "as happened" scenario keeps the earlier figures (P50 22.84, 32.49, 31.51, 26.55,
+  23.53; P90 30.45, 41.77, 40.52, 34.93, 31.84).
 - A second reference site added to the fixture list changes the benchmarks and
   `referenceSites` to 2, with no code change.
 
@@ -435,6 +462,11 @@ reference-site layer (a new kind of source: real, published, third-party, kept a
 both the synthetic data and a tenant's own records).
 
 ## 6. The Founder's answers (24 November 2026)
+
+At the MG-PLAN-A review the same day: the single-tariff demand basis (3.2 (1)), positive
+elasticities left out of the scenarios (3.2 (3)), the capex bases and the two planner
+inputs for the subsidy gap (3.2 (4)).
+
 
 1. **Tariff response:** as proposed. Scenarios: fixed budget (e = −1), each event's own e
    with its confounders, and the user's e. Where the events disagree in sign, the range,

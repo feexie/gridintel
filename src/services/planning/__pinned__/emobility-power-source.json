@@ -1,0 +1,1203 @@
+[
+ [
+  {
+   "option": "grid_diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 96.4,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 20195.800000000003,
+     "costPerKwh": 209.50000000000003,
+     "costPerSwap": 504.8950000000001,
+     "costPerKwhLowDiesel": 209.50000000000003,
+     "costPerSwapLowDiesel": 504.8950000000001,
+     "hubKgCo2PerDay": 38.078,
+     "kgCo2AvoidedPerDay": 91.8595,
+     "kgCo2AvoidedPerSwap": 2.2964875,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 96.4,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 20195.800000000003,
+     "costPerKwh": 209.50000000000003,
+     "costPerSwap": 504.8950000000001,
+     "costPerKwhLowDiesel": 209.50000000000003,
+     "costPerSwapLowDiesel": 504.8950000000001,
+     "hubKgCo2PerDay": 38.078,
+     "kgCo2AvoidedPerDay": 91.8595,
+     "kgCo2AvoidedPerSwap": 2.2964875,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 96.4,
+     "dieselLitres": 32.13333333333333,
+     "fuelAndTariffPerDay": 105316.03600000001,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 2632.9009,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1405.8333333333335,
+     "hubKgCo2PerDay": 86.11733333333333,
+     "kgCo2AvoidedPerDay": 43.820166666666665,
+     "kgCo2AvoidedPerSwap": 1.0955041666666667,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 96.4,
+     "dieselLitres": 32.13333333333333,
+     "fuelAndTariffPerDay": 105316.03600000001,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 2632.9009,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1405.8333333333335,
+     "hubKgCo2PerDay": 86.11733333333333,
+     "kgCo2AvoidedPerDay": 43.820166666666665,
+     "kgCo2AvoidedPerSwap": 1.0955041666666667,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "solar_grid",
+   "pvKwp": 11.136783733826247,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 48.2,
+     "gridKwh": 48.2,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 10097.900000000001,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 19.039,
+     "kgCo2AvoidedPerDay": 110.8985,
+     "kgCo2AvoidedPerSwap": 2.7724625,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 36.70683918669131,
+     "gridKwh": 59.693160813308694,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 12505.717190388172,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 23.578798521256935,
+     "kgCo2AvoidedPerDay": 106.35870147874306,
+     "kgCo2AvoidedPerSwap": 2.6589675369685764,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "placeholder: no EPC quote"
+   ]
+  },
+  {
+   "option": "solar_bess",
+   "pvKwp": 23.510987882522077,
+   "bessKwh": 53.55555555555556,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 96.4,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 129.9375,
+     "kgCo2AvoidedPerSwap": 3.2484375,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 74.56299445471349,
+     "gridKwh": 0,
+     "dieselKwh": 21.837005545286516,
+     "dieselLitres": 7.279001848428838,
+     "fuelAndTariffPerDay": 23856.710188170066,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 19.50772495378929,
+     "kgCo2AvoidedPerDay": 110.42977504621071,
+     "kgCo2AvoidedPerSwap": 2.7607443761552677,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 24.854331484904495
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "placeholder: no EPC quote"
+   ]
+  },
+  {
+   "option": "hybrid",
+   "pvKwp": 23.510987882522077,
+   "bessKwh": 53.55555555555556,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 96.4,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 129.9375,
+     "kgCo2AvoidedPerSwap": 3.2484375,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 74.56299445471349,
+     "gridKwh": 21.837005545286516,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 4574.8526617375255,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 8.625617190388175,
+     "kgCo2AvoidedPerDay": 121.31188280961183,
+     "kgCo2AvoidedPerSwap": 3.0327970702402958,
+     "petrolKgCo2PerDay": 129.9375,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 32.13333333333333
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "placeholder: no EPC quote"
+   ]
+  }
+ ],
+ [
+  {
+   "option": "grid_diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 242.49999999999997,
+     "dieselKwh": 189.20000000000002,
+     "dieselLitres": 63.06666666666667,
+     "fuelAndTariffPerDay": 221814.133,
+     "costPerKwh": 513.8154574936299,
+     "costPerSwap": 1478.7608866666667,
+     "costPerKwhLowDiesel": 290.668732144236,
+     "costPerSwapLowDiesel": 836.5446111111112,
+     "hubKgCo2PerDay": 264.8061666666667,
+     "kgCo2AvoidedPerDay": 228.9563333333333,
+     "kgCo2AvoidedPerSwap": 1.5263755555555554,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 80.83333333333334
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 242.49999999999997,
+     "dieselKwh": 189.20000000000002,
+     "dieselLitres": 63.06666666666667,
+     "fuelAndTariffPerDay": 221814.133,
+     "costPerKwh": 513.8154574936299,
+     "costPerSwap": 1478.7608866666667,
+     "costPerKwhLowDiesel": 290.668732144236,
+     "costPerSwapLowDiesel": 836.5446111111112,
+     "hubKgCo2PerDay": 264.8061666666667,
+     "kgCo2AvoidedPerDay": 228.9563333333333,
+     "kgCo2AvoidedPerSwap": 1.5263755555555554,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 80.83333333333334
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 431.7,
+     "dieselLitres": 143.9,
+     "fuelAndTariffPerDay": 471627.933,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 3144.18622,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1678.8333333333333,
+     "hubKgCo2PerDay": 385.65200000000004,
+     "kgCo2AvoidedPerDay": 108.11049999999994,
+     "kgCo2AvoidedPerSwap": 0.7207366666666662,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 431.7,
+     "dieselLitres": 143.9,
+     "fuelAndTariffPerDay": 471627.933,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 3144.18622,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1678.8333333333333,
+     "hubKgCo2PerDay": 385.65200000000004,
+     "kgCo2AvoidedPerDay": 108.11049999999994,
+     "kgCo2AvoidedPerSwap": 0.7207366666666662,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "solar_grid",
+   "pvKwp": 45.96465076660987,
+   "bessKwh": null,
+   "installedCost": 29877022.998296417,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 215.84999999999997,
+     "gridKwh": 215.85000000000002,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 13453.9305,
+     "costPerKwh": 31.165000000000003,
+     "costPerSwap": 89.69287,
+     "costPerKwhLowDiesel": 31.165000000000003,
+     "costPerSwapLowDiesel": 89.69287,
+     "hubKgCo2PerDay": 85.26075000000002,
+     "kgCo2AvoidedPerDay": 408.50174999999996,
+     "kgCo2AvoidedPerSwap": 2.7233449999999997,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 143.9
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 171.35621805792164,
+     "gridKwh": 242.49999999999997,
+     "dieselKwh": 17.84378194207838,
+     "dieselLitres": 5.947927314026127,
+     "fuelAndTariffPerDay": 34609.1783339012,
+     "costPerKwh": 80.16951200811027,
+     "costPerSwap": 230.72785555934135,
+     "costPerKwhLowDiesel": 59.124155199318324,
+     "costPerSwapLowDiesel": 170.15931866363815,
+     "hubKgCo2PerDay": 111.72794520159002,
+     "kgCo2AvoidedPerDay": 382.03455479841,
+     "kgCo2AvoidedPerSwap": 2.5468970319894,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 137.9520726859739
+    }
+   },
+   "paybackMonths": 2.1450296258450137,
+   "reasons": []
+  },
+  {
+   "option": "solar_bess",
+   "pvKwp": 97.03648495173195,
+   "bessKwh": 239.83333333333331,
+   "installedCost": 163803715.21862575,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 431.69999999999993,
+     "gridKwh": 0,
+     "dieselKwh": 5.684341886080802e-14,
+     "dieselLitres": 1.8947806286936004e-14,
+     "fuelAndTariffPerDay": 6.210086667124415e-11,
+     "costPerKwh": 1.4385190333853172e-13,
+     "costPerSwap": 4.1400577780829434e-13,
+     "costPerKwhLowDiesel": 7.680949965748902e-14,
+     "costPerSwapLowDiesel": 2.2105774001425341e-13,
+     "hubKgCo2PerDay": 5.078012084898849e-14,
+     "kgCo2AvoidedPerDay": 493.76249999999993,
+     "kgCo2AvoidedPerSwap": 3.2917499999999995,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 143.89999999999998
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 347.16181431005106,
+     "gridKwh": 0,
+     "dieselKwh": 84.53818568994893,
+     "dieselLitres": 28.179395229982976,
+     "fuelAndTariffPerDay": 92357.1224844123,
+     "costPerKwh": 213.93820357751287,
+     "costPerSwap": 615.7141498960821,
+     "costPerKwhLowDiesel": 114.23197047132317,
+     "costPerSwapLowDiesel": 328.75961101646806,
+     "hubKgCo2PerDay": 75.52077921635438,
+     "kgCo2AvoidedPerDay": 418.24172078364563,
+     "kgCo2AvoidedPerSwap": 2.7882781385576374,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 115.72060477001703
+    }
+   },
+   "paybackMonths": 11.424853637487685,
+   "reasons": []
+  },
+  {
+   "option": "hybrid",
+   "pvKwp": 97.03648495173195,
+   "bessKwh": 239.83333333333331,
+   "installedCost": 163803715.21862575,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 431.69999999999993,
+     "gridKwh": 5.684341886080802e-14,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 3.5430502975941635e-12,
+     "costPerKwh": 8.207204766259355e-15,
+     "costPerSwap": 2.3620335317294422e-14,
+     "costPerKwhLowDiesel": 8.207204766259355e-15,
+     "costPerSwapLowDiesel": 2.3620335317294422e-14,
+     "hubKgCo2PerDay": 2.2453150450019167e-14,
+     "kgCo2AvoidedPerDay": 493.7625,
+     "kgCo2AvoidedPerSwap": 3.29175,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 143.9
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 347.16181431005106,
+     "gridKwh": 84.53818568994893,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 5269.265114054517,
+     "costPerKwh": 12.205849233390126,
+     "costPerSwap": 35.128434093696775,
+     "costPerKwhLowDiesel": 12.205849233390126,
+     "costPerSwapLowDiesel": 35.128434093696775,
+     "hubKgCo2PerDay": 33.39258334752983,
+     "kgCo2AvoidedPerDay": 460.3699166524702,
+     "kgCo2AvoidedPerSwap": 3.0691327776831345,
+     "petrolKgCo2PerDay": 493.7625,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 143.9
+    }
+   },
+   "paybackMonths": 11.424853637487683,
+   "reasons": []
+  }
+ ],
+ [
+  {
+   "option": "grid_diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": null,
+   "paybackMonths": null,
+   "reasons": [
+    "no published tariff for the feeder's band"
+   ]
+  },
+  {
+   "option": "diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 212.9,
+     "dieselLitres": 70.96666666666667,
+     "fuelAndTariffPerDay": 232591.121,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 4228.929472727273,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 2258.030303030303,
+     "hubKgCo2PerDay": 190.1906666666667,
+     "kgCo2AvoidedPerDay": 0.38433333333333053,
+     "kgCo2AvoidedPerSwap": 0.0069878787878787365,
+     "petrolKgCo2PerDay": 190.57500000000002,
+     "co2Finding": "no_material_saving",
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 212.9,
+     "dieselLitres": 70.96666666666667,
+     "fuelAndTariffPerDay": 232591.121,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 4228.929472727273,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 2258.030303030303,
+     "hubKgCo2PerDay": 190.1906666666667,
+     "kgCo2AvoidedPerDay": 0.38433333333333053,
+     "kgCo2AvoidedPerSwap": 0.0069878787878787365,
+     "petrolKgCo2PerDay": 190.57500000000002,
+     "co2Finding": "no_material_saving",
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "solar_grid",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": null,
+   "paybackMonths": null,
+   "reasons": [
+    "no published tariff for the feeder's band"
+   ]
+  },
+  {
+   "option": "solar_bess",
+   "pvKwp": 56.97965967996394,
+   "bessKwh": 118.27777777777777,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 212.89999999999998,
+     "gridKwh": 0,
+     "dieselKwh": 2.842170943040401e-14,
+     "dieselLitres": 9.473903143468002e-15,
+     "fuelAndTariffPerDay": 3.1050433335622074e-11,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 2.5390060424494246e-14,
+     "kgCo2AvoidedPerDay": 190.575,
+     "kgCo2AvoidedPerSwap": 3.465,
+     "petrolKgCo2PerDay": 190.57500000000002,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 70.96666666666665
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 162.8490669371197,
+     "gridKwh": 0,
+     "dieselKwh": 50.05093306288032,
+     "dieselLitres": 16.68364435429344,
+     "fuelAndTariffPerDay": 54680.14386186612,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 44.71216686950642,
+     "kgCo2AvoidedPerDay": 145.86283313049358,
+     "kgCo2AvoidedPerSwap": 2.6520515114635197,
+     "petrolKgCo2PerDay": 190.57500000000002,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 54.283022312373234
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "placeholder: no EPC quote"
+   ]
+  },
+  {
+   "option": "hybrid",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": null,
+   "paybackMonths": null,
+   "reasons": [
+    "no published tariff for the feeder's band"
+   ]
+  }
+ ],
+ [
+  {
+   "option": "grid_diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 103.95,
+     "dieselKwh": 76.3,
+     "dieselLitres": 25.433333333333334,
+     "fuelAndTariffPerDay": 106745.737,
+     "costPerKwh": 592.2093592233009,
+     "costPerSwap": 1423.2764933333333,
+     "costPerKwhLowDiesel": 376.6828478964402,
+     "costPerSwapLowDiesel": 905.2944444444446,
+     "hubKgCo2PerDay": 109.22158333333334,
+     "kgCo2AvoidedPerDay": 134.41122916666666,
+     "kgCo2AvoidedPerSwap": 1.792149722222222,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 34.650000000000006
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 103.95,
+     "dieselKwh": 76.3,
+     "dieselLitres": 25.433333333333334,
+     "fuelAndTariffPerDay": 106745.737,
+     "costPerKwh": 592.2093592233009,
+     "costPerSwap": 1423.2764933333333,
+     "costPerKwhLowDiesel": 376.6828478964402,
+     "costPerSwapLowDiesel": 905.2944444444446,
+     "hubKgCo2PerDay": 109.22158333333334,
+     "kgCo2AvoidedPerDay": 134.41122916666666,
+     "kgCo2AvoidedPerSwap": 1.792149722222222,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 34.650000000000006
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 180.25,
+     "dieselLitres": 60.083333333333336,
+     "fuelAndTariffPerDay": 196921.3225,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 2625.6176333333333,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1401.9444444444446,
+     "hubKgCo2PerDay": 161.02333333333334,
+     "kgCo2AvoidedPerDay": 82.60947916666666,
+     "kgCo2AvoidedPerSwap": 1.1014597222222222,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 180.25,
+     "dieselLitres": 60.083333333333336,
+     "fuelAndTariffPerDay": 196921.3225,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 2625.6176333333333,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1401.9444444444446,
+     "hubKgCo2PerDay": 161.02333333333334,
+     "kgCo2AvoidedPerDay": 82.60947916666666,
+     "kgCo2AvoidedPerSwap": 1.1014597222222222,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "solar_grid",
+   "pvKwp": 18.713662790697676,
+   "bessKwh": null,
+   "installedCost": 11415334.302325582,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 90.125,
+     "gridKwh": 90.125,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 20278.125,
+     "costPerKwh": 112.5,
+     "costPerSwap": 270.375,
+     "costPerKwhLowDiesel": 112.5,
+     "costPerSwapLowDiesel": 270.375,
+     "hubKgCo2PerDay": 35.599375,
+     "kgCo2AvoidedPerDay": 208.0334375,
+     "kgCo2AvoidedPerSwap": 2.7737791666666665,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 60.083333333333336
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 76.3517441860465,
+     "gridKwh": 103.8982558139535,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 23377.107558139538,
+     "costPerKwh": 129.69269102990035,
+     "costPerSwap": 311.6947674418605,
+     "costPerKwhLowDiesel": 129.69269102990035,
+     "costPerSwapLowDiesel": 311.6947674418605,
+     "hubKgCo2PerDay": 41.03981104651163,
+     "kgCo2AvoidedPerDay": 202.59300145348837,
+     "kgCo2AvoidedPerSwap": 2.701240019379845,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 60.083333333333336
+    }
+   },
+   "paybackMonths": 2.1257791024738286,
+   "reasons": []
+  },
+  {
+   "option": "solar_bess",
+   "pvKwp": 39.50662144702842,
+   "bessKwh": 100.13888888888889,
+   "installedCost": 63653900.19379845,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 180.25,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": 0,
+     "costPerSwap": 0,
+     "costPerKwhLowDiesel": 0,
+     "costPerSwapLowDiesel": 0,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 243.6328125,
+     "kgCo2AvoidedPerSwap": 3.2484375,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 60.083333333333336
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 154.08081395348836,
+     "gridKwh": 0,
+     "dieselKwh": 26.16918604651164,
+     "dieselLitres": 8.72306201550388,
+     "fuelAndTariffPerDay": 28589.574063953503,
+     "costPerKwh": 158.61067441860473,
+     "costPerSwap": 381.19432085271336,
+     "costPerKwhLowDiesel": 84.6899224806202,
+     "costPerSwapLowDiesel": 203.53811369509052,
+     "hubKgCo2PerDay": 23.3778062015504,
+     "kgCo2AvoidedPerDay": 220.2550062984496,
+     "kgCo2AvoidedPerSwap": 2.936733417312661,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 51.36027131782946
+    }
+   },
+   "paybackMonths": 10.633070453041636,
+   "reasons": []
+  },
+  {
+   "option": "hybrid",
+   "pvKwp": 39.50662144702842,
+   "bessKwh": 100.13888888888889,
+   "installedCost": 63653900.19379845,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 180.25,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": 0,
+     "costPerSwap": 0,
+     "costPerKwhLowDiesel": 0,
+     "costPerSwapLowDiesel": 0,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 243.6328125,
+     "kgCo2AvoidedPerSwap": 3.2484375,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 60.083333333333336
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 154.08081395348836,
+     "gridKwh": 26.16918604651164,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 5888.066860465119,
+     "costPerKwh": 32.66611295681065,
+     "costPerSwap": 78.50755813953494,
+     "costPerKwhLowDiesel": 32.66611295681065,
+     "costPerSwapLowDiesel": 78.50755813953494,
+     "hubKgCo2PerDay": 10.336828488372099,
+     "kgCo2AvoidedPerDay": 233.2959840116279,
+     "kgCo2AvoidedPerSwap": 3.1106131201550387,
+     "petrolKgCo2PerDay": 243.6328125,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 60.083333333333336
+    }
+   },
+   "paybackMonths": 10.633070453041636,
+   "reasons": []
+  }
+ ],
+ [
+  {
+   "option": "grid_diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": null,
+   "paybackMonths": null,
+   "reasons": [
+    "no hours of supply calculated for the feeder",
+    "no headroom figure for the DT"
+   ]
+  },
+  {
+   "option": "diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 31.3,
+     "dieselLitres": 10.433333333333334,
+     "fuelAndTariffPerDay": 34194.937,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 2630.379769230769,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1404.4871794871797,
+     "hubKgCo2PerDay": 27.961333333333336,
+     "kgCo2AvoidedPerDay": 14.91804166666666,
+     "kgCo2AvoidedPerSwap": 1.1475416666666662,
+     "petrolKgCo2PerDay": 42.879374999999996,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 31.3,
+     "dieselLitres": 10.433333333333334,
+     "fuelAndTariffPerDay": 34194.937,
+     "costPerKwh": 1092.49,
+     "costPerSwap": 2630.379769230769,
+     "costPerKwhLowDiesel": 583.3333333333334,
+     "costPerSwapLowDiesel": 1404.4871794871797,
+     "hubKgCo2PerDay": 27.961333333333336,
+     "kgCo2AvoidedPerDay": 14.91804166666666,
+     "kgCo2AvoidedPerSwap": 1.1475416666666662,
+     "petrolKgCo2PerDay": 42.879374999999996,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "solar_grid",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": null,
+   "paybackMonths": null,
+   "reasons": [
+    "no hours of supply calculated for the feeder",
+    "no headroom figure for the DT"
+   ]
+  },
+  {
+   "option": "solar_bess",
+   "pvKwp": 8.019147788565265,
+   "bessKwh": 17.38888888888889,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 31.3,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 42.879374999999996,
+     "kgCo2AvoidedPerSwap": 3.2984134615384613,
+     "petrolKgCo2PerDay": 42.879374999999996,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 10.433333333333334
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 24.544669902912624,
+     "gridKwh": 0,
+     "dieselKwh": 6.755330097087377,
+     "dieselLitres": 2.2517766990291257,
+     "fuelAndTariffPerDay": 7380.130577766989,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 6.034761553398058,
+     "kgCo2AvoidedPerDay": 36.84461344660194,
+     "kgCo2AvoidedPerSwap": 2.8342010343539954,
+     "petrolKgCo2PerDay": 42.879374999999996,
+     "co2Finding": "saving",
+     "dieselLitresAvoidedPerDay": 8.181556634304208
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "placeholder: no EPC quote"
+   ]
+  },
+  {
+   "option": "hybrid",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": null,
+   "paybackMonths": null,
+   "reasons": [
+    "no hours of supply calculated for the feeder",
+    "no headroom figure for the DT"
+   ]
+  }
+ ],
+ [
+  {
+   "option": "grid_diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "diesel",
+   "pvKwp": null,
+   "bessKwh": null,
+   "installedCost": null,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": []
+  },
+  {
+   "option": "solar_grid",
+   "pvKwp": 0,
+   "bessKwh": null,
+   "installedCost": 0,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "saves nothing against diesel"
+   ]
+  },
+  {
+   "option": "solar_bess",
+   "pvKwp": 0,
+   "bessKwh": 0,
+   "installedCost": 0,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "saves nothing against diesel"
+   ]
+  },
+  {
+   "option": "hybrid",
+   "pvKwp": 0,
+   "bessKwh": 0,
+   "installedCost": 0,
+   "days": {
+    "average": {
+     "sun": "average",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    },
+    "rainy_season": {
+     "sun": "rainy_season",
+     "solarKwh": 0,
+     "gridKwh": 0,
+     "dieselKwh": 0,
+     "dieselLitres": 0,
+     "fuelAndTariffPerDay": 0,
+     "costPerKwh": null,
+     "costPerSwap": null,
+     "costPerKwhLowDiesel": null,
+     "costPerSwapLowDiesel": null,
+     "hubKgCo2PerDay": 0,
+     "kgCo2AvoidedPerDay": 0,
+     "kgCo2AvoidedPerSwap": null,
+     "petrolKgCo2PerDay": 0,
+     "co2Finding": null,
+     "dieselLitresAvoidedPerDay": 0
+    }
+   },
+   "paybackMonths": null,
+   "reasons": [
+    "saves nothing against diesel"
+   ]
+  }
+ ]
+]
