@@ -1,6 +1,10 @@
 # MG plan: a real reference mini-grid, then the mini-grid planning engine
 
-Status: **plan only, for the Founder's approval before any code** (24 November 2026).
+Status: **approved with one change** (Founder, 24 November 2026): the P90 of
+`demandFromReference` is taken from the reference site's daily totals, so diversity is
+captured (3.2, method 1; expected figures re-derived in 3.6). The answers to the open
+questions are in section 6. MG-REAL is built first; MG-PLAN-A follows the Founder's
+approval of MG-REAL.
 Branch: `phase-mg-plan`, from `main` at 47b5761 (NAV-A and EMOB-A merged).
 
 Two phases:
@@ -95,6 +99,7 @@ pattern as the synthetic sites' reports.
 | ASAI | Reported, two figures | The reported ASAI divides by 8,760 hours (C25); the dataset's recalculation on hours in the month is shown beside it |
 | Months with no logged outage (May, Jun, Sep, Oct 2021) | "No outage logged" | Never shown as 0 hours or 100%. Outside Dec 2020 to Nov 2021: "no outage log exists" |
 | Customers paying each year: 116 (2020, from 31 July), 141, 136, 123, 125, 68 (2025, to 26 January) | Calculated, with the dataset's own counts as the reported claim | Customers with at least one PAY payment in the calendar year, from Payments |
+| **Repeat buyers**: customers who bought credit in 2021 and again in 2024, shown as "x of y" (y = buyers in 2021) | Calculated | Payments (PAY). Labelled "repeat buyers", never "retention" (Founder, 24 November 2026) |
 | Accounts created to date: 208, 234, 238, 244, 244, 245 | Calculated | Customers by year created |
 | Paying customers as a share of accounts created: e.g. 141 of 234 in 2021 | Calculated | Labelled "customers who bought credit in the year". Not "retention" or "churn": the customer file holds no closure dates (C10) |
 | Tariff events: ₦165/kWh to July 2023, ₦350/kWh from July 2023, about ₦500/kWh from about February 2024; supply interruption April to July 2023 | Reported | Tariffs, Tariffs_and_Events, always with "change dates approximate; agents paid a lower, unrecorded rate" (C11, C23) |
@@ -130,7 +135,9 @@ pattern as the synthetic sites' reports.
   meters, as the dataset states; calculated: x%", outside the synthetic counts and labelled
   real.
 - The reference site is shown in the public demonstration and in a tenant deployment
-  alike: it is public, licensed data, like the NERC figures. Open question 3.
+  alike, read-only, as a public reference (Founder, 24 November 2026), and never in an
+  organization's own totals.
+- Addresses are today's; NAV-B moves them later with everything else.
 
 ### 2.4 Building blocks
 
@@ -181,19 +188,26 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
 
 **1. `demandFromReference`**: the daily kWh of a planned community, years 1 to 5, P50 and P90.
 
-- From the reference: daily kWh per reporting meter **by class** (residential,
-  non-residential) **by year of operation**, the P50 and the P90 across the year's days.
-  Gap days, the low-use window and stale repeats (C01, C02, C04) are excluded, the
+- **P50 and P90 from the site's daily totals (Founder, 24 November 2026).** For each day,
+  the sum of meters (Site_Daily) ÷ meters reporting gives the site's kWh per reporting
+  meter-day, so the day's diversity between customers is in it. The P50 and the P90 are
+  taken across the days of each **year of operation**.
+- **By class**: the site figure × (the class's share of the year's metered energy ÷ the
+  class's share of the year's meter-days), both from Meter_Daily. The class factors are
+  weighted by meter-days, so they average 1 over the site.
+- Gap days, the low-use window and stale repeats (C01, C02, C04) are excluded, the
   exclusions are listed in the output, and zero meter-days are kept (C03 cannot tell
   "no use" from "off").
 - The connection ramp: accounts created to the end of year n ÷ accounts in the file
   (RMG01: 208, 234, 238, 244, 245 of 245, so 0.85, 0.96, 0.97, 1.00, 1.00).
 - Buying customers: customers who bought credit in year n ÷ accounts created to date
   (RMG01: 0.56, 0.60, 0.57, 0.50, 0.51). It stands in for "retention", with that label.
-- Demand(n, P) = Σ over classes [customers(class) × ramp(n) × buying(n) × kWh per meter(class,
-  n, P)] × (1 + losses).
-- P90 is "every customer at the class's P90 day", an upper case, and is not the P90 of the
-  total. The output says so.
+- Demand(n, P) = Σ over classes [customers(class) × class factor(n)] × site kWh per reporting
+  meter-day(n, P) × ramp(n) × buying(n) × (1 + losses).
+- **No-diversity upper bound**, a separate line with that label: Σ over classes of
+  customers × the class's own P90 meter-day (from Meter_Daily) × ramp × buying × (1 +
+  losses), that is, every customer on a high day at once. It is never the design day and
+  never called P90.
 - Losses: an **assumption** entered by the user (default 10%). The RMG01 gap of 8.6% to
   17.9% is shown beside it as reference, and not used as a loss figure, because it includes
   unmetered own use and theft.
@@ -209,7 +223,8 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
 - Sun hours per planned site from NASA POWER, the same source, citation shape and
   average and rainy-season cases as EMOB-A. The planned site's coordinates are an input.
   RMG01's location is withheld, so it has no sun hours.
-- Design day: the highest P90 day over years 1 to 5 (an option: a named year and case).
+- Design day: the highest diversified P90 over years 1 to 5 (an option: a named year and
+  case). The no-diversity upper bound is never used to size.
 - Night share of daily energy: an **assumption** (default 60%), because the dataset has no
   hourly data.
 - PV makes the day share plus the night share ÷ round-trip efficiency; kWp = that ÷ (sun
@@ -242,11 +257,12 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
   ₦4,300 at ₦500. A single
   fixed-budget fit is therefore not clean: the rebound after the interruption, the rising
   share of meters reporting, the shrinking meter gap and the unexplained fall in 2024 (C15)
-  all overlap the tariff changes. Open question 1.
-- Proposal: the method returns e = −1 (fixed budget), e fitted to each event separately,
-  and the user's own e, side by side. Each carries its window, the number of days and its
-  confounders. Where the two events give elasticities of opposite sign the output is
-  "response not determined by the reference" and not an average.
+  all overlap the tariff changes.
+- **Scenarios (Founder, 24 November 2026):** the method returns e = −1 (fixed budget), e
+  fitted to each event separately, and the user's own e, side by side. Each fitted e carries
+  its window, its number of days and its confounders. Where the events give elasticities
+  of opposite sign, the method returns **the range** (the events' elasticities, low to high)
+  with "the reference events disagree", and **never a single figure** or an average.
 - Payments are not used in the fit (C12), only kWh.
 
 **4. `subsidyGap`**: capex minus net revenue over a stated period, per connection. Display only.
@@ -283,7 +299,9 @@ values as parameters.
 
 | Input | Default | Status | Source or basis |
 | --- | --- | --- | --- |
-| kWh per reporting meter a day, by class, by year of operation, P50 and P90 | From each reference | Calculated on reported data | Meter_Daily, with the exclusions listed |
+| Site kWh per reporting meter-day, by year of operation, P50 and P90 | From each reference | Calculated on reported data | Site_Daily (sum of meters ÷ meters reporting), with the exclusions listed |
+| Class factors (share of energy ÷ share of meter-days), by year | From each reference | Calculated on reported data | Meter_Daily |
+| Class P90 meter-day, for the no-diversity upper bound only | From each reference | Calculated on reported data | Meter_Daily |
 | Connection ramp, years 1 to 5 | From each reference | Calculated on reported data | Customers, year created |
 | Buying customers ÷ accounts, years 1 to 5 | From each reference | Calculated on reported data | Payments (PAY), Customers |
 | Customers by class in the planned community | User | Input | The planner |
@@ -307,7 +325,7 @@ values as parameters.
 
 | Method | May not claim |
 | --- | --- |
-| `demandFromReference` | True or unconstrained demand; a load profile; that P90 is the P90 of the total; anything beyond 5 years; that the class split is the source's own |
+| `demandFromReference` | True or unconstrained demand; a load profile; that the no-diversity upper bound is a P90 or a design day; anything beyond 5 years; that the class split is the source's own |
 | `sizeSystem` | An hour-by-hour dispatch or a loss-of-load probability; a cost; an EPC design; anything for a site without coordinates |
 | `tariffResponse` | A price elasticity measured at one site as a general law; an effect on collection or revenue at RMG01; a figure where the events disagree |
 | `subsidyGap` | A grant amount, a programme's eligibility, a lender's decision; an opex from RMG01; today's cost from 2019 prices without the stated scaling |
@@ -332,43 +350,51 @@ values as parameters.
 
 250 customers: 232 residential and 18 non-residential. Every input is a fixed round
 number held in the test, so the tests do not depend on the vendored file. The ramp and
-buying shares are rounded and close to RMG01's. The per-meter kWh figures are round numbers,
-**not** RMG01's.
+buying shares are rounded and close to RMG01's. The kWh figures and class shares are round
+numbers, **not** RMG01's. They were set before the expected figures were worked out
+(re-derived 24 November 2026 for the diversified P90).
 
 | Input | Value |
 | --- | --- |
-| kWh per meter a day, residential | P50 0.15, P90 0.30 |
-| kWh per meter a day, non-residential | P50 0.60, P90 1.20 |
+| Site kWh per reporting meter-day, P50, years 1 to 5 | 0.18, 0.21, 0.21, 0.19, 0.17 |
+| Site kWh per reporting meter-day, P90, years 1 to 5 | 0.24, 0.27, 0.27, 0.25, 0.23 |
+| Class shares of meter-days and of energy | Residential 92% and 80%; non-residential 8% and 20% (factors 0.8696 and 2.5) |
+| Class P90 meter-day, for the no-diversity upper bound only | Residential 0.30, non-residential 1.20 |
 | Connection ramp, years 1 to 5 | 0.85, 0.95, 0.97, 0.99, 1.00 |
 | Buying share, years 1 to 5 | 0.55, 0.60, 0.57, 0.52, 0.51 |
 | Losses | 10% |
 | Sun hours (fixture, not NASA POWER) | 5.0 average, 4.0 rainy season |
 | PR, night share, lead-acid DoD and round-trip | 0.80, 60%, 0.5, 0.85 |
 
+The community counts as 246.74 meter-equivalents (232 × 0.8696 + 18 × 2.5).
+
 Expected figures (hand-checked):
 
 | Figure | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 | --- | --- | --- | --- | --- | --- |
-| Demand P50, kWh/day | 23.45 | 28.59 | 27.73 | 25.82 | 25.58 |
-| Demand P90, kWh/day | 46.90 | 57.18 | 55.47 | 51.64 | 51.16 |
-| With uplift 1.5, P50 | 35.17 | 42.89 | 41.60 | 38.73 | 38.37 |
-| Utilisation P50 | 41.0% | 50.0% | 48.5% | 45.2% | 44.7% |
-| Utilisation P90 | 82.0% | 100.0% | 97.0% | 90.3% | 89.5% |
+| Demand P50, kWh/day | 22.84 | 32.49 | 31.51 | 26.55 | 23.53 |
+| Demand P90 (diversified), kWh/day | 30.45 | 41.77 | 40.52 | 34.93 | 31.84 |
+| No-diversity upper bound, kWh/day | 46.90 | 57.18 | 55.47 | 51.64 | 51.16 |
+| With uplift 1.5, P50 | 34.26 | 48.73 | 47.27 | 39.82 | 35.30 |
+| Utilisation P50 | 54.7% | 77.8% | 75.4% | 63.6% | 56.3% |
+| Utilisation P90 | 72.9% | 100.0% | 97.0% | 83.6% | 76.2% |
 
-- `sizeSystem` on the design day (year 2 P90, 57.18 kWh): PV energy needed 63.24 kWh a day,
-  **15.81 kWp**, battery **68.62 kWh**. The rainy season covers 80.0% of the design day.
-  Year-1 P50 utilisation of 41.0% is below 60%, so the result is flagged **oversized**: the
-  sizing covers year-2 P90.
-- `pueGap` to 70% in year 1 at P50: **18.33 kWh a day** of daytime productive load.
+- `sizeSystem` on the design day (year 2 diversified P90, 41.77 kWh): PV energy needed
+  46.19 kWh a day, **11.55 kWp**, battery **50.13 kWh**. The rainy season covers 80.0% of
+  the design day. The no-diversity bound would have needed 15.81 kWp and 68.62 kWh. Year-1
+  P50 utilisation of 54.7% is still below the 60% threshold, so the result is flagged
+  **oversized in year 1**. The cause is now the connection ramp and buying share of year 1,
+  not the sizing basis, and the flag says which year and why.
+- `pueGap` to 70% in year 1 at P50: **7.08 kWh a day** of daytime productive load.
 - `tariffResponse` from 25 kWh a day at ₦165: at e = −1, 11.79 kWh at ₦350 and 8.25 kWh at
   ₦500, revenue ₦4,125 a day throughout; at e = −0.5, 17.17 kWh (₦6,007.8) and 14.36 kWh
-  (₦7,180.7); at e = 0, ₦8,750 and ₦12,500. Two events with opposite signs give "not
-  determined".
+  (₦7,180.7); at e = 0, ₦8,750 and ₦12,500. Two events with e = +0.4 and e = −2.0 return
+  the range −2.0 to +0.4 with "the reference events disagree", and no single e.
 - `subsidyGap` with capex ₦30,000,000, tariff ₦350, opex ₦3,000 a day, 10 years, no tariff
-  response: kWh sold 21.32, 25.99, 25.21, 23.48, 23.26 a day; net revenue over 10 years
-  ₦19,139,356; **gap ₦10,860,644, ₦43,443 a connection**. With opex ₦1,500 a day: gap
-  ₦5,385,644, ₦21,543 a connection. At year 5's net of ₦5,139.60 a day, capex repays in
-  192.0 months at 0% and **never** at 10% a year.
+  response, P50: kWh sold 20.76, 29.54, 28.65, 24.13, 21.39 a day; net revenue over 10
+  years ₦18,615,713; **gap ₦11,384,287, ₦45,537 a connection**. With opex ₦1,500 a day:
+  gap ₦5,909,287, ₦23,637 a connection. At year 5's net of ₦4,487.30 a day, capex repays in
+  219.9 months at 0% and **never** at 10% a year.
 - A second reference site added to the fixture list changes the benchmarks and
   `referenceSites` to 2, with no code change.
 
@@ -408,23 +434,18 @@ before each checkpoint. DESIGN notes go to `docs/minigrid/DESIGN.md`, with an AD
 reference-site layer (a new kind of source: real, published, third-party, kept apart from
 both the synthetic data and a tenant's own records).
 
-## 6. Open questions for the Founder
+## 6. The Founder's answers (24 November 2026)
 
-1. **Tariff response.** RMG01's two tariff events do not show one fixed-budget behaviour
-   (3.2, method 3): use per meter rose after ₦350 and halved at ₦500, with the interruption
-   and coverage changes overlapping. Is the proposal acceptable (fixed budget, each event's
-   own fit and the user's figure side by side, and "not determined" where they disagree)?
-   Or should the method use the fixed budget only, labelled as an assumption?
-2. **Vendor or fetch** (section 1, decision gate). The recommendation is to vendor the 20
-   CSVs (about 7 MB, Meter_Daily 6 MB) pinned at `bd9dea2` with checksums, and leave out the
-   .xlsx.
-3. **Tenant deployments.** Should the reference site appear in a tenant's workspace as
-   public reference data (the recommendation), or only in the public demonstration?
-4. **Order against 8A and NAV-B.** MG-REAL adds to existing screens and could run now,
-   while 8A waits for your Supabase sign-in. Should it go before NAV-B, or after?
-5. **"Retention".** The dataset has no closure dates, so the plan uses "customers who
-   bought credit in the year ÷ accounts created to date" under that label. Is that the
-   meaning you want, or a different one (for example the share of meters with use in the
-   year)?
-6. **The second dataset** (Zenodo 22149102) has not been read. The design takes it with a
-   new adapter only. Should it be part of MG-REAL, or later?
+1. **Tariff response:** as proposed. Scenarios: fixed budget (e = −1), each event's own e
+   with its confounders, and the user's e. Where the events disagree in sign, the range,
+   never a single figure.
+2. **Vendor** the dataset, pinned at v1.0.2 (`bd9dea2`), with the licence, `CITATION.cff`
+   and the checksum test.
+3. **Tenant deployments** show RMG01 too, read-only, as a public reference, and never in an
+   organization's own totals.
+4. **MG-REAL goes before NAV-B** (NAV-B waits for the Founder's Supabase sign-in), at
+   today's addresses; NAV-B moves them later with everything else.
+5. Keep **"customers who bought credit in the year"**. Add **"repeat buyers"**: customers
+   who bought credit in 2021 and again in 2024, as a count of a count, never called
+   "retention".
+6. **Zenodo 22149102 is later**, as its own decision gate.
