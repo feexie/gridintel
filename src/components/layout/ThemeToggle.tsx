@@ -7,7 +7,8 @@
 
 const KEY = "gridintel-theme";
 
-export default function ThemeToggle() {
+/** `compact`: below the sm breakpoint only the icon shows; the theme's name stays for screen readers. */
+export default function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const toggle = () => {
     const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", next);
@@ -20,8 +21,10 @@ export default function ThemeToggle() {
   return (
     <button type="button" onClick={toggle} data-theme-toggle className="gi-tap inline-flex items-center gap-1.5 rounded-tile border border-line-strong px-2.5 py-1 text-caption font-medium text-ink-3 hover:border-line-bold hover:text-ink">
       <span aria-hidden>◐</span>
-      <span className="gi-when-dark">Light theme</span>
-      <span className="gi-when-light">Dark theme</span>
+      <span className={compact ? "max-sm:sr-only" : undefined}>
+        <span className="gi-when-dark">Light theme</span>
+        <span className="gi-when-light">Dark theme</span>
+      </span>
     </button>
   );
 }

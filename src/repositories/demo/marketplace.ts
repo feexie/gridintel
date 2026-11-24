@@ -1,6 +1,7 @@
-import type { DataSource, DiscoId, MarketplaceBand, MeterApplication, MeterJourneyRecord, MeterPledge } from "@/domain";
+import type { DataSource, DiscoId, MarketplaceBand, MeterApplication, MeterJourneyRecord, MeterPledge, PendingApplicationStep, PendingMeterApplications } from "@/domain";
 import type { MarketplaceRepository } from "../ports/marketplace.ts";
 import { seeded } from "./rng.ts";
+import { DEMO_ORGANIZATION_ID } from "./sources.ts";
 
 /* ==========================================================
    DEMO ADAPTER — SYNTHETIC METERING MARKETPLACE
@@ -38,6 +39,9 @@ const JOURNEYS: MeterJourneyRecord[] = [
 /** The range of approved applications a DisCo holds for a band. */
 const RANGE: Record<MarketplaceBand, [number, number]> = { A1: [20, 150], A3: [5, 40], B: [40, 250], C: [60, 300], D: [40, 220], E: [20, 160], lifeline: [20, 120] };
 
+/** The range of applications a DisCo holds waiting at each step before approval (Phase NAV-A: the count on the initiative card). */
+const PENDING_RANGE: Record<PendingApplicationStep, [number, number]> = { submitted: [40, 260], under_review: [20, 140], verified: [10, 90], assigned: [5, 60] };
+
 export function createSyntheticMarketplace(): MarketplaceRepository {
   const applications: MeterApplication[] = ALL.flatMap((disco) =>
     (Object.keys(RANGE) as MarketplaceBand[]).map((band) => {
@@ -46,9 +50,18 @@ export function createSyntheticMarketplace(): MarketplaceRepository {
       return { disco, band, approved: Math.round(low + (high - low) * random()), sourceId: source };
     }),
   );
+  // The eleven DisCos' queues, and the synthetic demonstration DisCo's own (its workspace counts that one only).
+  const pending: PendingMeterApplications[] = [...ALL, DEMO_ORGANIZATION_ID].flatMap((disco) =>
+    (Object.keys(PENDING_RANGE) as PendingApplicationStep[]).map((step) => {
+      const random = seeded(`marketplace:pending:${disco}:${step}`);
+      const [low, high] = PENDING_RANGE[step];
+      return { disco, step, count: Math.round(low + (high - low) * random()), sourceId: source };
+    }),
+  );
   return {
     pledges: async () => PLEDGES,
     applications: async () => applications,
+    pending: async () => pending,
     journeys: async () => JOURNEYS,
     sources: async () => [SYNTHETIC_MARKETPLACE_SOURCE],
   };
