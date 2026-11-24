@@ -4,7 +4,7 @@ import { demandFromReference, MINIGRID_DEMAND_REFERENCE } from "../../analytics/
 import { MINIGRID_PUE_GAP_REFERENCE, pueGap } from "../../analytics/planning/minigrid/pueGap.ts";
 import { MINIGRID_REFERENCE_BASIS, referenceBasisFrom } from "../../analytics/planning/minigrid/reference.ts";
 import { MINIGRID_SIZING_REFERENCE, sizeSystem } from "../../analytics/planning/minigrid/sizing.ts";
-import { MINIGRID_SUBSIDY_GAP_REFERENCE, scaleReferenceCapex, subsidyGap } from "../../analytics/planning/minigrid/subsidyGap.ts";
+import { capexFactorToToday, MINIGRID_SUBSIDY_GAP_REFERENCE, scaleReferenceCapex, subsidyGap } from "../../analytics/planning/minigrid/subsidyGap.ts";
 import { MINIGRID_TARIFF_RESPONSE_REFERENCE, tariffResponse } from "../../analytics/planning/minigrid/tariff.ts";
 import type { PlannedCommunityRepository } from "../../repositories/ports/minigridPlanning.ts";
 import type { ReferenceSiteRepository } from "../../repositories/ports/reference.ts";
@@ -54,22 +54,27 @@ export async function referenceBases(repo: ReferenceSiteRepository): Promise<Ref
 /** The plan for one community on the given reference bases. */
 export function minigridPlan(community: PlannedCommunity, bases: readonly ReferenceBasis[], settings: MinigridPlanSettings = DEFAULT_PLAN_SETTINGS) {
   const demand = demandFromReference(community, bases);
+  // What happened at the reference sites, year by year: a labelled scenario, never the default.
+  const asHappened = demandFromReference(community, bases, { ...MINIGRID_DEMAND_REFERENCE.parameters, basis: "as_happened" });
   const sizing = sizeSystem(demand, { average: community.solar.averagePeakSunHours, rainySeason: community.solar.rainySeasonPeakSunHours });
   const productiveUse = sizing === null ? null : pueGap(demand, sizing);
-  // The tariff response is worked from year 2's P50 at the reference site's first tariff, the tariff years 1 and 2 were served at.
-  const firstTariff = bases[0]?.tariffs[0] ?? settings.tariff;
+  // The tariff response is worked from year 2's P50 at the tariff the demand basis was served at (₦165 at RMG01).
+  const firstTariff = demand.servedAtTariff ?? bases[0]?.tariffs[0] ?? settings.tariff;
   const baseKwh = demand.years[1]?.p50 ?? null;
   const tariffs = [...new Set([...bases.flatMap((basis) => basis.tariffs), settings.tariff])].sort((a, b) => a - b);
   const tariff = baseKwh === null ? null : tariffResponse({ baseKwh, baseTariff: firstTariff, tariffs, userElasticity: settings.userElasticity, bases });
   const connections = community.customers.residential + community.customers.non_residential;
   const reference = bases.find((basis) => basis.capex !== null)?.capex ?? null;
-  const scaled = reference === null || sizing === null ? null : scaleReferenceCapex(reference, { pvKwp: sizing.pvKwp, batteryKwh: sizing.batteryKwh, connections }, settings.capexToToday ?? 1);
-  const capexNgn = settings.capexNgn ?? (settings.capexToToday === null ? null : (scaled?.totalNgn ?? null));
+  const toToday = reference === null || settings.ngnPerUsdToday === null ? null : capexFactorToToday(reference.ngnPerUsd, settings.ngnPerUsdToday.rate);
+  const scaled = reference === null || sizing === null ? null : scaleReferenceCapex(reference, { pvKwp: sizing.pvKwp, batteryKwh: sizing.batteryKwh, connections }, toToday ?? 1);
+  const capexNgn = settings.capexNgn ?? (toToday === null ? null : (scaled?.totalNgn ?? null));
+  // The planned tariff acts only through the tariff response, from the tariff demand was served at, at the middle case (e = −1).
+  const response = demand.servedAtTariff === null || demand.servedAtTariff === settings.tariff ? null : { baseTariff: demand.servedAtTariff, elasticity: -1 };
   const gap =
     capexNgn === null || settings.opexPerDay === null
       ? null
-      : subsidyGap({ capexNgn, demand, demandCase: "p50", losses: MINIGRID_DEMAND_REFERENCE.parameters.losses, tariff: settings.tariff, tariffResponse: null, opexPerDay: settings.opexPerDay, periodYears: settings.periodYears, returnPerYear: settings.returnPerYear, connections });
-  return { demand, sizing, productiveUse, tariff, scaledCapex: scaled, capexNgn, gap, connections };
+      : subsidyGap({ capexNgn, demand, demandCase: "p50", losses: MINIGRID_DEMAND_REFERENCE.parameters.losses, tariff: settings.tariff, tariffResponse: response, opexPerDay: settings.opexPerDay.ngn, periodYears: settings.periodYears, returnPerYear: settings.returnPerYear, connections });
+  return { demand, asHappened, sizing, productiveUse, tariff, scaledCapex: scaled, toToday, capexNgn, gap, response, connections };
 }
 
 export async function minigridPlanView(communities: PlannedCommunityRepository, references: ReferenceSiteRepository, settings: MinigridPlanSettings = DEFAULT_PLAN_SETTINGS): Promise<MinigridPlanView | null> {
@@ -95,18 +100,18 @@ export async function minigridPlanView(communities: PlannedCommunityRepository, 
     gapFigures.push({
       key: "scaledCapex",
       label: plan.scaledCapex.label,
-      value: settings.capexToToday === null ? `${naira(plan.scaledCapex.totalNgn)} at ${plan.scaledCapex.priceYear} prices; not brought to today` : naira(plan.scaledCapex.totalNgn),
-      status: settings.capexToToday === null ? "placeholder" : "calculated",
-      basis: `The reference build cost scaled: storage per kWh, generation per kWp, distribution and metering per connection, the other costs in proportion${settings.capexToToday === null ? "; no factor to today is set" : `, × ${settings.capexToToday} to today`}.`,
+      value: plan.toToday === null ? `${naira(plan.scaledCapex.totalNgn)} at ${plan.scaledCapex.priceYear} prices; not brought to today` : naira(plan.scaledCapex.totalNgn),
+      status: plan.toToday === null ? "placeholder" : "calculated",
+      basis: `The reference build cost scaled: storage per kWh, generation per kWp, distribution and metering per connection (${naira(plan.scaledCapex.perConnectionNgn)} a meter bought, ${plan.scaledCapex.connectionsBasis.meters} meters${plan.scaledCapex.perAccountNgn === null ? "" : `; ${naira(plan.scaledCapex.perAccountNgn)} over the ${plan.scaledCapex.connectionsBasis.accounts} accounts, shown beside it`}, at ${plan.scaledCapex.priceYear} prices), the other costs in proportion${plan.toToday === null ? "; no rate to today is set" : `, × ${plan.toToday.toFixed(2)} to today`}.`,
     });
   }
   if (gap) {
     gapFigures.push(
-      { key: "gap", label: "Subsidy gap", value: `${naira(gap.gapNgn ?? 0)}, ${naira(gap.gapPerConnectionNgn ?? 0)} a connection`, status: "calculated", basis: `Capex − net revenue over ${settings.periodYears} years at ${naira(settings.tariff)}/kWh, P50. Display only: not a grant amount.` },
+      { key: "gap", label: "Subsidy gap", value: `${naira(gap.gapNgn ?? 0)}, ${naira(gap.gapPerConnectionNgn ?? 0)} a connection`, status: "calculated", basis: `Capex − net revenue over ${settings.periodYears} years at ${naira(settings.tariff)}/kWh, P50${plan.response ? `, the tariff acting through the fixed-budget response (e = −1) from ₦${plan.response.baseTariff}` : ""}; opex ${naira(settings.opexPerDay?.ngn ?? 0)} a day (${settings.opexPerDay?.source ?? ""}). Display only: not a grant amount.` },
       { key: "repay", label: "Months to repay from net revenue", value: `${months(gap.monthsToRepay.atZero)} at 0%; ${months(gap.monthsToRepay.atReturn)} at ${pct(gap.monthsToRepay.returnPerYear, 0)} a year`, status: "calculated", basis: "On year 5's net revenue a day, with the shared loan arithmetic." },
     );
   } else {
-    gapFigures.push({ key: "gap", label: "Subsidy gap", value: "Not calculated", status: "placeholder", basis: `Not calculated until set: ${[settings.opexPerDay === null ? "opex a day (no reliable reference exists)" : null, plan.capexNgn === null ? "capex, or the factor bringing the reference cost to today" : null].filter(Boolean).join("; ")}.` });
+    gapFigures.push({ key: "gap", label: "Subsidy gap", value: "Not calculated", status: "placeholder", basis: `Not calculated until set: ${[settings.opexPerDay === null ? "opex a day (no reliable reference exists)" : null, plan.capexNgn === null ? "capex, or today's ₦ a US dollar to bring the reference cost to today" : null].filter(Boolean).join("; ")}.` });
   }
 
   const citations = await communities.citations();
@@ -125,6 +130,10 @@ export async function minigridPlanView(communities: PlannedCommunityRepository, 
         ramp: one.ramp === null ? "No figure" : one.ramp.toFixed(2),
         buyingShare: one.buyingShare === null ? "No figure" : one.buyingShare.toFixed(2),
       })),
+      scenario: {
+        label: plan.asHappened.scenarioLabel ?? "",
+        rows: plan.asHappened.years.map((one) => ({ year: `Year ${one.year}`, p50: kwh(one.p50), p90: kwh(one.p90) })),
+      },
       exclusions: demand.exclusions,
       notes: demand.notes,
       method: methodView(MINIGRID_DEMAND_REFERENCE),
@@ -147,12 +156,20 @@ export async function minigridPlanView(communities: PlannedCommunityRepository, 
           }
         : null,
     tariff: {
-      base: tariff ? `From year 2's P50, ${kwh(tariff.baseKwh)} a day, at ₦${tariff.baseTariff}/kWh` : "No figure",
+      base: tariff ? `From year 2's P50, ${kwh(tariff.baseKwh)} a day, at ₦${tariff.baseTariff}/kWh, the tariff the demand basis was served at` : "No figure",
       scenarios: (tariff?.scenarios ?? []).map((scenario) => ({
         label: scenario.label,
         elasticity: scenario.elasticity.toFixed(2),
+        middle: scenario.middle,
         rows: scenario.rows.map((row) => ({ tariff: `₦${row.tariff}`, kwhPerDay: kwh(row.kwhPerDay), revenuePerDay: naira(row.revenuePerDay) })),
         confounders: scenario.change ? [`Before ${scenario.change.before} (${scenario.change.days.before} days); after ${scenario.change.after} (${scenario.change.days.after} days).`, ...scenario.change.confounders] : [],
+      })),
+      range: tariff ? `e = ${tariff.range.low.toFixed(2)} to ${tariff.range.high.toFixed(2)}` : "No figure",
+      notUsable: (tariff?.unusable ?? []).map((one) => ({
+        label: one.label,
+        elasticity: `${one.elasticity >= 0 ? "+" : ""}${one.elasticity.toFixed(2)}`,
+        reason: one.reason,
+        confounders: one.change ? [`Before ${one.change.before} (${one.change.days.before} days); after ${one.change.after} (${one.change.days.after} days).`, ...one.change.confounders] : [],
       })),
       note: tariff?.note ?? null,
       method: methodView(MINIGRID_TARIFF_RESPONSE_REFERENCE),

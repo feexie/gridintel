@@ -40,10 +40,24 @@ export interface MinigridPlanView {
   /** "1 reference site: RMG01". */
   references: string;
   inputs: MinigridPlanFigure[];
-  demand: { label: string; rows: MinigridDemandRowView[]; exclusions: string[]; notes: string[]; method: MinigridMethodView };
+  demand: {
+    label: string;
+    rows: MinigridDemandRowView[];
+    /** What happened at the reference sites year by year: a labelled, confounded scenario, never the default. */
+    scenario: { label: string; rows: { year: string; p50: string; p90: string }[] };
+    exclusions: string[]; notes: string[]; method: MinigridMethodView };
   sizing: { designDay: string; figures: MinigridPlanFigure[]; utilisation: { year: string; p50: string; p90: string }[]; oversized: string | null; method: MinigridMethodView } | null;
   productiveUse: { figure: MinigridPlanFigure; examples: string[]; method: MinigridMethodView } | null;
-  tariff: { base: string; scenarios: { label: string; elasticity: string; rows: { tariff: string; kwhPerDay: string; revenuePerDay: string }[]; confounders: string[] }[]; note: string | null; method: MinigridMethodView };
+  tariff: {
+    base: string;
+    /** The fixed budget is the middle case; no scenario has a positive elasticity. */
+    scenarios: { label: string; elasticity: string; middle: boolean; rows: { tariff: string; kwhPerDay: string; revenuePerDay: string }[]; confounders: string[] }[];
+    range: string;
+    /** Changes (or a user figure) with a positive elasticity: shown with their confounders, used in no scenario. */
+    notUsable: { label: string; elasticity: string; reason: string; confounders: string[] }[];
+    note: string | null;
+    method: MinigridMethodView;
+  };
   subsidyGap: { figures: MinigridPlanFigure[]; method: MinigridMethodView };
   notClaimed: { method: string; claims: string }[];
   attribution: ReferenceAttributionView[];

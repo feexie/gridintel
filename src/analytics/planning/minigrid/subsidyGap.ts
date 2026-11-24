@@ -28,7 +28,13 @@ import type { DemandCase, DemandResult } from "./demand.ts";
    storage per kWh, generation per kWp, distribution and metering per
    connection, and the other costs (shared balance of system, soft
    costs) in proportion; then brought to today by a stated factor.
-   It is labelled "2019 reference cost, scaled".
+   It is labelled "2019 reference cost, scaled". The per-connection
+   rate is on the meters bought, with the accounts in the customer
+   file shown beside it.
+
+   The factor to today: the 2019 ₦ to US dollars at the source's own
+   rate, then to ₦ at a current rate the planner enters and cites
+   (Founder, 24 November 2026).
 ========================================================== */
 
 export interface SubsidyGapParameters {
@@ -103,8 +109,18 @@ export function subsidyGap(input: SubsidyGapInput, parameters: SubsidyGapParamet
   };
 }
 
+/** The factor that brings a reference's ₦ to today: ₦ → USD at the source's rate, then USD → ₦ at today's. */
+export function capexFactorToToday(sourceNgnPerUsd: number, todayNgnPerUsd: number): number {
+  return todayNgnPerUsd / sourceNgnPerUsd;
+}
+
 export interface ScaledCapex {
   label: string;
+  /** Distribution and metering ₦ a meter bought, at the reference's prices. */
+  perConnectionNgn: number;
+  /** The same over the accounts in the customer file, shown beside it; null when not stated. */
+  perAccountNgn: number | null;
+  connectionsBasis: { meters: number; accounts: number | null };
   storageNgn: number;
   generationNgn: number;
   distributionAndMeteringNgn: number;
@@ -124,6 +140,9 @@ export function scaleReferenceCapex(reference: ReferenceCapex, planned: { pvKwp:
   const other = reference.otherNgn * (scaled / (reference.storageNgn + reference.generationNgn + reference.distributionAndMeteringNgn));
   return {
     label: SCALED_CAPEX_LABEL,
+    perConnectionNgn: reference.distributionAndMeteringNgn / reference.connections,
+    perAccountNgn: reference.accounts === null ? null : reference.distributionAndMeteringNgn / reference.accounts,
+    connectionsBasis: { meters: reference.connections, accounts: reference.accounts },
     storageNgn: storage * toToday,
     generationNgn: generation * toToday,
     distributionAndMeteringNgn: distribution * toToday,

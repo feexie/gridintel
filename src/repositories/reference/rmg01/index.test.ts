@@ -23,6 +23,8 @@ describe("the RMG01 reference adapter (the vendored dataset)", async () => {
     assert.deepEqual((await repo.catalogue()).map((entry) => [entry.siteId, entry.source.id]), [["rmg01", RMG01_SOURCE.id]]);
     assert.equal(records.capex.find((line) => line.record === "actual_cost" && line.category === "Total")?.costNgn, 35_071_810.5);
     assert.equal(records.capex.length, 17);
+    assert.equal(records.opex.length, 11);
+    assert.deepEqual(records.opex.filter((line) => line.item === "Labor").map((line) => line.amount), [null], "a blank stays blank, never 0");
     assert.deepEqual((await repo.catalogue())[0].covers, { start: records.days[0].date, end: records.days.at(-1)?.date });
     assert.equal(RMG01_SOURCE.kind, "published_dataset");
     assert.equal(RMG01_SOURCE.licence, "CC BY 4.0");

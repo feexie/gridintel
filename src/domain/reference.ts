@@ -149,7 +149,22 @@ export interface ReferenceCapexLine {
   category: string;
   itemsIncluded: string | null;
   costNgn: number | null;
+  /** The rate the source converts at, ₦ a US dollar. */
+  ngnPerUsd: number | null;
   priceYear: number | null;
+  notes: string | null;
+}
+
+/** One operating-cost line, as published (OPEX); blanks stay null. */
+export interface ReferenceOpexLine {
+  siteId: string;
+  period: string | null;
+  item: string;
+  category: string;
+  amount: number | null;
+  unit: string | null;
+  /** "Site", "Company accounts line", … as the publisher words it. */
+  scope: string | null;
   notes: string | null;
 }
 

@@ -17,7 +17,16 @@ import { benchmark, benchmarkByYear, sitesLabel, YEARS } from "./benchmark.ts";
    The P50 and P90 are the site's daily totals per reporting meter,
    so the diversity between customers on a day is in them (Founder,
    24 November 2026). The class factor is the class's share of the
-   year's energy ÷ its share of the year's meter-days.
+   energy ÷ its share of the meter-days.
+
+   The default basis is the reference site's use at a single tariff
+   (its years of operation wholly at its first tariff, pooled), held
+   flat across years 1 to 5; the ramp and the buying share carry the
+   years. The planned tariff acts only through the tariff response,
+   from that tariff. The site's own curve by year of operation is a
+   scenario, labelled "as happened", never the default: at RMG01 it
+   falls with tariff rises, an outage and lighter later meters
+   (Founder, 24 November 2026).
 
    The no-diversity upper bound is a separate line: every customer on
    their class's P90 day at once, Σ customers × class P90 meter-day
@@ -29,7 +38,11 @@ import { benchmark, benchmarkByYear, sitesLabel, YEARS } from "./benchmark.ts";
    reference sites: a floor on true demand.
 ========================================================== */
 
+export type DemandBasis = "single_tariff" | "as_happened";
+
 export interface DemandParameters {
+  /** The default is single_tariff; as_happened is a labelled, confounded scenario. */
+  basis: DemandBasis;
   /** Losses between the plant and the meters. Assumption. */
   losses: number;
   /** Multiplier for demand the reference sites could not serve; 1 is off. Assumption. */
@@ -45,12 +58,14 @@ export const MINIGRID_DEMAND_REFERENCE: Methodology<DemandParameters> = {
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
-  parameters: { losses: 0.1, suppressedDemandUplift: 1 },
+  parameters: { basis: "single_tariff", losses: 0.1, suppressedDemandUplift: 1 },
 };
 
 export type DemandCase = "p50" | "p90";
 
 export const SERVED_DEMAND_LABEL = "Served demand at the reference site, a floor on true demand";
+/** "As happened at RMG01 (tariff rises and an outage; confounded)". */
+export const asHappenedLabel = (siteCodes: readonly string[]): string => `As happened at ${siteCodes.join(", ")} (tariff rises and an outage; confounded)`;
 
 const CLASSES: readonly PlanningClass[] = ["residential", "non_residential"];
 
@@ -81,17 +96,27 @@ export interface DemandResult {
   /** "1 reference site". */
   sitesLabel: string;
   label: string;
+  basis: DemandBasis;
+  /** The scenario's own label: null for the default, "As happened at RMG01 (…)" for the confounded curve. */
+  scenarioLabel: string | null;
+  /** The tariff the basis was served at; the planned tariff acts through the tariff response from it. Null when the sites' tariffs differ or the basis is as happened. */
+  servedAtTariff: number | null;
   exclusions: string[];
   notes: string[];
   method: { id: string; version: string };
 }
 
 export function demandFromReference(community: PlannedCommunity, bases: readonly ReferenceBasis[], parameters: DemandParameters = MINIGRID_DEMAND_REFERENCE.parameters): DemandResult {
-  const p50 = benchmarkByYear(bases, (basis) => basis.siteKwhPerMeterDay.p50);
-  const p90 = benchmarkByYear(bases, (basis) => basis.siteKwhPerMeterDay.p90);
+  const flat = parameters.basis === "single_tariff";
+  const held = (pick: (basis: ReferenceBasis) => number | null | undefined) => {
+    const one = benchmark(bases, pick);
+    return YEARS.map(() => one);
+  };
+  const p50 = flat ? held((basis) => basis.singleTariff?.p50) : benchmarkByYear(bases, (basis) => basis.siteKwhPerMeterDay.p50);
+  const p90 = flat ? held((basis) => basis.singleTariff?.p90) : benchmarkByYear(bases, (basis) => basis.siteKwhPerMeterDay.p90);
   const ramp = benchmarkByYear(bases, (basis) => basis.ramp);
   const buying = benchmarkByYear(bases, (basis) => basis.buyingShare);
-  const factor = Object.fromEntries(CLASSES.map((klass) => [klass, benchmarkByYear(bases, (basis) => basis.classFactor[klass])])) as Record<PlanningClass, ReturnType<typeof benchmarkByYear>>;
+  const factor = Object.fromEntries(CLASSES.map((klass) => [klass, flat ? held((basis) => basis.singleTariff?.classFactor[klass]) : benchmarkByYear(bases, (basis) => basis.classFactor[klass])])) as Record<PlanningClass, ReturnType<typeof benchmarkByYear>>;
   const classP90 = Object.fromEntries(CLASSES.map((klass) => [klass, benchmark(bases, (basis) => basis.classP90MeterDay[klass])])) as Record<PlanningClass, ReturnType<typeof benchmark>>;
   const grossUp = 1 + parameters.losses;
   const uplift = parameters.suppressedDemandUplift;
@@ -141,8 +166,14 @@ export function demandFromReference(community: PlannedCommunity, bases: readonly
     referenceSiteIds: ids,
     sitesLabel: sitesLabel(ids.length),
     label: SERVED_DEMAND_LABEL,
+    basis: parameters.basis,
+    scenarioLabel: flat ? null : asHappenedLabel(bases.map((basis) => basis.siteCode)),
+    servedAtTariff: flat ? servedAt(bases) : null,
     exclusions: bases.flatMap((basis) => basis.exclusions.map((line) => `${basis.siteCode}: ${line}`)),
     notes: [
+      flat
+        ? `Per-meter use is the reference sites' at a single tariff (${bases.map((basis) => (basis.singleTariff ? `${basis.siteCode}: years ${basis.singleTariff.years.join(" and ")} at ₦${basis.singleTariff.tariff}/kWh, ${basis.singleTariff.days} days` : `${basis.siteCode}: none`)).join("; ")}), held flat across years 1 to 5; the ramp and the buying share carry the years. A planned tariff acts only through the tariff response, from that tariff.`
+        : "A scenario, never the default: the reference site's per-meter use year by year, which fell with tariff rises, an outage and lighter later meters.",
       "The P90 is the reference sites' daily totals per reporting meter, so the diversity between customers on a day is in it.",
       "The no-diversity upper bound puts every customer on their class's high day at once. It is not a P90 and is never the design day.",
       "The class split rests on the reference data's classes; customers with no class in the source are counted as residential, as the dataset's authors did.",
@@ -150,4 +181,10 @@ export function demandFromReference(community: PlannedCommunity, bases: readonly
     ],
     method: { id: MINIGRID_DEMAND_REFERENCE.id, version: MINIGRID_DEMAND_REFERENCE.version },
   };
+}
+
+/** The one tariff the sites' single-tariff use was served at; null when they differ. */
+function servedAt(bases: readonly ReferenceBasis[]): number | null {
+  const tariffs = [...new Set(bases.map((basis) => basis.singleTariff?.tariff).filter((tariff): tariff is number => tariff !== undefined))];
+  return tariffs.length === 1 ? tariffs[0] : null;
 }

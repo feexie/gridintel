@@ -7,9 +7,12 @@ import type {
   ReferenceClaim,
   ReferenceCustomer,
   ReferenceMeterDay,
+  ReferenceOpexFloor,
+  ReferenceOpexLine,
   ReferencePayment,
   ReferenceSite,
   ReferenceSiteDay,
+  ReferenceSingleTariffUse,
   ReferenceTariffChange,
   ReferenceTariffEvent,
   ReferenceUseWindow,
@@ -31,8 +34,13 @@ import { YEARS } from "./benchmark.ts";
      repeated totals, by the publisher's own day flags. Zero
      meter-days are kept (a zero cannot be told from "off").
    - Site kWh per reporting meter-day: each day's sum of the meters ÷
-     meters reporting; the P50 and P90 across the year's days, by
-     linear interpolation between the nearest ranks.
+     meters reporting; the P50 and P90 by linear interpolation between
+     the nearest ranks.
+   - The default basis (Founder, 24 November 2026): the P50 and P90,
+     and the class factors, pooled over the years of operation that lie
+     wholly within the site's first tariff, held flat for a new site.
+     The same figures by year of operation are kept as what happened at
+     the site: a decline confounded by tariff rises and an outage.
    - Class factor: the class's share of the year's metered energy ÷
      its share of the year's meter-days. Class P90 meter-day: across
      the whole record, for the no-diversity upper bound only.
@@ -46,7 +54,10 @@ import { YEARS } from "./benchmark.ts";
      both (its day is not recorded); use per reporting meter-day
      over each window, with what else changed.
    - The 2019 build cost by the publisher's categories, with the PV,
-     battery and meters it bought.
+     battery and meters it bought, and the accounts beside them.
+   - The recurring operating-cost lines by year (company-account
+     lines in ₦ a year): a reported floor, never full opex, with the
+     lines the source leaves blank named.
 ========================================================== */
 
 export interface ReferenceBasisParameters {
@@ -78,6 +89,7 @@ export interface ReferenceBasisRecords {
   tariffEvents: readonly ReferenceTariffEvent[];
   capex: readonly ReferenceCapexLine[];
   claims: readonly ReferenceClaim[];
+  opex: readonly ReferenceOpexLine[];
 }
 
 const CLASSES: readonly PlanningClass[] = ["residential", "non_residential"];
@@ -152,6 +164,35 @@ export function referenceBasisFrom(records: ReferenceBasisRecords, parameters: R
   if (records.meterDays.some((meterDay) => meterDay.customerClass === null)) exclusions.push("Meter-days with no class are left out of the class factors.");
 
   const tariffs = records.tariffEvents.filter((event) => event.recordType === "tariff" && event.value !== null);
+
+  // The years of operation wholly within the first tariff, pooled.
+  const firstTariff = tariffs[0];
+  const firstEnd = firstTariff?.periodEnd && /^\d{4}-\d{2}/.test(firstTariff.periodEnd) ? dayNumber(`${firstTariff.periodEnd.slice(0, 7)}-01`) : Infinity;
+  const singleYears = YEARS.filter((year) => start + year * parameters.yearDays <= firstEnd);
+  let singleTariff: ReferenceSingleTariffUse | null = null;
+  if (firstTariff && singleYears.length > 0) {
+    const pooled = keptDays.filter((day) => singleYears.includes(yearOf(day.date)));
+    const pooledDates = new Set(pooled.map((day) => day.date));
+    const cells = Object.fromEntries(CLASSES.map((klass) => [klass, { kwh: 0, days: 0 }])) as Record<PlanningClass, { kwh: number; days: number }>;
+    for (const meterDay of records.meterDays) {
+      if (meterDay.customerClass === null || !pooledDates.has(meterDay.date)) continue;
+      cells[meterDay.customerClass].kwh += meterDay.kwh;
+      cells[meterDay.customerClass].days += 1;
+    }
+    const energy = CLASSES.reduce((sum, one) => sum + cells[one].kwh, 0);
+    const meterDays = CLASSES.reduce((sum, one) => sum + cells[one].days, 0);
+    const values = pooled.map(perMeter);
+    singleTariff = {
+      tariff: firstTariff.value as number,
+      years: singleYears,
+      days: pooled.length,
+      p50: percentile(values, 0.5),
+      p90: percentile(values, 0.9),
+      classFactor: Object.fromEntries(
+        CLASSES.map((klass) => [klass, energy <= 0 || meterDays <= 0 || cells[klass].days === 0 ? null : cells[klass].kwh / energy / (cells[klass].days / meterDays)]),
+      ) as Record<PlanningClass, number | null>,
+    };
+  }
   const gaps = records.claims.filter((claim) => claim.key === "meter_gap_share").map((claim) => claim.value);
 
   return {
@@ -159,6 +200,7 @@ export function referenceBasisFrom(records: ReferenceBasisRecords, parameters: R
     siteCode: records.site.code,
     sourceId: records.site.sourceId,
     operationStart: first.date,
+    singleTariff,
     siteKwhPerMeterDay: { p50: yearValues.map((values) => percentile(values, 0.5)), p90: yearValues.map((values) => percentile(values, 0.9)) },
     classFactor,
     classP90MeterDay: { residential: percentile(classDays.residential, 0.9), non_residential: percentile(classDays.non_residential, 0.9) },
@@ -168,6 +210,8 @@ export function referenceBasisFrom(records: ReferenceBasisRecords, parameters: R
     meterGap: gaps.length === 0 ? null : { low: Math.min(...gaps), high: Math.max(...gaps) },
     tariffChanges: tariffChanges(records, tariffs, keptDays, parameters),
     capex: capexOf(records),
+    opexFloor: opexFloorOf(records.opex),
+    opexBlank: records.opex.filter((line) => line.amount === null).map((line) => line.item),
     tariffs: tariffs.map((event) => event.value as number),
   };
 }
@@ -239,10 +283,13 @@ function capexOf(records: ReferenceBasisRecords): ReferenceCapex | null {
   const pvKwp = factNumber(records.site, "PV capacity");
   const storageKwh = factNumber(records.site, "Battery capacity, value used as reference");
   const connections = factNumber(records.site, "Smart meters purchased");
-  const priceYear = records.capex.find((line) => line.record === "actual_cost" && line.category === "Total")?.priceYear ?? null;
-  if ([storage, generation, distribution, shared, soft, total, pvKwp, storageKwh, connections, priceYear].some((value) => value === null)) return null;
+  const totalLine = records.capex.find((line) => line.record === "actual_cost" && line.category === "Total");
+  const priceYear = totalLine?.priceYear ?? null;
+  const ngnPerUsd = totalLine?.ngnPerUsd ?? null;
+  if ([storage, generation, distribution, shared, soft, total, pvKwp, storageKwh, connections, priceYear, ngnPerUsd].some((value) => value === null)) return null;
   return {
     priceYear: priceYear as number,
+    ngnPerUsd: ngnPerUsd as number,
     storageNgn: storage as number,
     generationNgn: generation as number,
     distributionAndMeteringNgn: distribution as number,
@@ -251,5 +298,20 @@ function capexOf(records: ReferenceBasisRecords): ReferenceCapex | null {
     pvKwp: pvKwp as number,
     storageKwh: storageKwh as number,
     connections: connections as number,
+    accounts: factNumber(records.site, "Customer accounts in the current customer file"),
   };
+}
+
+/** The recurring company-account lines in ₦ a year, summed by year: a reported floor. One-off costs and blank lines are left out. */
+function opexFloorOf(lines: readonly ReferenceOpexLine[]): ReferenceOpexFloor[] {
+  const byYear = new Map<number, ReferenceOpexFloor>();
+  for (const line of lines) {
+    if (line.amount === null || line.unit !== "NGN per year" || !line.period || !/^\d{4}$/.test(line.period)) continue;
+    const year = Number(line.period);
+    const floor = byYear.get(year) ?? { year, ngnPerYear: 0, items: [] };
+    floor.ngnPerYear += line.amount;
+    floor.items.push(line.item);
+    byYear.set(year, floor);
+  }
+  return [...byYear.values()].sort((a, b) => a.year - b.year);
 }

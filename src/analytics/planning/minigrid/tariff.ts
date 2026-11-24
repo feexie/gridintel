@@ -14,25 +14,27 @@ import { REFERENCE_DISCLAIMER } from "../../core/methodology.ts";
    use per reporting meter-day (kWh only, never payments), with its
    windows, days and what else changed.
 
-   Scenarios side by side: the fixed budget, each change's own e, and
-   the user's e. Where the changes give elasticities of opposite sign
-   the result gives their range, low to high, with "the reference
-   events disagree", and never a single figure or an average
-   (Founder, 24 November 2026). No single combined e is ever given.
+   Scenarios: the fixed budget (e = −1) as the middle case, each
+   reference change whose e is not positive, and the user's e. A
+   positive e (use rising with the price) is not a price response:
+   such a change is shown with its confounders, labelled "not usable
+   as a price response", and left out of every scenario and the range;
+   a positive user e is left out the same way (Founder, 24 November
+   2026). No single combined e is ever given.
 ========================================================== */
 
 export const MINIGRID_TARIFF_RESPONSE_REFERENCE: Methodology<Record<string, never>> = {
   id: "gridintel.planning.minigrid-tariff-response",
   version: "0.1.0",
   name: "GridIntel reference tariff response for a planned mini-grid",
-  description: "kWh and revenue a day under tariff options, for a fixed budget, each reference tariff change's own elasticity and the user's; the range where the changes disagree.",
+  description: "kWh and revenue a day under tariff options: the fixed budget as the middle case, each reference tariff change whose elasticity is not positive, and the user's; a positive elasticity is shown and left out.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
   parameters: {},
 };
 
-export const EVENTS_DISAGREE = "the reference events disagree";
+export const NOT_A_PRICE_RESPONSE = "not usable as a price response";
 
 /** kWh a day at a tariff, from kWh a day at a base tariff and an elasticity. */
 export function kwhAtTariff(baseKwh: number, baseTariff: number, tariff: number, elasticity: number): number {
@@ -52,23 +54,43 @@ export interface TariffRow {
   revenuePerDay: number;
 }
 
+export interface TariffChangeShown {
+  siteId: string;
+  id: string;
+  fromTariff: number;
+  toTariff: number;
+  before: string;
+  after: string;
+  days: { before: number; after: number };
+  confounders: string[];
+}
+
 export interface TariffScenario {
   kind: "fixed_budget" | "reference_change" | "user";
   label: string;
   elasticity: number;
+  /** The fixed budget is the middle case. */
+  middle: boolean;
   rows: TariffRow[];
-  /** For a reference change: its site, windows, days and what else changed. */
-  change?: { siteId: string; id: string; fromTariff: number; toTariff: number; before: string; after: string; days: { before: number; after: number }; confounders: string[] };
+  change?: TariffChangeShown;
+}
+
+/** A change, or a user figure, whose elasticity is positive: shown, never used. */
+export interface UnusableResponse {
+  kind: "reference_change" | "user";
+  label: string;
+  elasticity: number;
+  reason: string;
+  change?: TariffChangeShown;
 }
 
 export interface TariffResponseResult {
   baseKwh: number;
   baseTariff: number;
   scenarios: TariffScenario[];
-  /** "agree" when every change's e has one sign; "disagree" when signs differ; "one" or "none" otherwise. */
-  agreement: "agree" | "disagree" | "one" | "none";
-  /** The reference changes' elasticities, low to high, when there are two or more. */
-  range: { low: number; high: number } | null;
+  /** The scenarios' elasticities, low to high; never a single combined figure. */
+  range: { low: number; high: number };
+  unusable: UnusableResponse[];
   note: string | null;
   referenceSites: number;
   method: { id: string; version: string };
@@ -81,45 +103,45 @@ export function tariffResponse(input: { baseKwh: number; baseTariff: number; tar
       const kwhPerDay = kwhAtTariff(baseKwh, baseTariff, tariff, elasticity);
       return { tariff, kwhPerDay, revenuePerDay: kwhPerDay * tariff };
     });
-  const scenarios: TariffScenario[] = [{ kind: "fixed_budget", label: "Fixed budget (e = −1)", elasticity: -1, rows: rows(-1) }];
-  const fitted: number[] = [];
+  const scenarios: TariffScenario[] = [{ kind: "fixed_budget", label: "Fixed budget (e = −1), the middle case", elasticity: -1, middle: true, rows: rows(-1) }];
+  const unusable: UnusableResponse[] = [];
   const sites = new Set<string>();
   for (const basis of input.bases) {
     for (const change of basis.tariffChanges) {
       const elasticity = changeElasticity(change);
       if (elasticity === null) continue;
-      fitted.push(elasticity);
+      const label = `${basis.siteCode}: ₦${change.fromTariff} to ₦${change.toTariff}`;
+      const shown: TariffChangeShown = {
+        siteId: basis.siteId,
+        id: change.id,
+        fromTariff: change.fromTariff,
+        toTariff: change.toTariff,
+        before: `${change.before.start} to ${change.before.end}`,
+        after: `${change.after.start} to ${change.after.end}`,
+        days: { before: change.before.days, after: change.after.days },
+        confounders: change.confounders,
+      };
+      if (elasticity > 0) {
+        unusable.push({ kind: "reference_change", label, elasticity, reason: `Use rose with the price: ${NOT_A_PRICE_RESPONSE}`, change: shown });
+        continue;
+      }
       sites.add(basis.siteId);
-      scenarios.push({
-        kind: "reference_change",
-        label: `${basis.siteCode}: ₦${change.fromTariff} to ₦${change.toTariff}`,
-        elasticity,
-        rows: rows(elasticity),
-        change: {
-          siteId: basis.siteId,
-          id: change.id,
-          fromTariff: change.fromTariff,
-          toTariff: change.toTariff,
-          before: `${change.before.start} to ${change.before.end}`,
-          after: `${change.after.start} to ${change.after.end}`,
-          days: { before: change.before.days, after: change.after.days },
-          confounders: change.confounders,
-        },
-      });
+      scenarios.push({ kind: "reference_change", label, elasticity, middle: false, rows: rows(elasticity), change: shown });
     }
   }
-  if (input.userElasticity !== null) scenarios.push({ kind: "user", label: `Your elasticity (e = ${input.userElasticity})`, elasticity: input.userElasticity, rows: rows(input.userElasticity) });
-
-  const positive = fitted.some((e) => e > 0);
-  const negative = fitted.some((e) => e < 0);
-  const agreement = fitted.length === 0 ? "none" : fitted.length === 1 ? "one" : positive && negative ? "disagree" : "agree";
+  const user = input.userElasticity;
+  if (user !== null) {
+    if (user > 0) unusable.push({ kind: "user", label: `Your elasticity (e = ${user})`, elasticity: user, reason: `A positive elasticity is ${NOT_A_PRICE_RESPONSE}` });
+    else scenarios.push({ kind: "user", label: `Your elasticity (e = ${user})`, elasticity: user, middle: false, rows: rows(user) });
+  }
+  const used = scenarios.map((scenario) => scenario.elasticity);
   return {
     baseKwh,
     baseTariff,
     scenarios,
-    agreement,
-    range: fitted.length < 2 ? null : { low: Math.min(...fitted), high: Math.max(...fitted) },
-    note: agreement === "disagree" ? `The ${EVENTS_DISAGREE.replace(/^the /, "")}: their elasticities run from ${Math.min(...fitted).toFixed(2)} to ${Math.max(...fitted).toFixed(2)}, and no single figure is given` : null,
+    range: { low: Math.min(...used), high: Math.max(...used) },
+    unusable,
+    note: unusable.length === 0 ? null : `${unusable.map((one) => `${one.label} (e = ${one.elasticity >= 0 ? "+" : ""}${one.elasticity.toFixed(2)})`).join("; ")}: ${NOT_A_PRICE_RESPONSE}, shown with ${unusable.length === 1 ? "its" : "their"} confounders and left out of the scenarios`,
     referenceSites: sites.size,
     method: { id: MINIGRID_TARIFF_RESPONSE_REFERENCE.id, version: MINIGRID_TARIFF_RESPONSE_REFERENCE.version },
   };

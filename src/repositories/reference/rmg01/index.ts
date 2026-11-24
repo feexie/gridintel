@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type {
   DataSource,
   ReferenceCapexLine,
+  ReferenceOpexLine,
   ReferenceCaveat,
   ReferenceClaim,
   ReferenceCustomer,
@@ -68,7 +69,8 @@ type Table =
   | "Reliability_Indices"
   | "Tariffs_and_Events"
   | "Caveats"
-  | "CAPEX";
+  | "CAPEX"
+  | "OPEX";
 
 const requiredNumber = (value: string | undefined, what: string): number => {
   const number = numberOrNull(value);
@@ -194,7 +196,19 @@ const capexLine = (row: CsvRow): ReferenceCapexLine => ({
   category: row.category,
   itemsIncluded: textOrNull(row.items_included),
   costNgn: numberOrNull(row.cost_NGN),
+  ngnPerUsd: numberOrNull(row.exchange_rate_NGN_per_USD),
   priceYear: numberOrNull(row.price_year),
+  notes: textOrNull(row.notes),
+});
+
+const opexLine = (row: CsvRow): ReferenceOpexLine => ({
+  siteId: SITE_ID,
+  period: textOrNull(row.period),
+  item: row.item,
+  category: row.category,
+  amount: numberOrNull(row.amount),
+  unit: textOrNull(row.unit),
+  scope: textOrNull(row.scope),
   notes: textOrNull(row.notes),
 });
 
@@ -271,7 +285,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
   let loaded: Promise<ReferenceSiteRecords> | null = null;
 
   const load = async (): Promise<ReferenceSiteRecords> => {
-    const [description, days, meterDays, customers, payments, outages, reported, tariffs, caveats, capex] = await Promise.all([
+    const [description, days, meterDays, customers, payments, outages, reported, tariffs, caveats, capex, opex] = await Promise.all([
       read("Site_Description"),
       read("Site_Daily"),
       read("Meter_Daily"),
@@ -282,6 +296,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
       read("Tariffs_and_Events"),
       read("Caveats"),
       read("CAPEX"),
+      read("OPEX"),
     ]);
     return {
       site: site(description),
@@ -295,6 +310,7 @@ export function rmg01Reference(root = process.cwd()): ReferenceSiteRepository {
       tariffEvents: tariffs.map(tariffEvent),
       caveats: caveats.map(caveat),
       capex: capex.map(capexLine),
+      opex: opex.map(opexLine),
       claims: claims(description),
     };
   };
