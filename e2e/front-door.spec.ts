@@ -67,7 +67,9 @@ test("the public charging network and the mini-grid summary need no sign-in and 
 
   await page.goto("/preview/initiatives/minigrid-verification/public");
   const summary = page.locator('[data-public-view="minigrid-summary"]');
-  await expect(summary.locator("[data-figure]")).toHaveCount(4);
+  // Four figures of the synthetic sites, and apart from them one figure of a real reference site.
+  await expect(summary.locator("[data-figure]")).toHaveCount(5);
+  await expect(summary.locator("[data-summary-reference] [data-figure]")).toHaveCount(1);
   await expect(summary.locator("[data-synthetic-note]")).toBeVisible();
   await expect(page.locator('a[href*="/dashboard/minigrid/sites/"]')).toHaveCount(0);
 });

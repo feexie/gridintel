@@ -1,0 +1,17 @@
+component,status,quantity,rating_per_unit,rating_unit,total_capacity,total_unit,type_or_model,notes,source
+PV array,as built,,,,30,kWp,Monocrystalline modules,"Module model, number and rating are not recorded for the as-built array. The 2019 design lists 100 modules of 300 Wp (30 kWp).",Operator project description (2023); Company profile document (Jan 2024); Operator questionnaire (Q2 2020)
+Battery bank,as built,,,,136,kWh,Lead-acid,"Reference value; other documents give 140, 144 and 150 kWh (see Site_Description). Make, cell count, nominal voltage and depth-of-discharge limit are not recorded. Charge and discharge power rating is not recorded.",Operator project description (2023); Company profile document (Jan 2024)
+Hybrid inverters,as built,4,10,kVA,40,kVA,"Infini Solar hybrid inverter, 10 kW (as quoted), 48 V, three-phase","The model name quoted in the operator documents says 10 kW and the project description says 10 kVA; both are shown. 1 inverter was repaired and 2 new inverters of 10 kW were installed in Nov to Dec 2022. Efficiency, DC current limits and PV input ratings are not recorded.",Operator project description (2023); Operator repair cost sheet (Dec 2022)
+Charge controllers,as built,,,,,,,Not recorded as separate equipment.,
+Smart meters,as built,220,,,,,Prepaid smart meters,Number purchased. 133 meters have readings in this dataset. Meter ratings are not recorded for the as-built meters.,Operator project description (2023)
+Distribution network,as built,,,,2,km,Three-phase low-voltage overhead network,About 2 km span. No as-built single-line diagram was found.,Operator project description (2023)
+Powerhouse,as built,1,,,,,Shipping container with air conditioning,Number of air conditioners is not recorded.,"Project cost breakdown, actual costs (operator records)"
+Communications router,as built,,,,,,,A cost line exists; quantity and model are not recorded.,"Project cost breakdown, actual costs (operator records)"
+"PV modules (30 kW bill of quantities, 2019)",design only,100,300,Wp,30,kWp,,Pre-construction design; not as built.,Pre-construction design documents (2019)
+"Batteries (30 kW bill of quantities, 2019)",design only,48,"2 V, 1,500 Ah",,144,kWh,,"Pre-construction design (48 x 2 V x 1,500 Ah, nominal); not as built.",Pre-construction design documents (2019)
+"Battery inverters (30 kW bill of quantities, 2019)",design only,3,,,,,,Pre-construction design; not as built.,Pre-construction design documents (2019)
+"MPPT charge controllers (30 kW bill of quantities, 2019)",design only,6,,,,,,Pre-construction design; not as built.,Pre-construction design documents (2019)
+"Smart meters (30 kW bill of quantities, 2019)",design only,250,,,,,"238 x 16 A single-phase, 10 x 60 A single-phase, 2 three-phase",Pre-construction design; not as built.,Pre-construction design documents (2019)
+"Distribution (30 kW bill of quantities, 2019)",design only,80,,,9600,m,"80 concrete poles; 9,600 m overhead conductor; 60 m armoured cable",Pre-construction design; not as built.,Pre-construction design documents (2019)
+"One-line diagram, 100 kW system (2019)",design only,,,,100,kW,300 x 300 W modules (90 kW); 120 gel batteries at 360 V; 4 x 30 kVA inverters,Design peak load 100 kW and 232 customers. Describes a larger system than the one built.,Pre-construction design documents (2019)
+Simulation model (2019),design only,,,,,,"Generic flat-plate PV, generic lead-acid battery and system converter",Generic components.,Pre-construction design documents (2019)

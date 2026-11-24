@@ -11,7 +11,12 @@ workspaces as a prototype under `/preview`. **Phase EMOB-A is merged to
 `phase-emob-a`): the E-mobility engine, no screen. Both merged once CI's
 full `verify` passed, after a GitHub billing lock (16 to 24 November) had
 stopped CI. **Phase 8A stays at its checkpoint** until the Founder has
-signed in on the real Supabase project, before NAV-B. Earlier status: **Phase 10 (Mini-grid Intelligence) is
+signed in on the real Supabase project, before NAV-B. **Phase MG-REAL is
+approved and merged to `main`** (Founder, 2026-11-24, with one fix: the data
+bar above a reference page says it is published real data; ADR 0022
+accepted; tag `phase-mg-real`): a real, published mini-grid (site RMG01) as
+a reference site beside the portfolio. **MG-PLAN-A is in progress** (branch
+`phase-mg-plan-a`). Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2333,6 +2338,37 @@ sites and DT headroom, power source, finance from a per-swap add-on, and verific
 
 DER → Plan → E-mobility, tabs Demand · Sites and headroom · Power source · Finance · Verify;
 an "E-mobility hubs" initiative card; presentation mode; key figures added to `geh:figures`.
+
+## Phase MG: real reference sites and mini-grid planning (plan approved 2026-11-24 with one change; MG-REAL merged, tag `phase-mg-real`)
+
+**Goal.** Bring a real, published mini-grid into GridIntel as a reference
+site, then plan new mini-grids from reference sites (plan
+`docs/design/MG-PLAN.md`; ADR 0022). Taken before NAV-B, which waits for the
+Founder's Supabase sign-in (Founder, 24 November 2026).
+
+### MG-REAL: the reference site (approved 2026-11-24 with one fix; merged, tag `phase-mg-real`)
+
+| Built | Where |
+| --- | --- |
+| The RMG01 dataset (Kemabonta & Geoffrey 2026, v1.0.2, CC BY 4.0) vendored unchanged at commit `bd9dea2`, every file's SHA-256 checked | `src/repositories/reference/rmg01/data`, `SOURCE.md` |
+| Reference sites as a layer of their own: domain, a port returning a list, the RMG01 adapter | `src/domain/reference.ts`, `src/repositories/ports/reference.ts`, `src/repositories/reference/` |
+| Four methods at 0.1.0: meter gap, credit buyers (and repeat buyers), use by year, reliability from the fault log | `src/analytics/reference/` |
+| The publisher's figures beside GridIntel's: 17.9%, 8.6%, 69/85/90%, the credit buyers each year all agree; SAIDI agrees in 7 of 8 months, March 2021 differs (7.03 h reported, 6.88 h calculated) | `src/services/minigrid/reference.ts` |
+| Repeat buyers 2021 and 2024: 114 of 141, never called retention | the reference page |
+| The Sites screen's "Reference sites" section, the reference page, a line on the Mini-grid verification card and the public summary, each credited and outside the portfolio's figures; in both deployments | `src/components/minigrid/Reference.tsx`, `/dashboard/minigrid/sites/reference/rmg01` |
+| The fix at review: above a reference page the data bar reads "PUBLISHED DATA" (the portfolio elsewhere is synthetic, this page is published real data) with the citation; unchanged on every other screen | `src/components/system/DataBar.tsx`, `e2e/reference-site.spec.ts` |
+
+Technical design: `docs/minigrid/DESIGN.md`. `npm run geh:figures`: all 101
+unchanged.
+
+### MG-PLAN-A: the planning engine (in progress; branch `phase-mg-plan-a`)
+
+`demandFromReference` (P50 and a diversified P90 from the reference site's
+daily totals, with a labelled no-diversity upper bound), `sizeSystem`,
+`tariffResponse` (scenarios; a range where the events disagree),
+`subsidyGap`, `pueGap`, each at 0.1.0 with fixed-input tests. Screens after
+NAV-B, under Mini-grid workspace → Plan → Unserved and Productive use. The
+Zenodo 22149102 dataset is later, as its own decision gate.
 
 ## Phase 11: AI / MCP intelligence
 

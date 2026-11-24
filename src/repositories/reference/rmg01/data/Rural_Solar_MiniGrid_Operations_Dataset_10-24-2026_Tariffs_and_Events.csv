@@ -1,0 +1,15 @@
+record_type,period_start,period_end,description,value,unit,source,notes
+tariff,2020,2023-07,Energy tariff,165,NGN per kWh,Reported by the site operator,Applied until July 2023. The exact day it ended is not recorded.
+tariff,2023-07,2024-02,Energy tariff,350,NGN per kWh,Reported by the site operator,From July 2023. The exact start day is not recorded.
+tariff,2024-02,open,Energy tariff (about),500,NGN per kWh,Reported by the site operator,About NGN 500 per kWh from about February 2024. The exact start day is not recorded.
+event,2023-04,2023-07,Supply interruption (Apr to Jul 2023).,,,Reported by the site operator,No recorded payments from 2023-04-26 to 2023-07-02 and almost no recorded usage (see data notes below). Normal use and payments are recorded again from 2023-07-03.
+event,2023-07,2023-07,Tariff change to NGN 350 per kWh (July 2023).,,,Reported by the site operator,The exact start day is not recorded.
+event,2024-02,2024-02,Tariff change to about NGN 500 per kWh (about February 2024).,,,Reported by the site operator,The exact start day is not recorded.
+data_note,2023-03-20,2023-07-02,"Low-use window in the per-meter data: 105 days, 93.7 kWh in total on the 67 days with data.",,,Derived from Site_Daily,Flagged as low_use_window in Site_Daily.
+data_note,2023-04-26,2023-06-02,No per-meter usage data and no community series for these 38 days.,,,Derived from Site_Daily,Flagged as gap_no_meter_data in Site_Daily. Values are left blank.
+data_note,2023-04-26,2023-07-02,"No recorded cash payments (last payment 2023-04-25, next payment 2023-07-03).",,,Derived from Payments,Flagged as no_recorded_payments in Site_Daily.
+data_note,2020-07-17,2020-07-17,First payment record in the export.,,,Payments,
+data_note,2020-08-26,2020-08-26,First per-meter daily reading.,,,Meter_Daily,
+data_note,2022-06-06,2022-06-06,First day of the community Electricity series.,,,Site_Daily,
+data_note,2024-09-19,2025-01-25,From this date the community series equals the sum of the per-meter readings on every day.,,,Site_Daily,Before this date the community series is higher (see Caveats).
+data_note,2025-01-25,2025-01-26,End of the data: last per-meter reading 2025-01-25; last payment record 2025-01-26.,,,"Meter_Daily, Payments",No usage or payment data after these dates is included. Meter_Uptime extends to 2026-10-24 (communications uptime only).

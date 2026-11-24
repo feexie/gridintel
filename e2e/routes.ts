@@ -45,6 +45,8 @@ export const ROUTES = [
   // The Sites workspace and one site.
   "/dashboard/minigrid/sites",
   "/dashboard/minigrid/sites/MG-DRY",
+  // A reference site: published data from another operator, beside the portfolio (Phase MG-REAL).
+  "/dashboard/minigrid/sites/reference/rmg01",
   // The reports: each sector's list, every report, and each built report for its month.
   "/dashboard/utility/reports",
   "/dashboard/minigrid/reports",

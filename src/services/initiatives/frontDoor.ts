@@ -53,6 +53,7 @@ function card(initiative: Initiative, figures: Figures, href: string): Initiativ
     headline: figures[initiative.headline],
     progress: initiative.progress === undefined ? null : figures[initiative.progress],
     secondary: initiative.secondary === undefined ? null : figures[initiative.secondary],
+    reference: initiative.reference === undefined ? null : figures[initiative.reference],
   };
 }
 

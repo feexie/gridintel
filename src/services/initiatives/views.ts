@@ -28,6 +28,8 @@ export interface InitiativeFigureView {
   basis: string;
   /** A share from 0 to 1 for a progress bar; null when the figure is not a share or is not available. */
   share: number | null;
+  /** For a figure from a published dataset: the credit its licence requires, shown with it. */
+  attribution?: { citation: string; url: string; licence: string; licenceUrl: string };
 }
 
 export interface InitiativeCardView {
@@ -39,6 +41,8 @@ export interface InitiativeCardView {
   /** The figure the bar shows; null when the card has none. */
   progress: InitiativeFigureView | null;
   secondary: InitiativeFigureView | null;
+  /** A reference site's published figure, shown apart from the card's own figures; null when the card has none. */
+  reference: InitiativeFigureView | null;
 }
 
 export interface RoleOptionView {
@@ -141,4 +145,6 @@ export interface RailItemPageView {
 export interface MinigridSummaryView {
   figures: InitiativeFigureView[];
   synthetic: boolean;
+  /** Published figures about reference sites: real, outside the figures above and never counted in them. */
+  reference: InitiativeFigureView[];
 }

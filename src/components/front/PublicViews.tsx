@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PlannedTag } from "@/components/system/Brand";
 import type { MinigridSummaryView, SignInHandoffView } from "@/services/initiatives/views";
-import { Basis, FigureRow } from "./Figure";
+import { Attribution, Basis, FigureRow } from "./Figure";
 
 /* The pages a role is sent to (ADR 0021). In Phase NAV-A they are shells: the meter application
    and the tracking page show every field and submit nothing (MTR-A builds them); the charging
@@ -193,6 +193,18 @@ export function MinigridSummary({ summary }: { summary: MinigridSummaryView }) {
           </div>
         ))}
       </div>
+      {summary.reference.length > 0 ? (
+        <div className="space-y-3 rounded-panel border border-dashed border-line-strong bg-panel p-4" data-summary-reference>
+          <p className="text-sm font-medium text-ink-2">A real site, from published data. Not one of the sites above, and not counted in their figures.</p>
+          {summary.reference.map((figure) => (
+            <div key={figure.id} className="space-y-1">
+              <FigureRow figure={figure} />
+              <Basis figure={figure} />
+              <Attribution figure={figure} />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

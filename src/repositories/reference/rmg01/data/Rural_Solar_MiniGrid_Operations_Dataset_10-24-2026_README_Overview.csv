@@ -1,0 +1,43 @@
+field,value
+Title,"Rural Solar Mini-Grid Operations Dataset in Southern Nigeria, 2020 to 2025"
+Authors,Tam Kemabonta and Abiye Geoffrey
+Year,2026
+Created,2026-10-24
+What the data is,"Daily electricity use per smart meter, daily site totals, customer-level payment records, customer attributes and tariff information for one rural solar mini-grid in southern Nigeria, with site description, equipment, capital cost, operating cost lines, tariffs, an outage log with reliability indices, and meter communications uptime. All identifiers are replaced by codes."
+Source,Smart-meter and payment system export from the mini-grid's management platform.
+Location,Southern Nigeria (rural community; no more precise location is given).
+Site code,RMG01
+Coverage,"Per-meter daily readings 2020-08-26 to 2025-01-25 (1,614 days, 1,576 with data). Payments 2020-07-17 to 2025-01-26. Community daily series 2022-06-06 to 2025-01-25. Meter communications uptime reports 2020-08-26 to 2026-10-24 (communications only; usage and payments end in January 2025)."
+Time resolution,Daily. No hourly or sub-daily data exists in this dataset.
+Units,Energy in kWh. Money in Nigerian naira (NGN).
+Time zone,UTC+01:00 (West Africa Time). All dates are local calendar dates.
+Size,"133 meters with readings; 142 customer-meter links (Meter_Customer_Link); 248 customer codes; 6 agent codes; 142,450 meter-days; 21,300 payment records."
+Main totals,"Sum of per-meter kWh 25,050.9; PAY payments NGN 7,499,650 (19,769 payments)."
+Identifier coding,"Names, phone numbers, payment references, SIM numbers, coordinates, balances and the real meter, customer and agent identifiers are removed. Identifiers are replaced by codes (RMG01-Mnnnn, RMG01-Cnnnn, RMG01-Axx) assigned with a fixed random seed; the mapping key is withheld. Dates only, no times (the outage log keeps local clock times of events). Classes BUS and INS merged into non-residential; customers with no class in the source are treated as residential. No customer price column is included. Creation date reduced to year. The smallest class group is 18 customers; year created has two groups below 5 (2022: 4 customers, 2025: 1 customer), and the 3 customers that appear in payment records only have no creation year (see the README for group sizes). The site description, equipment, capital cost, operating cost, tariff and reliability tables hold operator-level figures only: no names, place names, coordinates or account numbers."
+Coding convention,Site RMG01; meters RMG01-Mnnnn; customers RMG01-Cnnnn; agents RMG01-Axx. Real identifiers are withheld. Meter_Customer_Link uses the same codes. Details in Data_Dictionary.
+How to cite,"Kemabonta, T., & Geoffrey, A. (2026). Rural Solar Mini-Grid Operations Dataset in Southern Nigeria, 2020 to 2025 [Data set]. [PLACEHOLDER: DOI or URL to be added after review]"
+DOI or URL,[PLACEHOLDER: DOI or URL to be added after review]
+License,"Creative Commons Attribution 4.0 International (CC BY 4.0). You are free to share and adapt the dataset, including for commercial use, provided that you give appropriate credit to the authors, provide a link to the license and indicate if changes were made."
+Commercial licensing,Commercial use is permitted under CC BY 4.0; no separate permission is needed.
+Contact,[contact to be added]
+Sheets,
+  CITATION_and_LICENSE.txt,"Plain-text citation, how to cite, and license (see LICENSE and CITATION.cff)"
+  README_Overview,"Title, authors, how to cite, license, source, coverage, units and identifier-coding summary"
+  Site_Description,"Site technology, capacities, customers, energization and years of operation, with conflicting battery values shown (38 rows)"
+  Equipment,As-built equipment and design-only items with ratings (16 rows)
+  CAPEX,Actual build cost by category in NGN and USD with the exchange rate; 2019 estimate (design only) (17 rows)
+  OPEX,"Operating cost lines that exist, with units and years; blanks where none exists (11 rows)"
+  Tariffs,"Tariffs stated by the operator (165, 350 and about 500 NGN per kWh) and a note on the lower rate charged to sales agents (4 rows)"
+  Reliability_Outages,"17 logged outage events, December 2020 to November 2021 (17 rows)"
+  Reliability_Indices,"Monthly SAIDI, CAIDI, SAIFI, CAIFI, CIII, MAIFI and ASAI, December 2020 to November 2021 (12 rows)"
+  Site_Daily,"One row per day: site kWh, meters reporting, payments, data flags, logged outage flag (1,614 rows)"
+  Site_Monthly,Site_Daily aggregated by month (54 rows)
+  Site_Yearly,Site_Daily aggregated by year (6 rows)
+  Meter_Daily,"Daily kWh per meter code (142,450 rows)"
+  Meter_Uptime,"Communications uptime per meter code from six platform uptime reports, 2020-08-26 to 2026-10-24 (communications only) (804 rows)"
+  Customers,"One row per customer code: class, year created, linked meters (248 rows)"
+  Meter_Customer_Link,"Meter code and customer code of each of the 142 customer-meter pairs, with a yes/no column for meters that have daily readings (142 rows)"
+  Payments,"Payment events (PAY, UCU, REV) by date, agent and customer code (21,300 rows)"
+  Tariffs_and_Events,"Tariffs, dated events and data notes (14 rows)"
+  Data_Dictionary,"Every column, unit, source and notes; coding convention (129 rows)"
+  Caveats,Known gaps and limitations (29 rows)

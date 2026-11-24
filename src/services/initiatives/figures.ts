@@ -3,6 +3,7 @@ import type { InitiativeFigureId } from "../../constants/initiatives.ts";
 import type { MarketplaceRepository } from "../../repositories/ports/marketplace.ts";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
 import type { MinigridPortfolioView } from "../minigrid/views.ts";
+import type { ReferenceSitesView } from "../minigrid/referenceViews.ts";
 import type { InitiativeFigureView, MinigridSummaryView } from "./views.ts";
 
 /* ==========================================================
@@ -21,6 +22,10 @@ import type { InitiativeFigureView, MinigridSummaryView } from "./views.ts";
    - Charging hubs: no source yet (E-mobility comes later).
    - Mini-grid verification: the Sites screen's report checks,
      counted (calculated, on synthetic records).
+   - Reference site: a real site's published figure (the customer
+     meters against the site meter), with GridIntel's calculation
+     and the dataset's credit. Shown apart; never counted in the
+     sites agreeing or any other figure of the card.
 ========================================================== */
 
 /** The national figure the Metering screens use: NERC's Second Quarter 2026 Report, Table 15. */
@@ -105,8 +110,28 @@ export function sitesAgreeing(portfolio: MinigridPortfolioView): InitiativeFigur
   };
 }
 
+/** A reference site's meter gap as the dataset states it, with GridIntel's calculation in the basis. */
+export function referenceMeterGap(reference: ReferenceSitesView): InitiativeFigureView {
+  const id: InitiativeFigureId = "minigrid.reference-meter-gap";
+  const [site] = reference.sites;
+  if (!site) return notAvailable(id, "Reference site", "No reference site is held.");
+  const gap = site.meterGap;
+  const standing = gap.standing === "agrees" ? "agrees" : gap.standing === "differs" ? "differs" : "cannot be calculated";
+  return {
+    id,
+    label: `Reference site ${site.code} (published data): customer meters below the site meter`,
+    value: gap.stated,
+    status: "ok",
+    origin: "reported",
+    synthetic: false,
+    basis: `As the dataset states, over every day with both figures. Calculated by GridIntel from the published daily figures: ${gap.calculated ?? "not calculable"} (${standing}). A real site outside this portfolio: not counted in the figures above.`,
+    share: null,
+    attribution: { citation: site.attribution.citation, url: site.attribution.url, licence: site.attribution.licence, licenceUrl: site.attribution.licenceUrl },
+  };
+}
+
 /** The public summary of mini-grid verification: counts only, no site's detail. */
-export function minigridSummary(portfolio: MinigridPortfolioView): MinigridSummaryView {
+export function minigridSummary(portfolio: MinigridPortfolioView, reference: ReferenceSitesView): MinigridSummaryView {
   const synthetic = portfolio.sourcing.synthetic;
   const claims = portfolio.sites.reduce((sum, site) => sum + site.report.claims, 0);
   const differ = portfolio.sites.reduce((sum, site) => sum + site.report.differ, 0);
@@ -129,23 +154,25 @@ export function minigridSummary(portfolio: MinigridPortfolioView): MinigridSumma
     basis: `Of those, the figures more than ${Math.round(portfolio.agreementTolerance * 100)}% away from the calculation on the same basis.`,
     share: null,
   };
-  return { figures: [listed, sitesAgreeing(portfolio), checked, different], synthetic };
+  return { figures: [listed, sitesAgreeing(portfolio), checked, different], synthetic, reference: [referenceMeterGap(reference)] };
 }
 
 type FigureInputs = {
   published: PublishedFiguresRepository;
   marketplace: MarketplaceRepository;
   minigrid: () => Promise<MinigridPortfolioView>;
+  reference: () => Promise<ReferenceSitesView>;
 };
 
 /** Every figure the initiative catalogue names, resolved, as the public Home shows them: every DisCo's queue. */
 export async function initiativeFigures(inputs: FigureInputs): Promise<Record<InitiativeFigureId, InitiativeFigureView>> {
-  const [rate, pending, portfolio] = await Promise.all([nationalMeteringRate(inputs.published), pendingApplications(inputs.marketplace), inputs.minigrid()]);
+  const [rate, pending, portfolio, reference] = await Promise.all([nationalMeteringRate(inputs.published), pendingApplications(inputs.marketplace), inputs.minigrid(), inputs.reference()]);
   return {
     "metering.national-rate": rate,
     "metering.pending-applications": pending,
     "charging.hubs": chargingHubs(),
     "minigrid.sites-agreeing": sitesAgreeing(portfolio),
+    "minigrid.reference-meter-gap": referenceMeterGap(reference),
   };
 }
 

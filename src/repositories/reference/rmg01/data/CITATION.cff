@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this dataset, please cite it as below."
+type: dataset
+title: "A Multi-Year Daily Operations Dataset from a Rural Solar Mini-Grid in Southern Nigeria"
+authors:
+  - family-names: Kemabonta
+    given-names: Tam
+  - family-names: Geoffrey
+    given-names: Abiye
+date-released: "2026-10-24"
+license: CC-BY-4.0
+# Replace the placeholder below with the DOI assigned on deposit, for example:
+# identifiers:
+#   - type: doi
+#     value: 10.xxxx/xxxxx
+keywords:
+  - mini-grid
+  - solar
+  - smart meter
+  - energy access
+  - Nigeria

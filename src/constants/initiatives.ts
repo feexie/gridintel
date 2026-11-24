@@ -17,7 +17,13 @@
 import type { RailItemId, ViewId, WorkspaceType } from "./workspaces.ts";
 
 /** Figures a card may show, each resolved by the initiatives service. */
-export type InitiativeFigureId = "metering.national-rate" | "metering.pending-applications" | "charging.hubs" | "minigrid.sites-agreeing";
+export type InitiativeFigureId =
+  | "metering.national-rate"
+  | "metering.pending-applications"
+  | "charging.hubs"
+  | "minigrid.sites-agreeing"
+  /** A reference site's published figure, shown apart from the card's own figures. */
+  | "minigrid.reference-meter-gap";
 
 /** The public views a public role is sent to. */
 export type PublicViewId = "meter-application" | "charging-network" | "minigrid-summary";
@@ -48,6 +54,8 @@ export type Initiative = {
   progress?: InitiativeFigureId;
   /** A second, smaller figure on the card. */
   secondary?: InitiativeFigureId;
+  /** A figure from published data about a site outside any portfolio, shown apart and never counted in the card's own figures. */
+  reference?: InitiativeFigureId;
   roles: readonly InitiativeRole[];
 };
 
@@ -132,6 +140,7 @@ export const INITIATIVES: readonly Initiative[] = [
     summary: "Each mini-grid's reported results checked against its own records.",
     headline: "minigrid.sites-agreeing",
     progress: "minigrid.sites-agreeing",
+    reference: "minigrid.reference-meter-gap",
     roles: [
       { id: "public", label: "Member of the public", description: "I want to see the summary figures.", audience: "public", view: "minigrid-summary" },
       {

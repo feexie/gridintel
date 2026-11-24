@@ -1,0 +1,5 @@
+record_type,period_start,period_end,price_low_NGN_per_kWh,price_high_NGN_per_kWh,basis,status,notes
+tariff,2020-07,2023-07,165,165,Reported by the site operator; the standard price in the 2020 to 2021 platform exports,Reported,Applied until July 2023. The exact day it ended is not recorded.
+tariff,2023-07,2024-02,350,350,Reported by the site operator,Reported,From July 2023. The exact start day is not recorded.
+tariff,2024-02,open,500,500,Reported by the site operator,Reported (approximate),About NGN 500 per kWh from about February 2024. The exact start day is not recorded.
+note,,,,,Reported by the site operator,Reported,Sales agents were charged a lower rate than customers. The lower rate is not recorded in this dataset. The tariffs above are the rates charged to customers.

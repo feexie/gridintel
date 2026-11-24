@@ -4,7 +4,8 @@ import type { Citation, DataSource, PendingMeterApplications, ReportedNationalMe
 import type { MarketplaceRepository } from "../../repositories/ports/marketplace.ts";
 import type { PublishedFiguresRepository } from "../../repositories/ports/published.ts";
 import type { MinigridPortfolioView, SiteCardView } from "../minigrid/views.ts";
-import { chargingHubs, initiativeFigures, minigridSummary, nationalMeteringRate, pendingApplications, sitesAgreeing, workspaceFigures } from "./figures.ts";
+import type { ReferenceSitesView } from "../minigrid/referenceViews.ts";
+import { chargingHubs, initiativeFigures, minigridSummary, nationalMeteringRate, pendingApplications, referenceMeterGap, sitesAgreeing, workspaceFigures } from "./figures.ts";
 import { initialsOf, publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, workspaceHome, workspaceInitiative, type WorkspaceRecord } from "./frontDoor.ts";
 
 const CITATION: Citation = { id: "nerc-q2-2026", title: "NERC, Second Quarter 2026 Report", url: null, published: "2026-09-29", standing: "primary" };
@@ -16,6 +17,27 @@ const published = (reports: ReportedNationalMetering[], citations: Citation[] = 
 const SYNTHETIC: DataSource = { id: "synthetic-x", name: "Synthetic", kind: "synthetic" } as DataSource;
 const marketplace = (pending: PendingMeterApplications[], sources: DataSource[] = [SYNTHETIC]) =>
   ({ pending: async () => pending, sources: async () => sources }) as unknown as MarketplaceRepository;
+
+const ATTRIBUTION = { citation: "Author (2026). A dataset", url: "https://doi.org/x", licence: "CC BY 4.0", licenceUrl: "https://creativecommons.org/licenses/by/4.0/", changes: "Unchanged." };
+const REFERENCE = {
+  heading: "Reference sites",
+  note: "",
+  sites: [
+    {
+      id: "ref1",
+      code: "REF1",
+      name: "Site (REF1)",
+      region: "Somewhere",
+      plant: "",
+      href: "/x",
+      meterGap: { label: "", stated: "17.9%", calculated: "17.9%", standing: "agrees", basis: "" },
+      creditBuyers: { label: "", value: "1" },
+      tariff: { label: "", value: "" },
+      attribution: ATTRIBUTION,
+    },
+  ],
+  sourcing: { synthetic: false, sources: [] },
+} as ReferenceSitesView;
 
 const site = (claims: number, differ: number) => ({ report: { claims, agree: claims - differ, differ, notComparable: 0, document: null } }) as unknown as SiteCardView;
 const portfolio = (sites: SiteCardView[], completeness: MinigridPortfolioView["completeness"] = "complete") =>
@@ -65,7 +87,7 @@ describe("the figures on the initiative cards", () => {
       { disco: "ibadan", step: "submitted", count: 120, sourceId: "synthetic-x" },
       { disco: "kano", step: "verified", count: 9, sourceId: "synthetic-x" },
     ]);
-    const publicFigures = await initiativeFigures({ published: published([NATIONAL]), marketplace: repo, minigrid: async () => portfolio([site(1, 0)]) });
+    const publicFigures = await initiativeFigures({ published: published([NATIONAL]), marketplace: repo, minigrid: async () => portfolio([site(1, 0)]), reference: async () => REFERENCE });
     assert.equal(publicFigures["metering.pending-applications"].value, "171");
     assert.equal(publicFigures["metering.national-rate"].label, "Customers metered nationally");
 
@@ -109,7 +131,7 @@ describe("the figures on the initiative cards", () => {
   });
 
   it("gives the public mini-grid summary as counts only", () => {
-    const summary = minigridSummary(portfolio([site(6, 0), site(5, 2)]));
+    const summary = minigridSummary(portfolio([site(6, 0), site(5, 2)]), REFERENCE);
     assert.deepEqual(
       summary.figures.map((figure) => [figure.label, figure.value]),
       [
@@ -120,16 +142,27 @@ describe("the figures on the initiative cards", () => {
       ],
     );
     assert.equal(summary.synthetic, true);
+    // The reference site is a line of its own: real, credited, and not in the counts above.
+    assert.deepEqual(summary.reference.map((figure) => [figure.value, figure.synthetic, figure.origin]), [["17.9%", false, "reported"]]);
+    assert.equal(summary.reference[0].attribution?.licence, "CC BY 4.0");
+  });
+
+  it("gives a reference site's meter gap as stated, with the calculation and the credit, apart from the portfolio", () => {
+    const figure = referenceMeterGap(REFERENCE);
+    assert.equal(figure.label, "Reference site REF1 (published data): customer meters below the site meter");
+    assert.match(figure.basis, /Calculated by GridIntel from the published daily figures: 17\.9% \(agrees\)/);
+    assert.match(figure.basis, /not counted in the figures above/);
+    assert.equal(referenceMeterGap({ ...REFERENCE, sites: [] }).status, "not_available");
   });
 
   it("resolves every figure the catalogue names", async () => {
-    const figures = await initiativeFigures({ published: published([NATIONAL]), marketplace: marketplace([]), minigrid: async () => portfolio([site(1, 0)]) });
-    assert.deepEqual(Object.keys(figures).sort(), ["charging.hubs", "metering.national-rate", "metering.pending-applications", "minigrid.sites-agreeing"]);
+    const figures = await initiativeFigures({ published: published([NATIONAL]), marketplace: marketplace([]), minigrid: async () => portfolio([site(1, 0)]), reference: async () => REFERENCE });
+    assert.deepEqual(Object.keys(figures).sort(), ["charging.hubs", "metering.national-rate", "metering.pending-applications", "minigrid.reference-meter-gap", "minigrid.sites-agreeing"]);
   });
 });
 
 describe("the front door's view models", async () => {
-  const figures = await initiativeFigures({ published: published([NATIONAL]), marketplace: marketplace([{ disco: "ibadan", step: "submitted", count: 7, sourceId: "synthetic-x" }]), minigrid: async () => portfolio([site(1, 0)]) });
+  const figures = await initiativeFigures({ published: published([NATIONAL]), marketplace: marketplace([{ disco: "ibadan", step: "submitted", count: 7, sourceId: "synthetic-x" }]), minigrid: async () => portfolio([site(1, 0)]), reference: async () => REFERENCE });
 
   it("gives the public Home three cards, each with its headline and the meter card its bar and pending count", () => {
     const cards = publicCards(figures);

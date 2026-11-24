@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { NO_DATA_NOTICE, PUBLISHED_FIGURES_NOTICE, REPORT_NOTICE } from "@/constants/planning";
+import type { ReferenceBarNotice } from "@/services/minigrid/referenceViews";
 import { formatPeriod, formatTime } from "./format";
 
 /* The one place a screen says what data it is looking at: the SYNTHETIC DATA label when the
@@ -13,7 +14,11 @@ import { formatPeriod, formatTime } from "./format";
    what the dataset is opens with one tap. Nothing is left out at any width.
 
    On a report's page the bar names the report's own period (a day or a month) and the instant its
-   data is as of, looked up by the period in the address; never the platform's month. */
+   data is as of, looked up by the period in the address; never the platform's month.
+
+   On a reference site's page (real records someone else published) the bar says that the
+   operator's portfolio on the other screens is synthetic and this page is published real data,
+   with the dataset's citation (Founder, 24 November 2026). */
 
 /** A report's address: /dashboard/{sector}/reports/{report}/{period}. */
 const REPORT_ADDRESS = /^\/dashboard\/[^/]+\/reports\/[^/]+\/([^/]+)$/;
@@ -25,6 +30,8 @@ export interface DataContext {
   asOf: string;
   /** By period key, what a report's page says: its period in words, and its as-of instant or null when not available. */
   reportPeriods: Record<string, { label: string; asOf: string | null }>;
+  /** By page address, what the bar says above a reference site's page. */
+  referenceNotices: Record<string, ReferenceBarNotice>;
 }
 
 export function DataBar({ context }: { context: DataContext }) {
@@ -33,7 +40,10 @@ export function DataBar({ context }: { context: DataContext }) {
   const published = PUBLISHED_FIGURES_NOTICE.paths.includes(pathname);
   const noData = NO_DATA_NOTICE.summaries[pathname];
   const planReport = REPORT_NOTICE.paths.includes(pathname);
-  const notice = published
+  const referenceNotice = context.referenceNotices[pathname];
+  const notice = referenceNotice
+    ? { label: referenceNotice.label, summary: referenceNotice.summary }
+    : published
     ? { label: PUBLISHED_FIGURES_NOTICE.label, summary: PUBLISHED_FIGURES_NOTICE.summary }
     : planReport
       ? { label: REPORT_NOTICE.label, summary: REPORT_NOTICE.summary }
@@ -47,6 +57,7 @@ export function DataBar({ context }: { context: DataContext }) {
     <div
       role="note"
       aria-label="About the data on this screen"
+      data-bar-kind={referenceNotice ? "published" : notice ? "notice" : "real"}
       className={`flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-4 py-1.5 text-xs sm:px-6 lg:px-8 ${notice ? "border-caution-line/50 bg-caution-surface text-caution-ink" : "border-line bg-panel text-ink-3"}`}
     >
       {notice ? (
@@ -57,12 +68,20 @@ export function DataBar({ context }: { context: DataContext }) {
           </button>
           <span id="gi-data-summary" className={open ? "w-full sm:w-auto" : "max-sm:hidden"}>
             {notice.summary}
+            {referenceNotice ? (
+              <>
+                {" Source: "}
+                <a href={referenceNotice.url} className="underline decoration-dotted underline-offset-2" data-bar-citation>
+                  {referenceNotice.citation}
+                </a>
+              </>
+            ) : null}
           </span>
         </>
       ) : null}
       <dl className="flex flex-wrap gap-x-4 gap-y-0.5 text-caption sm:ml-auto" data-context>
-        {published ? (
-          PUBLISHED_FIGURES_NOTICE.context.map((item) => (
+        {referenceNotice || published ? (
+          (referenceNotice?.context ?? PUBLISHED_FIGURES_NOTICE.context).map((item) => (
             <div key={item.term} className="flex gap-1.5">
               <dt className="opacity-80">{item.term}</dt>
               <dd className="font-mono">{item.value}</dd>

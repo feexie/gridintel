@@ -52,6 +52,11 @@ const importBoundaries = [
     reaching("memory|demo|supabase|geoboundaries|analytics|data|types|services|composition|components|app|context|constants|lib",
       "The published-figures adapter may import only the domain and the ports."),
   ]),
+  boundary(["src/repositories/reference/**"], [
+    OUTSIDE_DOMAIN,
+    reaching("memory|demo|supabase|geoboundaries|published|sprint|analytics|data|types|services|composition|components|app|context|constants|lib",
+      "A reference-site adapter may import only the domain and the ports."),
+  ]),
   boundary(["src/repositories/sprint/**"], [
     OUTSIDE_DOMAIN,
     reaching("memory|demo|supabase|geoboundaries|published|analytics|data|types|services|composition|components|app|context|constants|lib",

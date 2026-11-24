@@ -25,7 +25,14 @@ const nextConfig: NextConfig = {
   distDir: process.env.GRIDINTEL_DIST_DIR ?? (onRequest ? ".next-request" : ".next"),
   env: { GRIDINTEL_BUILT_AS_TENANT: String(tenant) },
   // About this build reads the sprint changelog (src/repositories/sprint/changelog.ts).
-  outputFileTracingIncludes: { "/dashboard/planning/about-this-build": ["./docs/geh/CHANGELOG-GEH.md"] },
+  // The reference sites' vendored datasets (src/repositories/reference), read on the server by the
+  // Mini-grid screens and by the front door's verification card.
+  outputFileTracingIncludes: {
+    "/dashboard/planning/about-this-build": ["./docs/geh/CHANGELOG-GEH.md"],
+    "/dashboard/minigrid/**": ["./src/repositories/reference/*/data/*.csv"],
+    "/preview/**": ["./src/repositories/reference/*/data/*.csv"],
+    "/preview": ["./src/repositories/reference/*/data/*.csv"],
+  },
   async redirects() {
     return [
       fullList("/dashboard/utility/executive", "feeders"),
