@@ -1,0 +1,840 @@
+{
+ "keys": [
+  "der",
+  "der.overview",
+  "minigrid",
+  "minigrid.ai",
+  "minigrid.map",
+  "minigrid.overview",
+  "minigrid.reports",
+  "minigrid.reports.compliance",
+  "minigrid.reports.site-performance",
+  "minigrid.sites",
+  "planning",
+  "planning.dt",
+  "planning.e-mobility",
+  "planning.feeders",
+  "planning.metering",
+  "planning.network-expansion",
+  "planning.overview",
+  "planning.pue",
+  "planning.underserved",
+  "planning.unserved",
+  "platform",
+  "platform.overview",
+  "platform.people",
+  "platform.reports",
+  "utility",
+  "utility.ai",
+  "utility.assets",
+  "utility.events",
+  "utility.executive",
+  "utility.map",
+  "utility.operations",
+  "utility.overview",
+  "utility.reliability",
+  "utility.reports",
+  "utility.reports.daily-brief",
+  "utility.reports.operations",
+  "utility.reports.reliability",
+  "utility.revenue"
+ ],
+ "addresses": [
+  "/dashboard",
+  "/dashboard/refused",
+  "/dashboard/reports",
+  "/dashboard/settings",
+  "/dashboard/settings/people",
+  "/dashboard/intelligence/ai",
+  "/dashboard/intelligence/analytics",
+  "/dashboard/der",
+  "/dashboard/utility",
+  "/dashboard/utility/map",
+  "/dashboard/utility/ai",
+  "/dashboard/utility/executive",
+  "/dashboard/utility/executive/all",
+  "/dashboard/utility/operations",
+  "/dashboard/utility/operations/regions/demo-region-northfield",
+  "/dashboard/utility/operations/substations/SS-RIV",
+  "/dashboard/utility/operations/feeders/FD-MKT",
+  "/dashboard/utility/operations/transformers/DT-OLD-2",
+  "/dashboard/utility/operations/transformers/DT-OLD-2/all",
+  "/dashboard/utility/operations/service-points/SP-OLD2-001",
+  "/dashboard/utility/reliability",
+  "/dashboard/utility/revenue",
+  "/dashboard/utility/revenue/all",
+  "/dashboard/utility/assets",
+  "/dashboard/utility/assets/all",
+  "/dashboard/utility/events",
+  "/dashboard/utility/reports",
+  "/dashboard/utility/reports/reliability",
+  "/dashboard/utility/reports/reliability/2026-09",
+  "/dashboard/utility/reports/reliability/2026-09/data.csv",
+  "/dashboard/utility/reports/reliability/2026-09/data.xlsx",
+  "/dashboard/utility/reports/operations/2026-09",
+  "/dashboard/utility/reports/daily-brief/2026-09-30",
+  "/dashboard/minigrid",
+  "/dashboard/minigrid/map",
+  "/dashboard/minigrid/ai",
+  "/dashboard/minigrid/sites",
+  "/dashboard/minigrid/sites/MG-DRY",
+  "/dashboard/minigrid/sites/reference/rmg01",
+  "/dashboard/minigrid/reports",
+  "/dashboard/minigrid/reports/site-performance",
+  "/dashboard/minigrid/reports/site-performance/2026-09",
+  "/dashboard/minigrid/reports/site-performance/2026-09/data.csv",
+  "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx",
+  "/dashboard/minigrid/reports/compliance/2026-09",
+  "/dashboard/planning",
+  "/dashboard/planning/about-this-build",
+  "/dashboard/planning/metering",
+  "/dashboard/planning/metering/allocation",
+  "/dashboard/planning/metering/dt",
+  "/dashboard/planning/metering/marketplace",
+  "/dashboard/planning/metering/monitoring",
+  "/dashboard/planning/metering/journey",
+  "/dashboard/planning/metering/report",
+  "/dashboard/planning/dt",
+  "/dashboard/planning/feeders",
+  "/dashboard/planning/network-expansion",
+  "/dashboard/planning/unserved",
+  "/dashboard/planning/underserved",
+  "/dashboard/planning/pue",
+  "/dashboard/planning/e-mobility"
+ ],
+ "opens": {
+  "demo public viewer": [
+   "/dashboard",
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/settings",
+   "/dashboard/settings/people",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics",
+   "/dashboard/der",
+   "/dashboard/utility",
+   "/dashboard/utility/map",
+   "/dashboard/utility/ai",
+   "/dashboard/utility/executive",
+   "/dashboard/utility/executive/all",
+   "/dashboard/utility/operations",
+   "/dashboard/utility/operations/regions/demo-region-northfield",
+   "/dashboard/utility/operations/substations/SS-RIV",
+   "/dashboard/utility/operations/feeders/FD-MKT",
+   "/dashboard/utility/operations/transformers/DT-OLD-2",
+   "/dashboard/utility/operations/transformers/DT-OLD-2/all",
+   "/dashboard/utility/operations/service-points/SP-OLD2-001",
+   "/dashboard/utility/reliability",
+   "/dashboard/utility/revenue",
+   "/dashboard/utility/revenue/all",
+   "/dashboard/utility/assets",
+   "/dashboard/utility/assets/all",
+   "/dashboard/utility/events",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/reliability",
+   "/dashboard/utility/reports/reliability/2026-09",
+   "/dashboard/utility/reports/reliability/2026-09/data.csv",
+   "/dashboard/utility/reports/reliability/2026-09/data.xlsx",
+   "/dashboard/utility/reports/operations/2026-09",
+   "/dashboard/utility/reports/daily-brief/2026-09-30",
+   "/dashboard/minigrid",
+   "/dashboard/minigrid/map",
+   "/dashboard/minigrid/ai",
+   "/dashboard/minigrid/sites",
+   "/dashboard/minigrid/sites/MG-DRY",
+   "/dashboard/minigrid/sites/reference/rmg01",
+   "/dashboard/minigrid/reports",
+   "/dashboard/minigrid/reports/site-performance",
+   "/dashboard/minigrid/reports/site-performance/2026-09",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.csv",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx",
+   "/dashboard/minigrid/reports/compliance/2026-09",
+   "/dashboard/planning",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/metering",
+   "/dashboard/planning/metering/allocation",
+   "/dashboard/planning/metering/dt",
+   "/dashboard/planning/metering/marketplace",
+   "/dashboard/planning/metering/monitoring",
+   "/dashboard/planning/metering/journey",
+   "/dashboard/planning/metering/report",
+   "/dashboard/planning/dt",
+   "/dashboard/planning/feeders",
+   "/dashboard/planning/network-expansion",
+   "/dashboard/planning/unserved",
+   "/dashboard/planning/underserved",
+   "/dashboard/planning/pue",
+   "/dashboard/planning/e-mobility"
+  ],
+  "disco administrator": [
+   "/dashboard",
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/settings",
+   "/dashboard/settings/people",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics",
+   "/dashboard/utility",
+   "/dashboard/utility/map",
+   "/dashboard/utility/ai",
+   "/dashboard/utility/executive",
+   "/dashboard/utility/executive/all",
+   "/dashboard/utility/operations",
+   "/dashboard/utility/operations/regions/demo-region-northfield",
+   "/dashboard/utility/operations/substations/SS-RIV",
+   "/dashboard/utility/operations/feeders/FD-MKT",
+   "/dashboard/utility/operations/transformers/DT-OLD-2",
+   "/dashboard/utility/operations/transformers/DT-OLD-2/all",
+   "/dashboard/utility/operations/service-points/SP-OLD2-001",
+   "/dashboard/utility/reliability",
+   "/dashboard/utility/revenue",
+   "/dashboard/utility/revenue/all",
+   "/dashboard/utility/assets",
+   "/dashboard/utility/assets/all",
+   "/dashboard/utility/events",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/reliability",
+   "/dashboard/utility/reports/reliability/2026-09",
+   "/dashboard/utility/reports/reliability/2026-09/data.csv",
+   "/dashboard/utility/reports/reliability/2026-09/data.xlsx",
+   "/dashboard/utility/reports/operations/2026-09",
+   "/dashboard/utility/reports/daily-brief/2026-09-30"
+  ],
+  "disco member, every screen": [
+   "/dashboard",
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/settings",
+   "/dashboard/settings/people",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics",
+   "/dashboard/utility",
+   "/dashboard/utility/map",
+   "/dashboard/utility/ai",
+   "/dashboard/utility/executive",
+   "/dashboard/utility/executive/all",
+   "/dashboard/utility/operations",
+   "/dashboard/utility/operations/regions/demo-region-northfield",
+   "/dashboard/utility/operations/substations/SS-RIV",
+   "/dashboard/utility/operations/feeders/FD-MKT",
+   "/dashboard/utility/operations/transformers/DT-OLD-2",
+   "/dashboard/utility/operations/transformers/DT-OLD-2/all",
+   "/dashboard/utility/operations/service-points/SP-OLD2-001",
+   "/dashboard/utility/reliability",
+   "/dashboard/utility/revenue",
+   "/dashboard/utility/revenue/all",
+   "/dashboard/utility/assets",
+   "/dashboard/utility/assets/all",
+   "/dashboard/utility/events",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/reliability",
+   "/dashboard/utility/reports/reliability/2026-09",
+   "/dashboard/utility/reports/reliability/2026-09/data.csv",
+   "/dashboard/utility/reports/reliability/2026-09/data.xlsx",
+   "/dashboard/utility/reports/operations/2026-09",
+   "/dashboard/utility/reports/daily-brief/2026-09-30"
+  ],
+  "disco revenue member (partial)": [
+   "/dashboard/refused",
+   "/dashboard/utility",
+   "/dashboard/utility/map",
+   "/dashboard/utility/revenue",
+   "/dashboard/utility/revenue/all"
+  ],
+  "disco member, no grants": [
+   "/dashboard/refused"
+  ],
+  "mini-grid administrator": [
+   "/dashboard",
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/settings",
+   "/dashboard/settings/people",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics",
+   "/dashboard/minigrid",
+   "/dashboard/minigrid/map",
+   "/dashboard/minigrid/ai",
+   "/dashboard/minigrid/sites",
+   "/dashboard/minigrid/sites/MG-DRY",
+   "/dashboard/minigrid/sites/reference/rmg01",
+   "/dashboard/minigrid/reports",
+   "/dashboard/minigrid/reports/site-performance",
+   "/dashboard/minigrid/reports/site-performance/2026-09",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.csv",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx",
+   "/dashboard/minigrid/reports/compliance/2026-09"
+  ],
+  "key:der": [
+   "/dashboard/refused",
+   "/dashboard/der"
+  ],
+  "key:der.overview": [
+   "/dashboard/refused",
+   "/dashboard/der"
+  ],
+  "key:minigrid": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/minigrid",
+   "/dashboard/minigrid/map",
+   "/dashboard/minigrid/ai",
+   "/dashboard/minigrid/sites",
+   "/dashboard/minigrid/sites/MG-DRY",
+   "/dashboard/minigrid/sites/reference/rmg01",
+   "/dashboard/minigrid/reports",
+   "/dashboard/minigrid/reports/site-performance",
+   "/dashboard/minigrid/reports/site-performance/2026-09",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.csv",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx",
+   "/dashboard/minigrid/reports/compliance/2026-09"
+  ],
+  "key:minigrid.ai": [
+   "/dashboard/refused",
+   "/dashboard/minigrid/ai"
+  ],
+  "key:minigrid.map": [
+   "/dashboard/refused",
+   "/dashboard/minigrid/map"
+  ],
+  "key:minigrid.overview": [
+   "/dashboard/refused",
+   "/dashboard/minigrid"
+  ],
+  "key:minigrid.reports": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/minigrid/reports",
+   "/dashboard/minigrid/reports/site-performance",
+   "/dashboard/minigrid/reports/site-performance/2026-09",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.csv",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx",
+   "/dashboard/minigrid/reports/compliance/2026-09"
+  ],
+  "key:minigrid.reports.compliance": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/minigrid/reports",
+   "/dashboard/minigrid/reports/compliance/2026-09"
+  ],
+  "key:minigrid.reports.site-performance": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/minigrid/reports",
+   "/dashboard/minigrid/reports/site-performance",
+   "/dashboard/minigrid/reports/site-performance/2026-09",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.csv",
+   "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx"
+  ],
+  "key:minigrid.sites": [
+   "/dashboard/refused",
+   "/dashboard/minigrid/sites",
+   "/dashboard/minigrid/sites/MG-DRY",
+   "/dashboard/minigrid/sites/reference/rmg01"
+  ],
+  "key:planning": [
+   "/dashboard/refused",
+   "/dashboard/planning",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/metering",
+   "/dashboard/planning/metering/allocation",
+   "/dashboard/planning/metering/dt",
+   "/dashboard/planning/metering/marketplace",
+   "/dashboard/planning/metering/monitoring",
+   "/dashboard/planning/metering/journey",
+   "/dashboard/planning/metering/report",
+   "/dashboard/planning/dt",
+   "/dashboard/planning/feeders",
+   "/dashboard/planning/network-expansion",
+   "/dashboard/planning/unserved",
+   "/dashboard/planning/underserved",
+   "/dashboard/planning/pue",
+   "/dashboard/planning/e-mobility"
+  ],
+  "key:planning.dt": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/dt"
+  ],
+  "key:planning.e-mobility": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/e-mobility"
+  ],
+  "key:planning.feeders": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/feeders"
+  ],
+  "key:planning.metering": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/metering",
+   "/dashboard/planning/metering/allocation",
+   "/dashboard/planning/metering/dt",
+   "/dashboard/planning/metering/marketplace",
+   "/dashboard/planning/metering/monitoring",
+   "/dashboard/planning/metering/journey",
+   "/dashboard/planning/metering/report"
+  ],
+  "key:planning.network-expansion": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/network-expansion"
+  ],
+  "key:planning.overview": [
+   "/dashboard/refused",
+   "/dashboard/planning",
+   "/dashboard/planning/about-this-build"
+  ],
+  "key:planning.pue": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/pue"
+  ],
+  "key:planning.underserved": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/underserved"
+  ],
+  "key:planning.unserved": [
+   "/dashboard/refused",
+   "/dashboard/planning/about-this-build",
+   "/dashboard/planning/unserved"
+  ],
+  "key:platform": [
+   "/dashboard",
+   "/dashboard/refused",
+   "/dashboard/settings",
+   "/dashboard/settings/people",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics"
+  ],
+  "key:platform.overview": [
+   "/dashboard",
+   "/dashboard/refused",
+   "/dashboard/settings",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics"
+  ],
+  "key:platform.people": [
+   "/dashboard/refused",
+   "/dashboard/settings",
+   "/dashboard/settings/people",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics"
+  ],
+  "key:platform.reports": [
+   "/dashboard/refused",
+   "/dashboard/settings",
+   "/dashboard/intelligence/ai",
+   "/dashboard/intelligence/analytics"
+  ],
+  "key:utility": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/utility",
+   "/dashboard/utility/map",
+   "/dashboard/utility/ai",
+   "/dashboard/utility/executive",
+   "/dashboard/utility/executive/all",
+   "/dashboard/utility/operations",
+   "/dashboard/utility/operations/regions/demo-region-northfield",
+   "/dashboard/utility/operations/substations/SS-RIV",
+   "/dashboard/utility/operations/feeders/FD-MKT",
+   "/dashboard/utility/operations/transformers/DT-OLD-2",
+   "/dashboard/utility/operations/transformers/DT-OLD-2/all",
+   "/dashboard/utility/operations/service-points/SP-OLD2-001",
+   "/dashboard/utility/reliability",
+   "/dashboard/utility/revenue",
+   "/dashboard/utility/revenue/all",
+   "/dashboard/utility/assets",
+   "/dashboard/utility/assets/all",
+   "/dashboard/utility/events",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/reliability",
+   "/dashboard/utility/reports/reliability/2026-09",
+   "/dashboard/utility/reports/reliability/2026-09/data.csv",
+   "/dashboard/utility/reports/reliability/2026-09/data.xlsx",
+   "/dashboard/utility/reports/operations/2026-09",
+   "/dashboard/utility/reports/daily-brief/2026-09-30"
+  ],
+  "key:utility.ai": [
+   "/dashboard/refused",
+   "/dashboard/utility/ai"
+  ],
+  "key:utility.assets": [
+   "/dashboard/refused",
+   "/dashboard/utility/assets",
+   "/dashboard/utility/assets/all"
+  ],
+  "key:utility.events": [
+   "/dashboard/refused",
+   "/dashboard/utility/events"
+  ],
+  "key:utility.executive": [
+   "/dashboard/refused",
+   "/dashboard/utility/executive",
+   "/dashboard/utility/executive/all"
+  ],
+  "key:utility.map": [
+   "/dashboard/refused",
+   "/dashboard/utility/map"
+  ],
+  "key:utility.operations": [
+   "/dashboard/refused",
+   "/dashboard/utility/operations",
+   "/dashboard/utility/operations/regions/demo-region-northfield",
+   "/dashboard/utility/operations/substations/SS-RIV",
+   "/dashboard/utility/operations/feeders/FD-MKT",
+   "/dashboard/utility/operations/transformers/DT-OLD-2",
+   "/dashboard/utility/operations/transformers/DT-OLD-2/all",
+   "/dashboard/utility/operations/service-points/SP-OLD2-001"
+  ],
+  "key:utility.overview": [
+   "/dashboard/refused",
+   "/dashboard/utility"
+  ],
+  "key:utility.reliability": [
+   "/dashboard/refused",
+   "/dashboard/utility/reliability"
+  ],
+  "key:utility.reports": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/reliability",
+   "/dashboard/utility/reports/reliability/2026-09",
+   "/dashboard/utility/reports/reliability/2026-09/data.csv",
+   "/dashboard/utility/reports/reliability/2026-09/data.xlsx",
+   "/dashboard/utility/reports/operations/2026-09",
+   "/dashboard/utility/reports/daily-brief/2026-09-30"
+  ],
+  "key:utility.reports.daily-brief": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/daily-brief/2026-09-30"
+  ],
+  "key:utility.reports.operations": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/operations/2026-09"
+  ],
+  "key:utility.reports.reliability": [
+   "/dashboard/refused",
+   "/dashboard/reports",
+   "/dashboard/utility/reports",
+   "/dashboard/utility/reports/reliability",
+   "/dashboard/utility/reports/reliability/2026-09",
+   "/dashboard/utility/reports/reliability/2026-09/data.csv",
+   "/dashboard/utility/reports/reliability/2026-09/data.xlsx"
+  ],
+  "key:utility.revenue": [
+   "/dashboard/refused",
+   "/dashboard/utility/revenue",
+   "/dashboard/utility/revenue/all"
+  ]
+ },
+ "screens": {
+  "demo public viewer": [
+   "der",
+   "der.overview",
+   "minigrid",
+   "minigrid.ai",
+   "minigrid.map",
+   "minigrid.overview",
+   "minigrid.reports",
+   "minigrid.reports.compliance",
+   "minigrid.reports.site-performance",
+   "minigrid.sites",
+   "planning",
+   "planning.dt",
+   "planning.e-mobility",
+   "planning.feeders",
+   "planning.metering",
+   "planning.network-expansion",
+   "planning.overview",
+   "planning.pue",
+   "planning.underserved",
+   "planning.unserved",
+   "platform",
+   "platform.overview",
+   "platform.people",
+   "platform.reports",
+   "utility",
+   "utility.ai",
+   "utility.assets",
+   "utility.events",
+   "utility.executive",
+   "utility.map",
+   "utility.operations",
+   "utility.overview",
+   "utility.reliability",
+   "utility.reports",
+   "utility.reports.daily-brief",
+   "utility.reports.operations",
+   "utility.reports.reliability",
+   "utility.revenue"
+  ],
+  "disco administrator": [
+   "platform",
+   "platform.overview",
+   "platform.people",
+   "platform.reports",
+   "utility",
+   "utility.ai",
+   "utility.assets",
+   "utility.events",
+   "utility.executive",
+   "utility.map",
+   "utility.operations",
+   "utility.overview",
+   "utility.reliability",
+   "utility.reports",
+   "utility.reports.daily-brief",
+   "utility.reports.operations",
+   "utility.reports.reliability",
+   "utility.revenue"
+  ],
+  "disco member, every screen": [
+   "platform",
+   "platform.overview",
+   "platform.people",
+   "platform.reports",
+   "utility",
+   "utility.ai",
+   "utility.assets",
+   "utility.events",
+   "utility.executive",
+   "utility.map",
+   "utility.operations",
+   "utility.overview",
+   "utility.reliability",
+   "utility.reports",
+   "utility.reports.daily-brief",
+   "utility.reports.operations",
+   "utility.reports.reliability",
+   "utility.revenue"
+  ],
+  "disco revenue member (partial)": [
+   "utility",
+   "utility.map",
+   "utility.overview",
+   "utility.revenue"
+  ],
+  "disco member, no grants": [],
+  "mini-grid administrator": [
+   "minigrid",
+   "minigrid.ai",
+   "minigrid.map",
+   "minigrid.overview",
+   "minigrid.reports",
+   "minigrid.reports.compliance",
+   "minigrid.reports.site-performance",
+   "minigrid.sites",
+   "platform",
+   "platform.overview",
+   "platform.people",
+   "platform.reports"
+  ],
+  "key:der": [
+   "der",
+   "der.overview"
+  ],
+  "key:der.overview": [
+   "der",
+   "der.overview"
+  ],
+  "key:minigrid": [
+   "minigrid",
+   "minigrid.ai",
+   "minigrid.map",
+   "minigrid.overview",
+   "minigrid.reports",
+   "minigrid.reports.compliance",
+   "minigrid.reports.site-performance",
+   "minigrid.sites",
+   "platform.reports"
+  ],
+  "key:minigrid.ai": [
+   "minigrid",
+   "minigrid.ai"
+  ],
+  "key:minigrid.map": [
+   "minigrid",
+   "minigrid.map"
+  ],
+  "key:minigrid.overview": [
+   "minigrid",
+   "minigrid.overview"
+  ],
+  "key:minigrid.reports": [
+   "minigrid",
+   "minigrid.reports",
+   "minigrid.reports.compliance",
+   "minigrid.reports.site-performance",
+   "platform.reports"
+  ],
+  "key:minigrid.reports.compliance": [
+   "minigrid",
+   "minigrid.reports",
+   "minigrid.reports.compliance",
+   "platform.reports"
+  ],
+  "key:minigrid.reports.site-performance": [
+   "minigrid",
+   "minigrid.reports",
+   "minigrid.reports.site-performance",
+   "platform.reports"
+  ],
+  "key:minigrid.sites": [
+   "minigrid",
+   "minigrid.sites"
+  ],
+  "key:planning": [
+   "planning",
+   "planning.dt",
+   "planning.e-mobility",
+   "planning.feeders",
+   "planning.metering",
+   "planning.network-expansion",
+   "planning.overview",
+   "planning.pue",
+   "planning.underserved",
+   "planning.unserved"
+  ],
+  "key:planning.dt": [
+   "planning",
+   "planning.dt"
+  ],
+  "key:planning.e-mobility": [
+   "planning",
+   "planning.e-mobility"
+  ],
+  "key:planning.feeders": [
+   "planning",
+   "planning.feeders"
+  ],
+  "key:planning.metering": [
+   "planning",
+   "planning.metering"
+  ],
+  "key:planning.network-expansion": [
+   "planning",
+   "planning.network-expansion"
+  ],
+  "key:planning.overview": [
+   "planning",
+   "planning.overview"
+  ],
+  "key:planning.pue": [
+   "planning",
+   "planning.pue"
+  ],
+  "key:planning.underserved": [
+   "planning",
+   "planning.underserved"
+  ],
+  "key:planning.unserved": [
+   "planning",
+   "planning.unserved"
+  ],
+  "key:platform": [
+   "platform",
+   "platform.overview",
+   "platform.people"
+  ],
+  "key:platform.overview": [
+   "platform",
+   "platform.overview"
+  ],
+  "key:platform.people": [
+   "platform",
+   "platform.people"
+  ],
+  "key:platform.reports": [
+   "platform"
+  ],
+  "key:utility": [
+   "platform.reports",
+   "utility",
+   "utility.ai",
+   "utility.assets",
+   "utility.events",
+   "utility.executive",
+   "utility.map",
+   "utility.operations",
+   "utility.overview",
+   "utility.reliability",
+   "utility.reports",
+   "utility.reports.daily-brief",
+   "utility.reports.operations",
+   "utility.reports.reliability",
+   "utility.revenue"
+  ],
+  "key:utility.ai": [
+   "utility",
+   "utility.ai"
+  ],
+  "key:utility.assets": [
+   "utility",
+   "utility.assets"
+  ],
+  "key:utility.events": [
+   "utility",
+   "utility.events"
+  ],
+  "key:utility.executive": [
+   "utility",
+   "utility.executive"
+  ],
+  "key:utility.map": [
+   "utility",
+   "utility.map"
+  ],
+  "key:utility.operations": [
+   "utility",
+   "utility.operations"
+  ],
+  "key:utility.overview": [
+   "utility",
+   "utility.overview"
+  ],
+  "key:utility.reliability": [
+   "utility",
+   "utility.reliability"
+  ],
+  "key:utility.reports": [
+   "platform.reports",
+   "utility",
+   "utility.reports",
+   "utility.reports.daily-brief",
+   "utility.reports.operations",
+   "utility.reports.reliability"
+  ],
+  "key:utility.reports.daily-brief": [
+   "platform.reports",
+   "utility",
+   "utility.reports",
+   "utility.reports.daily-brief"
+  ],
+  "key:utility.reports.operations": [
+   "platform.reports",
+   "utility",
+   "utility.reports",
+   "utility.reports.operations"
+  ],
+  "key:utility.reports.reliability": [
+   "platform.reports",
+   "utility",
+   "utility.reports",
+   "utility.reports.reliability"
+  ],
+  "key:utility.revenue": [
+   "utility",
+   "utility.revenue"
+  ]
+ }
+}
