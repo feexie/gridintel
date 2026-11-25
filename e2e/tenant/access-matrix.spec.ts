@@ -31,7 +31,8 @@ async function signIn(page: Page, person: Person) {
   await expect(page).toHaveURL(/\/login\/verify/);
   await page.getByLabel(/^Code/).fill(totpCode(person.totpSecret, Date.now()));
   await page.getByRole("button", { name: /Sign in|Finish/ }).click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  // Someone whose grant opens no screen is told so at /login/continue (Phase 8A); everyone else lands in the dashboard.
+  await expect(page).toHaveURL(person.screens !== null && person.screens.length === 0 ? /\/login\/continue/ : /\/dashboard/);
 }
 
 /** Every address, asked for directly: open where the grant opens it, 403 everywhere else. */

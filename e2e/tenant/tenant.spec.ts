@@ -165,7 +165,8 @@ test("an administrator invites someone: the link works once, and the person open
   await signIn(page, TEST_PEOPLE.discoAdmin);
   await page.locator("[data-account]").first().getByRole("link", { name: "People" }).click();
   await expect(page).toHaveURL(/\/dashboard\/settings\/people$/);
-  await expect(page.locator("[data-member]")).toHaveCount(3);
+  // The DisCo's four seeded people: the administrator, the revenue member, the member with no grants (NAV-B) and the new member.
+  await expect(page.locator("[data-member]")).toHaveCount(4);
   await expect(page.locator("[data-people]")).not.toContainText(TEST_PEOPLE.minigridAdmin.email);
   await page.locator("[data-invite]").getByLabel("Email address").fill("invited@disco.test");
   await page.locator("[data-invite]").getByLabel("May open").selectOption({ label: "Revenue department" });
