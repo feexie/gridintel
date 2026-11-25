@@ -132,7 +132,16 @@ export function supabaseIdentitySession(settings: SupabaseSettings, cookies: Coo
     },
     async verify(factorId, code) {
       const { error } = await client.auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
-      return !error;
+      if (error) return false;
+      // The invitation is accepted here, at aal2, and not when the password is chosen: before the
+      // second factor row-level security shows no one their membership row, so an update then
+      // matched nothing and failed silently (found at the pilot's first sign-in, 25 November 2026).
+      const verified = await claims();
+      if (verified !== null) {
+        const { error: marked } = await client.from("memberships").update({ accepted: true }).eq("user_id", verified.sub).eq("accepted", false);
+        if (marked) console.error("[gridintel] the invitation could not be marked accepted:", marked.message);
+      }
+      return true;
     },
     async acceptInvite(tokenHash) {
       const { error } = await client.auth.verifyOtp({ type: "invite", token_hash: tokenHash });
@@ -141,10 +150,8 @@ export function supabaseIdentitySession(settings: SupabaseSettings, cookies: Coo
     async setPassword(password) {
       if (password.length < 12) return false;
       const { data, error } = await client.auth.updateUser({ password });
-      if (error || !data.user) return false;
-      // The person's own row: row-level security lets them set this one column on it.
-      await client.from("memberships").update({ accepted: true }).eq("user_id", data.user.id);
-      return true;
+      // The membership is marked accepted after the second factor (verify), where its row is visible.
+      return !error && Boolean(data.user);
     },
     async signOut() {
       await client.auth.signOut();
@@ -198,6 +205,20 @@ export function supabaseAccountsAdmin(settings: SupabaseSettings): AccountsAdmin
       if (written) throw new Error("The membership could not be written.");
       await mirror(userId, input.organizationId, input.role, input.screens);
       return { tokenHash: data.properties.hashed_token, userId };
+    },
+    async reissueInvite(email: string, organizationId: string) {
+      const wanted = email.trim().toLowerCase();
+      const { data: rows, error } = await admin.from("memberships").select("user_id,organization_id,accepted").eq("email", wanted);
+      if (error) throw new Error("The membership could not be read.");
+      const row = rows?.[0];
+      if (row === undefined) return null;
+      if (row.organization_id !== organizationId) throw new Error("That person is a member of another organization.");
+      if (row.accepted === true) throw new Error("That person has already accepted their invitation.");
+      // Supabase issues a new token for a person not yet confirmed; the earlier one stops working.
+      const { data, error: linkError } = await admin.auth.admin.generateLink({ type: "invite", email: wanted });
+      if (linkError || !data.user) throw new Error(linkError?.message ?? "The invitation could not be made again.");
+      if (data.user.id !== row.user_id) throw new Error("The invitation was made for a different account.");
+      return { tokenHash: data.properties.hashed_token, userId: String(row.user_id) };
     },
     async setGrant(userId: string, organizationId: string, role: MemberRole, screens: readonly string[] | null) {
       const { data, error } = await admin

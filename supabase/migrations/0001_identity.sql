@@ -74,7 +74,9 @@ create policy "own membership, or the organization's to its administrator" on pu
     and (user_id = (select auth.uid()) or (select public.gridintel_i_administer()))
   );
 
--- Accepting an invitation happens before the second factor is enrolled, so it does not ask for aal2.
+-- The person marks their own invitation accepted. The app does it once the second factor is
+-- verified: an update needs the row to be visible, and the select policy above shows it only at
+-- aal2 (before, the update matched nothing; found 25 November 2026). This policy is unchanged.
 drop policy if exists "a person marks their own invitation accepted" on public.memberships;
 create policy "a person marks their own invitation accepted" on public.memberships
   for update to authenticated

@@ -177,6 +177,9 @@ export function memoryIdentitySession(store: MemoryIdentityStore, cookies: Cooki
       if (user === undefined || factor === undefined || !totpMatches(factor.secret, code.trim(), nowMs())) return false;
       factor.verified = true;
       start(user.id, "aal2");
+      // Accepted at aal2, as the Supabase adapter does: before it, row-level security hides the row.
+      const membership = store.memberships.get(user.id);
+      if (membership !== undefined && !membership.accepted) store.memberships.set(user.id, { ...membership, accepted: true });
       return true;
     },
     async acceptInvite(tokenHash: string): Promise<boolean> {
@@ -191,8 +194,6 @@ export function memoryIdentitySession(store: MemoryIdentityStore, cookies: Cooki
       const user = session === null ? undefined : store.users.get(session.userId);
       if (user === undefined || password.length < 12) return false;
       user.passwordHash = hashPassword(password);
-      const membership = store.memberships.get(user.id);
-      if (membership !== undefined) store.memberships.set(user.id, { ...membership, accepted: true });
       return true;
     },
     async signOut(): Promise<void> {
@@ -238,6 +239,18 @@ export function memoryAccountsAdmin(store: MemoryIdentityStore, nowMs: () => num
       const tokenHash = sha256(token);
       store.invites.set(tokenHash, { userId, expiresAt: nowMs() + INVITE_MS });
       return { tokenHash, userId };
+    },
+    async reissueInvite(email: string, organizationId: string) {
+      const wanted = email.trim().toLowerCase();
+      const membership = [...store.memberships.values()].find((one) => one.email.toLowerCase() === wanted);
+      if (membership === undefined) return null;
+      if (membership.organizationId !== organizationId) throw new Error("That person is a member of another organization.");
+      if (membership.accepted) throw new Error("That person has already accepted their invitation.");
+      // An earlier token stops working.
+      for (const [hash, invite] of store.invites) if (invite.userId === membership.userId) store.invites.delete(hash);
+      const tokenHash = sha256(randomBytes(32).toString("base64url"));
+      store.invites.set(tokenHash, { userId: membership.userId, expiresAt: nowMs() + INVITE_MS });
+      return { tokenHash, userId: membership.userId };
     },
     async setGrant(userId: string, organizationId: string, role: MemberRole, screens: readonly string[] | null) {
       const membership = store.memberships.get(userId);

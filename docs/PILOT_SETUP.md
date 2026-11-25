@@ -154,6 +154,11 @@ to an authenticator app. After that, invite people from **People** in the
 account menu. For the mini-grid operator, run it again with
 `demo-minigrid-operator`.
 
+If the link lapsed or failed before the password was set, run the same
+command again: for someone already invited to that organization who has not
+accepted, it makes a new link, leaves their membership as it is, and the
+earlier link stops working.
+
 ## If something fails
 
 | What you see | Usual cause |

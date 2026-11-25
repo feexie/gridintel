@@ -3,15 +3,18 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-11-24. **Phase NAV-A is merged to `main`**
+Last updated: 2026-11-25. **Phase 8A is complete: merged and closed**
+(2026-11-25; tag `phase-8a`): the Founder signed in on the real Supabase
+project (`gridintel-pilot`, eu-west-1) at the pilot,
+https://gridintel-pilot.vercel.app, with a password and an authenticator
+app. **Phase NAV-A is merged to `main`**
 (2026-11-24; accepted by the Founder 2026-11-10 with fixes; tag
 `phase-nav-a`; ADR 0021 accepted): the public front door and the demo
 workspaces as a prototype under `/preview`. **Phase EMOB-A is merged to
 `main`** (2026-11-24; approved by the Founder 2026-11-17; tag
 `phase-emob-a`): the E-mobility engine, no screen. Both merged once CI's
 full `verify` passed, after a GitHub billing lock (16 to 24 November) had
-stopped CI. **Phase 8A stays at its checkpoint** until the Founder has
-signed in on the real Supabase project, before NAV-B. **Phase MG-REAL is
+stopped CI. **Phase MG-REAL is
 approved and merged to `main`** (Founder, 2026-11-24, with one fix: the data
 bar above a reference page says it is published real data; ADR 0022
 accepted; tag `phase-mg-real`): a real, published mini-grid (site RMG01) as
@@ -32,7 +35,7 @@ complete.** **Phase REPORTS-A is merged** (by the Founder's instruction of
 (Founder, 2026-10-20, with fixes; merged to `main`, tag `phase-reports-b`):
 the other three reports and XLSX (ADR 0019 and its amendment). **The
 REPORTS phase is complete.** **Phase 8 comes before DER** (Founder, 2026-10-20): **Phase 8A is
-at its checkpoint** (2026-10-21; branch `phase-8a`): login and separate
+complete** (checkpoint 2026-10-21; closed 2026-11-25): login and separate
 organizations, on synthetic data only (ADR 0020).
 
 **Order of what follows (Founder, 2026-10-13).** The UI revamp comes first,
@@ -1465,7 +1468,7 @@ it. The ways that remain, should it ever matter, are those of ADR 0012:
 build the 6,448 service-point screens ahead of time, or keep an instance
 warm, which is a paid Vercel feature.
 
-## Phase 8: Login, separate organizations, the API boundary (approved 2026-10-20, ahead of DER; 8A at its checkpoint)
+## Phase 8: Login, separate organizations, the API boundary (approved 2026-10-20, ahead of DER; 8A complete 2026-11-25)
 
 **Why now (Founder, 2026-10-20).** A pilot asks an organization for three to
 six months of its records, and GridIntel had no login and nothing on the
@@ -1480,7 +1483,29 @@ administrator for their own organization and by the platform owner). 8C:
 where pilot data lives, the pilot import, the public demonstration kept
 apart. Then G9 (below).
 
-### Phase 8A: login and separate organizations (at its checkpoint 2026-10-21; branch `phase-8a`, not merged)
+### Phase 8A: login and separate organizations (complete: merged and closed 2026-11-25; tag `phase-8a`)
+
+**Closed (Founder, 2026-11-25).** The Founder signed in on the real Supabase
+project with their invitation, a password and an authenticator code, as
+administrator of `demo-disco`, at the pilot: **https://gridintel-pilot.vercel.app**
+(Vercel project `gridintel-pilot`, production branch `main`; Supabase project
+`gridintel-pilot`, eu-west-1, Ireland). `scripts/pilot-check.ts`: every item
+passes. The code reached `main` on 2026-10-31 inside the geh-sprint merge
+(`7109180`); it was closed out on 2026-11-24 and 25:
+
+- `pilot-check.ts` checks the demonstration at `/dashboard` (its `/` only
+  redirects there); its deployment items are unit-tested.
+- The keep-awake job fails, not passes, when its secrets are missing (the
+  silent pass is why the project paused); it was run by hand and wrote its
+  heartbeat.
+- `.gitignore` guards `env.local` and `*.local.`; `docs/PILOT_SETUP.md`
+  describes the pilot as set up.
+- `pilot-invite.ts` re-issues the link for someone invited and not yet
+  accepted (the first link failed before the password was set).
+- An invitation is marked accepted once the second factor is verified. Before
+  that, row-level security hides the membership row, so the old update at
+  password time matched nothing and failed silently (found at the first
+  sign-in; the Founder's own row was set once by hand).
 
 | Built | Where |
 | --- | --- |
@@ -1500,9 +1525,9 @@ Invitation links are passed on by hand for now, and the People screen
 says: "Send this privately. It works once and expires in a day." The
 third build stays in `verify`, `verify:local` and CI.
 
-**Hosting (Founder, 2026-10-21).** Supabase free plan, region Paris
-(`eu-west-3`): Supabase has no region in Africa, and Paris is the closest
-to Lagos. Vercel Hobby: the existing project stays the public
+**Hosting (Founder, 2026-10-21).** Supabase free plan. Planned in Paris
+(`eu-west-3`), the closest to Lagos, as Supabase has no region in Africa;
+the pilot's project is in **Ireland (`eu-west-1`)** (2026-11-24). Vercel Hobby: the existing project stays the public
 demonstration, with no Supabase setting; a second Hobby project serves the
 tenant deployment. Secrets in Vercel environment variables and GitHub
 Actions secrets only.
