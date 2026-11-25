@@ -103,7 +103,7 @@ test("presentation mode hides the navigation and keeps the finding", async ({ pa
 test("DisCo allocation: the largest gap first, the two scores, the first million against pro-rata, and a pilot", async ({ page }) => {
   await page.goto(FUND);
   await page.locator("[data-metering-tabs]").getByRole("link", { name: /DisCo allocation/ }).click();
-  await expect(page).toHaveURL(/\/metering\/allocation$/);
+  await expect(page).toHaveURL(/\/plan\/metering-allocation$/);
   const main = page.getByRole("main");
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(main.getByRole("heading", { level: 1 })).toHaveText("Ibadan holds 22.2% of Nigeria's unmetered customers; at the current pace it reaches 100% in 52 months.");
@@ -147,7 +147,7 @@ test("Monitoring: plan against synthetic actuals, tranches against verified inst
 test("Marketplace: pledges matched to approved meters, the daily charge by band, unmatched money queued, all marked synthetic", async ({ page }) => {
   await page.goto("/dashboard/plan/metering-allocation");
   await page.locator("[data-metering-tabs]").getByRole("link", { name: /Marketplace · Match/ }).click();
-  await expect(page).toHaveURL(/\/metering\/marketplace$/);
+  await expect(page).toHaveURL(/\/finance\/marketplace$/);
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^5 funders have pledged ₦[\d.,]+ (million|billion); [\d,]+ approved meters are matched; ₦[\d.,]+( million| billion)? is queued for the next allocation\.$/);
   await expect(main.locator("[data-headline]")).toContainText("Synthetic");
@@ -162,7 +162,7 @@ test("Marketplace: pledges matched to approved meters, the daily charge by band,
 test("One meter's journey: six steps for one household in Ibadan, each naming who acts and linking to its screen, the balance falling, marked synthetic", async ({ page }) => {
   await page.goto("/dashboard/finance/marketplace");
   await page.locator("[data-metering-tabs]").getByRole("link", { name: /Journey/ }).click();
-  await expect(page).toHaveURL(/\/metering\/journey$/);
+  await expect(page).toHaveURL(/\/meter-every-customer\/journey$/);
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^On GridIntel one household in Ibadan applied/);
   await expect(main.locator("[data-headline]")).toContainText("Synthetic");
@@ -229,7 +229,7 @@ test("the Metering Plan report: a Download report link on every Metering screen,
   await expect(page.locator("[data-steps] li")).toHaveCount(3);
   await page.goto("/dashboard/finance/metering-fund?case=nigeria");
   await page.locator("[data-report-link]").click();
-  await expect(page).toHaveURL(/\/metering\/report\?case=nigeria/);
+  await expect(page).toHaveURL(/\/reports\/metering-plan\?case=nigeria/);
   const report = page.locator("[data-metering-report]");
   await expect(report.locator("h1")).toHaveText("Metering Plan");
   await expect(report.locator("[data-report-section]")).toHaveCount(7);
