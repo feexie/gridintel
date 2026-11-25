@@ -7,7 +7,7 @@ import type { DemandCase, DemandResult } from "./demand.ts";
 
 /* ==========================================================
    ANALYTICS — MINI-GRID PLANNING: THE SUBSIDY GAP
-   (gridintel.planning.minigrid-subsidy-gap 0.1.0; MG-PLAN.md 3.2 (4))
+   (gridintel.planning.minigrid-subsidy-gap 0.2.0; MG-PLAN.md 3.2 (4))
 
    Capex minus net revenue over a stated period, in total and per
    connection. Display only: it is not a grant amount, and matching
@@ -32,9 +32,23 @@ import type { DemandCase, DemandResult } from "./demand.ts";
    rate is on the meters bought, with the accounts in the customer
    file shown beside it.
 
-   The factor to today: the 2019 ₦ to US dollars at the source's own
-   rate, then to ₦ at a current rate the planner enters and cites
-   (Founder, 24 November 2026).
+   The factor to today (Founder, 24 November 2026): the 2019 ₦ to US
+   dollars at the source's own rate, × (1 + the change in equipment
+   prices since 2019 in US dollar terms), then to ₦ at a current rate
+   the planner enters and cites. The change is the planner's, with its
+   source; it may be given per category (storage, generation,
+   distribution and metering), since battery and module prices moved
+   differently from poles and cable. A category without its own figure,
+   and the other costs, take the overall change. Until the change and
+   the rate are both set there is no factor and no gap: never a silent
+   0%.
+
+   Side by side (0.2.0): the gap is worked under each tariff scenario
+   the tariff response gives (the fixed budget, e = −1, as the middle
+   case; each reference change whose e is not positive; the user's).
+   A positive e is never used. At e = −1 revenue does not change with
+   the tariff, so that gap is the same at any planned tariff and says
+   nothing about tariffs.
 ========================================================== */
 
 export interface SubsidyGapParameters {
@@ -44,9 +58,9 @@ export interface SubsidyGapParameters {
 
 export const MINIGRID_SUBSIDY_GAP_REFERENCE: Methodology<SubsidyGapParameters> = {
   id: "gridintel.planning.minigrid-subsidy-gap",
-  version: "0.1.0",
+  version: "0.2.0",
   name: "GridIntel reference subsidy gap for a planned mini-grid",
-  description: "Capex minus net revenue over a period, in total and per connection, with the months net revenue takes to repay the capex at 0% and at a stated return.",
+  description: "Capex minus net revenue over a period, in total and per connection, under each tariff scenario side by side, with the months net revenue takes to repay the capex at 0% and at a stated return.",
   authority: "gridintel_reference",
   status: "draft",
   disclaimer: REFERENCE_DISCLAIMER,
@@ -109,9 +123,69 @@ export function subsidyGap(input: SubsidyGapInput, parameters: SubsidyGapParamet
   };
 }
 
-/** The factor that brings a reference's ₦ to today: ₦ → USD at the source's rate, then USD → ₦ at today's. */
-export function capexFactorToToday(sourceNgnPerUsd: number, todayNgnPerUsd: number): number {
-  return todayNgnPerUsd / sourceNgnPerUsd;
+/** Under the fixed budget (e = −1): why that gap is not a finding about tariffs. */
+export const FIXED_BUDGET_GAP_NOTE =
+  "At a fixed budget (e = −1) revenue does not change with the tariff, so this gap is the same at any planned tariff and is not a finding about tariffs.";
+
+export interface GapScenario {
+  kind: string;
+  label: string;
+  elasticity: number;
+  middle: boolean;
+}
+
+export interface SubsidyGapScenarioResult extends GapScenario {
+  result: SubsidyGapResult;
+  /** Said under the figure: the fixed budget's note; null otherwise. */
+  note: string | null;
+}
+
+/** The gap under each tariff scenario, side by side, from the tariff the demand was served at. A positive elasticity is never used. */
+export function subsidyGapScenarios(
+  input: Omit<SubsidyGapInput, "tariffResponse">,
+  baseTariff: number,
+  scenarios: readonly GapScenario[],
+  parameters: SubsidyGapParameters = MINIGRID_SUBSIDY_GAP_REFERENCE.parameters,
+): SubsidyGapScenarioResult[] {
+  return scenarios
+    .filter((scenario) => scenario.elasticity <= 0)
+    .map((scenario) => ({
+      ...scenario,
+      result: subsidyGap({ ...input, tariffResponse: { baseTariff, elasticity: scenario.elasticity } }, parameters),
+      note: scenario.elasticity === -1 ? FIXED_BUDGET_GAP_NOTE : null,
+    }));
+}
+
+/** The change in equipment prices since the reference's price year, in US dollar terms: 0.1 is +10%. Per category when given; the rest take the overall figure. */
+export interface EquipmentPriceChange {
+  overall: number;
+  byCategory?: { storage?: number; generation?: number; distributionAndMetering?: number };
+  source: string;
+}
+
+export interface CapexFactors {
+  storage: number;
+  generation: number;
+  distributionAndMetering: number;
+  /** Shared balance of system and soft costs: the overall change. */
+  other: number;
+}
+
+/** The factor that brings a reference's ₦ to today: ₦ → USD at the source's rate, × (1 + the USD price change), then USD → ₦ at today's. */
+export function capexFactorToToday(sourceNgnPerUsd: number, todayNgnPerUsd: number, usdPriceChange: number): number {
+  if (!(usdPriceChange > -1)) throw new RangeError(`A price change of ${usdPriceChange} would leave no cost`);
+  return (todayNgnPerUsd / sourceNgnPerUsd) * (1 + usdPriceChange);
+}
+
+/** The factor by category; the categories without a figure of their own, and the other costs, take the overall change. */
+export function capexFactorsToToday(sourceNgnPerUsd: number, todayNgnPerUsd: number, change: EquipmentPriceChange): CapexFactors {
+  const at = (value: number | undefined) => capexFactorToToday(sourceNgnPerUsd, todayNgnPerUsd, value ?? change.overall);
+  return {
+    storage: at(change.byCategory?.storage),
+    generation: at(change.byCategory?.generation),
+    distributionAndMetering: at(change.byCategory?.distributionAndMetering),
+    other: at(undefined),
+  };
 }
 
 export interface ScaledCapex {
@@ -121,18 +195,33 @@ export interface ScaledCapex {
   /** The same over the accounts in the customer file, shown beside it; null when not stated. */
   perAccountNgn: number | null;
   connectionsBasis: { meters: number; accounts: number | null };
+  /** At the reference's prices. */
+  atPriceYear: CapexParts;
+  /** Brought to today; null until the factors are set (never a silent factor of 1). */
+  today: CapexParts | null;
+  /** The factors that bring the reference's prices to today; null until set. */
+  toToday: CapexFactors | null;
+  priceYear: number;
+}
+
+export interface CapexParts {
   storageNgn: number;
   generationNgn: number;
   distributionAndMeteringNgn: number;
   otherNgn: number;
   totalNgn: number;
-  /** The factor that brings 2019 prices to today. Assumption. */
-  toToday: number;
-  priceYear: number;
 }
 
-/** A reference site's build cost scaled to a planned system, then brought to today by a stated factor. */
-export function scaleReferenceCapex(reference: ReferenceCapex, planned: { pvKwp: number; batteryKwh: number; connections: number }, toToday: number): ScaledCapex {
+const parts = (storage: number, generation: number, distribution: number, other: number): CapexParts => ({
+  storageNgn: storage,
+  generationNgn: generation,
+  distributionAndMeteringNgn: distribution,
+  otherNgn: other,
+  totalNgn: storage + generation + distribution + other,
+});
+
+/** A reference site's build cost scaled to a planned system, then brought to today by the factors, when set. */
+export function scaleReferenceCapex(reference: ReferenceCapex, planned: { pvKwp: number; batteryKwh: number; connections: number }, toToday: CapexFactors | null): ScaledCapex {
   const storage = (reference.storageNgn / reference.storageKwh) * planned.batteryKwh;
   const generation = (reference.generationNgn / reference.pvKwp) * planned.pvKwp;
   const distribution = (reference.distributionAndMeteringNgn / reference.connections) * planned.connections;
@@ -143,11 +232,8 @@ export function scaleReferenceCapex(reference: ReferenceCapex, planned: { pvKwp:
     perConnectionNgn: reference.distributionAndMeteringNgn / reference.connections,
     perAccountNgn: reference.accounts === null ? null : reference.distributionAndMeteringNgn / reference.accounts,
     connectionsBasis: { meters: reference.connections, accounts: reference.accounts },
-    storageNgn: storage * toToday,
-    generationNgn: generation * toToday,
-    distributionAndMeteringNgn: distribution * toToday,
-    otherNgn: other * toToday,
-    totalNgn: (scaled + other) * toToday,
+    atPriceYear: parts(storage, generation, distribution, other),
+    today: toToday === null ? null : parts(storage * toToday.storage, generation * toToday.generation, distribution * toToday.distributionAndMetering, other * toToday.other),
     toToday,
     priceYear: reference.priceYear,
   };

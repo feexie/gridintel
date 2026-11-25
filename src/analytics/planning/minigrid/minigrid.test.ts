@@ -4,7 +4,7 @@ import type { PlannedCommunity, ReferenceBasis } from "@/domain";
 import { demandFromReference, MINIGRID_DEMAND_REFERENCE } from "./demand.ts";
 import { pueGap } from "./pueGap.ts";
 import { sizeSystem } from "./sizing.ts";
-import { capexFactorToToday, scaleReferenceCapex, subsidyGap } from "./subsidyGap.ts";
+import { capexFactorsToToday, capexFactorToToday, FIXED_BUDGET_GAP_NOTE, scaleReferenceCapex, subsidyGap, subsidyGapScenarios } from "./subsidyGap.ts";
 import { NOT_A_PRICE_RESPONSE, tariffResponse } from "./tariff.ts";
 
 /* The synthetic test community of MG-PLAN.md 3.6: fixed round inputs held here, so the tests do
@@ -181,15 +181,87 @@ describe("mini-grid planning on the test community (MG-PLAN.md 3.6)", () => {
 
   it("scales a reference build cost by kWh, kWp and connections, the rest in proportion, with the accounts beside the per-connection rate", () => {
     const reference = { priceYear: 2019, ngnPerUsd: 350, storageNgn: 1_000_000, generationNgn: 600_000, distributionAndMeteringNgn: 400_000, otherNgn: 200_000, totalNgn: 2_200_000, pvKwp: 10, storageKwh: 100, connections: 100, accounts: 125 };
-    const scaled = scaleReferenceCapex(reference, { pvKwp: 20, batteryKwh: 50, connections: 200 }, 2);
-    assert.deepEqual([scaled.storageNgn, scaled.generationNgn, scaled.distributionAndMeteringNgn, scaled.otherNgn, scaled.totalNgn], [1_000_000, 2_400_000, 1_600_000, 500_000, 5_500_000]);
+    const planned = { pvKwp: 20, batteryKwh: 50, connections: 200 };
+    const scaled = scaleReferenceCapex(reference, planned, { storage: 2, generation: 2, distributionAndMetering: 2, other: 2 });
+    const values = (parts: typeof scaled.atPriceYear | null) => (parts === null ? null : [parts.storageNgn, parts.generationNgn, parts.distributionAndMeteringNgn, parts.otherNgn, parts.totalNgn]);
+    assert.deepEqual(values(scaled.atPriceYear), [500_000, 1_200_000, 800_000, 250_000, 2_750_000]);
+    assert.deepEqual(values(scaled.today), [1_000_000, 2_400_000, 1_600_000, 500_000, 5_500_000]);
     assert.equal(scaled.label, "2019 reference cost, scaled");
     assert.equal(scaled.perConnectionNgn, 4_000);
     assert.equal(scaled.perAccountNgn, 3_200);
+    // A factor per category: storage at × 3, the rest at × 2.
+    const byCategory = scaleReferenceCapex(reference, planned, { storage: 3, generation: 2, distributionAndMetering: 2, other: 2 });
+    assert.deepEqual(values(byCategory.today), [1_500_000, 2_400_000, 1_600_000, 500_000, 6_000_000]);
   });
 
-  it("brings 2019 ₦ to today through US dollars at the source's ₦350, then at today's cited rate", () => {
-    assert.equal(capexFactorToToday(350, 1_400), 4);
+  it("never brings the cost to today without the factors: no silent factor of 1", () => {
+    const reference = { priceYear: 2019, ngnPerUsd: 350, storageNgn: 1_000_000, generationNgn: 600_000, distributionAndMeteringNgn: 400_000, otherNgn: 200_000, totalNgn: 2_200_000, pvKwp: 10, storageKwh: 100, connections: 100, accounts: null };
+    const scaled = scaleReferenceCapex(reference, { pvKwp: 20, batteryKwh: 50, connections: 200 }, null);
+    assert.equal(scaled.today, null);
+    assert.equal(scaled.toToday, null);
+    assert.equal(scaled.atPriceYear.totalNgn, 2_750_000);
+  });
+
+  it("brings 2019 ₦ to today: ÷ the source's ₦350, × (1 + the USD price change), × today's cited rate", () => {
+    assert.equal(capexFactorToToday(350, 1_400, 0), 4);
+    assert.equal(capexFactorToToday(350, 1_400, 0.25), 5);
+    assert.equal(capexFactorToToday(350, 1_400, -0.5), 2);
+    assert.throws(() => capexFactorToToday(350, 1_400, -1), RangeError);
+  });
+
+  it("takes the price change per category, the rest and the other costs at the overall change", () => {
+    const factors = capexFactorsToToday(350, 1_400, { overall: 0.25, byCategory: { storage: -0.5, generation: -0.25 }, source: "fixture" });
+    assert.deepEqual(factors, { storage: 2, generation: 3, distributionAndMetering: 5, other: 5 });
+    assert.deepEqual(capexFactorsToToday(350, 1_400, { overall: 0, source: "fixture" }), { storage: 4, generation: 4, distributionAndMetering: 4, other: 4 });
+  });
+
+  /* Side by side at ₦350 from ₦165, capex ₦30,000,000, 10 years, 250 connections. Worked by a
+     separate hand script before the method ran (24 November 2026): kWh sold = 246.739 × 0.195 ×
+     ramp × buying share × (350 ÷ 165)^e; years 6 to 10 hold year 5. */
+  it("gives the gap side by side at e = −1 (the middle case, with its note) and e = −2.10", () => {
+    const input = { capexNgn: 30_000_000, demand, demandCase: "p50" as const, losses: 0.1, tariff: 350, opexPerDay: 3_000, periodYears: 10, returnPerYear: 0.1, connections: 250 };
+    const scenarios = [
+      { kind: "fixed_budget", label: "Fixed budget (e = −1), the middle case", elasticity: -1, middle: true },
+      { kind: "reference_change", label: "₦350 to ₦500", elasticity: -2.1, middle: false },
+    ];
+    const at3000 = subsidyGapScenarios(input, 165, scenarios);
+    const at1500 = subsidyGapScenarios({ ...input, opexPerDay: 1_500 }, 165, scenarios);
+    const figures = (results: typeof at3000) => results.map((one) => [one.elasticity, one.result.gapNgn?.toFixed(0), one.result.gapPerConnectionNgn?.toFixed(0)]);
+    assert.deepEqual(figures(at3000), [
+      [-1, "25982937", "103932"],
+      [-2.1, "34405235", "137621"],
+    ]);
+    assert.deepEqual(figures(at1500), [
+      [-1, "20507937", "82032"],
+      [-2.1, "28930235", "115721"],
+    ]);
+    assert.deepEqual(two(at3000[0].result.years.map((one) => one.kwhSoldPerDay)), [10.6, 12.93, 12.54, 11.68, 11.57]);
+    assert.deepEqual(two(at3000[1].result.years.map((one) => one.kwhSoldPerDay)), [4.64, 5.65, 5.48, 5.11, 5.06]);
+    assert.equal(at3000[0].result.monthsToRepay.atZero?.toFixed(1), "940.9");
+    assert.equal(at3000[1].result.monthsToRepay.atZero, null, "never: year 5's net is below zero");
+    assert.equal(at3000[1].result.netRevenueNgn?.toFixed(0), "-4405235");
+    assert.equal(at1500[1].result.monthsToRepay.atZero?.toFixed(1), "3648.9");
+    assert.equal(at3000[0].note, FIXED_BUDGET_GAP_NOTE);
+    assert.equal(at3000[1].note, null);
+    assert.equal(at3000[0].middle, true);
+  });
+
+  it("at e = −1 the gap is the same at any planned tariff: revenue does not change with it", () => {
+    const input = { capexNgn: 30_000_000, demand, demandCase: "p50" as const, losses: 0.1, opexPerDay: 3_000, periodYears: 10, returnPerYear: 0, connections: 250 };
+    const fixed = [{ kind: "fixed_budget", label: "Fixed budget", elasticity: -1, middle: true }];
+    const gaps = [165, 350, 500, 800].map((tariff) => subsidyGapScenarios({ ...input, tariff }, 165, fixed)[0].result.gapNgn?.toFixed(0));
+    assert.deepEqual(gaps, ["25982937", "25982937", "25982937", "25982937"]);
+    assert.match(FIXED_BUDGET_GAP_NOTE, /revenue does not change with the tariff, so this gap is the same at any planned tariff and is not a finding about tariffs/);
+  });
+
+  it("never works the gap at a positive elasticity", () => {
+    const input = { capexNgn: 30_000_000, demand, demandCase: "p50" as const, losses: 0.1, tariff: 350, opexPerDay: 3_000, periodYears: 10, returnPerYear: 0, connections: 250 };
+    const results = subsidyGapScenarios(input, 165, [
+      { kind: "fixed_budget", label: "Fixed budget", elasticity: -1, middle: true },
+      { kind: "reference_change", label: "₦165 to ₦350", elasticity: 0.53, middle: false },
+      { kind: "user", label: "Yours", elasticity: -0.5, middle: false },
+    ]);
+    assert.deepEqual(results.map((one) => one.elasticity), [-1, -0.5]);
   });
 
   it("takes a second reference site as a list entry: the benchmarks move and rest on 2 sites, with no code change", () => {

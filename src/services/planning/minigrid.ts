@@ -4,7 +4,7 @@ import { demandFromReference, MINIGRID_DEMAND_REFERENCE } from "../../analytics/
 import { MINIGRID_PUE_GAP_REFERENCE, pueGap } from "../../analytics/planning/minigrid/pueGap.ts";
 import { MINIGRID_REFERENCE_BASIS, referenceBasisFrom } from "../../analytics/planning/minigrid/reference.ts";
 import { MINIGRID_SIZING_REFERENCE, sizeSystem } from "../../analytics/planning/minigrid/sizing.ts";
-import { capexFactorToToday, MINIGRID_SUBSIDY_GAP_REFERENCE, scaleReferenceCapex, subsidyGap } from "../../analytics/planning/minigrid/subsidyGap.ts";
+import { capexFactorsToToday, type CapexFactors, MINIGRID_SUBSIDY_GAP_REFERENCE, scaleReferenceCapex, subsidyGapScenarios } from "../../analytics/planning/minigrid/subsidyGap.ts";
 import { MINIGRID_TARIFF_RESPONSE_REFERENCE, tariffResponse } from "../../analytics/planning/minigrid/tariff.ts";
 import type { PlannedCommunityRepository } from "../../repositories/ports/minigridPlanning.ts";
 import type { ReferenceSiteRepository } from "../../repositories/ports/reference.ts";
@@ -29,7 +29,7 @@ export const NOT_CLAIMED: { method: string; claims: string }[] = [
   { method: "Demand", claims: "True or unconstrained demand; a load profile; that the no-diversity upper bound is a P90 or a design day; anything beyond 5 years; that the class split is the source's own." },
   { method: "Sizing", claims: "An hour-by-hour dispatch or a loss-of-load probability; a cost; an EPC design; anything for a site without coordinates." },
   { method: "Tariff response", claims: "A price elasticity measured at one site as a general law; an effect on collection or revenue at RMG01; a figure where the events disagree." },
-  { method: "Subsidy gap", claims: "A grant amount, a programme's eligibility, a lender's decision; an opex from RMG01; today's cost from 2019 prices without the stated scaling." },
+  { method: "Subsidy gap", claims: "A grant amount, a programme's eligibility, a lender's decision; an opex from RMG01; today's cost from 2019 prices without the planner's price change and rate; from the fixed-budget gap, anything about tariffs." },
   { method: "Productive-use gap", claims: "That a productive user exists or would pay; the equipment as demand." },
   { method: "All", claims: "A benchmark from one site called typical; any figure without the number of reference sites it rests on." },
 ];
@@ -65,16 +65,23 @@ export function minigridPlan(community: PlannedCommunity, bases: readonly Refere
   const tariff = baseKwh === null ? null : tariffResponse({ baseKwh, baseTariff: firstTariff, tariffs, userElasticity: settings.userElasticity, bases });
   const connections = community.customers.residential + community.customers.non_residential;
   const reference = bases.find((basis) => basis.capex !== null)?.capex ?? null;
-  const toToday = reference === null || settings.ngnPerUsdToday === null ? null : capexFactorToToday(reference.ngnPerUsd, settings.ngnPerUsdToday.rate);
-  const scaled = reference === null || sizing === null ? null : scaleReferenceCapex(reference, { pvKwp: sizing.pvKwp, batteryKwh: sizing.batteryKwh, connections }, toToday ?? 1);
-  const capexNgn = settings.capexNgn ?? (toToday === null ? null : (scaled?.totalNgn ?? null));
-  // The planned tariff acts only through the tariff response, from the tariff demand was served at, at the middle case (e = −1).
-  const response = demand.servedAtTariff === null || demand.servedAtTariff === settings.tariff ? null : { baseTariff: demand.servedAtTariff, elasticity: -1 };
-  const gap =
+  // No factor to today until both the planner's price change and today's rate are set: never a silent 0%.
+  const toToday: CapexFactors | null =
+    reference === null || settings.ngnPerUsdToday === null || settings.equipmentPriceChange === null ? null : capexFactorsToToday(reference.ngnPerUsd, settings.ngnPerUsdToday.rate, settings.equipmentPriceChange);
+  const scaled = reference === null || sizing === null ? null : scaleReferenceCapex(reference, { pvKwp: sizing.pvKwp, batteryKwh: sizing.batteryKwh, connections }, toToday);
+  const capexNgn = settings.capexNgn ?? scaled?.today?.totalNgn ?? null;
+  // The planned tariff acts only through the tariff response, from the tariff demand was served at, under each
+  // tariff scenario side by side: the fixed budget (the middle case), each usable reference change, the user's.
+  const baseTariff = demand.servedAtTariff ?? settings.tariff;
+  const gaps =
     capexNgn === null || settings.opexPerDay === null
       ? null
-      : subsidyGap({ capexNgn, demand, demandCase: "p50", losses: MINIGRID_DEMAND_REFERENCE.parameters.losses, tariff: settings.tariff, tariffResponse: response, opexPerDay: settings.opexPerDay.ngn, periodYears: settings.periodYears, returnPerYear: settings.returnPerYear, connections });
-  return { demand, asHappened, sizing, productiveUse, tariff, scaledCapex: scaled, toToday, capexNgn, gap, response, connections };
+      : subsidyGapScenarios(
+          { capexNgn, demand, demandCase: "p50", losses: MINIGRID_DEMAND_REFERENCE.parameters.losses, tariff: settings.tariff, opexPerDay: settings.opexPerDay.ngn, periodYears: settings.periodYears, returnPerYear: settings.returnPerYear, connections },
+          baseTariff,
+          tariff?.scenarios ?? [{ kind: "fixed_budget", label: "Fixed budget (e = −1), the middle case", elasticity: -1, middle: true }],
+        );
+  return { demand, asHappened, sizing, productiveUse, tariff, scaledCapex: scaled, toToday, capexNgn, gaps, baseTariff, connections };
 }
 
 export async function minigridPlanView(communities: PlannedCommunityRepository, references: ReferenceSiteRepository, settings: MinigridPlanSettings = DEFAULT_PLAN_SETTINGS): Promise<MinigridPlanView | null> {
@@ -82,7 +89,7 @@ export async function minigridPlanView(communities: PlannedCommunityRepository, 
   if (!community) return null;
   const bases = await referenceBases(references);
   const plan = minigridPlan(community, bases, settings);
-  const { demand, sizing, productiveUse, tariff, gap } = plan;
+  const { demand, sizing, productiveUse, tariff, gaps } = plan;
   const sites = `${demand.sitesLabel}: ${bases.map((basis) => basis.siteCode).join(", ")}`;
   const referenceSources = await references.sources();
 
@@ -96,22 +103,41 @@ export async function minigridPlanView(communities: PlannedCommunityRepository, 
     : [];
 
   const gapFigures: MinigridPlanFigure[] = [];
-  if (plan.scaledCapex) {
+  const scaledCapex = plan.scaledCapex;
+  if (scaledCapex) {
+    const factors = scaledCapex.toToday;
     gapFigures.push({
       key: "scaledCapex",
-      label: plan.scaledCapex.label,
-      value: plan.toToday === null ? `${naira(plan.scaledCapex.totalNgn)} at ${plan.scaledCapex.priceYear} prices; not brought to today` : naira(plan.scaledCapex.totalNgn),
-      status: plan.toToday === null ? "placeholder" : "calculated",
-      basis: `The reference build cost scaled: storage per kWh, generation per kWp, distribution and metering per connection (${naira(plan.scaledCapex.perConnectionNgn)} a meter bought, ${plan.scaledCapex.connectionsBasis.meters} meters${plan.scaledCapex.perAccountNgn === null ? "" : `; ${naira(plan.scaledCapex.perAccountNgn)} over the ${plan.scaledCapex.connectionsBasis.accounts} accounts, shown beside it`}, at ${plan.scaledCapex.priceYear} prices), the other costs in proportion${plan.toToday === null ? "; no rate to today is set" : `, × ${plan.toToday.toFixed(2)} to today`}.`,
+      label: scaledCapex.label,
+      value: scaledCapex.today === null ? `${naira(scaledCapex.atPriceYear.totalNgn)} at ${scaledCapex.priceYear} prices; not brought to today` : naira(scaledCapex.today.totalNgn),
+      status: scaledCapex.today === null ? "placeholder" : "calculated",
+      basis: `The reference build cost scaled: storage per kWh, generation per kWp, distribution and metering per connection (${naira(scaledCapex.perConnectionNgn)} a meter bought, ${scaledCapex.connectionsBasis.meters} meters${scaledCapex.perAccountNgn === null ? "" : `; ${naira(scaledCapex.perAccountNgn)} over the ${scaledCapex.connectionsBasis.accounts} accounts, shown beside it`}, at ${scaledCapex.priceYear} prices), the other costs in proportion${factors === null ? "; not brought to today until the equipment price change and today's ₦ a US dollar are set" : `; to today × ${factors.storage.toFixed(2)} storage, × ${factors.generation.toFixed(2)} generation, × ${factors.distributionAndMetering.toFixed(2)} distribution and metering, × ${factors.other.toFixed(2)} other (${naira(scaledCapex.atPriceYear.totalNgn)} at ${scaledCapex.priceYear} prices)`}.`,
     });
   }
-  if (gap) {
-    gapFigures.push(
-      { key: "gap", label: "Subsidy gap", value: `${naira(gap.gapNgn ?? 0)}, ${naira(gap.gapPerConnectionNgn ?? 0)} a connection`, status: "calculated", basis: `Capex − net revenue over ${settings.periodYears} years at ${naira(settings.tariff)}/kWh, P50${plan.response ? `, the tariff acting through the fixed-budget response (e = −1) from ₦${plan.response.baseTariff}` : ""}; opex ${naira(settings.opexPerDay?.ngn ?? 0)} a day (${settings.opexPerDay?.source ?? ""}). Display only: not a grant amount.` },
-      { key: "repay", label: "Months to repay from net revenue", value: `${months(gap.monthsToRepay.atZero)} at 0%; ${months(gap.monthsToRepay.atReturn)} at ${pct(gap.monthsToRepay.returnPerYear, 0)} a year`, status: "calculated", basis: "On year 5's net revenue a day, with the shared loan arithmetic." },
-    );
-  } else {
-    gapFigures.push({ key: "gap", label: "Subsidy gap", value: "Not calculated", status: "placeholder", basis: `Not calculated until set: ${[settings.opexPerDay === null ? "opex a day (no reliable reference exists)" : null, plan.capexNgn === null ? "capex, or today's ₦ a US dollar to bring the reference cost to today" : null].filter(Boolean).join("; ")}.` });
+  const gapScenarios = (gaps ?? []).map((one) => {
+    const result = one.result;
+    const negative = result.netRevenueNgn !== null && result.netRevenueNgn < 0;
+    return {
+      label: one.label,
+      elasticity: one.elasticity.toFixed(2),
+      middle: one.middle,
+      gap: {
+        key: `gap:${one.kind}`,
+        label: `Subsidy gap, ${one.label}`,
+        value: result.gapNgn === null || result.gapPerConnectionNgn === null ? "No figure" : `${naira(result.gapNgn)}, ${naira(result.gapPerConnectionNgn)} a connection`,
+        status: result.gapNgn === null ? ("not_available" as const) : ("calculated" as const),
+        basis: `Capex − net revenue over ${settings.periodYears} years at ${naira(settings.tariff)}/kWh, P50, the tariff acting through e = ${one.elasticity.toFixed(2)} from ₦${plan.baseTariff}; opex ${naira(settings.opexPerDay?.ngn ?? 0)} a day (${settings.opexPerDay?.source ?? ""})${negative ? `; net revenue is below zero (${naira(result.netRevenueNgn ?? 0)}), so the gap exceeds the capex` : ""}. Display only: not a grant amount.`,
+      },
+      repay: { key: `repay:${one.kind}`, label: "Months to repay from net revenue", value: `${months(result.monthsToRepay.atZero)} at 0%; ${months(result.monthsToRepay.atReturn)} at ${pct(result.monthsToRepay.returnPerYear, 0)} a year`, status: "calculated" as const, basis: "On year 5's net revenue a day, with the shared loan arithmetic." },
+      note: one.note,
+    };
+  });
+  if (gaps === null) {
+    const unset = [
+      settings.opexPerDay === null ? "opex a day (no reliable reference exists)" : null,
+      plan.capexNgn === null ? "capex, or both the equipment price change since 2019 (in US dollar terms) and today's ₦ a US dollar to bring the reference cost to today" : null,
+    ].filter(Boolean);
+    gapFigures.push({ key: "gap", label: "Subsidy gap", value: "Not calculated", status: "placeholder", basis: `Not calculated until set: ${unset.join("; ")}.` });
   }
 
   const citations = await communities.citations();
@@ -174,7 +200,7 @@ export async function minigridPlanView(communities: PlannedCommunityRepository, 
       note: tariff?.note ?? null,
       method: methodView(MINIGRID_TARIFF_RESPONSE_REFERENCE),
     },
-    subsidyGap: { figures: gapFigures, method: methodView(MINIGRID_SUBSIDY_GAP_REFERENCE) },
+    subsidyGap: { figures: gapFigures, scenarios: gapScenarios, method: methodView(MINIGRID_SUBSIDY_GAP_REFERENCE) },
     notClaimed: NOT_CLAIMED,
     attribution: referenceSources.map(attributionOf),
     sourcing: {

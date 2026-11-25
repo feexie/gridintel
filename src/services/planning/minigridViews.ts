@@ -58,7 +58,13 @@ export interface MinigridPlanView {
     note: string | null;
     method: MinigridMethodView;
   };
-  subsidyGap: { figures: MinigridPlanFigure[]; method: MinigridMethodView };
+  subsidyGap: {
+    /** The scaled reference cost, and "Not calculated" while an input is unset. */
+    figures: MinigridPlanFigure[];
+    /** Side by side under each tariff scenario: the fixed budget (the middle case, with its note), each usable reference change, the user's. Never a positive e. */
+    scenarios: { label: string; elasticity: string; middle: boolean; gap: MinigridPlanFigure; repay: MinigridPlanFigure; note: string | null }[];
+    method: MinigridMethodView;
+  };
   notClaimed: { method: string; claims: string }[];
   attribution: ReferenceAttributionView[];
   sourcing: { synthetic: boolean; sources: { id: string; name: string; kind: string }[]; citations: { id: string; title: string; url: string | null }[] };

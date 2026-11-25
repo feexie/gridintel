@@ -111,24 +111,36 @@ describe("the mini-grid plan for the synthetic community", () => {
     assert.ok(view.tariff.notUsable[0].confounders.some((line) => /105 days between the windows are left out/.test(line)));
   });
 
-  it("gives no subsidy gap until opex and a factor to today are set, and then gives one", async () => {
+  it("gives no subsidy gap until opex, the equipment price change and today's rate are set, and then gives it side by side", async () => {
     assert.equal(view.subsidyGap.figures.find((figure) => figure.key === "gap")?.status, "placeholder");
+    assert.deepEqual(view.subsidyGap.scenarios, []);
+    assert.equal(view.inputs.find((input) => input.key === "priceChange")?.status, "placeholder");
+    assert.equal(view.inputs.find((input) => input.key === "capexToToday")?.value, "Not calculated");
+    assert.ok(!view.inputs.some((input) => /unchanged since/.test(input.basis)), "no stated assumption of unchanged dollar prices");
     const scaled = view.subsidyGap.figures.find((figure) => figure.key === "scaledCapex");
     assert.equal(scaled?.value, "₦21,666,037 at 2019 prices; not brought to today");
     assert.match(scaled?.basis ?? "", /₦38,250 a meter bought, 220 meters; ₦34,347 over the 245 accounts, shown beside it/);
     const opex = view.inputs.find((input) => input.key === "opex");
     assert.match(opex?.basis ?? "", /reported floor, excluding labour and metering platform fees \(blank in the source\), never as full opex: RMG01 2022: ₦3,749 a day/);
+    const rateOnly = { ...DEFAULT_PLAN_SETTINGS, opexPerDay: { ngn: 3_000, source: "the planner's estimate" }, ngnPerUsdToday: { rate: 1_500, source: "a cited rate" } };
+    const withoutChange = await minigridPlanView(createSyntheticPlannedCommunities(), references, rateOnly);
+    assert.equal(withoutChange?.subsidyGap.figures.find((figure) => figure.key === "gap")?.value, "Not calculated", "the price change unset: never a silent 0%");
+    assert.match(withoutChange?.subsidyGap.figures.find((figure) => figure.key === "gap")?.basis ?? "", /equipment price change since 2019/);
     const set = await minigridPlanView(createSyntheticPlannedCommunities(), references, {
-      ...DEFAULT_PLAN_SETTINGS,
-      opexPerDay: { ngn: 3_000, source: "the planner's estimate" },
-      ngnPerUsdToday: { rate: 1_500, source: "a cited rate" },
+      ...rateOnly,
+      equipmentPriceChange: { overall: 0, byCategory: { storage: -0.5 }, source: "a cited price index" },
+      userElasticity: -0.5,
     });
     assert.equal(set?.inputs.find((input) => input.key === "opex")?.status, "input");
-    assert.match(set?.inputs.find((input) => input.key === "capexToToday")?.value ?? "", /^× 4\.29 \(₦350\/\$ in 2019 to ₦1,500\.00\/\$ today\)$/);
-    const gap = set?.subsidyGap.figures.find((figure) => figure.key === "gap");
-    assert.equal(gap?.status, "calculated");
-    assert.match(gap?.value ?? "", /a connection$/);
-    assert.match(gap?.basis ?? "", /fixed-budget response \(e = −1\) from ₦165/);
+    assert.equal(set?.inputs.find((input) => input.key === "priceChange")?.status, "input");
+    assert.equal(set?.inputs.find((input) => input.key === "priceChange")?.value, "storage −50.0%; +0.0% for the rest");
+    assert.equal(set?.inputs.find((input) => input.key === "capexToToday")?.value, "× 2.14 storage, × 4.29 generation, × 4.29 distribution and metering, × 4.29 other");
+    const scenarios = set?.subsidyGap.scenarios ?? [];
+    assert.deepEqual(scenarios.map((one) => [one.elasticity, one.middle]), [["-1.00", true], ["-2.10", false], ["-0.50", false]]);
+    assert.ok(scenarios.every((one) => one.gap.status === "calculated" && /a connection$/.test(one.gap.value)));
+    assert.match(scenarios[0].note ?? "", /not a finding about tariffs/);
+    assert.equal(scenarios[1].note, null);
+    assert.match(scenarios[0].gap.basis, /e = -1\.00 from ₦165/);
   });
 
   it("lists what each method may not claim", () => {
