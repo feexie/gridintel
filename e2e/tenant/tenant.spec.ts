@@ -207,7 +207,7 @@ test("signing out ends the session", async ({ page }) => {
   await page.locator("[data-account]").first().getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/dashboard/intelligence/minigrid");
-  await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fminigrid$/);
+  await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fintelligence%2Fminigrid$/);
 });
 
 test("a tenant deployment serves no front door: /preview leads to signing in, and is not found once signed in (ADR 0021)", async ({ page, request }) => {
