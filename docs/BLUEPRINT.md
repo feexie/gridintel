@@ -4,8 +4,11 @@ Current versus target architecture. Update this file when the architecture
 changes. The plan is in `ROADMAP.md`; the vision is in
 `private/FOUNDING_DIRECTIVE.md`, which is not committed.
 
-> **State at the Phase 8A checkpoint (2026-10-21; branch `phase-8a`, not
-> merged; ADR 0020).** Login and separate organizations, on synthetic data:
+> **Phase 8A (complete, 2026-11-25; tag `phase-8a`; ADR 0020).** Login and
+> separate organizations, on synthetic data, live at the pilot
+> (https://gridintel-pilot.vercel.app; Supabase `gridintel-pilot`, eu-west-1).
+> An invitation is marked accepted once the second factor is verified, where
+> row-level security shows the person their membership row:
 >
 > - **Two deployments** (`composition/mode.ts`): the public demonstration
 >   (no login, no secret, screens built ahead of time) and a tenant
