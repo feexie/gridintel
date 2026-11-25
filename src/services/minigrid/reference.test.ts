@@ -80,7 +80,7 @@ describe("the RMG01 reference site's views", async () => {
 
   it("gives the Sites screen a card per reference site, with its credit", async () => {
     const sites = await referenceSitesView(repo);
-    assert.deepEqual(sites.sites.map((card) => [card.code, card.href]), [["RMG01", "/dashboard/minigrid/sites/reference/rmg01"]]);
+    assert.deepEqual(sites.sites.map((card) => [card.code, card.href]), [["RMG01", "/dashboard/intelligence/minigrid/sites/reference/rmg01"]]);
     assert.equal(sites.sites[0].meterGap.stated, "17.9%");
     assert.equal(sites.sites[0].attribution.licence, "CC BY 4.0");
     assert.equal(sites.sourcing.synthetic, false);
@@ -92,8 +92,8 @@ describe("the RMG01 reference site's views", async () => {
     const reads: string[] = [];
     const notices = await referenceBarNotices({ ...repo, records: async (id) => (reads.push(id), null), sites: async () => (reads.push("sites"), []) });
     assert.deepEqual(reads, []);
-    assert.deepEqual(Object.keys(notices), ["/dashboard/minigrid/sites/reference/rmg01"]);
-    const notice = notices["/dashboard/minigrid/sites/reference/rmg01"];
+    assert.deepEqual(Object.keys(notices), ["/dashboard/intelligence/minigrid/sites/reference/rmg01"]);
+    const notice = notices["/dashboard/intelligence/minigrid/sites/reference/rmg01"];
     assert.equal(notice.label, "PUBLISHED DATA");
     assert.match(notice.summary, /portfolio shown on the other screens is synthetic/);
     assert.match(notice.citation, /Kemabonta.*Geoffrey.*v1\.0\.2/);

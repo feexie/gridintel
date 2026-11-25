@@ -13,21 +13,21 @@ export const REQUEST_ENV = { ...process.env, GRIDINTEL_RENDER: "request" };
 /** Set by `npm run verify:local`: the ordinary build only, with no server started by a test (see scripts/e2e-local.mjs). */
 export const LOCAL = process.env.GRIDINTEL_E2E === "local";
 
-export const OPERATIONS = "/dashboard/utility/operations";
+export const OPERATIONS = "/dashboard/intelligence/utility/operations";
 
 export const ROUTES = [
   // The overviews, and each sector's GIS Map.
   "/dashboard",
-  "/dashboard/utility",
-  "/dashboard/utility/map",
-  "/dashboard/minigrid",
-  "/dashboard/minigrid/map",
-  "/dashboard/utility/executive",
-  "/dashboard/utility/reliability",
-  "/dashboard/utility/revenue",
-  "/dashboard/utility/assets",
-  "/dashboard/utility/assets/all",
-  "/dashboard/utility/events",
+  "/dashboard/intelligence/utility",
+  "/dashboard/intelligence/utility/map",
+  "/dashboard/intelligence/minigrid",
+  "/dashboard/intelligence/minigrid/map",
+  "/dashboard/intelligence/utility/executive",
+  "/dashboard/intelligence/utility/reliability",
+  "/dashboard/intelligence/utility/revenue",
+  "/dashboard/intelligence/utility/assets",
+  "/dashboard/intelligence/utility/assets/all",
+  "/dashboard/intelligence/utility/events",
   OPERATIONS,
   `${OPERATIONS}/regions/demo-region-northfield`,
   `${OPERATIONS}/substations/SS-RIV`,
@@ -43,10 +43,10 @@ export const ROUTES = [
   `${OPERATIONS}/service-points/SP-OLD2-004`,
   `${OPERATIONS}/service-points/SP-MKT2-005`,
   // The Sites workspace and one site.
-  "/dashboard/minigrid/sites",
-  "/dashboard/minigrid/sites/MG-DRY",
+  "/dashboard/intelligence/minigrid/sites",
+  "/dashboard/intelligence/minigrid/sites/MG-DRY",
   // A reference site: published data from another operator, beside the portfolio (Phase MG-REAL).
-  "/dashboard/minigrid/sites/reference/rmg01",
+  "/dashboard/intelligence/minigrid/sites/reference/rmg01",
   // The reports: each sector's list, every report, and each built report for its month.
   "/dashboard/utility/reports",
   "/dashboard/minigrid/reports",

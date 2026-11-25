@@ -268,10 +268,10 @@ function platformScenes(): Scene[] {
   const scene = (id: string, name: string, path: string, play: Scene["play"]): Scene => ({ id, name, path, dir: "platform", caption: BEFORE, play });
   return [
     scene("p1", "platform-home", "/dashboard", look(3000, 500, 500)),
-    scene("p2", "utility-executive", "/dashboard/utility/executive", look(3000, 600, 600)),
-    scene("p3", "reliability", "/dashboard/utility/reliability", look(3000, 600, 600)),
-    scene("p4", "revenue-and-losses", "/dashboard/utility/revenue", look(3000, 600, 600)),
-    scene("p5", "gis-map", "/dashboard/utility/map", async (page, shot) => {
+    scene("p2", "utility-executive", "/dashboard/intelligence/utility/executive", look(3000, 600, 600)),
+    scene("p3", "reliability", "/dashboard/intelligence/utility/reliability", look(3000, 600, 600)),
+    scene("p4", "revenue-and-losses", "/dashboard/intelligence/utility/revenue", look(3000, 600, 600)),
+    scene("p5", "gis-map", "/dashboard/intelligence/utility/map", async (page, shot) => {
       await wait(4500);
       await shot("screen");
       await page.mouse.move(900, 500, { steps: 30 });
@@ -279,7 +279,7 @@ function platformScenes(): Scene[] {
       await page.mouse.move(1200, 650, { steps: 30 });
       await wait(3000);
     }),
-    scene("p6", "minigrid-site-performance", "/dashboard/minigrid/sites/MG-TAM", look(3000, 600, 600)),
+    scene("p6", "minigrid-site-performance", "/dashboard/intelligence/minigrid/sites/MG-TAM", look(3000, 600, 600)),
     { ...scene("p7", "report-opened-and-downloaded", "/dashboard/utility/reports", async (page, shot) => {
       await wait(1500);
       const open = page.locator('[data-report="reliability"]').getByRole("link", { name: "Open the report" });

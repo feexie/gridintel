@@ -6,7 +6,7 @@ import { PreparingData } from "@/components/system/PreparingData";
 import { reportsFor } from "@/constants/access";
 import { reports } from "@/composition/reports";
 import { getViewer } from "@/composition/runtime";
-import { aheadOfTime, preparing } from "./utility/screen";
+import { aheadOfTime, preparing } from "@/app/dashboard/screen";
 import { hrefOf, type ViewId } from "@/constants/views";
 
 /* ==========================================================

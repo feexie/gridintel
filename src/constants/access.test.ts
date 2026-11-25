@@ -17,27 +17,27 @@ const REVENUE_DEPARTMENT: ScreenGrant = { kind: "listed", keys: ["utility.overvi
 
 const ROUTES = [
   "/dashboard",
-  "/dashboard/utility",
-  "/dashboard/utility/map",
-  "/dashboard/utility/ai",
-  "/dashboard/utility/executive",
-  "/dashboard/utility/operations",
-  "/dashboard/utility/operations/feeders/FD-OLD",
-  "/dashboard/utility/reliability",
-  "/dashboard/utility/revenue",
-  "/dashboard/utility/assets",
-  "/dashboard/utility/events",
-  "/dashboard/minigrid",
-  "/dashboard/minigrid/map",
-  "/dashboard/minigrid/ai",
-  "/dashboard/minigrid/sites",
-  "/dashboard/minigrid/sites/MG-DRY",
+  "/dashboard/intelligence/utility",
+  "/dashboard/intelligence/utility/map",
+  "/dashboard/intelligence/utility/ai",
+  "/dashboard/intelligence/utility/executive",
+  "/dashboard/intelligence/utility/operations",
+  "/dashboard/intelligence/utility/operations/feeders/FD-OLD",
+  "/dashboard/intelligence/utility/reliability",
+  "/dashboard/intelligence/utility/revenue",
+  "/dashboard/intelligence/utility/assets",
+  "/dashboard/intelligence/utility/events",
+  "/dashboard/intelligence/minigrid",
+  "/dashboard/intelligence/minigrid/map",
+  "/dashboard/intelligence/minigrid/ai",
+  "/dashboard/intelligence/minigrid/sites",
+  "/dashboard/intelligence/minigrid/sites/MG-DRY",
   "/dashboard/utility/reports",
   "/dashboard/utility/reports/reliability/2026-09",
   "/dashboard/utility/reports/reliability/2026-09/data.csv",
   "/dashboard/minigrid/reports",
   "/dashboard/minigrid/reports/compliance/2026-09-14",
-  "/dashboard/der",
+  "/dashboard/intelligence/der",
   "/dashboard/planning",
   "/dashboard/planning/metering",
   "/dashboard/planning/dt",
@@ -52,10 +52,10 @@ describe("which screens a viewer may open", () => {
     const keys = sectors.flatMap((sector) => [...sector.opening, ...sector.workspaces].map((item) => item.key));
     assert.equal(new Set(keys).size, keys.length);
     for (const sector of sectors) for (const item of [...sector.opening, ...sector.workspaces]) assert.equal(viewOf(item.key).domain, sector.id, item.key);
-    assert.equal(keyFor("/dashboard/utility/operations/feeders/FD-OLD"), "utility.operations");
-    assert.equal(keyFor("/dashboard/minigrid/sites/MG-DRY"), "minigrid.sites");
-    assert.equal(keyFor("/dashboard/utility"), "utility.overview");
-    assert.equal(keyFor("/dashboard/utility/no-such-screen"), null);
+    assert.equal(keyFor("/dashboard/intelligence/utility/operations/feeders/FD-OLD"), "utility.operations");
+    assert.equal(keyFor("/dashboard/intelligence/minigrid/sites/MG-DRY"), "minigrid.sites");
+    assert.equal(keyFor("/dashboard/intelligence/utility"), "utility.overview");
+    assert.equal(keyFor("/dashboard/intelligence/utility/no-such-screen"), null);
     assert.equal(keyFor("/dashboard/reports"), "platform.reports");
     assert.equal(keyFor("/dashboard/utility/reports/reliability/2026-09/data.csv"), "utility.reports.reliability");
     assert.equal(keyFor("/dashboard/utility/reports"), "utility.reports");
@@ -73,31 +73,31 @@ describe("which screens a viewer may open", () => {
   });
 
   it("shows a viewer allowed only Utility > Revenue that one item, and refuses every other route", () => {
-    assert.deepEqual(shape(navigationFor(REVENUE_ONLY)), [{ sector: "utility", home: "/dashboard/utility/revenue", items: ["Revenue"] }]);
-    assert.equal(homeFor(navigationFor(REVENUE_ONLY)), "/dashboard/utility/revenue");
-    for (const route of ROUTES) assert.equal(canOpen(REVENUE_ONLY, route), route === "/dashboard/utility/revenue", route);
+    assert.deepEqual(shape(navigationFor(REVENUE_ONLY)), [{ sector: "utility", home: "/dashboard/intelligence/utility/revenue", items: ["Revenue"] }]);
+    assert.equal(homeFor(navigationFor(REVENUE_ONLY)), "/dashboard/intelligence/utility/revenue");
+    for (const route of ROUTES) assert.equal(canOpen(REVENUE_ONLY, route), route === "/dashboard/intelligence/utility/revenue", route);
     // The screens below Revenue are Revenue's; the refusal page is open to anyone.
-    assert.equal(canOpen(REVENUE_ONLY, "/dashboard/utility/revenue/anything-below"), true);
+    assert.equal(canOpen(REVENUE_ONLY, "/dashboard/intelligence/utility/revenue/anything-below"), true);
     assert.equal(canOpen(REVENUE_ONLY, REFUSED_PATH), true);
   });
 
   it("gives a department its set of screens: the revenue department sees the Utility Overview, GIS Map and Revenue", () => {
-    assert.deepEqual(shape(navigationFor(REVENUE_DEPARTMENT)), [{ sector: "utility", home: "/dashboard/utility", items: ["Overview", "GIS Map", "Revenue"] }]);
+    assert.deepEqual(shape(navigationFor(REVENUE_DEPARTMENT)), [{ sector: "utility", home: "/dashboard/intelligence/utility", items: ["Overview", "GIS Map", "Revenue"] }]);
     assert.deepEqual(
       ROUTES.filter((route) => canOpen(REVENUE_DEPARTMENT, route)),
-      ["/dashboard/utility", "/dashboard/utility/map", "/dashboard/utility/revenue"],
+      ["/dashboard/intelligence/utility", "/dashboard/intelligence/utility/map", "/dashboard/intelligence/utility/revenue"],
     );
   });
 
   it("opens a whole sector with the sector's key, and nothing with an empty list", () => {
     const minigrid: ScreenGrant = { kind: "listed", keys: ["minigrid"] };
-    assert.deepEqual(shape(navigationFor(minigrid)), [{ sector: "minigrid", home: "/dashboard/minigrid", items: ["Overview", "GIS Map", "AI Assistant", "Sites", "Reports"] }]);
+    assert.deepEqual(shape(navigationFor(minigrid)), [{ sector: "minigrid", home: "/dashboard/intelligence/minigrid", items: ["Overview", "GIS Map", "AI Assistant", "Sites", "Reports"] }]);
     assert.deepEqual(ROUTES.filter((route) => canOpen(minigrid, route)), [
-      "/dashboard/minigrid",
-      "/dashboard/minigrid/map",
-      "/dashboard/minigrid/ai",
-      "/dashboard/minigrid/sites",
-      "/dashboard/minigrid/sites/MG-DRY",
+      "/dashboard/intelligence/minigrid",
+      "/dashboard/intelligence/minigrid/map",
+      "/dashboard/intelligence/minigrid/ai",
+      "/dashboard/intelligence/minigrid/sites",
+      "/dashboard/intelligence/minigrid/sites/MG-DRY",
       "/dashboard/minigrid/reports",
       "/dashboard/minigrid/reports/compliance/2026-09-14",
       "/dashboard/reports",
@@ -133,7 +133,7 @@ describe("which screens a viewer may open", () => {
     assert.deepEqual(shape(navigationFor(funder)), [{ sector: "minigrid", home: "/dashboard/minigrid/reports", items: ["Reports"] }]);
     assert.deepEqual(reportsFor(funder).map((report) => report.key), ["minigrid.reports.compliance"]);
     assert.equal(canOpen(funder, "/dashboard/utility/reports/reliability/2026-09"), false);
-    assert.equal(canOpen(funder, "/dashboard/minigrid/sites"), false);
+    assert.equal(canOpen(funder, "/dashboard/intelligence/minigrid/sites"), false);
   });
 
   it("opens every report of a sector with its Reports key, and the list of all reports to anyone who may open one", () => {
@@ -148,9 +148,9 @@ describe("which screens a viewer may open", () => {
   it("refuses at the proxy, with 403 and the refusal page, the routes a viewer may not open", () => {
     const viewer: ViewerContext = { viewerId: "user@revenue", organizationId: "savanna", access: { kind: "everything" }, screens: REVENUE_ONLY };
     const check = accessProxy(() => viewer);
-    const allowed = check(new NextRequest("http://localhost/dashboard/utility/revenue"));
+    const allowed = check(new NextRequest("http://localhost/dashboard/intelligence/utility/revenue"));
     assert.equal(allowed.headers.get("x-middleware-next"), "1");
-    for (const route of ["/dashboard", "/dashboard/utility", "/dashboard/utility/executive", "/dashboard/minigrid/sites/MG-DRY"]) {
+    for (const route of ["/dashboard", "/dashboard/intelligence/utility", "/dashboard/intelligence/utility/executive", "/dashboard/intelligence/minigrid/sites/MG-DRY"]) {
       const refused = check(new NextRequest(`http://localhost${route}`));
       assert.equal(refused.status, 403, route);
       assert.equal(refused.headers.get("x-middleware-rewrite"), `http://localhost${REFUSED_PATH}`, route);
@@ -164,12 +164,12 @@ describe("a member's grant (Phase 8A, ADR 0020)", () => {
     assert.ok(grant.kind === "listed");
     // What the catalogue shows a Utility workspace, and the platform's own screens (Founder, 25 November 2026).
     assert.deepEqual(new Set(grant.keys), new Set([...PLATFORM_DEFAULT, ...workspaceViews("utility")]));
-    assert.equal(canOpen(grant, "/dashboard/utility/revenue"), true);
+    assert.equal(canOpen(grant, "/dashboard/intelligence/utility/revenue"), true);
     assert.equal(canOpen(grant, "/dashboard/planning/metering/allocation"), true);
     assert.equal(canOpen(grant, "/dashboard/planning/unserved"), false, "a mini-grid planner stays with its own type");
     assert.equal(canOpen(grant, "/dashboard/planning/metering/monitoring"), false, "Oversight is a regulator's");
     assert.equal(canOpen(grant, "/dashboard/settings/people"), false, "People is an administrator's only");
-    assert.equal(canOpen(grant, "/dashboard/minigrid/sites"), false);
+    assert.equal(canOpen(grant, "/dashboard/intelligence/minigrid/sites"), false);
     assert.equal(holdsSector(grant, "utility"), true);
     assert.equal(holdsSector(grant, "planning"), true);
     assert.equal(holdsSector(grant, "minigrid"), false);
@@ -191,7 +191,7 @@ describe("a member's grant (Phase 8A, ADR 0020)", () => {
     const grant = grantFor(["minigrid"], ["minigrid.sites", "utility", "utility.revenue", "platform.reports"], false);
     assert.deepEqual(grant, { kind: "listed", keys: ["minigrid.sites", "platform.reports"] });
     assert.equal(holdsSector(grant, "utility"), false);
-    for (const path of ["/dashboard/utility", "/dashboard/utility/revenue", "/dashboard/utility/reports/operations/2026-09/data.csv"]) assert.equal(canOpen(grant, path), false, path);
+    for (const path of ["/dashboard/intelligence/utility", "/dashboard/intelligence/utility/revenue", "/dashboard/utility/reports/operations/2026-09/data.csv"]) assert.equal(canOpen(grant, path), false, path);
   });
 
   it("gives the people screen to an administrator only, and no membership can list it for itself", () => {
@@ -215,15 +215,15 @@ describe("the data layer's check (Phase 8A)", () => {
     const disco = grantFor(["utility"], null, false);
     const revenue = grantFor(["utility"], ["utility.overview", "utility.map", "utility.revenue"], false);
     const operator = grantFor(["minigrid"], null, true);
-    assert.equal(admitsRead(disco, "utility", "/dashboard/utility/executive"), true);
-    assert.equal(admitsRead(disco, "minigrid", "/dashboard/minigrid/sites"), false);
+    assert.equal(admitsRead(disco, "utility", "/dashboard/intelligence/utility/executive"), true);
+    assert.equal(admitsRead(disco, "minigrid", "/dashboard/intelligence/minigrid/sites"), false);
     // Asked from a screen of its own the grant opens, the other organization's records are still not read.
-    assert.equal(admitsRead(operator, "utility", "/dashboard/minigrid"), false);
-    assert.equal(admitsRead(revenue, "utility", "/dashboard/utility/revenue"), true);
-    assert.equal(admitsRead(revenue, "utility", "/dashboard/utility/executive"), false);
+    assert.equal(admitsRead(operator, "utility", "/dashboard/intelligence/minigrid"), false);
+    assert.equal(admitsRead(revenue, "utility", "/dashboard/intelligence/utility/revenue"), true);
+    assert.equal(admitsRead(revenue, "utility", "/dashboard/intelligence/utility/executive"), false);
     // The utility's Overview reads other workspaces' records to put itself together.
-    assert.equal(admitsRead(revenue, "utility", "/dashboard/utility"), true);
+    assert.equal(admitsRead(revenue, "utility", "/dashboard/intelligence/utility"), true);
     assert.equal(admitsRead(disco, "utility", null), false);
-    assert.equal(admitsRead({ kind: "everything" }, "minigrid", "/dashboard/minigrid"), true);
+    assert.equal(admitsRead({ kind: "everything" }, "minigrid", "/dashboard/intelligence/minigrid"), true);
   });
 });

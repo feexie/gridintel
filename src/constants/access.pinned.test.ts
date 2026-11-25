@@ -4,6 +4,7 @@ import { join, relative, sep } from "node:path";
 import { describe, it } from "node:test";
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
 import { canOpen, grantFor, opensView } from "./access.ts";
+import { destinationOf } from "./moves.ts";
 import { translateKey, viewAt, VIEWS, workspaceViews, type ViewId } from "./views.ts";
 
 /* ==========================================================
@@ -43,8 +44,8 @@ const ROLES: Record<string, () => ScreenGrant> = {
 
 const grantOf = (name: string): ScreenGrant => (name.startsWith("key:") ? { kind: "listed", keys: translateKey(name.slice(4)) } : ROLES[name]());
 
-/** Where an old address leads now. Identity until the first screen moves (step 2 reads moves.ts). */
-const destination = (address: string) => address;
+/** Where an old address leads now: its new address when it moved (moves.ts), else itself. */
+const destination = (address: string) => destinationOf(address) ?? address;
 
 /** The organization's workspace type of each role whose membership lists no screen: it holds what the catalogue shows that type. */
 const DEFAULT_TYPE: Record<string, "utility" | "minigrid"> = { "disco administrator": "utility", "disco member, every screen": "utility", "mini-grid administrator": "minigrid" };
@@ -120,8 +121,14 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
     }
   });
 
-  it("still knows every route that existed at step 0", () => {
+  it("keeps every route that existed at step 0, at its old address or through a redirect", () => {
     const now = appRoutes();
-    for (const route of frozenRoutes) assert.ok(now.includes(route), `the route ${route} is gone, with no redirect yet`);
+    const sample = (route: string) => route.replace(/\[[^\]]+\]/g, "x");
+    for (const route of frozenRoutes) {
+      if (now.includes(route)) continue;
+      const to = destinationOf(sample(route));
+      assert.ok(to !== null, `the route ${route} is gone, with no redirect`);
+      assert.ok(now.some((one) => new RegExp(`^${one.replace(/\[[^\]]+\]/g, "[^/]+")}$`).test(to.split("?")[0])), `${route} redirects to ${to}, which no route answers`);
+    }
   });
 });

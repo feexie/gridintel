@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { frontDoor } from "@/composition/initiatives";
-import { aheadOfTime, preparing } from "../dashboard/utility/screen";
+import { aheadOfTime, preparing } from "@/app/dashboard/screen";
 
 /* The front door is served by the public demonstration only (ADR 0021). On a tenant deployment
    every page under /preview is not found, before anything is read, and is rendered on request

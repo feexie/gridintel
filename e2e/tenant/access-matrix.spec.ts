@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { TENANT_ORGANIZATIONS, TEST_PEOPLE } from "../../src/composition/identityFixture";
 import { canOpen, grantFor } from "../../src/constants/access";
+import { destinationOf } from "../../src/constants/moves";
 import { totpCode } from "../../src/repositories/memory/totp";
 
 /* NAV-B safeguard A, by direct URL request (Founder, 25 November 2026): a hidden link is not a
@@ -14,7 +15,8 @@ import { totpCode } from "../../src/repositories/memory/totp";
    them. What each viewer should get is computed from the View catalogue and their grant. */
 
 const FIXTURE = JSON.parse(readFileSync(new URL("../../src/constants/__pinned__/access-before-nav-b.json", import.meta.url), "utf8")) as { addresses: string[] };
-const ADDRESSES = FIXTURE.addresses;
+/** Each frozen address where it is now (the redirect itself is old-addresses.spec.ts's). */
+const ADDRESSES = FIXTURE.addresses.map((address) => destinationOf(address) ?? address);
 
 type Person = (typeof TEST_PEOPLE)[keyof typeof TEST_PEOPLE] & { totpSecret: string };
 

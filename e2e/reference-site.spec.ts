@@ -4,8 +4,8 @@ import { expect, test, type Locator } from "@playwright/test";
    RMG01, Kemabonta & Geoffrey 2026, CC BY 4.0). Shown beside the operator's sites and never among
    them, and credited wherever its data is shown. */
 
-const SITES = "/dashboard/minigrid/sites";
-const PAGE = "/dashboard/minigrid/sites/reference/rmg01";
+const SITES = "/dashboard/intelligence/minigrid/sites";
+const PAGE = "/dashboard/intelligence/minigrid/sites/reference/rmg01";
 
 async function credited(where: Locator) {
   const credit = where.locator("[data-reference-attribution]").first();
@@ -93,7 +93,7 @@ test("the data bar says the reference page is published real data, with the cita
   await expect(bar).not.toContainText("Reporting period");
 
   // The Sites screen beside it, and any other screen, keep the synthetic banner as it was.
-  for (const route of [SITES, "/dashboard/minigrid"]) {
+  for (const route of [SITES, "/dashboard/intelligence/minigrid"]) {
     await page.goto(route);
     await expect(bar, route).not.toHaveAttribute("data-bar-kind", "published");
     await expect(bar.getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();

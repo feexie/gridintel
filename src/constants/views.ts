@@ -122,6 +122,8 @@ export type View = {
   permission: Permission;
   /** Not built yet: its page says so and holds no figure. */
   planned?: boolean;
+  /** The old menu's sector the screen is shown under, when it is not its domain's (until NAV-B step 6 replaces the old menu). */
+  inSector?: MenuSector;
   /** The old menu's entry (navigation.ts), until NAV-B removes the old menu. */
   menu?: { sector: MenuSector; section: "opening" | "views"; label: string; description?: string; group?: string };
   /** A planner of the Planning section (planning.ts). */
@@ -132,8 +134,12 @@ export type View = {
   report?: { id: ReportId; sector: "utility" | "minigrid"; audience: string; description: string };
 };
 
-const UTILITY = `${DASHBOARD}/utility`;
-const MINIGRID = `${DASHBOARD}/minigrid`;
+/** Intelligence, by domain (NAV-B step 2): the network screens of each domain. */
+const INTELLIGENCE = `${DASHBOARD}/intelligence`;
+const UTILITY = `${INTELLIGENCE}/utility`;
+const MINIGRID = `${INTELLIGENCE}/minigrid`;
+/** Where each domain's reports are until NAV-B step 4 moves them under /dashboard/reports. */
+const REPORTS_OF = (sector: "utility" | "minigrid") => `${DASHBOARD}/${sector}/reports`;
 const PLANNING = `${DASHBOARD}/planning`;
 const METERING = `${PLANNING}/metering`;
 
@@ -160,7 +166,7 @@ const report = (sector: "utility" | "minigrid", id: ReportId, label: string, aud
   label,
   question: description,
   domain: sector,
-  address: `${DASHBOARD}/${sector}/reports/${id}`,
+  address: `${REPORTS_OF(sector)}/${id}`,
   permission: "own",
   ...(planned ? { planned } : {}),
   report: { id, sector, audience, description },
@@ -186,7 +192,7 @@ export const VIEWS: readonly View[] = [
   { id: "platform.home", label: "Home", question: "What am I working on?", domain: "platform", address: null, exact: true, permission: "own", planned: true },
   { id: "platform.reports", label: "Reports", question: "Which reports can I download, for which period?", domain: "platform", address: `${DASHBOARD}/reports`, exact: true, permission: "own" },
   { id: "platform.people", label: "People", question: "Who may sign in, and what may each open?", domain: "platform", address: `${DASHBOARD}/settings/people`, permission: "own" },
-  { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${PLANNING}/about-this-build`, permission: "viewer", metering: { id: "about", step: "", label: "About this build" } },
+  { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${PLANNING}/about-this-build`, permission: "viewer", inSector: "planning", metering: { id: "about", step: "", label: "About this build" } },
   { id: "platform.refused", label: "Not open to you", question: "This screen is not open to you.", domain: "platform", address: `${DASHBOARD}/refused`, exact: true, permission: "viewer" },
   // Phase 1 placeholders with no link to them; removed in NAV-B step 5 (Founder, 10 November 2026).
   { id: "platform.settings", label: "Settings (Phase 1 placeholder)", question: NOT_BUILT, domain: "platform", address: `${DASHBOARD}/settings`, permission: "domain", planned: true },
@@ -201,7 +207,7 @@ export const VIEWS: readonly View[] = [
   utilityView("utility.revenue", "Revenue", "Where is revenue not realised?", "Where is revenue not realised, who is not paying, and is the loss commercial or collection?"),
   utilityView("utility.assets", "Assets", "Which assets require attention?"),
   utilityView("utility.events", "Events / Alarms", "What is wrong now, where, and who is affected?"),
-  utilityView("utility.reports", "Reports", "Which reports can I download, for which period?"),
+  { ...utilityView("utility.reports", "Reports", "Which reports can I download, for which period?"), address: REPORTS_OF("utility") },
   report("utility", "reliability", "Reliability and service standards", "Regulator; the DisCo's network planning", "SAIDI, SAIFI and CAIDI by feeder and substation, attribution by where interruptions began, service-band compliance by day, and the DisCo's reported figures against the calculation on their basis."),
   report("utility", "operations", "DisCo operations", "DisCo management", "ATC&C and its parts, revenue not realised, collection by customer class, reliability and hours of supply, assets requiring attention, outages and alarms."),
   report("utility", "daily-brief", "Daily operations brief", "Control room; DisCo management", "Any day in two printed pages: hours of supply by feeder, interruptions in progress, standing alarms and derived conditions at the day's end, and assets loaded above rating."),
@@ -209,12 +215,12 @@ export const VIEWS: readonly View[] = [
   // Mini-grid.
   ...opening("minigrid", MINIGRID, "Where are the sites, and how does each one stand?"),
   { id: "minigrid.sites", label: "Sites", question: "Which sites are underperforming, and do their reports match the records?", domain: "minigrid", address: `${MINIGRID}/sites`, permission: "own", menu: { sector: "minigrid", section: "views", label: "Sites", description: "Which sites are underperforming and why, and do their reports match the records?" } },
-  { id: "minigrid.reports", label: "Reports", question: "Which reports can I download, for which period?", domain: "minigrid", address: `${MINIGRID}/reports`, permission: "own", menu: { sector: "minigrid", section: "views", label: "Reports", description: "Which reports can I download, for which period?" } },
+  { id: "minigrid.reports", label: "Reports", question: "Which reports can I download, for which period?", domain: "minigrid", address: REPORTS_OF("minigrid"), permission: "own", menu: { sector: "minigrid", section: "views", label: "Reports", description: "Which reports can I download, for which period?" } },
   report("minigrid", "site-performance", "Mini-grid site performance", "Mini-grid operator", "The sites side by side, then each site: energy flow, PV, battery and generator, supply and interruptions, sales and collection."),
   report("minigrid", "compliance", "Mini-grid compliance and results", "Mini-grid regulator; programme funder", "Availability and hours of supply, connections, the tariff as an assumption, and each site's report against its records."),
 
   // DER (planned).
-  { id: "der.overview", label: "DER fleet", question: NOT_BUILT, domain: "der", address: `${DASHBOARD}/der`, exact: true, permission: "own", planned: true, menu: { sector: "der", section: "opening", label: "Overview", description: NOT_BUILT } },
+  { id: "der.overview", label: "DER fleet", question: NOT_BUILT, domain: "der", address: `${INTELLIGENCE}/der`, exact: true, permission: "own", planned: true, menu: { sector: "der", section: "opening", label: "Overview", description: NOT_BUILT } },
 
   // Planning.
   { id: "plan.overview", label: "Plan", question: "Which planners are built, and which are planned?", domain: "planning", address: PLANNING, exact: true, permission: "own", menu: { sector: "planning", section: "opening", label: "Overview", description: "Which planners are built, and which are planned?" } },

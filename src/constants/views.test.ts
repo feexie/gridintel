@@ -48,7 +48,7 @@ describe("the View catalogue: permission integrity (safeguard A)", () => {
     assert.deepEqual(VIEWS.filter((view) => opensView(unknown, view)).map((view) => view.id), ["platform.about-this-build", "platform.refused"]);
     for (const key of ["no-such-key", "utility.no-such-view", "planning.no-such-planner", "", "platform.no"]) assert.deepEqual(translateKey(key), [], key);
     assert.deepEqual(grantFor(["utility"], ["no-such-key"], false), { kind: "listed", keys: [] });
-    for (const path of ["/dashboard/no-such-screen", "/dashboard/utility/no-such-screen", "/dashboard/planning/no-such-planner", "/preview", "/dashboard2"]) {
+    for (const path of ["/dashboard/no-such-screen", "/dashboard/intelligence/utility/no-such-screen", "/dashboard/planning/no-such-planner", "/preview", "/dashboard2"]) {
       assert.equal(resolves(path), false, path);
       assert.equal(canOpen({ kind: "everything" }, path), false, path);
     }
@@ -72,20 +72,20 @@ describe("the View catalogue: route resolution", () => {
   });
 
   it("resolves an address below a view to it, unless the view is exact; the most specific view wins", () => {
-    assert.equal(viewAt("/dashboard/utility/operations/feeders/FD-OLD")?.id, "utility.operations");
-    assert.equal(viewAt("/dashboard/minigrid/sites/reference/rmg01")?.id, "minigrid.sites");
+    assert.equal(viewAt("/dashboard/intelligence/utility/operations/feeders/FD-OLD")?.id, "utility.operations");
+    assert.equal(viewAt("/dashboard/intelligence/minigrid/sites/reference/rmg01")?.id, "minigrid.sites");
     assert.equal(viewAt("/dashboard/utility/reports/reliability/2026-09/data.csv")?.id, "utility.reports.reliability");
     assert.equal(viewAt("/dashboard/planning/metering/allocation")?.id, "plan.metering-allocation");
     assert.equal(viewAt("/dashboard/planning/metering")?.id, "finance.metering-fund");
-    assert.equal(viewAt("/dashboard/utility/")?.id, "utility.overview");
-    assert.equal(viewAt("/dashboard/utility/x"), null);
-    assert.equal(hrefOf("utility.operations", "feeders", "FD 1"), "/dashboard/utility/operations/feeders/FD%201");
+    assert.equal(viewAt("/dashboard/intelligence/utility/")?.id, "utility.overview");
+    assert.equal(viewAt("/dashboard/intelligence/utility/x"), null);
+    assert.equal(hrefOf("utility.operations", "feeders", "FD 1"), "/dashboard/intelligence/utility/operations/feeders/FD%201");
   });
 });
 
 describe("the View catalogue is the single source of screens and addresses", () => {
   it("is the only module under src/ that writes a /dashboard address", () => {
-    const writers = sources().filter((file) => file.path !== "constants/views.ts" && /["'`]\/dashboard/.test(file.text)).map((file) => file.path);
+    const writers = sources().filter((file) => !["constants/views.ts", "constants/moves.ts"].includes(file.path) && /["'`]\/dashboard/.test(file.text)).map((file) => file.path);
     assert.deepEqual(writers, []);
   });
 

@@ -4,8 +4,8 @@ import { OPERATIONS } from "./routes";
 /* The shared map: each sector's GIS Map, and the same component inside other screens. Most of
    this file is about the Utility GIS Map, which holds the most layers. */
 
-const MAP = "/dashboard/utility/map";
-const MINIGRID_MAP = "/dashboard/minigrid/map";
+const MAP = "/dashboard/intelligence/utility/map";
+const MINIGRID_MAP = "/dashboard/intelligence/minigrid/map";
 const CREDIT = "Boundaries: geoBoundaries (CC BY 4.0), Runfola et al. 2020";
 
 async function open(page: Page, route = MAP) {
@@ -228,7 +228,7 @@ test("the same map is inside the Operations levels and Events / Alarms, on the p
   await open(page, `${OPERATIONS}/regions/demo-region-northfield`);
   await expect(page.locator("path.gi-line")).toHaveCount(4);
   // Events / Alarms: what is wrong now, where it is.
-  await open(page, "/dashboard/utility/events");
+  await open(page, "/dashboard/intelligence/utility/events");
   await expect(page.getByRole("heading", { name: "Where it is" })).toBeVisible();
   await expect(page.locator("path.gi-mark.gi-tone-alert")).toHaveCount(10);
   await expect(page.locator("path.gi-mark.gi-tone-watch")).toHaveCount(4);

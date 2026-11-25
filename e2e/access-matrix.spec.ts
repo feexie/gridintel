@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { destinationOf } from "../src/constants/moves";
 
 /* NAV-B safeguard A, by direct URL request, for the public demonstration's one viewer (Founder,
    25 November 2026): the public viewer holds every screen, so every address of the frozen access
@@ -13,7 +14,9 @@ test.describe.configure({ timeout: 600_000 });
 
 test("the public viewer opens every address directly, and is refused none", async ({ request }) => {
   const wrong: string[] = [];
-  for (const address of FIXTURE.addresses) {
+  for (const old of FIXTURE.addresses) {
+    // Where the address is now: its new address when it moved (the redirect itself is old-addresses.spec.ts's).
+    const address = destinationOf(old) ?? old;
     const status = (await request.get(address, { maxRedirects: 0 })).status();
     const ok = NO_ACCOUNTS.includes(address) ? status === 404 : status !== 403 && status !== 404 && status < 500;
     if (!ok) wrong.push(`${address}: answered ${status}`);
@@ -22,7 +25,7 @@ test("the public viewer opens every address directly, and is refused none", asyn
 });
 
 test("an address that is no view is answered not found, not opened and not refused", async ({ request }) => {
-  for (const address of ["/dashboard/no-such-screen", "/dashboard/utility/no-such-screen", "/dashboard/planning/no-such-planner"]) {
+  for (const address of ["/dashboard/no-such-screen", "/dashboard/intelligence/utility/no-such-screen", "/dashboard/planning/no-such-planner"]) {
     expect((await request.get(address)).status(), address).toBe(404);
   }
 });

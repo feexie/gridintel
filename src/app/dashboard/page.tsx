@@ -3,7 +3,7 @@ import { PreparingData } from "@/components/system/PreparingData";
 import { EmbeddedMap } from "@/components/system/map/EmbeddedMap";
 import { overview } from "@/composition/overview";
 import { spatial } from "@/composition/spatial";
-import { preparing } from "./utility/screen";
+import { preparing } from "@/app/dashboard/screen";
 
 /* The Platform Overview: where a visitor lands. Built with the application on the fixed
    demonstration dataset; rendered on each request for any other (ADR 0012). */

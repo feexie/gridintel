@@ -5,11 +5,11 @@ import { expect, test } from "@playwright/test";
    screen; and what a phone folds is open on a wider screen, never removed. */
 
 /** The rebuilt screens, in the order they were rebuilt. */
-const OPERATIONS = "/dashboard/utility/operations";
+const OPERATIONS = "/dashboard/intelligence/utility/operations";
 const REBUILT = [
-  "/dashboard/utility/executive",
-  "/dashboard/utility/executive/all",
-  "/dashboard/utility/events",
+  "/dashboard/intelligence/utility/executive",
+  "/dashboard/intelligence/utility/executive/all",
+  "/dashboard/intelligence/utility/events",
   OPERATIONS,
   `${OPERATIONS}/regions/demo-region-northfield`,
   `${OPERATIONS}/substations/SS-HIL`,
@@ -18,16 +18,16 @@ const REBUILT = [
   `${OPERATIONS}/transformers/DT-OLD-2/all`,
   `${OPERATIONS}/service-points/SP-OLD2-001`,
   `${OPERATIONS}/service-points/SP-MKT2-005`,
-  "/dashboard/utility/reliability",
-  "/dashboard/utility/revenue",
-  "/dashboard/utility/revenue/all",
-  "/dashboard/utility/assets",
-  "/dashboard/utility/assets/all",
-  "/dashboard/minigrid/sites",
-  "/dashboard/minigrid/sites/MG-DRY",
-  "/dashboard/minigrid/sites/MG-GRN",
-  "/dashboard/minigrid/sites/MG-PLM",
-  "/dashboard/minigrid/sites/MG-TAM",
+  "/dashboard/intelligence/utility/reliability",
+  "/dashboard/intelligence/utility/revenue",
+  "/dashboard/intelligence/utility/revenue/all",
+  "/dashboard/intelligence/utility/assets",
+  "/dashboard/intelligence/utility/assets/all",
+  "/dashboard/intelligence/minigrid/sites",
+  "/dashboard/intelligence/minigrid/sites/MG-DRY",
+  "/dashboard/intelligence/minigrid/sites/MG-GRN",
+  "/dashboard/intelligence/minigrid/sites/MG-PLM",
+  "/dashboard/intelligence/minigrid/sites/MG-TAM",
 ];
 
 for (const route of REBUILT) {
@@ -49,7 +49,7 @@ for (const route of REBUILT) {
 
 test("a phone folds the tables behind one tap; a wider screen shows them open", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/dashboard/utility/executive");
+  await page.goto("/dashboard/intelligence/utility/executive");
   const tables = page.locator('[data-wide-open="band-compliance"]');
   await expect(tables.locator('[data-table="band-compliance"]')).toBeHidden();
   await tables.locator("summary").click();
@@ -63,7 +63,7 @@ test("a phone folds the tables behind one tap; a wider screen shows them open", 
 
 test("on a phone, source and method open under the figure at full width, not as a box beside it", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/dashboard/utility/executive");
+  await page.goto("/dashboard/intelligence/utility/executive");
   const tile = page.locator('[data-metric="Revenue not realised"]').first();
   await tile.locator("summary").click();
   const trail = tile.locator("details > div");

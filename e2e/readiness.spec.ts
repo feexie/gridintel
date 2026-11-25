@@ -78,7 +78,7 @@ test("built ahead: a server that has only just started answers with the screen i
   expect(ready.status()).toBe(200);
   expect(await ready.json()).toEqual({ status: "not_started" });
 
-  for (const route of ["/dashboard/utility/executive", "/dashboard/utility/events", "/dashboard/utility/assets/all", `${OPERATIONS}/transformers/DT-GOV-3/all`, OPERATIONS]) {
+  for (const route of ["/dashboard/intelligence/utility/executive", "/dashboard/intelligence/utility/events", "/dashboard/intelligence/utility/assets/all", `${OPERATIONS}/transformers/DT-GOV-3/all`, OPERATIONS]) {
     const body = await (await request.get(`${base}${route}`)).text();
     expect(body, route).not.toContain("data-preparing");
     expect(body, route).toContain("SYNTHETIC DATA");
@@ -101,7 +101,7 @@ test("built ahead: a server that has only just started answers with the screen i
 });
 
 test("the old addresses of the longer lists lead to the new ones", async ({ page }) => {
-  await page.goto("/dashboard/utility/revenue?valuation=all");
+  await page.goto("/dashboard/intelligence/utility/revenue?valuation=all");
   await expect(page).toHaveURL(/\/revenue\/all(\?valuation=all)?$/);
   await expect(page.locator("[data-valuation]")).toHaveAttribute("data-valuation", "all");
   await page.goto(`${OPERATIONS}/transformers/DT-OLD-2?rows=all`);

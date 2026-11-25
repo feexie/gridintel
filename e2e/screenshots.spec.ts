@@ -6,19 +6,19 @@ import { test } from "@playwright/test";
    The folder is not committed (.gitignore): the files are attached to the phase's GitHub release. */
 
 const target = process.env.SCREENSHOTS;
-const OPERATIONS = "/dashboard/utility/operations";
+const OPERATIONS = "/dashboard/intelligence/utility/operations";
 const SHOTS: [string, string][] = [
   ["platform-overview", "/dashboard"],
-  ["utility-overview", "/dashboard/utility"],
-  ["utility-map", "/dashboard/utility/map"],
-  ["utility-assistant-planned", "/dashboard/utility/ai"],
-  ["minigrid-overview", "/dashboard/minigrid"],
-  ["minigrid-map", "/dashboard/minigrid/map"],
-  ["executive", "/dashboard/utility/executive"],
-  ["reliability", "/dashboard/utility/reliability"],
-  ["revenue", "/dashboard/utility/revenue"],
-  ["assets", "/dashboard/utility/assets"],
-  ["events", "/dashboard/utility/events"],
+  ["utility-overview", "/dashboard/intelligence/utility"],
+  ["utility-map", "/dashboard/intelligence/utility/map"],
+  ["utility-assistant-planned", "/dashboard/intelligence/utility/ai"],
+  ["minigrid-overview", "/dashboard/intelligence/minigrid"],
+  ["minigrid-map", "/dashboard/intelligence/minigrid/map"],
+  ["executive", "/dashboard/intelligence/utility/executive"],
+  ["reliability", "/dashboard/intelligence/utility/reliability"],
+  ["revenue", "/dashboard/intelligence/utility/revenue"],
+  ["assets", "/dashboard/intelligence/utility/assets"],
+  ["events", "/dashboard/intelligence/utility/events"],
   ["not-found", "/no-such-page"],
   ["operations", OPERATIONS],
   ["region", `${OPERATIONS}/regions/demo-region-northfield`],
@@ -36,11 +36,11 @@ const SHOTS: [string, string][] = [
   ["service-point-estimated-reading", `${OPERATIONS}/service-points/SP-OLD2-005`],
   ["service-point-reading-outside-window", `${OPERATIONS}/service-points/SP-OLD6-022`],
   ["service-point-ami", `${OPERATIONS}/service-points/SP-MKT2-005`],
-  ["minigrid-portfolio", "/dashboard/minigrid/sites"],
-  ["minigrid-site-dry-river", "/dashboard/minigrid/sites/MG-DRY"],
-  ["minigrid-site-granite-hill", "/dashboard/minigrid/sites/MG-GRN"],
-  ["minigrid-site-palm-landing", "/dashboard/minigrid/sites/MG-PLM"],
-  ["minigrid-site-tamarind-cross", "/dashboard/minigrid/sites/MG-TAM"],
+  ["minigrid-portfolio", "/dashboard/intelligence/minigrid/sites"],
+  ["minigrid-site-dry-river", "/dashboard/intelligence/minigrid/sites/MG-DRY"],
+  ["minigrid-site-granite-hill", "/dashboard/intelligence/minigrid/sites/MG-GRN"],
+  ["minigrid-site-palm-landing", "/dashboard/intelligence/minigrid/sites/MG-PLM"],
+  ["minigrid-site-tamarind-cross", "/dashboard/intelligence/minigrid/sites/MG-TAM"],
   ["reports-utility", "/dashboard/utility/reports"],
   ["reports-minigrid", "/dashboard/minigrid/reports"],
   ["report-reliability-month", "/dashboard/utility/reports/reliability/2026-09"],
@@ -78,7 +78,7 @@ test.describe("screenshots", () => {
   test.skip(!target, "set SCREENSHOTS to a folder to capture");
   // The map with an asset selected, the district totals on and the open fault marked.
   test("map-trace", async ({ page }) => {
-    await page.goto("/dashboard/utility/map");
+    await page.goto("/dashboard/intelligence/utility/map");
     await page.locator(".leaflet-container path.gi-point").first().waitFor();
     await page.locator("[data-select-asset]").selectOption("distribution_transformer:DT-OLD-2");
     await page.locator('[data-layer="utility.districts"] input').check();

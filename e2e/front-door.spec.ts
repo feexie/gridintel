@@ -71,7 +71,7 @@ test("the public charging network and the mini-grid summary need no sign-in and 
   await expect(summary.locator("[data-figure]")).toHaveCount(5);
   await expect(summary.locator("[data-summary-reference] [data-figure]")).toHaveCount(1);
   await expect(summary.locator("[data-synthetic-note]")).toBeVisible();
-  await expect(page.locator('a[href*="/dashboard/minigrid/sites/"]')).toHaveCount(0);
+  await expect(page.locator('a[href*="/dashboard/intelligence/minigrid/sites/"]')).toHaveCount(0);
 });
 
 test("an organization role is sent to sign in, or to its demo workspace", async ({ page }) => {

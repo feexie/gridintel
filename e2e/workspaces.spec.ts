@@ -4,7 +4,7 @@ const panel = (page: Page, title: string | RegExp) => page.locator("section", { 
 const tile = (page: Page, label: string) => page.locator(`[data-metric="${label}"]`).first();
 
 test("Reliability: feeders are ranked by what the network itself did, with the rest beside it", async ({ page }) => {
-  await page.goto("/dashboard/utility/reliability");
+  await page.goto("/dashboard/intelligence/utility/reliability");
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Reliability");
   const ranking = page.locator('[data-table="feeder-ranking"] tbody tr');
   await expect(ranking).toHaveCount(4);
@@ -19,7 +19,7 @@ test("Reliability: feeders are ranked by what the network itself did, with the r
 });
 
 test("Reliability: why supply was interrupted, where it began, and whether it is ours to fix", async ({ page }) => {
-  await page.goto("/dashboard/utility/reliability");
+  await page.goto("/dashboard/intelligence/utility/reliability");
   // By cause and by origin point, each with its indices and its share.
   const cause = page.locator('[data-table="by-cause"]');
   await expect(cause.locator('[data-row="load_shedding"]')).toContainText("225.3 h");
@@ -51,7 +51,7 @@ test("Reliability: why supply was interrupted, where it began, and whether it is
 });
 
 test("Revenue: the gap, collection by customer class with MDA visible, and commercial against collection loss by feeder", async ({ page }) => {
-  await page.goto("/dashboard/utility/revenue");
+  await page.goto("/dashboard/intelligence/utility/revenue");
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Revenue");
   // The revenue gap, as on the Executive page: an estimate, monthly, in two parts.
   await expect(panel(page, "Revenue gap")).toContainText("It is not an amount owed by anyone");
@@ -102,7 +102,7 @@ test("Revenue: the gap, collection by customer class with MDA visible, and comme
 });
 
 test("Assets: the assets with something on them, each fact in its own column, and loading by class", async ({ page }) => {
-  await page.goto("/dashboard/utility/assets");
+  await page.goto("/dashboard/intelligence/utility/assets");
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Assets");
 
   // Ten of the 55 assets are listed, in the order the rule states, and the rule is printed.
@@ -156,7 +156,7 @@ test("Assets: the assets with something on them, each fact in its own column, an
 });
 
 test("Events / Alarms: what is wrong now in three separate lists, where, and who is behind it", async ({ page }) => {
-  await page.goto("/dashboard/utility/events");
+  await page.goto("/dashboard/intelligence/utility/events");
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Events / Alarms");
   const now = panel(page, "What is wrong now");
   await expect(now).toContainText("As of 1 Oct 2026, 00:00 WAT · three separate lists, never merged");

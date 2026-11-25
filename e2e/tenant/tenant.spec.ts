@@ -15,8 +15,8 @@ const DISCO_NAME = "Savanna Electricity Distribution (synthetic)";
 const OPERATOR_NAME = "Demonstration Mini-grid Operator (synthetic)";
 const UTILITY_DOWNLOADS = ["/dashboard/utility/reports/operations/2026-09/data.csv", "/dashboard/utility/reports/reliability/2026-09/data.xlsx"];
 const MINIGRID_DOWNLOADS = ["/dashboard/minigrid/reports/compliance/2026-09/data.csv", "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx"];
-const UTILITY_ROUTES = ROUTES.filter((route) => route.startsWith("/dashboard/utility"));
-const MINIGRID_ROUTES = ROUTES.filter((route) => route.startsWith("/dashboard/minigrid"));
+const UTILITY_ROUTES = ROUTES.filter((route) => route.startsWith("/dashboard/intelligence/utility"));
+const MINIGRID_ROUTES = ROUTES.filter((route) => route.startsWith("/dashboard/intelligence/minigrid"));
 
 async function enterCode(page: Page, secret: string) {
   await page.getByLabel(/^Code/).fill(totpCode(secret, Date.now()));
@@ -74,7 +74,7 @@ test("a password alone opens nothing: the code is asked for, and a wrong one is 
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/login\/verify/);
   // With only the password, a screen sends the person back to the code.
-  await page.goto("/dashboard/utility");
+  await page.goto("/dashboard/intelligence/utility");
   await expect(page).toHaveURL(/\/login\/verify/);
   await page.getByLabel(/^Code/).fill("000000");
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -93,7 +93,7 @@ test("the DisCo's administrator sees the DisCo only: no screen, download or name
   await expect(page.locator("[data-sector]")).toHaveCount(1);
   await expect(page.locator('[data-sector="utility"]')).toBeVisible();
   await expect(page.locator("[data-sector-bar]")).not.toContainText("Mini-grid");
-  await expect(page.locator('a[href^="/dashboard/minigrid"]')).toHaveCount(0);
+  await expect(page.locator('a[href^="/dashboard/intelligence/minigrid"], a[href^="/dashboard/minigrid"]')).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(OPERATOR_NAME);
   // Every screen of the DisCo opens.
   for (const route of UTILITY_ROUTES) expect((await page.goto(route))?.status(), route).toBe(200);
@@ -108,8 +108,8 @@ test("the mini-grid operator's administrator sees the operator only, its map dra
   await expect(page.locator("[data-account-organization]").first()).toHaveText(OPERATOR_NAME);
   await expect(page.locator("[data-sector]")).toHaveCount(1);
   await expect(page.locator('[data-sector="minigrid"]')).toBeVisible();
-  await expect(page.locator('a[href^="/dashboard/utility"]')).toHaveCount(0);
-  for (const route of [...MINIGRID_ROUTES, "/dashboard/minigrid/sites/MG-GRN"]) {
+  await expect(page.locator('a[href^="/dashboard/intelligence/utility"], a[href^="/dashboard/utility"]')).toHaveCount(0);
+  for (const route of [...MINIGRID_ROUTES, "/dashboard/intelligence/minigrid/sites/MG-GRN"]) {
     expect((await page.goto(route))?.status(), route).toBe(200);
     await expect(page.locator("body"), route).not.toContainText(DISCO_NAME);
   }
@@ -120,12 +120,12 @@ test("the mini-grid operator's administrator sees the operator only, its map dra
   await page.goto("/dashboard/reports");
   await expect(page.locator("[data-report]")).toHaveCount(2);
   // The reference site is public reference data: shown read-only, credited, and not among the operator's sites (Phase MG-REAL).
-  await page.goto("/dashboard/minigrid/sites");
+  await page.goto("/dashboard/intelligence/minigrid/sites");
   const reference = page.locator('[data-reference-site="rmg01"]');
   await expect(reference.locator("[data-reference-attribution]")).toContainText("Kemabonta, T. & Geoffrey, A. (2026)");
   await expect(reference.locator("[data-licence-link]")).toHaveText("CC BY 4.0");
   await expect(page.locator('[data-sites] [data-site="rmg01"]')).toHaveCount(0);
-  await page.goto("/dashboard/minigrid/sites/reference/rmg01");
+  await page.goto("/dashboard/intelligence/minigrid/sites/reference/rmg01");
   await expect(page.locator('[data-reference-page="rmg01"] [data-reference-attribution]').first()).toContainText("CC BY 4.0");
 });
 
@@ -139,11 +139,11 @@ test("a member of the revenue department opens their three screens, and the link
   // The ways in hold Revenue and the map; no link anywhere leads to a screen they may not open.
   await expect(page.locator("[data-ways-in] a")).toHaveText([/GIS Map/, /Revenue/]);
   for (const closed of ["executive", "operations", "reliability", "assets", "events", "ai", "reports"]) {
-    await expect(page.locator(`main a[href^="/dashboard/utility/${closed}"]`), closed).toHaveCount(0);
+    await expect(page.locator(`main a[href^="/dashboard/intelligence/utility/${closed}"]`), closed).toHaveCount(0);
   }
   await expect(page.locator("[data-account]").first()).not.toContainText("People");
-  expect((await page.goto("/dashboard/utility/revenue"))?.status()).toBe(200);
-  await refusedEverywhere(page, ["/dashboard", "/dashboard/utility/executive", "/dashboard/utility/operations/feeders/FD-OLD", "/dashboard/settings/people"], OPERATOR_NAME);
+  expect((await page.goto("/dashboard/intelligence/utility/revenue"))?.status()).toBe(200);
+  await refusedEverywhere(page, ["/dashboard", "/dashboard/intelligence/utility/executive", "/dashboard/intelligence/utility/operations/feeders/FD-OLD", "/dashboard/settings/people"], OPERATOR_NAME);
   expect((await page.request.get(UTILITY_DOWNLOADS[0])).status()).toBe(403);
 });
 
@@ -154,7 +154,7 @@ test("a person with no authenticator app is asked to add one before anything ope
   await page.getByLabel("Password").fill(person.password);
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/login\/enrol/);
-  await page.goto("/dashboard/utility");
+  await page.goto("/dashboard/intelligence/utility");
   await expect(page).toHaveURL(/\/login\/enrol/);
   const secret = (await page.locator("[data-totp-secret]").textContent())!.trim();
   await enterCode(page, secret);
@@ -185,7 +185,7 @@ test("an administrator invites someone: the link works once, and the person open
   await expect(invited).toHaveURL(/\/login\/enrol$/);
   await enterCode(invited, (await invited.locator("[data-totp-secret]").textContent())!.trim());
   await expect(invited).toHaveURL(/\/dashboard\/utility$/);
-  expect((await invited.goto("/dashboard/utility/executive"))?.status()).toBe(403);
+  expect((await invited.goto("/dashboard/intelligence/utility/executive"))?.status()).toBe(403);
 
   // The link was used: it does not sign anyone in again.
   const again = await (await browser.newContext()).newPage();
@@ -198,7 +198,7 @@ test("an administrator invites someone: the link works once, and the person open
   await expect(row).toContainText("Revenue department");
   await row.getByRole("button", { name: "Remove" }).click();
   await expect(page.locator('[data-member="invited@disco.test"]')).toHaveCount(0);
-  await invited.goto("/dashboard/utility/revenue");
+  await invited.goto("/dashboard/intelligence/utility/revenue");
   await expect(invited).toHaveURL(/\/login\?next=/);
 });
 
@@ -206,7 +206,7 @@ test("signing out ends the session", async ({ page }) => {
   await signIn(page, TEST_PEOPLE.minigridAdmin);
   await page.locator("[data-account]").first().getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
-  await page.goto("/dashboard/minigrid");
+  await page.goto("/dashboard/intelligence/minigrid");
   await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fminigrid$/);
 });
 

@@ -7,7 +7,7 @@
    item leads to a screen that exists; an item marked `planned` leads to a page that says what is
    not built yet. Each item's key is its View ID (ADR 0018, ADR 0021 amended). */
 
-import { hrefOf, VIEWS, type MenuSector, type ReportId, type View, type ViewId } from "./views.ts";
+import { hrefOf, viewAt, VIEWS, type MenuSector, type ReportId, type View, type ViewId } from "./views.ts";
 
 export type { ReportId };
 
@@ -119,7 +119,9 @@ export const sectors: Sector[] = [
   { id: "planning", label: "Planning", title: "Planning", home: PLANNING_HOME, opening: menuOf("planning", "opening"), workspaces: PLANNING_WORKSPACES },
 ];
 
-/** The sector an address is in, of those given. An address in none of them is the platform's. */
+/** The sector an address is in, of those given: its view's domain (views.ts), whatever the address. An address in none of them is the platform's. */
 export function sectorOf(pathname: string, among: readonly Sector[] = sectors): Sector | undefined {
-  return among.find((sector) => sector.id !== "platform" && (pathname === sector.home || pathname.startsWith(`${sector.home}/`))) ?? among.find((sector) => sector.id === "platform");
+  const view = viewAt(pathname);
+  const domain = view?.inSector ?? view?.domain;
+  return among.find((sector) => sector.id !== "platform" && sector.id === domain) ?? among.find((sector) => sector.id === "platform");
 }

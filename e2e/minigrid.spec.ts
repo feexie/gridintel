@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 /* The Mini-grid workspace: the sites side by side, what stands out among them, and one site in full. */
 
-const SITES = "/dashboard/minigrid/sites";
+const SITES = "/dashboard/intelligence/minigrid/sites";
 const site = (id: string) => `${SITES}/${id}`;
 const finding = (page: Page, key: string) => page.locator(`[data-finding="${key}"]`);
 const card = (page: Page, id: string) => page.locator(`[data-site="${id}"]`);
@@ -169,8 +169,8 @@ test("a site that is not in the register is said not to be, in the dashboard fra
 });
 
 test("a site on the Mini-grid GIS Map leads to its own screen", async ({ page }) => {
-  await page.goto("/dashboard/minigrid/map");
+  await page.goto("/dashboard/intelligence/minigrid/map");
   await expect(page.locator(".leaflet-container path.gi-point").first()).toBeVisible();
   await page.locator("[data-select-asset]").selectOption("minigrid_site:MG-GRN");
-  await expect(page.locator("[data-selected]").getByRole("link", { name: /Open the site/ })).toHaveAttribute("href", "/dashboard/minigrid/sites/MG-GRN");
+  await expect(page.locator("[data-selected]").getByRole("link", { name: /Open the site/ })).toHaveAttribute("href", "/dashboard/intelligence/minigrid/sites/MG-GRN");
 });

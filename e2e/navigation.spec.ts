@@ -9,10 +9,10 @@ const PLACEHOLDERS = [
   "/dashboard/intelligence/analytics",
 ];
 
-const UTILITY = "/dashboard/utility";
-const MINIGRID = "/dashboard/minigrid";
+const UTILITY = "/dashboard/intelligence/utility";
+const MINIGRID = "/dashboard/intelligence/minigrid";
 const ASSISTANTS = [`${UTILITY}/ai`, `${MINIGRID}/ai`];
-const PLANNED_SECTORS = ["/dashboard/der"];
+const PLANNED_SECTORS = ["/dashboard/intelligence/der"];
 const PLANNING = "/dashboard/planning";
 const PLANNED_PLANNERS = ["dt", "feeders", "network-expansion", "unserved", "underserved", "pue", "e-mobility"].map((id) => `${PLANNING}/${id}`);
 const REFUSED = "/dashboard/refused";
@@ -65,7 +65,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
 });
 
 test("a sector that is not built says so, in the row of sectors, in the menu and on its one page", async ({ page }) => {
-  for (const [route, name] of [["/dashboard/der", "DER Intelligence"]]) {
+  for (const [route, name] of [["/dashboard/intelligence/der", "DER Intelligence"]]) {
     await page.goto(route);
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1 }), route).toHaveText("Overview");
@@ -242,12 +242,12 @@ test("the menu marks the workspace the reader is in, at any depth", async ({ pag
   const menu = page.getByRole("navigation", { name: "Main" });
   await page.goto(`${OPERATIONS}/feeders/FD-OLD`);
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Operations"]);
-  await page.goto("/dashboard/utility/revenue");
+  await page.goto("/dashboard/intelligence/utility/revenue");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Revenue"]);
-  await page.goto("/dashboard/utility/events");
+  await page.goto("/dashboard/intelligence/utility/events");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Events / Alarms"]);
   // A site's screen is inside the Sites workspace.
-  await page.goto("/dashboard/minigrid/sites/MG-PLM");
+  await page.goto("/dashboard/intelligence/minigrid/sites/MG-PLM");
   await expect(menu.locator('[aria-current="page"]')).toHaveText(["Sites"]);
   // A sector's Overview is not marked on the screens below it, and each sector's own items are told apart.
   await page.goto(`${MINIGRID}/map`);
@@ -277,7 +277,7 @@ test("every page has exactly one h1", async ({ page }) => {
 
 test("the reporting period and the SYNTHETIC DATA label are in one bar, once, on every dashboard page", async ({ page }) => {
   // "/" is where a visitor lands; it leads to the overview, which carries the bar like every other screen.
-  for (const route of ["/", "/dashboard", "/dashboard/utility", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/utility/reliability", "/dashboard/utility/revenue", "/dashboard/utility/assets", "/dashboard/utility/events", "/dashboard/utility/map", "/dashboard/utility/ai", "/dashboard/minigrid", "/dashboard/minigrid/map", "/dashboard/minigrid/sites", "/dashboard/minigrid/sites/MG-GRN", "/dashboard/reports"]) {
+  for (const route of ["/", "/dashboard", "/dashboard/intelligence/utility", "/dashboard/intelligence/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/intelligence/utility/reliability", "/dashboard/intelligence/utility/revenue", "/dashboard/intelligence/utility/assets", "/dashboard/intelligence/utility/events", "/dashboard/intelligence/utility/map", "/dashboard/intelligence/utility/ai", "/dashboard/intelligence/minigrid", "/dashboard/intelligence/minigrid/map", "/dashboard/intelligence/minigrid/sites", "/dashboard/intelligence/minigrid/sites/MG-GRN", "/dashboard/reports"]) {
     await page.goto(route);
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar, route).toHaveCount(1);
@@ -291,7 +291,7 @@ test("the reporting period and the SYNTHETIC DATA label are in one bar, once, on
 });
 
 test("the site asks not to be indexed: a robots meta on every page and a robots.txt that disallows everything", async ({ page, request }) => {
-  for (const route of ["/", "/dashboard", "/dashboard/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/reports", `${OPERATIONS}/feeders/NOPE`]) {
+  for (const route of ["/", "/dashboard", "/dashboard/intelligence/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/reports", `${OPERATIONS}/feeders/NOPE`]) {
     await page.goto(route);
     // A not-found page carries Next's own "noindex" tags as well; the first is the layout's.
     await expect(page.locator('meta[name="robots"]').first(), route).toHaveAttribute("content", "noindex, nofollow");

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const EXECUTIVE = "/dashboard/utility/executive";
+const EXECUTIVE = "/dashboard/intelligence/utility/executive";
 const tile = (page: Page, label: string) => page.locator(`[data-metric="${label}"]`).first();
 const panel = (page: Page, title: string | RegExp) => page.locator("section", { has: page.getByRole("heading", { name: title, level: 2 }) });
 
