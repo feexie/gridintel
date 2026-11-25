@@ -1,6 +1,7 @@
 # Phase NAV-B plan: the screens move into the new structure
 
-Date: 2026-11-25. Status: **proposed, for the Founder's approval. Not started.**
+Date: 2026-11-25. Status: **approved by the Founder (2026-11-25) with one change, three
+safeguards and conditions, all written in below (sections 0, 4, 4a to 4c, 9 to 11). Not started.**
 Branch (once approved): `phase-nav-b` from `main`. Decision record: ADR 0021
 (accepted 2026-11-10), with the amendment this plan proposes (section 11).
 Addresses: `docs/design/NAV-A-ADDRESSES.md` (approved 2026-11-10), brought up
@@ -20,6 +21,14 @@ What NAV-B does, in one paragraph:
   landing on their screens.
 
 ---
+
+## 0. Scope guard (Founder, 2026-11-25)
+
+No existing functionality, data model, API contract, dashboard figure or working integration
+may be removed, weakened or silently redesigned as part of NAV-B. Any change outside this
+plan is written up and approved by the Founder before it is implemented. The plan's own
+removals are the three Coming Soon pages (section 6) and the old menu, once the rail is live
+(section 5); nothing else is removed.
 
 ## 1. Every screen's move
 
@@ -194,8 +203,10 @@ stays where it is, once per page.
     would be refused).
   - A planned view keeps its "Planned" mark and holds no figure.
 - **Home** (`/dashboard`): the initiatives as this workspace sees them (NAV-A's workspace home,
-  `initiativesFor(type)`), with figures scoped to the organization (3c.3), then a short line to
-  Intelligence for the network figures.
+  `initiativesFor(type)`), with figures scoped to the organization (3c.3). It carries a clear
+  link, "Platform overview (now under Intelligence)", to the former Platform Overview at
+  `/dashboard/intelligence`, so a visitor from a GEH link finds it in one click (Founder,
+  2026-11-25). A browser test opens `/dashboard` and follows that link.
 
 **On the tenant** the frame is drawn on the server from the session: the
 organization's record (name), its workspace type, and the member's grant.
@@ -218,8 +229,8 @@ static page is the same for every visitor.
   - Which one is kept in a cookie, set by the switcher and by the role picker's organization
     roles. A link may name it with `?workspace=[type]`, which the client reads once and then
     removes from the address.
-  - The tenant ignores both. The address never names an organization; only the demo's
-    presentation choice travels, and only on the demo (question 1).
+  - Both are validated against the catalogue's five demo workspaces; any other value falls
+    back to the default (Demonstration DisCo). The tenant ignores both entirely (safeguard C).
 - **An address outside the chosen workspace's rail.** For example, a financier demo opening a
   Utility revenue link: the frame switches to a demo workspace whose rail has that view
   (`demoTypeFor(view, preferred)`, pure and tested). A link from the deck therefore always shows
@@ -227,62 +238,162 @@ static page is the same for every visitor.
 - **Grant.** The demo's viewer still holds everything; Sign in leads to the tenant's sign-in
   page (configuration, as now).
 
-## 4. Permission keys, old to new
+## 4. Permission keys are stable View IDs (Founder's change, 2026-11-25)
 
-**The new key is the screen's address below `/dashboard`**, with `/` read as `.`. A landing
-page that answers only at its exact address takes `.overview`. For example
-`intelligence.utility.revenue`, `plan.metering-allocation`, `reports.utility.reliability`,
-`account.people`.
-- A unit test checks that every view's key equals its address, so the two cannot drift.
-- Each view in the catalogue also names its **domain** (`platform`, `utility`, `minigrid`,
-  `der`, `planning`). `grantFor` cuts a grant to the organization's domains by that field, not
-  by the key's first word, because a key now starts with a rail item. `holdsSector` and the
-  data gate (`admitsRead`) use the same field.
+**The key is the view's id, never its address.** A URL change never changes a view's identity
+or its permission. The ids are NAV-A's (`utility.executive`, `plan.metering-allocation`,
+`finance.metering-fund`); a screen NAV-A's catalogue did not list takes its old key as its id
+where it had one (`utility.overview`, `utility.reports.reliability`, `platform.reports`), and a
+new id only where it is new.
 
-| Old key | New key(s) |
+**One catalogue** (`src/constants/views.ts`, grown from NAV-A's `VIEWS`) is the single
+authoritative source for:
+- navigation (the rail, the old menu while it lasts, and every link to a screen);
+- the permission of each view;
+- workspace visibility (which types' rails list it);
+- route resolution: `hrefOf(id, …rest)` from id to address, and `viewAt(pathname)` back;
+- the automated access tests.
+
+Each entry holds:
+- its id;
+- its label and question;
+- its domain (`platform`, `utility`, `minigrid`, `der`, `planning`);
+- its address;
+- whether it is exact (a landing page) or opens the addresses below it;
+- its permission: `protected` with its id as the key, or `open` (only `platform.refused`,
+  the refusal page);
+- planned or not.
+
+No other module keeps a list of screens or writes a `/dashboard` address:
+- `navigation.ts`'s `sectors`, `PLANNERS`' and `METERING_SCREENS`' hrefs and `REPORTS`' hrefs
+  are derived from it.
+- Components and services ask `hrefOf`.
+- A unit test fails if any module under `src/` other than the catalogue and `moves.ts` holds a
+  `/dashboard` address literal or exports its own list of screens.
+
+### The View IDs
+
+| View ID | Today's address | Domain | Note |
+| --- | --- | --- | --- |
+| `platform.home` | (new) `/dashboard` | platform | Home; new view |
+| `platform.overview` | `/dashboard` | platform | The Platform Overview; moves to `/dashboard/intelligence` with its content |
+| `platform.reports` | `/dashboard/reports` | platform | Opens to anyone who may open one report (rule kept) |
+| `platform.people` | `/dashboard/settings/people` | platform | Administrators only |
+| `platform.about-this-build` | `/dashboard/planning/about-this-build` | platform | Opens to every signed-in viewer (answer 5) |
+| `platform.refused` | `/dashboard/refused` | platform | **open**: the refusal page |
+| `utility.overview`, `.map`, `.ai`, `.executive`, `.operations`, `.reliability`, `.revenue`, `.assets`, `.events` | `/dashboard/utility/...` | utility | Unchanged ids |
+| `utility.reports`, `utility.reports.reliability`, `.operations`, `.daily-brief` | `/dashboard/utility/reports/...` | utility | Unchanged ids |
+| `minigrid.overview`, `.map`, `.ai`, `.sites` (a site and a reference site below it), `minigrid.reports`, `.reports.site-performance`, `.reports.compliance` | `/dashboard/minigrid/...` | minigrid | Unchanged ids |
+| `der.overview` | `/dashboard/der` | der | Unchanged id |
+| `plan.overview` | `/dashboard/planning` | planning | Was `planning.overview` |
+| `plan.metering-allocation`, `plan.dt-sequencing` | `.../metering/allocation`, `.../metering/dt` | planning | NAV-A ids |
+| `finance.metering-fund`, `finance.marketplace` | `.../metering`, `.../metering/marketplace` | planning | NAV-A ids |
+| `oversight.monitoring` | `.../metering/monitoring` | planning | NAV-A id |
+| `initiative.journey` | `.../metering/journey` | planning | NAV-A id |
+| `plan.metering-report` | `.../metering/report` | planning | New id (the Metering Plan report) |
+| `plan.dt`, `plan.feeders`, `plan.network-expansion`, `plan.unserved`, `plan.underserved`, `plan.pue`, `plan.charging-hubs` | `/dashboard/planning/[planner]` (planned) | planning | NAV-A ids (`plan.charging-hubs` was `planning.e-mobility`) |
+| `plan.rooftop-solar`, `plan.storage`, `finance.pipeline`, `oversight.regulator`, `initiative.applications` | (new, planned) | der, planning, planning, planning, utility | NAV-A ids; no figure |
+| `finance.overview`, `oversight.overview`, `initiative.home` | (new) `/dashboard/finance`, `/dashboard/oversight`, `/dashboard/initiatives/[id]` | planning, planning, platform | New: the rail items' indexes and an initiative inside a workspace |
+
+A held key opens its view and the views whose id lies below it (`utility` opens every
+`utility.*`; `utility.reports` every report of the sector), as today. **Unknown keys open
+nothing; an address no view resolves to is refused** (safeguard A).
+
+### Old keys to View IDs
+
+The translation is applied where a grant is built (`grantFor`, and the People screen's reading
+of a membership). No stored row has to change: today the one real membership holds `null`.
+Old keys that are already View IDs translate to themselves.
+
+| Old key | View IDs |
 | --- | --- |
-| `platform` | `home`, `intelligence.overview`, `about-this-build` |
-| `platform.overview` | `home`, `intelligence.overview` |
-| `platform.reports` | `reports` (the list; still opens to anyone who may open one report) |
-| `platform.people` | `account.people` |
-| `utility` | `intelligence.utility`, `reports.utility` |
-| `utility.overview` | `intelligence.utility.overview` |
-| `utility.map`, `utility.ai` | `intelligence.utility.map`, `intelligence.utility.ai` |
-| `utility.executive`, `.operations`, `.reliability`, `.revenue`, `.assets`, `.events` | `intelligence.utility.executive`, … (the same view name) |
-| `utility.reports` | `reports.utility` |
-| `utility.reports.[report]` | `reports.utility.[report]` |
-| `minigrid` | `intelligence.minigrid`, `reports.minigrid` |
-| `minigrid.overview`, `.map`, `.ai`, `.sites` | `intelligence.minigrid.overview`, `.map`, `.ai`, `.sites` (`.sites` opens a site and a reference site below it) |
-| `minigrid.reports`, `minigrid.reports.[report]` | `reports.minigrid`, `reports.minigrid.[report]` |
-| `der`, `der.overview` | `intelligence.der`, `intelligence.der.overview` |
-| `planning` | `plan`, `finance`, `oversight`, `initiatives.meter-every-customer`, `reports.metering-plan`, `about-this-build` |
+| `platform` | every `platform.*` view the old key opened (fixed by the fixture, step 0), and `platform.home` |
+| `platform.overview` | `platform.overview`, `platform.home` |
+| `platform.reports`, `platform.people` | themselves |
+| `utility`, `utility.*`, `minigrid`, `minigrid.*`, `der`, `der.overview` | themselves |
+| `planning` | every planning-domain view, listed |
 | `planning.overview` | `plan.overview` |
-| `planning.metering` | `plan.metering-allocation`, `plan.dt-sequencing`, `finance.metering-fund`, `finance.marketplace`, `oversight.monitoring`, `initiatives.meter-every-customer.journey`, `reports.metering-plan` |
-| `planning.dt`, `.feeders`, `.network-expansion`, `.unserved`, `.underserved`, `.pue` | `plan.dt`, `plan.feeders`, … (the same name) |
+| `planning.metering` | `plan.metering-allocation`, `plan.dt-sequencing`, `finance.metering-fund`, `finance.marketplace`, `oversight.monitoring`, `initiative.journey`, `plan.metering-report` |
+| `planning.dt`, `.feeders`, `.network-expansion`, `.unserved`, `.underserved`, `.pue` | `plan.dt`, `plan.feeders`, … |
 | `planning.e-mobility` | `plan.charging-hubs` |
+| any other key | nothing (deny) |
 
-**How old keys keep working.** A membership's stored `screens` may hold old
-keys. Today none does: the one real membership holds `null`, which is every
-screen. The translation is applied where a grant is built (`grantFor`, and
-the People screen's reading of a membership), so no stored row has to change
-in NAV-B. The People screen writes new keys from NAV-B on. The old keys and
-the map are removed once the database brief has rewritten stored keys, as
-their own step.
+`grantFor` cuts a grant to the organization's domains by each view's **domain** field, not by
+the key's first word. `holdsSector` and the data gate (`admitsRead`) use the same field.
+Utility's default domains are `utility` and `planning` (answer 2). An organization's own
+sectors are added to them.
 
-**`access.test.ts` covers both.**
+### The frozen-fixture test (kept, as approved)
 
-1. **A pinned fixture, made in step 0 before anything moves:** for every old key, and for a
-   sample of every old address (each row of section 1, with real ids), whether
-   `canOpen(grant, address)` is true. After the move the test asks the same question with the
-   translated grant at the redirected address, and the answers must be the same, row for row.
-   So no one gains or loses a screen by the move. Where the scheme is meant to change an answer
-   (`about-this-build`, question 5), the fixture says so in a named exception.
-2. **The new keys on their own**, as today's tests do: a sector key opens everything below it;
-   a report key opens its report and the list of reports; nothing is open by default; a key of
-   a domain the organization does not hold is dropped, whatever the membership says; the
-   people key only for administrators.
-3. `navigationFor` / the rail: no view is listed that the grant would refuse, and every built
-   view is reached from exactly one place in each workspace type's rail.
+Made in step 0, before anything moves, with the access functions as they are today:
+- for every old key, alone and in the grants of the five viewer types (section 4a);
+- for a sample of every old address (each row of section 1, with real ids);
+- whether the address opens.
+
+After step 1, and again after every move, the test asks the same question with the translated
+grant at the address the old one redirects to, and the answers must be the same, row by row.
+The one named exception is `platform.about-this-build`, opened to every signed-in viewer
+(answer 5).
+
+## 4a. Safeguard A: permission integrity (Founder, 2026-11-25)
+
+Each line is a test:
+
+1. **Every View ID is unique** (unit).
+2. **Every view has an explicit permission:** `protected` or `open`. A view without one fails
+   (unit). `open` is allowed only for `platform.refused`.
+3. **Default deny** (unit):
+   - an unknown or unmapped key opens nothing;
+   - an address that resolves to no view is refused;
+   - a view not in the catalogue cannot be opened.
+4. **No widening by a move** (unit). For each role, the test compares the set of views open to
+   it before the move (the step 0 fixture) and after, and fails on any view newly opened. The
+   only exception is `platform.about-this-build`, which is named. The roles: the demo's public
+   viewer, an administrator, a member with all screens, the revenue member (partial grant), and
+   a member with no grants.
+5. **By direct URL request, not by the navigation** (browser, on the builds):
+   - **Unauthenticated visitor** (tenant): every address, old and new, leads to `/login`; none
+     answers a page.
+   - **Signed in, no grants** (tenant; a new fixture account, `none@disco.test`, `screens: []`):
+     every protected view is refused; only the refusal page answers.
+   - **Partial grant** (tenant; `revenue@disco.test`): exactly its views open; every other
+     address is refused.
+   - **Organization administrator** (tenant; `admin@disco.test`): every view of its domains, and
+     People; another organization's domain refused.
+   - **Public viewer** (demo build): every view opens; there is no People, sign-in or
+     account address.
+
+   For each viewer, the expected answer of each address comes from the catalogue and the
+   grant (`canOpen`), and the page's actual answer must match it.
+
+## 4b. Safeguard B: redirect integrity (Founder, 2026-11-25)
+
+`e2e/old-addresses.spec.ts` runs on all three builds: the demo build (`npm run build`,
+`.next`), the on-request build (`GRIDINTEL_RENDER=request`, `.next-request`) and the tenant
+build (`npm run build:tenant`, `.next-tenant`). It checks:
+
+- every legacy address answers **308** to its correct destination, with real ids;
+- **no loops and no chains**: each old address reaches its final address in one hop, and a
+  unit test checks that no destination in `moves.ts` is itself a redirect source;
+- **query parameters are preserved** (`?present=1`, `?disco=`, any other); the plan names none
+  to drop;
+- **access still applies after the redirect** (tenant): an old address redirects, then the new
+  address asks for sign-in, or refuses a view the grant does not hold, exactly as a direct
+  visit would. This runs for the five viewer types of 4a.
+
+## 4c. Safeguard C: workspace isolation (Founder, 2026-11-25)
+
+- **On the tenant** the workspace is the signed-in person's organization only. `?workspace=`
+  and the workspace cookie are ignored entirely there.
+  - The client frame is not drawn on the tenant.
+  - Tested: the same requests with and without them give byte-identical frames and the same
+    answers; they open nothing.
+- **On the demo**, `?workspace=` and the cookie can only select one of the five synthetic demo
+  workspaces in the catalogue. Any other value falls back to the default, validated by a pure
+  function with a unit test (unknown values, an organization id, `demo-disco` spelt otherwise,
+  an empty string).
+- **No demo grant, demo workspace or demo cookie has any effect on the tenant.** The tenant's
+  grant comes from the session only. The existing `unsafeConfiguration` checks stay unchanged.
 
 ## 5. ADR 0017's "workspace" renamed View in code
 
@@ -290,8 +401,8 @@ The rename is done once, when the navigation catalogue is rewritten:
 
 | Today | After |
 | --- | --- |
-| `Sector.workspaces`, `UTILITY_WORKSPACES`, `MINIGRID_WORKSPACES`, `PLANNING_WORKSPACES` | the rail catalogue's `views` (`VIEWS` in `workspaces.ts` becomes the one catalogue; `navigation.ts`'s `sectors` is removed) |
-| `ViewId` `"utility.executive"` | `"intelligence.utility.executive"` (equal to its key) |
+| `Sector.workspaces`, `UTILITY_WORKSPACES`, `MINIGRID_WORKSPACES`, `PLANNING_WORKSPACES` | derived from the View ID catalogue (`views.ts`) in step 1, and removed with `navigation.ts`'s `sectors` in step 8 |
+| `ViewId` | unchanged: the id is the key and never follows the address (section 4) |
 | Comments and test names saying "workspace" for a screen | "view" |
 | The browser test "the menu marks the workspace the reader is in" | rewritten for the rail |
 
@@ -312,8 +423,10 @@ placeholders, with no link to them. The Founder answered on 10 November.
 
 ## 7. Figures, and the GEH links
 
-- **Figures:** `npm run geh:figures` before and after each step, which must report all 101
-  unchanged. Pages move with their page components; no service, method or view model changes.
+- **Figures:** a real comparison at every step. The 101 figures (value, wording, origin) are
+  listed before the step and after it, and compared line by line (`scripts/geh-compare.ts`,
+  reading `docs/geh/KEY-FIGURES.md` before and after). Any difference other than the stamp line
+  stops the work and is reported. Pages move with their page components; no service, method or view model changes.
   The checks that the screens' figures are the same (the existing e2e and unit tests) run at
   the new addresses.
 - **GEH video, deck, one-pager and posts:** the addresses in the GEH material I can see are the
@@ -349,23 +462,25 @@ unchanged or removed; and no new address is itself redirected (no chains).
 
 ## 9. Order of work
 
-Each step is committed when its checks pass, and pushed. On this laptop the local checks are
-typecheck, lint and unit tests, as the Founder set. CI runs the full `npm run verify` (three
-builds, browser tests, tenant browser tests) on every push, and each step waits for green
-before the next starts.
+Each step is committed only after typecheck, lint and unit tests pass, and pushed. On this
+laptop those are the local checks, as the Founder set. Each step then waits for CI's full
+`npm run verify` (three builds, browser tests, tenant browser tests) before the next starts.
+The 101-figure comparison runs at every step.
 
 | Step | What | Checks |
 | --- | --- | --- |
-| 0 | Branch. Freeze the route list and the access fixture (section 4.1); record the `geh:figures` baseline | Unit tests (the fixture's own) |
-| 1 | `moves.ts` and its unit test; the view catalogue with new keys, domains and addresses; the old-to-new key map; `access.ts` on the new keys with translation; `access.test.ts` on both. No route moves yet: the catalogue points at today's addresses through the map | Typecheck, lint, unit tests; CI |
-| 2 | Intelligence: Utility, Mini-grid (the reference page too) and DER route folders moved (`git mv`); their redirects; `REFERENCE_SITE_PATH`, file tracing, e2e `ROUTES` | Typecheck, lint, unit; `geh:figures`; CI (all builds and browser tests) |
+| 0 | Branch `phase-nav-b`. Freeze the route list and the access fixture (old access functions, every old key and the five roles, every old address sample); record the 101 figures | Unit tests; figures listed |
+| 1 | **Keys and grants.** The View ID catalogue as the single source (`views.ts`), with domains, permissions and route resolution. `navigation.ts`, `planning.ts` and the reports derived from it; every `/dashboard` literal replaced by `hrefOf`. The old-to-new translation in `grantFor`; domains in `grantFor`, `holdsSector` and `admitsRead`; Utility's default domains. Safeguard A's unit tests and the fixture test; safeguard A's browser tests by direct URL on today's addresses (the fixture account `none@disco.test` added). **No route moves** | Typecheck, lint, unit; figures compared; CI |
+| **Checkpoint 1** | Stop. Report the old-to-new key table, safeguard A's results for all five viewer types, and the open-view comparison per role, before and after. **Wait for approval** | |
+| 2 | Intelligence: Utility, Mini-grid (with the reference page) and DER moved (`git mv`, the catalogue's addresses); their redirects; file tracing, `REFERENCE_SITE_PATH`, e2e `ROUTES` | As step 1, and the redirect tests of 4b for what has moved |
 | 3 | Plan, Finance, Oversight, the journey, the Metering Plan report, About this build; their redirects; the recorder | As step 2 |
-| 4 | Reports by domain (`/dashboard/reports/[domain]/...`); People to `/dashboard/account/people`; tenant browser tests updated | As step 2, with the tenant tests |
+| 4 | Reports by domain; People to `/dashboard/account/people`; tenant tests | As step 2 |
 | 5 | The three Coming Soon pages removed | As step 2 |
-| 6 | The signed-in frame: rail, workspace header and account menu over `/dashboard`; Home as the initiatives; the rail items' index pages; the demo's client frame, switcher, DEMO badge and `demoTypeFor`. The old sector menu stops being drawn | As step 2; screenshots of each workspace type |
-| 7 | The public layer: `src/app/(public)`, Home at `/`, `/initiatives/[id]` with Take part and `hostedBy`, the take-part routes, `/track`; `/preview` redirects; the NAV-A light-page test kept | As step 2 |
-| 8 | The old menu's code removed (`sectors`, `Sector`, `_WORKSPACES`); the View rename completed and grep-checked | As step 2 |
-| 9 | `old-addresses.spec.ts` complete (section 8) and the GEH-link walk; ADR 0021 amendment; ROADMAP, BLUEPRINT, DESIGN; checkpoint screenshots into `docs/screenshots/phase-nav-b` for the release | Full CI verify green; then **stop at the checkpoint** |
+| 6 | The signed-in frame (rail, header, account menu); Home with the link to the Platform overview; the rail indexes; the demo's client frame with safeguard C | As step 2, and 4c's tests |
+| 7 | The public layer at `/`; `/initiatives/[id]` with Take part and `hostedBy`; `/preview` redirects | As step 2 |
+| 8 | The old menu's code removed; the View rename grep-checked | As step 2 |
+| 9 | `old-addresses.spec.ts` complete on all three builds; the GEH walk; ADR 0021 amendment; ROADMAP, BLUEPRINT, DESIGN; screenshots | Full CI verify green |
+| **Checkpoint 2** | Stop before merge with: the Vercel preview address (and the pilot's, if it builds one); screenshots; every row of the old-addresses test on all three builds; the access-test and workspace-isolation results; the GEH links checked; the 101-figure comparison. **No merge until the Founder has personally reviewed the preview and said so** | |
 
 Each step leaves the application whole: a screen's links point at its new
 address in the same commit that moves it, and the old address redirects from
@@ -390,44 +505,34 @@ https://gridintel-iota.vercel.app keeps today's home page throughout.
    can sign in there with your own account. You would then see the signed-in rail and header
    with your real `demo-disco` membership. I confirm on the first push whether it does. If it
    does not, the tenant's frame is reviewed through the tenant browser tests' screenshots.
-3. **At the checkpoint** I send you:
+3. **At checkpoint 2** I send you:
    - both preview addresses;
    - the screenshots (also attached to the `phase-nav-b` release);
    - a short walk-through: Home, a card, its initiative page, Take part, each role, each demo
      workspace's rail, three GEH links, one old address with `?present=1`.
 
-   Merge happens only on your approval, and production switches then.
+   No merge until you have personally reviewed the preview and said so; production switches
+   then.
 4. **Showing someone else** before the merge needs a Vercel "share" link to the protected preview.
    That is your call; I would not make the preview public.
 5. **Undo.** If anything is wrong after the merge, Vercel's Instant Rollback returns production to
    the previous deployment in one step while it is fixed. The redirects make no change that
    needs undoing elsewhere.
 
-## 11. Decisions this plan asks for
+## 11. The Founder's answers (2026-11-25)
 
-1. **The demo's workspace choice:** a cookie, plus an optional `?workspace=[type]` on a link,
-   both read on the demonstration only; the tenant ignores both and takes the organization from
-   the session. *Recommended.* The alternative, a demo segment in the address, gives every
-   screen two addresses.
-2. **The Utility workspace's default sectors** (ADR 0021 decision 8's principle), set in code
-   now: Utility gives `utility` and `planning`, so the tenant DisCo can open Plan and Finance.
-   Without it, those items are not shown on the tenant until the database brief.
-   *Recommended:* set them now, with a test, the data being synthetic. This is access
-   semantics, so it is your call.
-3. **The tenant's workspace type** taken from the organization's sectors until the database
-   brief adds a column. *Recommended.*
-4. **No public layer on the tenant** in NAV-B (`/` leads to sign-in), as ADR 0021 gate 2.
-   *Recommended*; MTR-A decides where an application is submitted.
-5. **About this build open to every viewer who is signed in** (it shows the sprint changelog, no
-   records). Today only the Planning sector's key opens it. *Recommended*, recorded as the one
-   named exception in the access fixture.
-6. **The GEH link list:** the 21 addresses above are those in the repository. If the deck,
-   one-pager or posts hold others (a query, a feeder or site id), send them and they join the
-   walk.
-7. **`/dashboard` becomes Home:** a GEH link to `/dashboard` lands on the initiatives, with the
-   old overview's map one click away on Intelligence. Acceptable?
-8. **Recording:** an amendment to ADR 0021 (the key scheme of section 4, the demo frame of
-   section 3, decisions 1 to 5 as answered), rather than a new ADR. *Recommended.*
+1. **Demo workspace** by cookie and `?workspace=`, on the demo only, within safeguard C. Yes.
+2. **Utility's default domains** are `utility` and `planning`, set in code now. Yes.
+3. **Tenant workspace type** from the organization's sectors until the database brief. Yes.
+4. **No public layer on the tenant.** Yes.
+5. **About this build** open to every signed-in viewer. Yes.
+6. **No further list of GEH links.** Every old address has a 308 and the test walks them all,
+   plus the 21 GEH addresses.
+7. **`/dashboard` becomes Home.** Acceptable, provided Home shows a clear link to the former
+   Platform overview (now under Intelligence), so a GEH visitor finds it in one click
+   (section 3).
+8. **Recorded as an amendment to ADR 0021**, including the View ID rule, the scope guard and
+   the three safeguards.
 
 ## Not in NAV-B
 
