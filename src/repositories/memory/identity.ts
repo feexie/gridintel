@@ -239,6 +239,18 @@ export function memoryAccountsAdmin(store: MemoryIdentityStore, nowMs: () => num
       store.invites.set(tokenHash, { userId, expiresAt: nowMs() + INVITE_MS });
       return { tokenHash, userId };
     },
+    async reissueInvite(email: string, organizationId: string) {
+      const wanted = email.trim().toLowerCase();
+      const membership = [...store.memberships.values()].find((one) => one.email.toLowerCase() === wanted);
+      if (membership === undefined) return null;
+      if (membership.organizationId !== organizationId) throw new Error("That person is a member of another organization.");
+      if (membership.accepted) throw new Error("That person has already accepted their invitation.");
+      // An earlier token stops working.
+      for (const [hash, invite] of store.invites) if (invite.userId === membership.userId) store.invites.delete(hash);
+      const tokenHash = sha256(randomBytes(32).toString("base64url"));
+      store.invites.set(tokenHash, { userId: membership.userId, expiresAt: nowMs() + INVITE_MS });
+      return { tokenHash, userId: membership.userId };
+    },
     async setGrant(userId: string, organizationId: string, role: MemberRole, screens: readonly string[] | null) {
       const membership = store.memberships.get(userId);
       if (membership === undefined || membership.organizationId !== organizationId) throw new Error("No such member.");

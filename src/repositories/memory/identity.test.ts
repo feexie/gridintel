@@ -117,6 +117,28 @@ describe("the in-memory identity adapter", () => {
     assert.equal((await session.user())?.assurance, "aal2");
   });
 
+  it("re-issues a lapsed invitation: a new token, the old one dead, the grant unchanged", async () => {
+    const held = store();
+    const admin = memoryAccountsAdmin(held, clock);
+    const first = await admin.invite({ email: "again@a.test", organizationId: "org-a", role: "admin", screens: null });
+    const again = await admin.reissueInvite(" Again@A.test ", "org-a");
+    assert.ok(again);
+    assert.equal(again.userId, first.userId);
+    assert.notEqual(again.tokenHash, first.tokenHash);
+    assert.deepEqual({ ...held.memberships.get(first.userId) }, { userId: first.userId, email: "again@a.test", organizationId: "org-a", role: "admin", screens: null, accepted: false });
+    assert.equal(await memoryIdentitySession(held, browser(), clock).acceptInvite(first.tokenHash), false, "the earlier link no longer works");
+    assert.equal(await memoryIdentitySession(held, browser(), clock).acceptInvite(again.tokenHash), true);
+  });
+
+  it("re-issues nothing for someone with no membership, and refuses another organization's or an accepted one", async () => {
+    const held = store();
+    const admin = memoryAccountsAdmin(held, clock);
+    assert.equal(await admin.reissueInvite("nobody@a.test", "org-a"), null);
+    await admin.invite({ email: "pending@b.test", organizationId: "org-b", role: "member", screens: null });
+    await assert.rejects(admin.reissueInvite("pending@b.test", "org-a"), /another organization/);
+    await assert.rejects(admin.reissueInvite("admin@a.test", "org-a"), /already accepted/);
+  });
+
   it("refuses an invitation that has expired", async () => {
     const held = store();
     const { tokenHash } = await memoryAccountsAdmin(held, clock).invite({ email: "late@a.test", organizationId: "org-a", role: "member", screens: null });

@@ -141,6 +141,13 @@ export interface AccountsAdmin {
    * project's own team, ADR 0020).
    */
   invite(input: InviteInput): Promise<{ tokenHash: string; userId: string }>;
+  /**
+   * A new invitation token for someone already invited to this organization who has not
+   * accepted (their link lapsed or failed). Their membership and grant are left as they are, and
+   * an earlier token stops working. Null when the email has no membership; refused when the
+   * membership is another organization's or already accepted.
+   */
+  reissueInvite(email: string, organizationId: string): Promise<{ tokenHash: string; userId: string } | null>;
   /** Changes what a member may open, in the membership and in the session's copy. */
   setGrant(userId: string, organizationId: string, role: MemberRole, screens: readonly string[] | null): Promise<void>;
   /** Removes a member from the organization: from the next request they open nothing. */

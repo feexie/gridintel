@@ -199,6 +199,20 @@ export function supabaseAccountsAdmin(settings: SupabaseSettings): AccountsAdmin
       await mirror(userId, input.organizationId, input.role, input.screens);
       return { tokenHash: data.properties.hashed_token, userId };
     },
+    async reissueInvite(email: string, organizationId: string) {
+      const wanted = email.trim().toLowerCase();
+      const { data: rows, error } = await admin.from("memberships").select("user_id,organization_id,accepted").eq("email", wanted);
+      if (error) throw new Error("The membership could not be read.");
+      const row = rows?.[0];
+      if (row === undefined) return null;
+      if (row.organization_id !== organizationId) throw new Error("That person is a member of another organization.");
+      if (row.accepted === true) throw new Error("That person has already accepted their invitation.");
+      // Supabase issues a new token for a person not yet confirmed; the earlier one stops working.
+      const { data, error: linkError } = await admin.auth.admin.generateLink({ type: "invite", email: wanted });
+      if (linkError || !data.user) throw new Error(linkError?.message ?? "The invitation could not be made again.");
+      if (data.user.id !== row.user_id) throw new Error("The invitation was made for a different account.");
+      return { tokenHash: data.properties.hashed_token, userId: String(row.user_id) };
+    },
     async setGrant(userId: string, organizationId: string, role: MemberRole, screens: readonly string[] | null) {
       const { data, error } = await admin
         .from("memberships")

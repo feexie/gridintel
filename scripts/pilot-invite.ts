@@ -8,7 +8,12 @@
    e.g. node --env-file=.env.local scripts/pilot-invite.ts you@example.com demo-disco https://gridintel-pilot.vercel.app
 
    It prints the invitation's link. Nothing is emailed: pass the link on yourself. It works once,
-   within a day. The organizations are those of supabase/migrations/0001_identity.sql. */
+   within a day. The organizations are those of supabase/migrations/0001_identity.sql.
+
+   Run it again for someone already invited to the same organization who has not accepted (their
+   link lapsed or failed): it makes a new link, leaves their membership and grant as they are,
+   and the earlier link stops working. It refuses someone of another organization, or who has
+   already accepted. */
 
 import { supabaseAccountsAdmin } from "../src/repositories/supabase/identity.ts";
 
@@ -25,8 +30,14 @@ if (!url || !publishableKey || !secretKey) {
   process.exit(2);
 }
 
-const { tokenHash } = await supabaseAccountsAdmin({ url, publishableKey, secretKey }).invite({ email, organizationId, role: "admin", screens: null });
+const admin = supabaseAccountsAdmin({ url, publishableKey, secretKey });
+const reissued = await admin.reissueInvite(email, organizationId);
+const { tokenHash } = reissued ?? (await admin.invite({ email, organizationId, role: "admin", screens: null }));
 const link = new URL("/auth/confirm", address);
 link.searchParams.set("token_hash", tokenHash);
 link.searchParams.set("type", "invite");
-console.log(`Invitation for ${email}, administrator of ${organizationId}. It works once, within a day:\n${link}`);
+console.log(
+  reissued
+    ? `A new invitation for ${email}, already invited to ${organizationId}; their grant is unchanged and the earlier link no longer works. It works once, within a day:\n${link}`
+    : `Invitation for ${email}, administrator of ${organizationId}. It works once, within a day:\n${link}`,
+);
