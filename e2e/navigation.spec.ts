@@ -30,7 +30,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   const visited: string[] = [];
   // Utility: Overview, GIS Map, AI Assistant marked planned, then its six workspaces and Reports. Nothing of another sector.
   await expect(menu).toContainText("Utility Intelligence");
-  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, `${UTILITY}/reports`]);
+  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, "/dashboard/utility/reports"]);
   await expect(menu.getByRole("link")).toContainText(["Overview", "GIS Map", "AI AssistantPlanned"]);
   await expect(menu.locator("[data-planned]")).toHaveCount(1);
   await expect(menu.locator("[data-workspaces]").getByRole("link")).toHaveCount(7);
@@ -38,10 +38,10 @@ test("the sectors are across the top, and the menu holds the screens of the sect
 
   // Choosing a sector opens its Overview and changes the menu to its screens: the same structure.
   await sectors.getByRole("link", { name: "Mini-grid" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/minigrid$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid$/);
   await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
   await expect(menu).toContainText("Mini-grid Intelligence");
-  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`, `${MINIGRID}/reports`]);
+  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`, "/dashboard/minigrid/reports"]);
   await expect(menu.getByRole("link")).toHaveText(["Overview", "GIS Map", "AI AssistantPlanned", "Sites", "Reports"]);
   visited.push(...(await hrefs()));
   // A screen below a workspace is still in its sector.
@@ -120,7 +120,7 @@ test("an AI Assistant page says it is not built, gives example questions, and is
   }
   await page.goto(ASSISTANTS[0]);
   await page.getByRole("main").getByRole("link", { name: /Revenue/ }).click();
-  await expect(page).toHaveURL(/\/dashboard\/utility\/revenue$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility\/revenue$/);
 });
 
 test("the Platform Overview says what GridIntel does, shows every sector on one map and leads into each sector's findings", async ({ page }) => {
@@ -156,7 +156,7 @@ test("the Platform Overview says what GridIntel does, shows every sector on one 
   // The sectors that are not built are said not to be.
   await expect(main.locator("[data-to-join] li")).toHaveText([/DER Intelligence\s*Planned/, /Planning\s*Partly built\s*Metering is built. The other planners are planned./]);
   await utility.locator("[data-open-sector]").click();
-  await expect(page).toHaveURL(/\/dashboard\/utility$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility$/);
 });
 
 test("a sector's Overview says what needs attention, in the fixed order of its rules, with links in", async ({ page }) => {
@@ -184,7 +184,7 @@ test("a sector's Overview says what needs attention, in the fixed order of its r
   await expect(main.locator('[data-site-mix] [data-site="MG-DRY"]')).toContainText("49.6%");
   await expect(main.locator('[data-site-mix] [data-site="MG-GRN"]')).toContainText("100.0%");
   await main.locator('[data-site-mix] [data-site="MG-DRY"]').getByRole("link").click();
-  await expect(page).toHaveURL(/\/dashboard\/minigrid\/sites\/MG-DRY$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid\/sites\/MG-DRY$/);
 });
 
 test("on a phone the menu opens on request, the data bar stays in view and nothing is wider than the screen", async ({ page }) => {
@@ -215,12 +215,12 @@ test("on a phone the menu opens on request, the data bar stays in view and nothi
   // Nothing in the open menu is wider than the screen.
   expect(await drawer.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
   await drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link", { name: "Mini-grid" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/minigrid$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid$/);
   await expect(drawer).toHaveCount(0);
   await expect(page.locator("[data-menu-button]")).toHaveText(/Mini-grid/);
   await page.locator("[data-menu-button]").click();
   await drawer.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Sites" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/minigrid\/sites$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid\/sites$/);
   await expect(drawer).toHaveCount(0);
 });
 

@@ -72,7 +72,7 @@ test("the four sites are side by side on the same figures, each with its status 
   await expect(page.locator("path.gi-kind-minigrid_site")).toHaveCount(4);
   await expect(page.locator("path.gi-outline-state")).toHaveCount(37);
   await dry.getByRole("link", { name: "Dry River" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/minigrid\/sites\/MG-DRY$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid\/sites\/MG-DRY$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dry River");
 });
 

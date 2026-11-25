@@ -132,7 +132,7 @@ test("the mini-grid operator's administrator sees the operator only, its map dra
 test("a member of the revenue department opens their three screens, and the links in them are cut to that", async ({ page }) => {
   await signIn(page, TEST_PEOPLE.discoRevenue);
   // Their start is the Utility Overview: the Platform Overview is not theirs.
-  await expect(page).toHaveURL(/\/dashboard\/utility$/);
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility$/);
   const menu = page.locator("aside").first();
   await expect(menu).toContainText("Revenue");
   await expect(menu).not.toContainText("Executive");
@@ -184,7 +184,7 @@ test("an administrator invites someone: the link works once, and the person open
   await invited.getByRole("button", { name: "Continue" }).click();
   await expect(invited).toHaveURL(/\/login\/enrol$/);
   await enterCode(invited, (await invited.locator("[data-totp-secret]").textContent())!.trim());
-  await expect(invited).toHaveURL(/\/dashboard\/utility$/);
+  await expect(invited).toHaveURL(/\/dashboard\/intelligence\/utility$/);
   expect((await invited.goto("/dashboard/intelligence/utility/executive"))?.status()).toBe(403);
 
   // The link was used: it does not sign anyone in again.
