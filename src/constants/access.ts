@@ -1,6 +1,6 @@
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
 import { REPORTS, sectors, type NavigationItem, type ReportItem, type Sector } from "./navigation.ts";
-import { domainOfKey, hrefOf, isDomain, isViewId, translateKey, viewAt, viewOf, type Domain, type View } from "./views.ts";
+import { domainOfKey, hrefOf, isDomain, isViewId, PLATFORM_DEFAULT, translateKey, viewAt, viewOf, VIEWS, workspaceTypeOf, workspaceViews, type Domain, type View, type ViewId } from "./views.ts";
 
 /* ==========================================================
    WHICH SCREENS A VIEWER MAY OPEN (ADR 0018; NAV-B, ADR 0021
@@ -114,44 +114,38 @@ export function opensScreen(grant: ScreenGrant, key: string): boolean {
 }
 
 /* ==========================================================
-   A MEMBER'S GRANT (Phase 8A, ADR 0020; NAV-B)
+   A MEMBER'S GRANT (Phase 8A, ADR 0020; NAV-B, Founder,
+   25 November 2026)
 
-   A person signed in for an organization holds the keys their
-   membership lists, each translated to View IDs (views.ts,
-   OLD_KEYS), cut to the organization's domains and the platform's
-   own screens; a membership that lists none holds every screen of
-   them. A key of a domain the organization does not hold is dropped,
-   whatever the membership says, so a grant can never reach another
-   organization's records. Only an administrator holds the people
-   screen by listing; every member who holds the platform's screens
-   also holds its key, as before NAV-B, and the screen itself answers
-   "not found" to anyone but an administrator.
-
-   An organization's domains: its sectors, and the default domains of
-   its workspace type (ADR 0021 decision 8; Founder, 25 November
-   2026): a Utility organization (one holding "utility") also holds
-   "planning", the Metering screens.
+   What an organization opens is what the catalogue shows its
+   workspace type (views.ts, workspaceViews), with the platform's own
+   screens; never a whole sector. A membership that lists no screen
+   holds all of it; one that lists screens holds those of them, each
+   old key translated to View IDs (views.ts, OLD_KEYS). Any other key
+   is dropped, whatever the membership says, so a grant can never
+   reach another organization's records. People is held by an
+   administrator only.
 ========================================================== */
 
 const PEOPLE = "platform.people";
 
-/** The domains an organization holding these sectors opens, with its workspace type's defaults. */
-export function domainsFor(organizationSectors: readonly string[]): Domain[] {
-  const domains = new Set<Domain>(["platform"]);
-  for (const sector of organizationSectors) if (isDomain(sector)) domains.add(sector);
-  if (domains.has("utility")) domains.add("planning");
-  return [...domains];
+/** The views an organization holding these sectors may open: its workspace type's, and the platform's own. */
+export function defaultViewsFor(organizationSectors: readonly string[]): ViewId[] {
+  const type = workspaceTypeOf(organizationSectors);
+  return [...new Set<ViewId>([...PLATFORM_DEFAULT, ...(type === null ? [] : workspaceViews(type))])];
+}
+
+/** True when a held key stays inside what the organization may open: a view of it, or a key above views that all are. */
+function within(allowed: ReadonlySet<string>, key: string): boolean {
+  if (isViewId(key)) return allowed.has(key);
+  const below = VIEWS.filter((view) => view.id.startsWith(`${key}.`));
+  return below.length > 0 && below.every((view) => allowed.has(view.id));
 }
 
 export function grantFor(organizationSectors: readonly string[], screens: readonly string[] | null, administrator: boolean): ScreenGrant {
-  const domains = domainsFor(organizationSectors);
-  const ours = (key: string) => {
-    const domain = domainOfKey(key);
-    return domain !== null && domains.includes(domain) && key !== PEOPLE;
-  };
-  const listed = screens === null ? ["platform", ...domains.filter((domain) => domain !== "platform")] : screens;
-  const keys = [...new Set(listed.flatMap(translateKey))].filter((key) => (screens === null && key === PEOPLE) || ours(key));
-  return { kind: "listed", keys: administrator && !keys.includes(PEOPLE) ? [...keys, PEOPLE] : keys };
+  const allowed = new Set<string>(defaultViewsFor(organizationSectors));
+  const keys = screens === null ? [...allowed] : [...new Set(screens.flatMap(translateKey))].filter((key) => key !== PEOPLE && within(allowed, key));
+  return { kind: "listed", keys: administrator ? [...keys, PEOPLE] : keys };
 }
 
 /** True when the grant reaches any screen of the domain: the domain's records may then be read. */

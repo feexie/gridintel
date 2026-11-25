@@ -32,6 +32,8 @@
    Pure data and pure functions: no figure, no clock, no I/O.
 ========================================================== */
 
+import { INITIATIVES } from "./initiatives.ts";
+
 export const DASHBOARD = "/dashboard";
 
 export type Domain = "platform" | "utility" | "minigrid" | "der" | "planning";
@@ -318,6 +320,61 @@ export const RAILS: Record<WorkspaceType, readonly RailEntry[]> = {
   ],
 };
 
+/* ==========================================================
+   WHAT EACH WORKSPACE TYPE SHOWS, AND SO OPENS BY DEFAULT
+   (Founder, 25 November 2026, correcting answer 2)
+
+   A workspace type's default access is exactly the views the
+   catalogue shows that type, never a whole sector:
+   - the views its rail lists (RAILS);
+   - the landing page of each rail item it has (Plan's index, its
+     Intelligence domain's Overview);
+   - its Reports foot (the reports of its domain; for a Utility, the
+     Metering Plan report too);
+   - the views its initiatives' roles list for it (INITIATIVES).
+   The rail and the grant both read this one function, and a test
+   holds a type's default grant equal to it.
+========================================================== */
+
+const LANDINGS: Record<WorkspaceType, Partial<Record<RailItemId, ViewId>>> = {
+  utility: { home: "platform.home", intelligence: "utility.overview", plan: "plan.overview", finance: "finance.overview" },
+  minigrid: { home: "platform.home", intelligence: "minigrid.overview", plan: "plan.overview" },
+  der: { home: "platform.home", intelligence: "der.overview", plan: "plan.overview" },
+  financier: { home: "platform.home", finance: "finance.overview" },
+  regulator: { home: "platform.home", oversight: "oversight.overview" },
+};
+
+/** The reports a type's Reports foot lists (ADR 0019; the Metering Plan report is a Utility's). */
+export const REPORTS_FOOT: Record<WorkspaceType, readonly ViewId[]> = {
+  utility: ["utility.reports", "utility.reports.reliability", "utility.reports.operations", "utility.reports.daily-brief", "plan.metering-report"],
+  minigrid: ["minigrid.reports", "minigrid.reports.site-performance", "minigrid.reports.compliance"],
+  der: [],
+  financier: [],
+  regulator: [],
+};
+
+/** Every view a workspace type shows: its default access. */
+export function workspaceViews(type: WorkspaceType): ViewId[] {
+  const ids = new Set<ViewId>();
+  for (const entry of RAILS[type]) {
+    const landing = LANDINGS[type][entry.item];
+    if (landing !== undefined) ids.add(landing);
+    for (const id of entry.views) ids.add(id);
+  }
+  for (const id of REPORTS_FOOT[type]) ids.add(id);
+  for (const initiative of INITIATIVES) for (const role of initiative.roles) if (role.audience === "organization" && role.workspaceType === type) for (const id of role.views) ids.add(id);
+  return VIEWS.map((view) => view.id).filter((id) => ids.has(id));
+}
+
+/** An organization's workspace type, taken from its sectors until the database brief records it (Founder's answer 3). */
+export function workspaceTypeOf(organizationSectors: readonly string[]): WorkspaceType | null {
+  for (const type of ["utility", "minigrid", "der"] as const) if (organizationSectors.includes(type)) return type;
+  return null;
+}
+
+/** The platform's own views every member of an organization holds by default; People is an administrator's only. */
+export const PLATFORM_DEFAULT: readonly ViewId[] = ["platform.overview", "platform.home", "platform.reports"];
+
 const BY_ID = new Map<string, View>(VIEWS.map((view) => [view.id, view]));
 
 /** The view with this id; throws for an id the catalogue does not hold. */
@@ -372,7 +429,8 @@ export function domainOfKey(key: string): Domain | null {
 const METERING_VIEWS: ViewId[] = ["plan.metering-allocation", "plan.dt-sequencing", "finance.metering-fund", "finance.marketplace", "oversight.monitoring", "initiative.journey", "plan.metering-report"];
 
 export const OLD_KEYS: Readonly<Record<string, readonly ViewId[]>> = {
-  platform: ["platform.overview", "platform.people", "platform.home"],
+  // People is an administrator's only, given by grantFor, never by a key (Founder, 25 November 2026).
+  platform: ["platform.overview", "platform.home"],
   "platform.overview": ["platform.overview", "platform.home"],
   planning: viewsOf("planning").map((view) => view.id),
   "planning.overview": ["plan.overview"],

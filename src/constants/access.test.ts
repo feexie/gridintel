@@ -7,7 +7,7 @@ import { admitsRead, canOpen, grantFor, holdsSector, homeFor, keyFor, navigation
 import { departmentOf, departmentsFor } from "./departments.ts";
 import { PEOPLE_KEY, PEOPLE_PATH } from "./navigation.ts";
 import { REPORTS, sectors } from "./navigation.ts";
-import { viewOf } from "./views.ts";
+import { PLATFORM_DEFAULT, RAILS, viewOf, workspaceViews } from "./views.ts";
 
 const EVERYTHING: ScreenGrant = { kind: "everything" };
 /** A viewer allowed only Utility > Revenue. */
@@ -162,18 +162,29 @@ describe("a member's grant (Phase 8A, ADR 0020)", () => {
   it("holds every screen of the organization's sectors and the platform's when the membership lists none", () => {
     const grant = grantFor(["utility"], null, false);
     assert.ok(grant.kind === "listed");
-    // The platform's screens (the old key "platform", translated), the whole utility domain, and a
-    // Utility organization's default planning domain (Founder, 25 November 2026).
-    assert.deepEqual(grant.keys.slice(0, 4), ["platform.overview", "platform.people", "platform.home", "utility"]);
-    assert.ok(grant.keys.includes("plan.metering-allocation") && grant.keys.includes("finance.metering-fund"));
+    // What the catalogue shows a Utility workspace, and the platform's own screens (Founder, 25 November 2026).
+    assert.deepEqual(new Set(grant.keys), new Set([...PLATFORM_DEFAULT, ...workspaceViews("utility")]));
     assert.equal(canOpen(grant, "/dashboard/utility/revenue"), true);
     assert.equal(canOpen(grant, "/dashboard/planning/metering/allocation"), true);
+    assert.equal(canOpen(grant, "/dashboard/planning/unserved"), false, "a mini-grid planner stays with its own type");
+    assert.equal(canOpen(grant, "/dashboard/planning/metering/monitoring"), false, "Oversight is a regulator's");
+    assert.equal(canOpen(grant, "/dashboard/settings/people"), false, "People is an administrator's only");
     assert.equal(canOpen(grant, "/dashboard/minigrid/sites"), false);
     assert.equal(holdsSector(grant, "utility"), true);
     assert.equal(holdsSector(grant, "planning"), true);
     assert.equal(holdsSector(grant, "minigrid"), false);
-    // A mini-grid operator holds no planning by default.
-    assert.equal(holdsSector(grantFor(["minigrid"], null, false), "planning"), false);
+  });
+
+  it("gives every workspace type, by default, exactly the views its catalogue shows it: its rail's, its landings, its Reports foot and its initiatives'", () => {
+    for (const [sectors, type] of [[["utility"], "utility"], [["minigrid"], "minigrid"], [["der"], "der"]] as const) {
+      const grant = grantFor(sectors, null, false);
+      assert.ok(grant.kind === "listed");
+      const own = (keys: readonly string[]) => keys.filter((key) => !PLATFORM_DEFAULT.includes(key as never)).sort();
+      assert.deepEqual(own(grant.keys), own(workspaceViews(type)), type);
+      for (const entry of RAILS[type]) for (const id of entry.views) assert.ok(grant.keys.includes(id), `${type}: ${id} is in its rail`);
+    }
+    assert.ok(!workspaceViews("utility").some((id) => id.startsWith("oversight.") || ["plan.unserved", "plan.underserved", "plan.pue"].includes(id)));
+    assert.ok(workspaceViews("regulator").includes("oversight.monitoring"));
   });
 
   it("drops a key of a sector the organization does not hold, whatever the membership says", () => {

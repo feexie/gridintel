@@ -4,7 +4,7 @@ import { join, relative, sep } from "node:path";
 import { describe, it } from "node:test";
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
 import { canOpen, grantFor, opensView } from "./access.ts";
-import { translateKey, viewAt, VIEWS, type ViewId } from "./views.ts";
+import { translateKey, viewAt, VIEWS, workspaceViews, type ViewId } from "./views.ts";
 
 /* ==========================================================
    THE ACCESS FIXTURE, FROZEN BEFORE NAV-B MOVED ANYTHING
@@ -21,8 +21,8 @@ import { translateKey, viewAt, VIEWS, type ViewId } from "./views.ts";
    key translated, views.ts OLD_KEYS; the roles' grants rebuilt by
    grantFor from the same memberships) at the address each old one
    leads to. Every answer must be the same, except where the
-   Founder approved a widening, named here; nothing may be narrowed
-   and nothing else widened.
+   Founder approved a change, named here: two widenings and one
+   narrowing. Nothing else may change.
 ========================================================== */
 
 const PINNED = new URL("./__pinned__/", import.meta.url);
@@ -46,15 +46,24 @@ const grantOf = (name: string): ScreenGrant => (name.startsWith("key:") ? { kind
 /** Where an old address leads now. Identity until the first screen moves (step 2 reads moves.ts). */
 const destination = (address: string) => address;
 
+/** The organization's workspace type of each role whose membership lists no screen: it holds what the catalogue shows that type. */
+const DEFAULT_TYPE: Record<string, "utility" | "minigrid"> = { "disco administrator": "utility", "disco member, every screen": "utility", "mini-grid administrator": "minigrid" };
+
 /** The widenings the Founder approved (25 November 2026); every other difference fails. */
 const WIDENINGS: { reason: string; applies: (grant: string, view: ViewId) => boolean }[] = [
   { reason: "About this build is open to every signed-in viewer (answer 5)", applies: (_grant, view) => view === "platform.about-this-build" },
   {
-    reason: "A Utility organization's default domains are utility and planning (answer 2)",
-    applies: (grant, view) => (grant === "disco administrator" || grant === "disco member, every screen") && VIEWS.find((one) => one.id === view)?.domain === "planning",
+    reason: "A workspace type's default access is exactly the views the catalogue shows it (answer 2, as corrected at checkpoint 1)",
+    applies: (grant, view) => DEFAULT_TYPE[grant] !== undefined && workspaceViews(DEFAULT_TYPE[grant]).includes(view),
   },
 ];
 const widening = (grant: string, view: ViewId | undefined) => (view === undefined ? undefined : WIDENINGS.find((one) => one.applies(grant, view)));
+
+/** The narrowing the Founder approved (checkpoint 1, finding 1): People only for an administrator, never by a key. */
+const NARROWINGS: { reason: string; applies: (grant: string, view: ViewId) => boolean }[] = [
+  { reason: "People is an administrator's only (finding 1)", applies: (grant, view) => view === "platform.people" && grant !== "disco administrator" && grant !== "mini-grid administrator" && grant !== "demo public viewer" && grant !== "key:platform.people" },
+];
+const narrowing = (grant: string, view: ViewId | undefined) => (view === undefined ? undefined : NARROWINGS.find((one) => one.applies(grant, view)));
 
 /** Every page and route handler under src/app, as an address pattern. */
 function appRoutes(): string[] {
@@ -86,7 +95,8 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
         const before = opened.includes(address);
         const after = canOpen(grant, destination(address));
         if (before === after) continue;
-        const why = !before && after ? widening(name, viewAt(destination(address))?.id) : undefined;
+        const view = viewAt(destination(address))?.id;
+        const why = !before && after ? widening(name, view) : narrowing(name, view);
         if (why === undefined) differences.push(`${name} at ${address}: ${before ? "open" : "refused"} before, ${after ? "open" : "refused"} now`);
       }
     }
@@ -103,10 +113,10 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
     }
   });
 
-  it("narrows no viewer type's views: every view open before is open now", () => {
+  it("narrows no viewer type's views, but for the approved narrowing (People)", () => {
     for (const name of Object.keys(ROLES)) {
       const grant = grantOf(name);
-      for (const address of frozen.opens[name]) assert.ok(canOpen(grant, destination(address)), `${name}: ${address}`);
+      for (const address of frozen.opens[name]) if (narrowing(name, viewAt(destination(address))?.id) === undefined) assert.ok(canOpen(grant, destination(address)), `${name}: ${address}`);
     }
   });
 
