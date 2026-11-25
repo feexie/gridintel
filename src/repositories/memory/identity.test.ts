@@ -109,12 +109,16 @@ describe("the in-memory identity adapter", () => {
     assert.equal(await memoryIdentitySession(held, browser(), clock).acceptInvite(tokenHash), false);
     assert.equal(await session.setPassword("short"), false);
     assert.equal(await session.setPassword("a-long-password-4"), true);
-    assert.equal(held.memberships.get(userId)?.accepted, true);
+    // Not yet accepted: before the second factor the person cannot see their membership row.
+    assert.equal(held.memberships.get(userId)?.accepted, false);
     assert.equal(await session.verifiedFactor(), null);
     const enrolment = await session.enrol();
     assert.match(enrolment.uri, /^otpauth:\/\/totp\/GridIntel%3Anew%40a\.test\?secret=/);
+    assert.equal(await session.verify(enrolment.factorId, "000000"), false);
+    assert.equal(held.memberships.get(userId)?.accepted, false, "a wrong code accepts nothing");
     assert.equal(await session.verify(enrolment.factorId, totpCode(enrolment.secret, NOW)), true);
     assert.equal((await session.user())?.assurance, "aal2");
+    assert.equal(held.memberships.get(userId)?.accepted, true, "accepted once the second factor is verified");
   });
 
   it("re-issues a lapsed invitation: a new token, the old one dead, the grant unchanged", async () => {

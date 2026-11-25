@@ -177,6 +177,9 @@ export function memoryIdentitySession(store: MemoryIdentityStore, cookies: Cooki
       if (user === undefined || factor === undefined || !totpMatches(factor.secret, code.trim(), nowMs())) return false;
       factor.verified = true;
       start(user.id, "aal2");
+      // Accepted at aal2, as the Supabase adapter does: before it, row-level security hides the row.
+      const membership = store.memberships.get(user.id);
+      if (membership !== undefined && !membership.accepted) store.memberships.set(user.id, { ...membership, accepted: true });
       return true;
     },
     async acceptInvite(tokenHash: string): Promise<boolean> {
@@ -191,8 +194,6 @@ export function memoryIdentitySession(store: MemoryIdentityStore, cookies: Cooki
       const user = session === null ? undefined : store.users.get(session.userId);
       if (user === undefined || password.length < 12) return false;
       user.passwordHash = hashPassword(password);
-      const membership = store.memberships.get(user.id);
-      if (membership !== undefined) store.memberships.set(user.id, { ...membership, accepted: true });
       return true;
     },
     async signOut(): Promise<void> {
