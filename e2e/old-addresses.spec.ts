@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { destinationOf, MOVES } from "../src/constants/moves";
+import { viewAt } from "../src/constants/views";
 import { LOCAL, REQUEST_BASE } from "./routes";
 
 /* NAV-B safeguard B, redirect integrity (Founder, 25 November 2026), on the public
@@ -39,8 +40,10 @@ async function walk(request: APIRequestContext, base: string) {
       if (to !== expected) wrong.push(`${address}: led to ${to}, not ${expected}`);
       const landed = await request.get(`${base}${to}`, { maxRedirects: 0 });
       // One step: the page itself (a report may still send a bare address on to its default period, the page's own redirect).
+      // People answers "not found" on the public demonstration, which has no accounts (ADR 0020).
+      const noAccounts = viewAt(to.split("?")[0])?.id === "platform.people";
       if (landed.status() === 308) wrong.push(`${address}: ${to} is itself redirected (a chain)`);
-      else if (landed.status() >= 400) wrong.push(`${address}: ${to} answered ${landed.status()}`);
+      else if (noAccounts ? landed.status() !== 404 : landed.status() >= 400) wrong.push(`${address}: ${to} answered ${landed.status()}`);
     }
   }
   return wrong;

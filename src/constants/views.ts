@@ -414,6 +414,14 @@ export function viewAt(pathname: string): View | null {
   return found;
 }
 
+/** The period a report's page is for: the one segment below a report's address; null on any other address. */
+export function reportPeriodAt(pathname: string): string | null {
+  const view = viewAt(pathname);
+  if (view?.report === undefined || view.address === null || !pathname.startsWith(`${view.address}/`)) return null;
+  const rest = pathname.slice(view.address.length + 1);
+  return rest === "" || rest.includes("/") ? null : decodeURIComponent(rest);
+}
+
 /** The views of a domain, in the catalogue's order. */
 export const viewsOf = (domain: Domain): View[] => VIEWS.filter((view) => view.domain === domain);
 

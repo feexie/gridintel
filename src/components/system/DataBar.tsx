@@ -5,6 +5,7 @@ import { useState } from "react";
 import { NO_DATA_NOTICE, PUBLISHED_FIGURES_NOTICE, REPORT_NOTICE } from "@/constants/planning";
 import type { ReferenceBarNotice } from "@/services/minigrid/referenceViews";
 import { formatPeriod, formatTime } from "./format";
+import { reportPeriodAt } from "@/constants/views";
 
 /* The one place a screen says what data it is looking at: the SYNTHETIC DATA label when the
    data is synthetic, the reporting period, and the time the data is as of. It sits above every
@@ -20,8 +21,6 @@ import { formatPeriod, formatTime } from "./format";
    operator's portfolio on the other screens is synthetic and this page is published real data,
    with the dataset's citation (Founder, 24 November 2026). */
 
-/** A report's address: /dashboard/{sector}/reports/{report}/{period}. */
-const REPORT_ADDRESS = /^\/dashboard\/[^/]+\/reports\/[^/]+\/([^/]+)$/;
 
 export interface DataContext {
   /** What must be said about the data; null for real data. */
@@ -51,7 +50,7 @@ export function DataBar({ context }: { context: DataContext }) {
         ? { label: NO_DATA_NOTICE.label, summary: noData }
         : context.notice;
   const [open, setOpen] = useState(false);
-  const key = REPORT_ADDRESS.exec(pathname)?.[1];
+  const key = reportPeriodAt(pathname) ?? undefined;
   const report = key === undefined ? undefined : context.reportPeriods[key];
   return (
     <div

@@ -6,7 +6,7 @@ import { canOpen, grantFor, opensView, resolves } from "./access.ts";
 import { INITIATIVES } from "./initiatives.ts";
 import { REPORTS, sectors } from "./navigation.ts";
 import { METERING_SCREENS, PLANNERS, plannerHref } from "./planning.ts";
-import { DOMAINS, hrefOf, OLD_KEYS, RAILS, translateKey, viewAt, viewOf, VIEWS, WORKSPACE_TYPES } from "./views.ts";
+import { DOMAINS, hrefOf, reportPeriodAt, OLD_KEYS, RAILS, translateKey, viewAt, viewOf, VIEWS, WORKSPACE_TYPES } from "./views.ts";
 
 /* The View catalogue (NAV-B, safeguard A; Founder, 25 November 2026): one entry per screen, each
    with a unique id that is its permission key, an explicit permission, a domain and its one
@@ -87,6 +87,18 @@ describe("the View catalogue is the single source of screens and addresses", () 
   it("is the only module under src/ that writes a /dashboard address", () => {
     const writers = sources().filter((file) => !["constants/views.ts", "constants/moves.ts"].includes(file.path) && /["'`]\/dashboard/.test(file.text)).map((file) => file.path);
     assert.deepEqual(writers, []);
+  });
+
+  it("is the only module that matches a /dashboard address with a pattern of its own (a regular expression)", () => {
+    const matchers = sources().filter((file) => !["constants/views.ts", "constants/moves.ts"].includes(file.path) && file.text.includes(String.raw`\/dashboard`)).map((file) => file.path);
+    assert.deepEqual(matchers, []);
+  });
+
+  it("finds a report's period from its address", () => {
+    assert.equal(reportPeriodAt(`${hrefOf("utility.reports.reliability")}/2026-09`), "2026-09");
+    assert.equal(reportPeriodAt(hrefOf("utility.reports.reliability")), null);
+    assert.equal(reportPeriodAt(`${hrefOf("utility.reports.reliability")}/2026-09/data.csv`), null);
+    assert.equal(reportPeriodAt(`${hrefOf("utility.revenue")}/2026-09`), null);
   });
 
   it("is the only module that builds a screen's address from a home: everything else asks hrefOf", () => {
