@@ -2,7 +2,7 @@ import type { PlannedCommunity, ReferenceBasis } from "@/domain";
 import { MINIGRID_DEMAND_REFERENCE } from "../../analytics/planning/minigrid/demand.ts";
 import { MINIGRID_PUE_GAP_REFERENCE } from "../../analytics/planning/minigrid/pueGap.ts";
 import { LEAD_ACID, LITHIUM_IRON_PHOSPHATE, MINIGRID_SIZING_REFERENCE } from "../../analytics/planning/minigrid/sizing.ts";
-import { capexFactorToToday, MINIGRID_SUBSIDY_GAP_REFERENCE } from "../../analytics/planning/minigrid/subsidyGap.ts";
+import { capexFactorsToToday, type EquipmentPriceChange, MINIGRID_SUBSIDY_GAP_REFERENCE } from "../../analytics/planning/minigrid/subsidyGap.ts";
 import type { MinigridPlanFigure } from "./minigridViews.ts";
 
 /* ==========================================================
@@ -24,6 +24,8 @@ export interface MinigridPlanSettings {
   capexNgn: number | null;
   /** Today's ₦ a US dollar, with its citation: the reference cost goes to USD at the source's rate, then to ₦ at this. Null until the planner enters one. */
   ngnPerUsdToday: { rate: number; source: string } | null;
+  /** The change in equipment prices since the reference's price year, in US dollar terms (0.1 is +10%), overall and optionally by category, with its source. Null until the planner sets it: never a silent 0%. */
+  equipmentPriceChange: EquipmentPriceChange | null;
   /** ₦/kWh the subsidy gap is worked at. */
   tariff: number;
   /** The planner's own tariff elasticity; null for none. */
@@ -36,6 +38,7 @@ export const DEFAULT_PLAN_SETTINGS: MinigridPlanSettings = {
   opexPerDay: null,
   capexNgn: null,
   ngnPerUsdToday: null,
+  equipmentPriceChange: null,
   tariff: 350,
   userElasticity: null,
   periodYears: 10,
@@ -59,6 +62,17 @@ function opexBlankText(bases: readonly ReferenceBasis[]): string {
 }
 
 const pct = (share: number, digits = 0) => `${(share * 100).toFixed(digits)}%`;
+const signed = (share: number) => `${share >= 0 ? "+" : "−"}${Math.abs(share * 100).toFixed(1)}%`;
+
+function priceChangeText(change: EquipmentPriceChange): string {
+  const categories = change.byCategory ?? {};
+  const own = [
+    categories.storage === undefined ? null : `storage ${signed(categories.storage)}`,
+    categories.generation === undefined ? null : `generation ${signed(categories.generation)}`,
+    categories.distributionAndMetering === undefined ? null : `distribution and metering ${signed(categories.distributionAndMetering)}`,
+  ].filter(Boolean);
+  return own.length === 0 ? `${signed(change.overall)} overall` : `${own.join(", ")}; ${signed(change.overall)} for the rest`;
+}
 const naira = (value: number, digits = 0) => `₦${value.toLocaleString("en-GB", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 const list = (values: readonly (number | null)[], format: (value: number) => string) => values.map((value) => (value === null ? "no figure" : format(value))).join(", ");
 
@@ -86,14 +100,31 @@ export function minigridInputs(community: PlannedCommunity, bases: readonly Refe
     { key: "elasticity", label: "Tariff elasticity", value: settings.userElasticity === null ? "−1 (fixed budget) and each reference change's own; no user figure" : `−1, each reference change's own, and the planner's ${settings.userElasticity}`, status: "assumption", basis: "The fixed budget is an assumption; each change's own e is calculated on reported use, with its confounders. Where the changes disagree, the range and never a single figure." },
     { key: "capex", label: "Reference capex", value: capex ? `${naira(capex.totalNgn, 2)} (${capex.priceYear}) by category; distribution and metering ${naira(capex.distributionAndMeteringNgn / capex.connections)} a connection on the ${capex.connections} meters bought${capex.accounts === null ? "" : ` (${naira(capex.distributionAndMeteringNgn / capex.accounts)} over the ${capex.accounts} accounts in the customer file, shown beside it)`}` : "No reference build cost", status: "reported", basis: `RMG01 CAPEX, actual costs (Caveats C21): storage per kWh on ${capex?.storageKwh ?? "no"} kWh (the publisher's reference value of four), generation per kWp on ${capex?.pvKwp ?? "no"} kWp, distribution and metering per meter bought, the other costs in proportion.` },
     {
+      key: "ngnPerUsdToday",
+      label: "Today's ₦ a US dollar",
+      value: settings.ngnPerUsdToday === null ? "Not set" : `${naira(settings.ngnPerUsdToday.rate, 2)}/$`,
+      status: settings.ngnPerUsdToday === null ? "placeholder" : "input",
+      basis: settings.ngnPerUsdToday === null ? "The planner enters it and cites it." : `${settings.ngnPerUsdToday.source}.`,
+    },
+    {
+      key: "priceChange",
+      label: `Equipment price change since ${capex?.priceYear ?? 2019}, in US dollar terms`,
+      value: settings.equipmentPriceChange === null ? "Not set" : priceChangeText(settings.equipmentPriceChange),
+      status: settings.equipmentPriceChange === null ? "placeholder" : "input",
+      basis: `${settings.equipmentPriceChange === null ? "The planner's figure, with its source; overall, or one per category (storage, generation, distribution and metering), since battery and module prices moved differently from poles and cable. " : `${settings.equipmentPriceChange.source}. `}A category without its own figure, and the other costs, take the overall change. Never taken as 0% while unset.`,
+    },
+    {
       key: "capexToToday",
       label: "Capex factor to today",
-      value: settings.ngnPerUsdToday === null || capex === null ? "Not set" : `× ${capexFactorToToday(capex.ngnPerUsd, settings.ngnPerUsdToday.rate).toFixed(2)} (${naira(capex.ngnPerUsd)}/$ in ${capex.priceYear} to ${naira(settings.ngnPerUsdToday.rate, 2)}/$ today)`,
-      status: settings.ngnPerUsdToday === null ? "placeholder" : "input",
-      basis:
-        settings.ngnPerUsdToday === null
-          ? `The planner enters today's ₦ a US dollar and cites it: the ${capex?.priceYear ?? 2019} ₦ go to US dollars at the source's own ${capex ? naira(capex.ngnPerUsd) : "rate"}/$, then to ₦ at today's rate. No subsidy gap from a reference cost is given until it is set.`
-          : `Today's rate: ${settings.ngnPerUsdToday.source}. The ${capex?.priceYear ?? 2019} ₦ go to US dollars at the source's ${capex ? naira(capex.ngnPerUsd) : "rate"}/$, then to ₦ at it. Dollar prices of equipment are taken as unchanged since ${capex?.priceYear ?? 2019}.`,
+      value:
+        settings.ngnPerUsdToday === null || settings.equipmentPriceChange === null || capex === null
+          ? "Not calculated"
+          : (() => {
+              const factors = capexFactorsToToday(capex.ngnPerUsd, settings.ngnPerUsdToday.rate, settings.equipmentPriceChange);
+              return `× ${factors.storage.toFixed(2)} storage, × ${factors.generation.toFixed(2)} generation, × ${factors.distributionAndMetering.toFixed(2)} distribution and metering, × ${factors.other.toFixed(2)} other`;
+            })(),
+      status: settings.ngnPerUsdToday === null || settings.equipmentPriceChange === null || capex === null ? "placeholder" : "calculated",
+      basis: `${capex?.priceYear ?? 2019} ₦ ÷ the source's ${capex ? naira(capex.ngnPerUsd) : "rate"}/$ × (1 + the equipment price change) × today's cited ₦ a US dollar. Not calculated, and no subsidy gap from a reference cost given, until both are set.`,
     },
     {
       key: "opex",

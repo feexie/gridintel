@@ -17,7 +17,10 @@ bar above a reference page says it is published real data; ADR 0022
 accepted; tag `phase-mg-real`): a real, published mini-grid (site RMG01) as
 a reference site beside the portfolio. **MG-PLAN-A is merged to `main`**
 (Founder, 2026-11-24, with two modelling fixes; tag `phase-mg-plan-a`): the
-mini-grid planning engine, no screen. Earlier status: **Phase 10 (Mini-grid Intelligence) is
+mini-grid planning engine, no screen. **MG-PLAN-A.1 is merged** (Founder,
+2026-11-24; tag `phase-mg-plan-a.1`): the subsidy gap side by side under the
+tariff scenarios, and the equipment price change since 2019 as a planner
+input. Earlier status: **Phase 10 (Mini-grid Intelligence) is
 complete** (accepted by the Founder, 2026-10-12; merged to `main`, tags
 `phase-10a` and `phase-10b`). It was taken ahead of Phase 8 by the Founder's
 decision of 2026-10-10 (ADR 0015). Phase 7 is complete (tags `phase-7a`,
@@ -2378,7 +2381,19 @@ happened" scenario; a positive elasticity (₦165 to ₦350, +0.53) shown and
 used in no scenario; opex a day and today's ₦ a dollar as planner inputs with
 their sources. The test community's expected figures, re-derived, all agree
 (MG-PLAN.md 3.6). Screens after NAV-B, under Mini-grid
-workspace → Plan → Unserved and Productive use. The Zenodo 22149102 dataset
+workspace → Plan → Unserved and Productive use.
+
+**MG-PLAN-A.1 (Founder, 24 November 2026; tag `phase-mg-plan-a.1`).** The
+subsidy gap side by side at e = −1 (the middle case, with the note that at a
+fixed budget it is the same at any planned tariff and is not a finding about
+tariffs), e = −2.10 and the user's e; never a positive e
+(`subsidyGapScenarios`, `minigrid-subsidy-gap` 0.2.0). The stated assumption
+of unchanged equipment dollar prices replaced by a planner input, "equipment
+price change since 2019, in US dollar terms", overall and optionally per
+category, with its source: factor to today = 2019 ₦ ÷ 350 × (1 + change) ×
+today's cited ₦/$; "not calculated" while unset. The test community's gaps
+re-derived (MG-PLAN.md 3.6). The opex floor, the 136 kWh and 220-meter bases
+and the tariff range (−2.10 to −1.00) unchanged. The Zenodo 22149102 dataset
 is later, as its own decision gate.
 
 ## Phase 11: AI / MCP intelligence

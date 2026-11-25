@@ -284,18 +284,28 @@ fixed-input tests. Every output figure carries `status` (`reported` | `calculate
 
 - Capex bases (Founder, 24 November 2026): storage on 136 kWh and distribution and metering
   on the 220 meters bought; the 245 accounts are shown beside the per-connection rate. The
-  factor to today is computed: 2019 ₦ to US dollars at the source's ₦350/$, then to ₦ at a
-  current rate the user enters and cites. Opex a day is a user input with its source; RMG01's
+  factor to today is computed (MG-PLAN-A.1, Founder, 24 November 2026): 2019 ₦ ÷ the source's
+  ₦350/$ × (1 + the equipment price change since 2019, in US dollar terms) × today's ₦/$,
+  which the user enters and cites. The price change is a user input with its source, overall
+  and optionally per category (storage, generation, distribution and metering), since
+  battery and module prices moved differently from poles and cable; a category without its
+  own figure, and the other costs, take the overall change. While the change or the rate is
+  unset, the factor and the gap are "not calculated", never a silent 0%. (This replaces the
+  stated assumption that equipment dollar prices were unchanged since 2019.) Opex a day is a user input with its source; RMG01's
   2022 to 2024 company-account lines are offered as a "reported floor, excluding labour and
   platform fees", never as full opex. The demonstration's gap stays "not calculated".
 - Capex: the user's figure, or RMG01's actual cost scaled. Scaling: storage per kWh,
   generation per kWp and distribution and metering per connection, at RMG01's actual 2019
-  cost of ₦35,071,810.50, with an **assumption** to bring it to today (a factor or a USD
-  rate). The output is labelled "2019 reference cost, scaled" (C21).
+  cost of ₦35,071,810.50, brought to today by the factor above. The output is labelled "2019 reference cost, scaled" (C21).
 - Net revenue: kWh sold (demand ÷ (1 + losses)) × tariff, with the tariff response, minus
   opex. **Opex has no reliable reference** (C22: one figure of USD 28 a month, plus company
   account lines), so it is a user input or a stated assumption, never RMG01's figure alone.
 - Period: an input (default 10 years; years 6 and on hold year 5).
+- **Side by side (MG-PLAN-A.1, Founder, 24 November 2026):** the gap is worked under each
+  tariff scenario: e = −1 (the middle case), e = −2.10 (the ₦350 to ₦500 event) and the
+  user's e when given; never a positive e. Under the e = −1 figure: "At a fixed budget
+  (e = −1) revenue does not change with the tariff, so this gap is the same at any planned
+  tariff and is not a finding about tariffs." Method version 0.2.0.
 - Output: the gap in total and per connection, and the months for net revenue to repay
   capex at 0% and at a stated return, using `analytics/planning/loan.ts`. "Never" when it
   does not repay.
@@ -337,7 +347,9 @@ values as parameters.
 | Tariff options | ₦165, ₦350, ₦500 /kWh and the user's own | Reported (RMG01's) and input | Tariffs |
 | Tariff elasticity | −1, fitted per event, user's | Assumption and calculated | 3.2 (3) |
 | Reference capex | ₦35,071,810.50 (2019) by category | Reported | CAPEX (C21) |
-| Capex factor to today | Today's ₦/$, entered and cited | Input | 2019 ₦ ÷ ₦350/$ (the source's rate) × today's rate |
+| Today's ₦ a US dollar | Entered and cited | Placeholder, then input | |
+| Equipment price change since 2019, in US dollar terms | Overall, optionally per category, with its source | Placeholder, then input | Never taken as 0% while unset |
+| Capex factor to today | Not calculated until both are set | Calculated | 2019 ₦ ÷ ₦350/$ (the source's rate) × (1 + the change) × today's rate, per category |
 | Opex a day | User, with its source | Input | C22; RMG01's 2022 to 2024 company-account lines offered as a reported floor, excluding labour and platform fees |
 | Period, return | 10 years, 0% | Assumption | |
 | Target utilisation | 70% | Assumption | |
@@ -350,7 +362,7 @@ values as parameters.
 | `demandFromReference` | True or unconstrained demand; a load profile; that the no-diversity upper bound is a P90 or a design day; anything beyond 5 years; that the class split is the source's own |
 | `sizeSystem` | An hour-by-hour dispatch or a loss-of-load probability; a cost; an EPC design; anything for a site without coordinates |
 | `tariffResponse` | A price elasticity measured at one site as a general law; an effect on collection or revenue at RMG01; a figure where the events disagree |
-| `subsidyGap` | A grant amount, a programme's eligibility, a lender's decision; an opex from RMG01; today's cost from 2019 prices without the stated scaling |
+| `subsidyGap` | A grant amount, a programme's eligibility, a lender's decision; an opex from RMG01; today's cost from 2019 prices without the user's price change and rate; from the fixed-budget gap, anything about tariffs |
 | `pueGap` | That a productive user exists or would pay; the equipment as demand |
 | All | A benchmark from one site called typical; any figure without "n reference sites" |
 
@@ -420,6 +432,18 @@ before the method was run:
   years ₦20,798,316; **gap ₦9,201,684, ₦36,807 a connection**. With opex ₦1,500 a day:
   gap ₦3,726,684, ₦14,907 a connection. At year 5's net of ₦5,588.37 a day, capex repays
   in 176.6 months at 0% and **never** at 10% a year.
+- Side by side (MG-PLAN-A.1), the same inputs with the tariff acting from ₦165, re-derived
+  by a separate hand script before the method ran:
+
+  | | e = −1 (middle case) | e = −2.10 |
+  | --- | --- | --- |
+  | kWh sold a day, years 1 to 5 | 10.60, 12.93, 12.54, 11.68, 11.57 | 4.64, 5.65, 5.48, 5.11, 5.06 |
+  | Gap at opex ₦3,000 a day | **₦25,982,937, ₦103,932 a connection** | **₦34,405,235, ₦137,621 a connection** (net revenue −₦4,405,235) |
+  | Gap at opex ₦1,500 a day | **₦20,507,937, ₦82,032 a connection** | **₦28,930,235, ₦115,721 a connection** |
+  | Months to repay at 0% (opex ₦3,000; ₦1,500) | 940.9; 387.2 | never; 3,648.9 |
+
+  At e = −1 the gap is the same at ₦165, ₦350, ₦500 and ₦800. The gap with no tariff
+  response (above) is the method's figure when the planned tariff is the served one.
 - The "as happened" scenario keeps the earlier figures (P50 22.84, 32.49, 31.51, 26.55,
   23.53; P90 30.45, 41.77, 40.52, 34.93, 31.84).
 - A second reference site added to the fixture list changes the benchmarks and

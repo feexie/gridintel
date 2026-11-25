@@ -101,7 +101,7 @@ The RMG01 adapter also reads `CAPEX` now (as published, every line).
 | `gridintel.planning.minigrid-demand` | Σ customers × class factor × site kWh per reporting meter-day (P50, P90) × ramp × buying share × (1 + losses); by default the single-tariff use held flat, the planned tariff acting only through the tariff response; the site's own curve as the "as happened" scenario, never the default; the no-diversity upper bound on the class P90 meter-days, labelled; an uplift as a separate line; "served demand, a floor on true demand" |
 | `gridintel.planning.minigrid-sizing` | The shared solar rule on the design day (the highest diversified P90 of years 1 to 5); utilisation = PV energy the demand needs ÷ PV energy on an average day; the rainy season's share made and share served; "oversized" when year-1 P50 utilisation is below 60%, naming year 1's ramp and buying share |
 | `gridintel.planning.minigrid-tariff-response` | kWh(t) = kWh(t₀) × (t ÷ t₀)^e; scenarios: e = −1 as the middle case, each reference change whose e is not positive (with its windows and confounders), the user's; a positive e is shown with its confounders, labelled "not usable as a price response", and used in no scenario; the range over the scenarios, never a single combined figure |
-| `gridintel.planning.minigrid-subsidy-gap` | Capex − net revenue (kWh sold × tariff − opex) over the period, years after 5 holding year 5; months to repay on year 5's net at 0% and at a return (`loan.ts`); a reference build cost scaled by kWh, kWp and connection, the rest in proportion, labelled "2019 reference cost, scaled", brought to today through US dollars (the source's ₦350/$, then the planner's cited rate) |
+| `gridintel.planning.minigrid-subsidy-gap` | Capex − net revenue (kWh sold × tariff − opex) over the period, years after 5 holding year 5; months to repay on year 5's net at 0% and at a return (`loan.ts`); a reference build cost scaled by kWh, kWp and connection, the rest in proportion, labelled "2019 reference cost, scaled", brought to today through US dollars: ÷ the source's ₦350/$, × (1 + the planner's equipment price change since 2019 in US dollar terms, per category when given), × the planner's cited ₦/$; "not calculated" while either is unset. 0.2.0: the gap side by side under each tariff scenario (e = −1, the middle case, with the note that it is the same at any planned tariff and is not a finding about tariffs; each usable reference change; the user's), never at a positive e |
 | `gridintel.planning.minigrid-pue-gap` | Target × PV energy on an average day − PV energy the year's demand needs; daytime, direct from PV |
 
 A benchmark across reference sites is the plain mean of the sites that have
@@ -132,5 +132,7 @@ For the synthetic community (4.43 sun hours, 3.64 in July): demand P50 28.58,
 34.74, 33.51, 30.30, 30.80 kWh; design day year 2, 44.01 kWh; 13.73 kWp and
 52.82 kWh of lead-acid; not oversized (year 1 P50 uses 64.9%); productive-use
 gap 2.47 kWh a day. The scaled reference cost is ₦21,666,037 at 2019 prices.
-The subsidy gap is not given until the planner enters an opex a day and
-today's ₦ a dollar, each with its source.
+The subsidy gap is not given until the planner enters an opex a day, the
+equipment price change since 2019 in US dollar terms, and today's ₦ a dollar,
+each with its source. Then it is given side by side at e = −1, e = −2.10 and
+the planner's e.
