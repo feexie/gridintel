@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { PlatformCapability } from "@/types/platform";
+import { hrefOf, type ViewId } from "@/constants/views";
 
 type CapabilityCardProps = {
   capability: PlatformCapability;
@@ -11,7 +12,7 @@ export default function CapabilityCard({
   capability,
 }: CapabilityCardProps) {
   return (
-    <Link href={capability.href}>
+    <Link href={hrefOf(capability.view as ViewId)}>
       <article className="group h-full overflow-hidden rounded-3xl border border-white/5 bg-white/[0.03] transition duration-300 hover:border-cyan-400/40 hover:bg-white/[0.05]">
         <div className="relative h-52 w-full">
           {capability.imageModern ? (

@@ -4,6 +4,7 @@ import { SectorBand } from "@/components/system/Brand";
 import { Fold } from "@/components/system/Fold";
 import { Panel } from "@/components/system/Metric";
 import { HeadRow, Note, Row, Table, Td, Th } from "@/components/system/Table";
+import { hrefOf } from "@/constants/views";
 
 /* Reference sites: real mini-grids whose records their owners published (Phase MG-REAL).
    Shown beside the operator's sites, never among them, and always with the dataset's credit,
@@ -132,7 +133,7 @@ export function ReferenceSite({ view }: { view: ReferenceSiteView }) {
       </SectorBand>
       <div className="flex flex-wrap items-center gap-2">
         <PublishedMark />
-        <Link href="/dashboard/minigrid/sites" className="text-sm text-link hover:text-link-hover hover:underline">
+        <Link href={hrefOf("minigrid.sites")} className="text-sm text-link hover:text-link-hover hover:underline">
           ← The operator&apos;s sites
         </Link>
       </div>

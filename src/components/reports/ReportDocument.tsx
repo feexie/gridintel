@@ -5,6 +5,7 @@ import type { ReportBlock, ReportCell, ReportDocumentView, ReportSection } from 
 import { STATUS_MARK } from "../system/Metric";
 import { ORIGIN_HINT, ORIGIN_LABEL, STATUS_HINT, STATUS_LABEL, formatMetric, formatSigned, formatTime } from "../system/format";
 import { PrintButton } from "./PrintButton";
+import { hrefOf as viewHref, type ViewId } from "@/constants/views";
 
 /* ==========================================================
    A REPORT, READY TO PRINT (ADR 0019)
@@ -28,7 +29,7 @@ import { PrintButton } from "./PrintButton";
 const ORIGIN_ABBREVIATION: Record<DisplayOrigin, string> = { measured: "M", reported: "R", calculated: "C", estimated: "E", derived: "D" };
 
 function hrefOf(view: ReportDocumentView, periodKey: string): string {
-  return `/dashboard/${view.header.sector}/reports/${view.header.id}/${periodKey}`;
+  return viewHref(`${view.header.sector}.reports.${view.header.id}` as ViewId, periodKey);
 }
 
 /** A figure with its status mark and its origin. `signed` writes a difference with its sign. */
@@ -305,7 +306,7 @@ function Toolbar({ view }: { view: ReportDocumentView }) {
   return (
     <div className="gr-toolbar">
       <div className="gr-toolbar-row">
-        <Link href={`/dashboard/${view.header.sector}/reports`} className="gr-link">
+        <Link href={viewHref(`${view.header.sector}.reports` as ViewId)} className="gr-link">
           ← Reports
         </Link>
         <div className="gr-actions">

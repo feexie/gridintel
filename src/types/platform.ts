@@ -5,7 +5,8 @@ export interface PlatformCapability {
   image: string;
   /** The same image in a modern format (WebP); `image` is its fallback. */
   imageModern?: string;
-  href: string;
+  /** The View ID the card opens (src/constants/views.ts); never an address. */
+  view: string;
 }
 
 export interface ArchitectureStep {

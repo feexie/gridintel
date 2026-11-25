@@ -7,6 +7,7 @@ import { reportsFor } from "@/constants/access";
 import { reports } from "@/composition/reports";
 import { getViewer } from "@/composition/runtime";
 import { aheadOfTime, preparing } from "./utility/screen";
+import { hrefOf, type ViewId } from "@/constants/views";
 
 /* ==========================================================
    THE REPORT ROUTES (ADR 0019)
@@ -39,7 +40,7 @@ export function reportRedirect(sector: Sector) {
   return async function ReportRedirect({ params }: { params: Promise<{ report: string }> }) {
     const { report } = await params;
     if (!reports.built(sector).includes(report as never)) notFound();
-    redirect(`/dashboard/${sector}/reports/${report}/${reports.defaultPeriod(report)}`);
+    redirect(hrefOf(`${sector}.reports.${report}` as ViewId, reports.defaultPeriod(report)));
   };
 }
 

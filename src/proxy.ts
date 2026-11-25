@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server.js";
 import type { CookieJar, CookieOptions } from "./repositories/ports/index.ts";
-import { canOpen, grantFor, REFUSED_PATH } from "./constants/access.ts";
+import { canOpen, grantFor, REFUSED_PATH, resolves } from "./constants/access.ts";
 import { PATH_HEADER, deploymentMode, unsafeConfiguration } from "./composition/mode.ts";
 import { publicViewer } from "./composition/viewer.ts";
 import type { ViewerContext } from "./services/spatial/viewer.ts";
+import { DASHBOARD } from "./constants/views.ts";
 
 /* ==========================================================
    THE ROUTES A VIEWER MAY OPEN (ADR 0018, ADR 0020)
@@ -15,7 +16,12 @@ import type { ViewerContext } from "./services/spatial/viewer.ts";
    grant (constants/access.ts), so a viewer is refused only at an
    address they were never shown.
 
-   THE PUBLIC DEMONSTRATION holds everything, so nothing is refused.
+   An address that is no screen of the View catalogue (views.ts) is
+   opened to no one: it is answered "not found" (NOT_A_SCREEN), so a
+   page the catalogue does not know is never served (NAV-B, default
+   deny).
+
+   THE PUBLIC DEMONSTRATION holds everything, so nothing else is refused.
 
    A TENANT DEPLOYMENT (Phase 8A) asks, on every request but the
    sign-in pages and public reference files:
@@ -32,9 +38,15 @@ import type { ViewerContext } from "./services/spatial/viewer.ts";
    A deployment configured unsafely (mode.ts) answers 503 to all.
 ========================================================== */
 
+/** No route answers here: an address rewritten to it is answered with the not-found page and 404. */
+export const NOT_A_SCREEN = "/_gridintel/not-a-screen";
+
+const notAScreen = (request: NextRequest) => NextResponse.rewrite(new URL(NOT_A_SCREEN, request.url));
+
 /** The check, for a given way of knowing who is looking. */
 export function accessProxy(viewerOf: (request: NextRequest) => ViewerContext) {
   return function check(request: NextRequest): NextResponse {
+    if (!resolves(request.nextUrl.pathname)) return notAScreen(request);
     if (canOpen(viewerOf(request).screens, request.nextUrl.pathname)) return NextResponse.next();
     return NextResponse.rewrite(new URL(REFUSED_PATH, request.url), { status: 403 });
   };
@@ -82,6 +94,7 @@ async function tenant(request: NextRequest): Promise<NextResponse> {
     return finish(NextResponse.redirect(new URL("/login/verify", request.url)));
   }
 
+  if (!resolves(path)) return finish(api ? NextResponse.json({ error: "Not found." }, { status: 404 }) : notAScreen(request));
   const grant = hint.organizationId === null ? { kind: "listed" as const, keys: [] } : grantFor(hint.sectors, hint.screens, hint.administrator);
   if (!canOpen(grant, path)) {
     if (api) return finish(NextResponse.json({ error: "Not open to you." }, { status: 403 }));
@@ -99,7 +112,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     console.error(`[gridintel] refusing to serve: ${problem}`);
     return new NextResponse("This deployment is not configured safely, so it serves nothing.", { status: 503 });
   }
-  if (deploymentMode() === "demo") return request.nextUrl.pathname.startsWith("/dashboard") ? demo(request) : NextResponse.next();
+  if (deploymentMode() === "demo") return (request.nextUrl.pathname === DASHBOARD || request.nextUrl.pathname.startsWith(`${DASHBOARD}/`)) ? demo(request) : NextResponse.next();
   return tenant(request);
 }
 

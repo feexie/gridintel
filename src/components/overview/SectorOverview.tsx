@@ -5,19 +5,20 @@ import { AttentionList, workspaceHref } from "@/components/system/Attention";
 import { KeyFold, PlannedTag, SectorBand } from "@/components/system/Brand";
 import { MetricTile, Panel } from "@/components/system/Metric";
 import { LossSplit, SiteMix } from "@/components/system/Visuals";
+import { hrefOf } from "@/constants/views";
 
 /* A sector's Overview: "what needs attention here?" in a few lines, with links in. Every sector
    has the same screen: the lines, a small visual of how the sector stands, and the ways in (its
    GIS Map, its workspaces, its assistant). Everything is laid out from the read model; nothing
    is found, ranked or calculated here. */
 
-function WaysIn({ view, home }: { view: SectorOverviewView; home: string }) {
+function WaysIn({ view, sector }: { view: SectorOverviewView; sector: "utility" | "minigrid" }) {
   return (
     <Panel title="Go to">
       <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" data-ways-in>
         {view.waysIn?.map === false ? null : (
           <li>
-            <Link href={`${home}/map`} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
+            <Link href={hrefOf(`${sector}.map`)} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
               <span className="text-sm font-semibold text-link">GIS Map</span>
               <span className="mt-0.5 block text-caption leading-snug text-ink-4">This sector on the map, with what is wrong on it now.</span>
             </Link>
@@ -33,7 +34,7 @@ function WaysIn({ view, home }: { view: SectorOverviewView; home: string }) {
         ))}
         {view.waysIn?.assistant === false ? null : (
           <li>
-            <Link href={`${home}/ai`} className="gi-tap block rounded-tile border border-dashed border-line-strong px-3 py-2 hover:border-brand">
+            <Link href={hrefOf(`${sector}.ai`)} className="gi-tap block rounded-tile border border-dashed border-line-strong px-3 py-2 hover:border-brand">
               <span className="flex items-center gap-2 text-sm font-semibold text-ink-3">
                 AI Assistant <PlannedTag />
               </span>
@@ -46,7 +47,7 @@ function WaysIn({ view, home }: { view: SectorOverviewView; home: string }) {
   );
 }
 
-function Frame({ view, home, lead, visual }: { view: SectorOverviewView; home: string; lead: string; visual: ReactNode }) {
+function Frame({ view, sector, lead, visual }: { view: SectorOverviewView; sector: "utility" | "minigrid"; lead: string; visual: ReactNode }) {
   return (
     <div className="space-y-4" data-overview={view.sector}>
       <SectorBand eyebrow={view.title} title="Overview">
@@ -68,18 +69,18 @@ function Frame({ view, home, lead, visual }: { view: SectorOverviewView; home: s
         <div className="space-y-4">{visual}</div>
       </div>
 
-      <WaysIn view={view} home={home} />
+      <WaysIn view={view} sector={sector} />
       <KeyFold />
       <p className="text-micro text-ink-5">Data sources: {view.sourcing.sources.map((source) => `${source.name} [${source.kind}]`).join("; ") || "none"}</p>
     </div>
   );
 }
 
-export function UtilityOverview({ view, home }: { view: UtilityOverviewView; home: string }) {
+export function UtilityOverview({ view }: { view: UtilityOverviewView }) {
   return (
     <Frame
       view={view}
-      home={home}
+      sector="utility"
       lead="what needs attention on the network, and where to go for it."
       visual={
         <Panel title="Where energy and money are lost" aside="From the Executive workspace">
@@ -90,11 +91,11 @@ export function UtilityOverview({ view, home }: { view: UtilityOverviewView; hom
   );
 }
 
-export function MinigridOverview({ view, home }: { view: MinigridOverviewView; home: string }) {
+export function MinigridOverview({ view }: { view: MinigridOverviewView }) {
   return (
     <Frame
       view={view}
-      home={home}
+      sector="minigrid"
       lead="what needs attention across the sites, and whether their reports match the records."
       visual={
         <Panel title="Generation mix by site" aside="From the Sites workspace">

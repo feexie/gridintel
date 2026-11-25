@@ -7,6 +7,7 @@ import { MetricCell, MetricTile, OriginTag, Panel } from "@/components/system/Me
 import { SEVERITY_STYLE } from "@/components/system/Panels";
 import { HeadRow, Note, Row, Table, Td, Th } from "@/components/system/Table";
 import { WORKSPACE_HREF, formatNumber, fullListHref, levelHref } from "@/components/system/format";
+import { hrefOf } from "@/constants/views";
 
 const SOURCE_ALARM_WORDS = { agrees: "a source alarm agrees", none_raised: "no source alarm was raised", cannot_tell: "whether a source alarm was raised cannot be told" };
 
@@ -213,7 +214,7 @@ export function Assets({ view }: { view: AssetsWorkspaceView }) {
         {view.alarmsElsewhere > 0 ? (
           <Note>
             {formatNumber(view.alarmsElsewhere)} standing alarm(s) name a substation as a whole or something not in the registry, not one of these assets; they are on the{" "}
-            <Link href="/dashboard/utility/events" className="text-link hover:underline">
+            <Link href={hrefOf("utility.events")} className="text-link hover:underline">
               Events / Alarms
             </Link>{" "}
             screen.

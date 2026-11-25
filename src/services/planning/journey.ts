@@ -4,6 +4,7 @@ import { MARKETPLACE_REFERENCE, monthsToRepay, monthsToRepayWithReturn, repaymen
 import { BAND_LABEL, MARKETPLACE_PATH, marketplaceMatch } from "./marketplace.ts";
 import { DISCO_NAMES, formatNaira } from "./metering.ts";
 import type { JourneyView } from "./views.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: ONE METER'S JOURNEY
@@ -14,9 +15,9 @@ import type { JourneyView } from "./views.ts";
    household, its dates and its recharges are designed records.
 ========================================================== */
 
-export const JOURNEY_PATH = "/dashboard/planning/metering/journey";
-const FUND_PATH = "/dashboard/planning/metering";
-const MONITORING_PATH = "/dashboard/planning/metering/monitoring";
+export const JOURNEY_PATH = hrefOf("initiative.journey");
+const FUND_PATH = hrefOf("finance.metering-fund");
+const MONITORING_PATH = hrefOf("oversight.monitoring");
 
 const day = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 

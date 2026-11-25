@@ -7,6 +7,7 @@ import { admitsRead, canOpen, grantFor, holdsSector, homeFor, keyFor, navigation
 import { departmentOf, departmentsFor } from "./departments.ts";
 import { PEOPLE_KEY, PEOPLE_PATH } from "./navigation.ts";
 import { REPORTS, sectors } from "./navigation.ts";
+import { viewOf } from "./views.ts";
 
 const EVERYTHING: ScreenGrant = { kind: "everything" };
 /** A viewer allowed only Utility > Revenue. */
@@ -47,21 +48,22 @@ const ROUTES = [
 const shape = (navigation: ReturnType<typeof navigationFor>) => navigation.map((sector) => ({ sector: sector.id, home: sector.home, items: [...sector.opening, ...sector.workspaces].map((item) => item.label) }));
 
 describe("which screens a viewer may open", () => {
-  it("gives every sector and every screen its own permission key", () => {
-    const keys = sectors.flatMap((sector) => [sector.id, ...[...sector.opening, ...sector.workspaces].map((item) => item.key)]);
+  it("gives every screen its own permission key, its View ID, in its sector's domain", () => {
+    const keys = sectors.flatMap((sector) => [...sector.opening, ...sector.workspaces].map((item) => item.key));
     assert.equal(new Set(keys).size, keys.length);
-    for (const sector of sectors) for (const item of [...sector.opening, ...sector.workspaces]) assert.ok(item.key.startsWith(`${sector.id}.`), item.key);
+    for (const sector of sectors) for (const item of [...sector.opening, ...sector.workspaces]) assert.equal(viewOf(item.key).domain, sector.id, item.key);
     assert.equal(keyFor("/dashboard/utility/operations/feeders/FD-OLD"), "utility.operations");
     assert.equal(keyFor("/dashboard/minigrid/sites/MG-DRY"), "minigrid.sites");
     assert.equal(keyFor("/dashboard/utility"), "utility.overview");
-    assert.equal(keyFor("/dashboard/utility/no-such-screen"), "utility");
+    assert.equal(keyFor("/dashboard/utility/no-such-screen"), null);
     assert.equal(keyFor("/dashboard/reports"), "platform.reports");
     assert.equal(keyFor("/dashboard/utility/reports/reliability/2026-09/data.csv"), "utility.reports.reliability");
     assert.equal(keyFor("/dashboard/utility/reports"), "utility.reports");
-    assert.equal(keyFor(REFUSED_PATH), null);
-    assert.equal(keyFor("/dashboard/planning"), "planning.overview");
-    assert.equal(keyFor("/dashboard/planning/metering"), "planning.metering");
-    assert.equal(keyFor("/dashboard/planning/e-mobility"), "planning.e-mobility");
+    assert.equal(keyFor(REFUSED_PATH), "platform.refused");
+    assert.equal(keyFor("/dashboard/planning"), "plan.overview");
+    assert.equal(keyFor("/dashboard/planning/metering"), "finance.metering-fund");
+    assert.equal(keyFor("/dashboard/planning/metering/allocation"), "plan.metering-allocation");
+    assert.equal(keyFor("/dashboard/planning/e-mobility"), "plan.charging-hubs");
   });
 
   it("opens everything to the public demonstration, whose menu is the whole catalogue", () => {
@@ -159,11 +161,19 @@ describe("which screens a viewer may open", () => {
 describe("a member's grant (Phase 8A, ADR 0020)", () => {
   it("holds every screen of the organization's sectors and the platform's when the membership lists none", () => {
     const grant = grantFor(["utility"], null, false);
-    assert.deepEqual(grant, { kind: "listed", keys: ["platform", "utility"] });
+    assert.ok(grant.kind === "listed");
+    // The platform's screens (the old key "platform", translated), the whole utility domain, and a
+    // Utility organization's default planning domain (Founder, 25 November 2026).
+    assert.deepEqual(grant.keys.slice(0, 4), ["platform.overview", "platform.people", "platform.home", "utility"]);
+    assert.ok(grant.keys.includes("plan.metering-allocation") && grant.keys.includes("finance.metering-fund"));
     assert.equal(canOpen(grant, "/dashboard/utility/revenue"), true);
+    assert.equal(canOpen(grant, "/dashboard/planning/metering/allocation"), true);
     assert.equal(canOpen(grant, "/dashboard/minigrid/sites"), false);
     assert.equal(holdsSector(grant, "utility"), true);
+    assert.equal(holdsSector(grant, "planning"), true);
     assert.equal(holdsSector(grant, "minigrid"), false);
+    // A mini-grid operator holds no planning by default.
+    assert.equal(holdsSector(grantFor(["minigrid"], null, false), "planning"), false);
   });
 
   it("drops a key of a sector the organization does not hold, whatever the membership says", () => {

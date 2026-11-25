@@ -4,6 +4,7 @@ import { POSITIONING_LINE } from "../../constants/planning.ts";
 import { investmentProfile, investorOutcome, METERING_FUND_REFERENCE, meteringPace, runMeteringFund, shortfallAtCharge, sizeCharge, type FundRun, type InvestmentProfile, type InvestorOutcome, type MeteringFundInputs, type PriceShock } from "../../analytics/planning/meteringFund.ts";
 import { ASSUMPTIONS, BANDS, MITIGATIONS, readAssumptions, type Assumptions, type AssumptionUnit, type CaseId } from "./assumptions.ts";
 import type { BandView, CitationView, FigureOrigin, InvestmentView, InvestorView, MeteringFundView, ShownFigure, StressRowView, StructureView, YearRowView } from "./views.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: THE METERING FUND
@@ -16,7 +17,7 @@ import type { BandView, CitationView, FigureOrigin, InvestmentView, InvestorView
    from.
 ========================================================== */
 
-export const METERING_FUND_PATH = "/dashboard/planning/metering";
+export const METERING_FUND_PATH = hrefOf("finance.metering-fund");
 
 export const DISCO_NAMES: Record<DiscoId, string> = {
   abuja: "Abuja",

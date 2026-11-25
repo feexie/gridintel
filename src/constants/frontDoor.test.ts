@@ -132,7 +132,7 @@ describe("the slimmed rail (ADR 0021)", () => {
   });
 
   it("points every view that has a page today at a dashboard address", () => {
-    for (const view of VIEWS) if (view.current !== null) assert.match(view.current, /^\/dashboard(\/|$)/, view.id);
+    for (const view of VIEWS) if (view.address !== null) assert.match(view.address, /^\/dashboard(\/|$)/, view.id);
   });
 
   it("keeps reports inside the dashboard, never on a public address", () => {

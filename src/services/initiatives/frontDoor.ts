@@ -136,7 +136,7 @@ export function workspaceFrame(workspaceId: string, workspaces: readonly Workspa
 
 function link(id: ViewId): ViewLinkView {
   const view = viewOf(id);
-  return { id: view.id, label: view.label, question: view.question, href: view.current, planned: view.planned === true };
+  return { id: view.id, label: view.label, question: view.question, href: view.address, planned: view.planned === true };
 }
 
 /** A workspace's Home: the initiatives its type takes part in. */

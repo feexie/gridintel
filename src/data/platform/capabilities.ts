@@ -6,7 +6,7 @@ export const platformCapabilities: PlatformCapability[] = [
     title: "Utility Intelligence",
     image: "/images/platform/utility.jpg",
     imageModern: "/images/platform/utility.webp",
-    href: "/dashboard/utility",
+    view: "utility.overview",
     description:
       "Executive dashboards, operations management, asset intelligence, reliability analytics, outage management, revenue operations, and AI-assisted utility decision support.",
   },
@@ -15,7 +15,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "der",
     title: "DER Intelligence",
     image: "/images/platform/der.jpg",
-    href: "/dashboard/der",
+    view: "der.overview",
     description:
       "Distributed energy resource monitoring, battery management, renewable asset analytics, forecasting, and portfolio intelligence.",
   },
@@ -24,7 +24,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "minigrid",
     title: "MiniGrid Intelligence",
     image: "/images/platform/minigrid.jpg",
-    href: "/dashboard/minigrid",
+    view: "minigrid.overview",
     description:
       "Mini-grid operations, customer management, commercial performance, asset monitoring, and portfolio oversight.",
   },
@@ -33,7 +33,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "planning",
     title: "Planning Intelligence",
     image: "/images/platform/planning.jpg",
-    href: "/dashboard/planning",
+    view: "plan.overview",
     description:
       "Network planning, electrification planning, demand forecasting, investment prioritization, and scenario modelling.",
   },
@@ -42,7 +42,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "gis",
     title: "GIS Intelligence",
     image: "/images/platform/gis.jpg",
-    href: "/dashboard/map",
+    view: "platform.overview",
     description:
       "Spatial intelligence, digital network mapping, geospatial visualization, routing, and asset location services.",
   },
@@ -51,7 +51,7 @@ export const platformCapabilities: PlatformCapability[] = [
     id: "ai",
     title: "AI Intelligence",
     image: "/images/platform/ai.jpg",
-    href: "/dashboard/intelligence/ai",
+    view: "platform.intelligence-ai",
     description:
       "Predictive maintenance, anomaly detection, intelligent recommendations, outage prediction, and operational decision support.",
   },

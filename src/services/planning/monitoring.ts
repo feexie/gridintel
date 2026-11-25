@@ -6,6 +6,7 @@ import { recommendedSplit, startingCostPerMeter } from "./allocation.ts";
 import { readAssumptions } from "./assumptions.ts";
 import { DISCO_NAMES, formatCount, formatNaira } from "./metering.ts";
 import type { MonitoringRowView, MonitoringView, ShownFigure } from "./views.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: MONITORING THE METERING PROGRAMME (M4)
@@ -18,7 +19,7 @@ import type { MonitoringRowView, MonitoringView, ShownFigure } from "./views.ts"
    marked so.
 ========================================================== */
 
-export const MONITORING_PATH = "/dashboard/planning/metering/monitoring";
+export const MONITORING_PATH = hrefOf("oversight.monitoring");
 
 /** The programme's first four quarters: July 2026 to June 2027, year 1 of the Metering Fund's Nigeria case. */
 export const PROGRAMME_QUARTERS = [

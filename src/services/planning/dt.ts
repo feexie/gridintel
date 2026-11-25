@@ -8,6 +8,7 @@ import { loadTopology } from "../analytics/topology.ts";
 import { startingCostPerMeter } from "./allocation.ts";
 import { formatCount, formatNaira } from "./metering.ts";
 import type { DtSequencingView, ShownFigure } from "./views.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: DT SEQUENCING INSIDE ONE DISCO (M4)
@@ -20,7 +21,7 @@ import type { DtSequencingView, ShownFigure } from "./views.ts";
    Every figure rests on synthetic records and is marked so.
 ========================================================== */
 
-export const DT_SEQUENCING_PATH = "/dashboard/planning/metering/dt";
+export const DT_SEQUENCING_PATH = hrefOf("plan.dt-sequencing");
 
 type Query = Record<string, string | string[] | undefined>;
 

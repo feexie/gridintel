@@ -2,10 +2,11 @@ import Link from "next/link";
 import type { MapView } from "@/services/spatial/views";
 import { Panel } from "@/components/system/Metric";
 import { NetworkMap } from "./NetworkMap";
+import { hrefOf } from "@/constants/views";
 
 const SECTOR_MAP = {
-  utility: { href: "/dashboard/utility/map", label: "Open the Utility GIS Map" },
-  minigrid: { href: "/dashboard/minigrid/map", label: "Open the Mini-grid GIS Map" },
+  utility: { href: hrefOf("utility.map"), label: "Open the Utility GIS Map" },
+  minigrid: { href: hrefOf("minigrid.map"), label: "Open the Mini-grid GIS Map" },
 };
 
 /** The shared map inside another screen: the same component, smaller, on the part of the network that screen is about. */

@@ -1,9 +1,9 @@
 import { AssistantPlanned } from "@/components/ai/AssistantPlanned";
-import { MINIGRID_HOME } from "@/constants/navigation";
+import { hrefOf } from "@/constants/views";
 
 /* Mini-grid's AI Assistant: planned, not built (ADR 0017). The page holds no data and no figure. */
 export default function MinigridAssistantPage() {
-  const sites = { label: "Sites", href: `${MINIGRID_HOME}/sites` };
+  const sites = { label: "Sites", href: hrefOf("minigrid.sites") };
   return (
     <AssistantPlanned
       sector="Mini-grid Intelligence"

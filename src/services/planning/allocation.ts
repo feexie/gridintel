@@ -5,6 +5,7 @@ import { installedCostAtStart } from "../../analytics/planning/meteringFund.ts";
 import { readAssumptions } from "./assumptions.ts";
 import { DISCO_NAMES, formatCount, formatNaira } from "./metering.ts";
 import type { AllocationView, CitationView, ShownFigure } from "./views.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: DISCO ALLOCATION (M3)
@@ -16,7 +17,7 @@ import type { AllocationView, CitationView, ShownFigure } from "./views.ts";
    address, and says where each figure came from.
 ========================================================== */
 
-export const ALLOCATION_PATH = "/dashboard/planning/metering/allocation";
+export const ALLOCATION_PATH = hrefOf("plan.metering-allocation");
 
 const DISCOS = Object.keys(DISCO_NAMES) as DiscoId[];
 

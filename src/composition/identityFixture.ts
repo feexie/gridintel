@@ -36,6 +36,8 @@ export const TEST_PEOPLE = {
     screens: ["utility.overview", "utility.map", "utility.revenue"],
   },
   minigridAdmin: { email: "admin@minigrid.test", password: TEST_PASSWORD, totpSecret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", organizationId: MINIGRID_ORGANIZATION_ID, role: "admin", screens: null },
+  // A member whose membership lists no screen (NAV-B safeguard A): opens only what every viewer may.
+  discoNone: { email: "none@disco.test", password: TEST_PASSWORD, totpSecret: "MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43U", organizationId: DEMO_ORGANIZATION_ID, role: "member", screens: [] },
   // Signed up, with no authenticator app yet: asked to enrol one at sign-in.
   discoNew: { email: "new@disco.test", password: TEST_PASSWORD, organizationId: DEMO_ORGANIZATION_ID, role: "member", screens: null },
 } as const satisfies Record<string, SeededPerson>;

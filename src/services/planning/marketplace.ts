@@ -7,6 +7,7 @@ import { startingCostPerMeter } from "./allocation.ts";
 import { readAssumptions } from "./assumptions.ts";
 import { DISCO_NAMES, formatCount, formatNaira, typicalBandBills } from "./metering.ts";
 import type { MarketplaceView, ShownFigure } from "./views.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — PLANNING: THE METERING MARKETPLACE
@@ -18,7 +19,7 @@ import type { MarketplaceView, ShownFigure } from "./views.ts";
    labelled.
 ========================================================== */
 
-export const MARKETPLACE_PATH = "/dashboard/planning/metering/marketplace";
+export const MARKETPLACE_PATH = hrefOf("finance.marketplace");
 
 /** Three-phase meter hardware, in dollars: an assumption (single-phase is the Metering Fund's $45). */
 export const THREE_PHASE_HARDWARE_USD = 110;

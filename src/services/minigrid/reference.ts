@@ -18,6 +18,7 @@ import type {
   ReferenceTariffView,
   ReferenceYearView,
 } from "./referenceViews.ts";
+import { hrefOf } from "../../constants/views.ts";
 
 /* ==========================================================
    SERVICES — REFERENCE SITES (Phase MG-REAL)
@@ -38,7 +39,7 @@ import type {
    Customer and meter codes are counted, never shown.
 ========================================================== */
 
-export const REFERENCE_SITE_PATH = "/dashboard/minigrid/sites/reference";
+export const REFERENCE_SITE_PATH = hrefOf("minigrid.sites", "reference");
 
 const NOT_CLAIMED = [
   "No revenue, collection rate or price per kWh: the payments are credit bought through agents, not the value of energy used, only part of the meters report, and the tariff dates are approximate.",

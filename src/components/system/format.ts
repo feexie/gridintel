@@ -1,8 +1,9 @@
 import type { DisplayOrigin, DisplayStatus, LevelKind, MetricView } from "@/services/operations/views";
+import { hrefOf } from "@/constants/views";
 
 /* Presentation only: how values, statuses and links are written on screen. */
 
-const BASE = "/dashboard/utility/operations";
+const BASE = hrefOf("utility.operations");
 
 const SEGMENT: Record<LevelKind, string> = {
   region: "regions",
@@ -13,7 +14,7 @@ const SEGMENT: Record<LevelKind, string> = {
 };
 
 export function levelHref(kind: LevelKind, id: string): string {
-  return `${BASE}/${SEGMENT[kind]}/${encodeURIComponent(id)}`;
+  return hrefOf("utility.operations", SEGMENT[kind], id);
 }
 
 export const OPERATIONS_HOME = BASE;
@@ -24,9 +25,9 @@ export function fullListHref(href: string): string {
 }
 
 export const WORKSPACE_HREF = {
-  executive: "/dashboard/utility/executive",
-  revenue: "/dashboard/utility/revenue",
-  assets: "/dashboard/utility/assets",
+  executive: hrefOf("utility.executive"),
+  revenue: hrefOf("utility.revenue"),
+  assets: hrefOf("utility.assets"),
 };
 
 export const LEVEL_NAME: Record<LevelKind, string> = {

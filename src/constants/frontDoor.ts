@@ -3,7 +3,7 @@
 
    Phase NAV-A: the public layer and the demo workspaces live under
    /preview, on the public demonstration only. Nothing here replaces
-   "/" or "/dashboard".
+   "/" or the dashboard.
 
    Where a role is sent is decided here and nowhere else:
    - a public role goes straight to its public view;
