@@ -74,7 +74,7 @@ describe("the View catalogue: route resolution", () => {
   it("resolves an address below a view to it, unless the view is exact; the most specific view wins", () => {
     assert.equal(viewAt("/dashboard/intelligence/utility/operations/feeders/FD-OLD")?.id, "utility.operations");
     assert.equal(viewAt("/dashboard/intelligence/minigrid/sites/reference/rmg01")?.id, "minigrid.sites");
-    assert.equal(viewAt("/dashboard/utility/reports/reliability/2026-09/data.csv")?.id, "utility.reports.reliability");
+    assert.equal(viewAt("/dashboard/reports/utility/reliability/2026-09/data.csv")?.id, "utility.reports.reliability");
     assert.equal(viewAt("/dashboard/plan/metering-allocation")?.id, "plan.metering-allocation");
     assert.equal(viewAt("/dashboard/finance/metering-fund")?.id, "finance.metering-fund");
     assert.equal(viewAt("/dashboard/intelligence/utility/")?.id, "utility.overview");

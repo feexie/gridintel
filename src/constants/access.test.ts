@@ -32,11 +32,11 @@ const ROUTES = [
   "/dashboard/intelligence/minigrid/ai",
   "/dashboard/intelligence/minigrid/sites",
   "/dashboard/intelligence/minigrid/sites/MG-DRY",
-  "/dashboard/utility/reports",
-  "/dashboard/utility/reports/reliability/2026-09",
-  "/dashboard/utility/reports/reliability/2026-09/data.csv",
-  "/dashboard/minigrid/reports",
-  "/dashboard/minigrid/reports/compliance/2026-09-14",
+  "/dashboard/reports/utility",
+  "/dashboard/reports/utility/reliability/2026-09",
+  "/dashboard/reports/utility/reliability/2026-09/data.csv",
+  "/dashboard/reports/minigrid",
+  "/dashboard/reports/minigrid/compliance/2026-09-14",
   "/dashboard/intelligence/der",
   "/dashboard/plan",
   "/dashboard/finance/metering-fund",
@@ -57,8 +57,8 @@ describe("which screens a viewer may open", () => {
     assert.equal(keyFor("/dashboard/intelligence/utility"), "utility.overview");
     assert.equal(keyFor("/dashboard/intelligence/utility/no-such-screen"), null);
     assert.equal(keyFor("/dashboard/reports"), "platform.reports");
-    assert.equal(keyFor("/dashboard/utility/reports/reliability/2026-09/data.csv"), "utility.reports.reliability");
-    assert.equal(keyFor("/dashboard/utility/reports"), "utility.reports");
+    assert.equal(keyFor("/dashboard/reports/utility/reliability/2026-09/data.csv"), "utility.reports.reliability");
+    assert.equal(keyFor("/dashboard/reports/utility"), "utility.reports");
     assert.equal(keyFor(REFUSED_PATH), "platform.refused");
     assert.equal(keyFor("/dashboard/plan"), "plan.overview");
     assert.equal(keyFor("/dashboard/finance/metering-fund"), "finance.metering-fund");
@@ -98,8 +98,8 @@ describe("which screens a viewer may open", () => {
       "/dashboard/intelligence/minigrid/ai",
       "/dashboard/intelligence/minigrid/sites",
       "/dashboard/intelligence/minigrid/sites/MG-DRY",
-      "/dashboard/minigrid/reports",
-      "/dashboard/minigrid/reports/compliance/2026-09-14",
+      "/dashboard/reports/minigrid",
+      "/dashboard/reports/minigrid/compliance/2026-09-14",
       "/dashboard/reports",
     ]);
     const none: ScreenGrant = { kind: "listed", keys: [] };
@@ -116,31 +116,31 @@ describe("which screens a viewer may open", () => {
 
   it("shows a regulator given only the reliability report that report, under Utility > Reports, and refuses everything else", () => {
     const regulator: ScreenGrant = { kind: "listed", keys: ["utility.reports.reliability"] };
-    assert.deepEqual(shape(navigationFor(regulator)), [{ sector: "utility", home: "/dashboard/utility/reports", items: ["Reports"] }]);
+    assert.deepEqual(shape(navigationFor(regulator)), [{ sector: "utility", home: "/dashboard/reports/utility", items: ["Reports"] }]);
     assert.deepEqual(reportsFor(regulator).map((report) => report.key), ["utility.reports.reliability"]);
     assert.deepEqual(ROUTES.filter((route) => canOpen(regulator, route)), [
-      "/dashboard/utility/reports",
-      "/dashboard/utility/reports/reliability/2026-09",
-      "/dashboard/utility/reports/reliability/2026-09/data.csv",
+      "/dashboard/reports/utility",
+      "/dashboard/reports/utility/reliability/2026-09",
+      "/dashboard/reports/utility/reliability/2026-09/data.csv",
       "/dashboard/reports",
     ]);
     // Another report of the same sector stays closed to them.
-    assert.equal(canOpen(regulator, "/dashboard/utility/reports/operations"), false);
+    assert.equal(canOpen(regulator, "/dashboard/reports/utility/operations"), false);
   });
 
   it("shows a mini-grid regulator or funder given only the compliance report that report and nothing of the utility's", () => {
     const funder: ScreenGrant = { kind: "listed", keys: ["minigrid.reports.compliance"] };
-    assert.deepEqual(shape(navigationFor(funder)), [{ sector: "minigrid", home: "/dashboard/minigrid/reports", items: ["Reports"] }]);
+    assert.deepEqual(shape(navigationFor(funder)), [{ sector: "minigrid", home: "/dashboard/reports/minigrid", items: ["Reports"] }]);
     assert.deepEqual(reportsFor(funder).map((report) => report.key), ["minigrid.reports.compliance"]);
-    assert.equal(canOpen(funder, "/dashboard/utility/reports/reliability/2026-09"), false);
+    assert.equal(canOpen(funder, "/dashboard/reports/utility/reliability/2026-09"), false);
     assert.equal(canOpen(funder, "/dashboard/intelligence/minigrid/sites"), false);
   });
 
   it("opens every report of a sector with its Reports key, and the list of all reports to anyone who may open one", () => {
     const management: ScreenGrant = { kind: "listed", keys: ["utility.reports"] };
     assert.deepEqual(reportsFor(management).map((report) => report.id), ["reliability", "operations", "daily-brief"]);
-    assert.equal(canOpen(management, "/dashboard/utility/reports/reliability/2026-09"), true);
-    assert.equal(canOpen(management, "/dashboard/minigrid/reports"), false);
+    assert.equal(canOpen(management, "/dashboard/reports/utility/reliability/2026-09"), true);
+    assert.equal(canOpen(management, "/dashboard/reports/minigrid"), false);
     assert.equal(canOpen(REVENUE_ONLY, "/dashboard/reports"), false);
     assert.equal(canOpen(management, "/dashboard/reports"), true);
   });
@@ -168,7 +168,7 @@ describe("a member's grant (Phase 8A, ADR 0020)", () => {
     assert.equal(canOpen(grant, "/dashboard/plan/metering-allocation"), true);
     assert.equal(canOpen(grant, "/dashboard/plan/unserved"), false, "a mini-grid planner stays with its own type");
     assert.equal(canOpen(grant, "/dashboard/oversight/monitoring"), false, "Oversight is a regulator's");
-    assert.equal(canOpen(grant, "/dashboard/settings/people"), false, "People is an administrator's only");
+    assert.equal(canOpen(grant, "/dashboard/account/people"), false, "People is an administrator's only");
     assert.equal(canOpen(grant, "/dashboard/intelligence/minigrid/sites"), false);
     assert.equal(holdsSector(grant, "utility"), true);
     assert.equal(holdsSector(grant, "planning"), true);
@@ -191,7 +191,7 @@ describe("a member's grant (Phase 8A, ADR 0020)", () => {
     const grant = grantFor(["minigrid"], ["minigrid.sites", "utility", "utility.revenue", "platform.reports"], false);
     assert.deepEqual(grant, { kind: "listed", keys: ["minigrid.sites", "platform.reports"] });
     assert.equal(holdsSector(grant, "utility"), false);
-    for (const path of ["/dashboard/intelligence/utility", "/dashboard/intelligence/utility/revenue", "/dashboard/utility/reports/operations/2026-09/data.csv"]) assert.equal(canOpen(grant, path), false, path);
+    for (const path of ["/dashboard/intelligence/utility", "/dashboard/intelligence/utility/revenue", "/dashboard/reports/utility/operations/2026-09/data.csv"]) assert.equal(canOpen(grant, path), false, path);
   });
 
   it("gives the people screen to an administrator only, and no membership can list it for itself", () => {

@@ -1,3 +1,3 @@
-import { reportsIndex } from "../../reportRoutes";
+import { reportsIndex } from "@/app/dashboard/reportRoutes";
 
 export default reportsIndex("utility", "Reports", "Utility Intelligence");

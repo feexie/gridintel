@@ -138,8 +138,8 @@ export type View = {
 const INTELLIGENCE = `${DASHBOARD}/intelligence`;
 const UTILITY = `${INTELLIGENCE}/utility`;
 const MINIGRID = `${INTELLIGENCE}/minigrid`;
-/** Where each domain's reports are until NAV-B step 4 moves them under /dashboard/reports. */
-const REPORTS_OF = (sector: "utility" | "minigrid") => `${DASHBOARD}/${sector}/reports`;
+/** Each domain's reports, under Reports at the foot of the rail (NAV-B step 4). */
+const REPORTS_OF = (sector: "utility" | "minigrid") => `${DASHBOARD}/reports/${sector}`;
 /** Plan, Finance and Oversight, by rail item (NAV-B step 3). */
 const PLAN = `${DASHBOARD}/plan`;
 const FINANCE = `${DASHBOARD}/finance`;
@@ -193,7 +193,7 @@ export const VIEWS: readonly View[] = [
   { id: "platform.overview", label: "Platform overview", question: "What does GridIntel show, across every sector?", domain: "platform", address: DASHBOARD, exact: true, permission: "own", menu: { sector: "platform", section: "opening", label: "Overview" } },
   { id: "platform.home", label: "Home", question: "What am I working on?", domain: "platform", address: null, exact: true, permission: "own", planned: true },
   { id: "platform.reports", label: "Reports", question: "Which reports can I download, for which period?", domain: "platform", address: `${DASHBOARD}/reports`, exact: true, permission: "own" },
-  { id: "platform.people", label: "People", question: "Who may sign in, and what may each open?", domain: "platform", address: `${DASHBOARD}/settings/people`, permission: "own" },
+  { id: "platform.people", label: "People", question: "Who may sign in, and what may each open?", domain: "platform", address: `${DASHBOARD}/account/people`, permission: "own" },
   { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${DASHBOARD}/about-this-build`, permission: "viewer", inSector: "planning", metering: { id: "about", step: "", label: "About this build" } },
   { id: "platform.refused", label: "Not open to you", question: "This screen is not open to you.", domain: "platform", address: `${DASHBOARD}/refused`, exact: true, permission: "viewer" },
   // Phase 1 placeholders with no link to them; removed in NAV-B step 5 (Founder, 10 November 2026).

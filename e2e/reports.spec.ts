@@ -5,18 +5,18 @@ import { expect, test } from "@playwright/test";
    a period the data does not cover says so and holds no figure; each report carries its ID,
    the time its figures were computed, its period, methodologies and data fingerprint. */
 
-const RELIABILITY = "/dashboard/utility/reports/reliability";
-const COMPLIANCE = "/dashboard/minigrid/reports/compliance";
-const OPERATIONS = "/dashboard/utility/reports/operations";
-const DAILY = "/dashboard/utility/reports/daily-brief";
-const PERFORMANCE = "/dashboard/minigrid/reports/site-performance";
+const RELIABILITY = "/dashboard/reports/utility/reliability";
+const COMPLIANCE = "/dashboard/reports/minigrid/compliance";
+const OPERATIONS = "/dashboard/reports/utility/operations";
+const DAILY = "/dashboard/reports/utility/daily-brief";
+const PERFORMANCE = "/dashboard/reports/minigrid/site-performance";
 const LABEL = "SAMPLE: SYNTHETIC DATA";
 
 /** The number of pages of a PDF, from its page tree. */
 const pageCount = (pdf: Buffer) => Math.max(...[...pdf.toString("latin1").matchAll(/\/Count (\d+)/g)].map((match) => Number(match[1])));
 
 test("a sector's Reports screen lists its reports, and a report opens on the month", async ({ page }) => {
-  await page.goto("/dashboard/utility/reports");
+  await page.goto("/dashboard/reports/utility");
   await expect(page.locator("[data-report]")).toHaveCount(3);
   await expect(page.locator('[data-report="daily-brief"]').getByRole("link", { name: "Open the report" })).toHaveAttribute("href", `${DAILY}/2026-09-30`);
   await expect(page.locator('[data-report="operations"]').getByRole("link", { name: "Open the report" })).toHaveAttribute("href", `${OPERATIONS}/2026-09`);
@@ -132,7 +132,7 @@ test("on a report's page the data bar names the report's own period, never the p
     await expect(bar, route).not.toContainText("Reporting period");
   }
   // The Reports screen itself is not a report: it keeps the platform's period.
-  await page.goto("/dashboard/utility/reports");
+  await page.goto("/dashboard/reports/utility");
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("Reporting period1 Sep 2026 – 30 Sep 2026");
 });
 
@@ -200,7 +200,7 @@ test("the daily operations brief is for a day, starts on the first page with its
 });
 
 test("the site performance report sets the sites side by side, then each site; on a day it gives no sales or collection", async ({ page }) => {
-  await page.goto("/dashboard/minigrid/reports");
+  await page.goto("/dashboard/reports/minigrid");
   await expect(page.locator("[data-report]")).toHaveCount(2);
   await expect(page.getByText("Not built yet.")).toHaveCount(0);
   await page.locator('[data-report="site-performance"]').getByRole("link", { name: "Open the report" }).click();

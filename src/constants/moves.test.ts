@@ -25,7 +25,9 @@ describe("the addresses NAV-B moved", () => {
     assert.equal(destinationOf("/dashboard/utility/operations/feeders/FD-OLD?present=1&x=2"), "/dashboard/intelligence/utility/operations/feeders/FD-OLD?present=1&x=2");
     assert.equal(destinationOf("/dashboard/minigrid/sites/reference/rmg01"), "/dashboard/intelligence/minigrid/sites/reference/rmg01");
     assert.equal(destinationOf("/dashboard/utility?present=1"), "/dashboard/intelligence/utility?present=1");
-    assert.equal(destinationOf("/dashboard/utility/reports/reliability/2026-09"), null, "the reports move in step 4");
+    assert.equal(destinationOf("/dashboard/utility/reports/reliability/2026-09/data.csv"), "/dashboard/reports/utility/reliability/2026-09/data.csv");
+    assert.equal(destinationOf("/dashboard/settings/people"), "/dashboard/account/people");
+    assert.equal(destinationOf("/dashboard/settings"), null, "a Phase 1 placeholder, removed in step 5");
     assert.equal(destinationOf("/dashboard/utility-other"), null);
     assert.equal(destinationOf("/dashboard"), null);
   });

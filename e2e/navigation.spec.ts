@@ -32,7 +32,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   const visited: string[] = [];
   // Utility: Overview, GIS Map, AI Assistant marked planned, then its six workspaces and Reports. Nothing of another sector.
   await expect(menu).toContainText("Utility Intelligence");
-  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, "/dashboard/utility/reports"]);
+  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, "/dashboard/reports/utility"]);
   await expect(menu.getByRole("link")).toContainText(["Overview", "GIS Map", "AI AssistantPlanned"]);
   await expect(menu.locator("[data-planned]")).toHaveCount(1);
   await expect(menu.locator("[data-workspaces]").getByRole("link")).toHaveCount(7);
@@ -43,7 +43,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid$/);
   await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
   await expect(menu).toContainText("Mini-grid Intelligence");
-  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`, "/dashboard/minigrid/reports"]);
+  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`, "/dashboard/reports/minigrid"]);
   await expect(menu.getByRole("link")).toHaveText(["Overview", "GIS Map", "AI AssistantPlanned", "Sites", "Reports"]);
   visited.push(...(await hrefs()));
   // A screen below a workspace is still in its sector.
@@ -324,7 +324,7 @@ test("the public demonstration may open every screen, and the page a refused rou
 });
 
 test("the public demonstration has no accounts: no sign-in, no people screen, no one signed in (ADR 0020)", async ({ page, request }) => {
-  for (const route of ["/login", "/login/verify", "/login/enrol", "/dashboard/settings/people"]) {
+  for (const route of ["/login", "/login/verify", "/login/enrol", "/dashboard/account/people"]) {
     expect((await request.get(route)).status(), route).toBe(404);
   }
   expect((await request.get("/auth/confirm?token_hash=x&type=invite")).status()).toBe(404);

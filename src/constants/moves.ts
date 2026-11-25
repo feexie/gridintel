@@ -66,6 +66,10 @@ export const MOVES: readonly Move[] = [
   { from: `${P}/underserved`, view: "plan.underserved", below: true, step: 3 },
   { from: `${P}/pue`, view: "plan.pue", below: true, step: 3 },
   { from: `${P}/e-mobility`, view: "plan.charging-hubs", below: true, step: 3 },
+  // Step 4: each domain's reports under Reports; People under Account.
+  { from: `${U}/reports`, view: "utility.reports", below: true, step: 4 },
+  { from: `${M}/reports`, view: "minigrid.reports", below: true, step: 4 },
+  { from: "/dashboard/settings/people", view: "platform.people", below: true, step: 4 },
 ];
 
 /** Where an old address now is, the rest of it carried; null when it did not move. */

@@ -48,12 +48,12 @@ export const ROUTES = [
   // A reference site: published data from another operator, beside the portfolio (Phase MG-REAL).
   "/dashboard/intelligence/minigrid/sites/reference/rmg01",
   // The reports: each sector's list, every report, and each built report for its month.
-  "/dashboard/utility/reports",
-  "/dashboard/minigrid/reports",
+  "/dashboard/reports/utility",
+  "/dashboard/reports/minigrid",
   "/dashboard/reports",
-  "/dashboard/utility/reports/reliability/2026-09",
-  "/dashboard/minigrid/reports/compliance/2026-09",
-  "/dashboard/utility/reports/operations/2026-09",
-  "/dashboard/utility/reports/daily-brief/2026-09-30",
-  "/dashboard/minigrid/reports/site-performance/2026-09",
+  "/dashboard/reports/utility/reliability/2026-09",
+  "/dashboard/reports/minigrid/compliance/2026-09",
+  "/dashboard/reports/utility/operations/2026-09",
+  "/dashboard/reports/utility/daily-brief/2026-09-30",
+  "/dashboard/reports/minigrid/site-performance/2026-09",
 ];

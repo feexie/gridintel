@@ -136,6 +136,6 @@ describe("the slimmed rail (ADR 0021)", () => {
   });
 
   it("keeps reports inside the dashboard, never on a public address", () => {
-    for (const type of WORKSPACE_TYPES) assert.match(reportsHrefFor(type), /^\/dashboard\/(.+\/)?reports$/);
+    for (const type of WORKSPACE_TYPES) assert.match(reportsHrefFor(type), /^\/dashboard\/reports(\/(utility|minigrid))?$/);
   });
 });

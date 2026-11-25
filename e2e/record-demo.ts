@@ -280,7 +280,7 @@ function platformScenes(): Scene[] {
       await wait(3000);
     }),
     scene("p6", "minigrid-site-performance", "/dashboard/intelligence/minigrid/sites/MG-TAM", look(3000, 600, 600)),
-    { ...scene("p7", "report-opened-and-downloaded", "/dashboard/utility/reports", async (page, shot) => {
+    { ...scene("p7", "report-opened-and-downloaded", "/dashboard/reports/utility", async (page, shot) => {
       await wait(1500);
       const open = page.locator('[data-report="reliability"]').getByRole("link", { name: "Open the report" });
       await point(page, '[data-report="reliability"] a:has-text("Open the report")', 800);
@@ -297,7 +297,7 @@ function platformScenes(): Scene[] {
       await download.cancel();
       await wait(1500);
       await shot("downloaded");
-    }), warm: ["/dashboard/utility/reports/reliability/2026-09"] },
+    }), warm: ["/dashboard/reports/utility/reliability/2026-09"] },
   ];
 }
 

@@ -8,7 +8,7 @@ import { destinationOf } from "../src/constants/moves";
    screen (ADR 0020), which answer "not found". An address that is no view is "not found" too. */
 
 const FIXTURE = JSON.parse(readFileSync(new URL("../src/constants/__pinned__/access-before-nav-b.json", import.meta.url), "utf8")) as { addresses: string[] };
-const NO_ACCOUNTS = ["/dashboard/settings/people"];
+const NO_ACCOUNTS = ["/dashboard/account/people"];
 
 test.describe.configure({ timeout: 600_000 });
 

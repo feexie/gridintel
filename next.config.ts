@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     [hrefOf("platform.about-this-build")]: ["./docs/geh/CHANGELOG-GEH.md"],
     [`${hrefOf("minigrid.overview")}/**`]: ["./src/repositories/reference/*/data/*.csv"],
-    "/dashboard/minigrid/**": ["./src/repositories/reference/*/data/*.csv"],
+    [`${hrefOf("minigrid.reports")}/**`]: ["./src/repositories/reference/*/data/*.csv"],
     "/preview/**": ["./src/repositories/reference/*/data/*.csv"],
     "/preview": ["./src/repositories/reference/*/data/*.csv"],
   },

@@ -13,8 +13,8 @@ type Person = { email: string; password: string; totpSecret?: string };
 
 const DISCO_NAME = "Savanna Electricity Distribution (synthetic)";
 const OPERATOR_NAME = "Demonstration Mini-grid Operator (synthetic)";
-const UTILITY_DOWNLOADS = ["/dashboard/utility/reports/operations/2026-09/data.csv", "/dashboard/utility/reports/reliability/2026-09/data.xlsx"];
-const MINIGRID_DOWNLOADS = ["/dashboard/minigrid/reports/compliance/2026-09/data.csv", "/dashboard/minigrid/reports/site-performance/2026-09/data.xlsx"];
+const UTILITY_DOWNLOADS = ["/dashboard/reports/utility/operations/2026-09/data.csv", "/dashboard/reports/utility/reliability/2026-09/data.xlsx"];
+const MINIGRID_DOWNLOADS = ["/dashboard/reports/minigrid/compliance/2026-09/data.csv", "/dashboard/reports/minigrid/site-performance/2026-09/data.xlsx"];
 const UTILITY_ROUTES = ROUTES.filter((route) => route.startsWith("/dashboard/intelligence/utility"));
 const MINIGRID_ROUTES = ROUTES.filter((route) => route.startsWith("/dashboard/intelligence/minigrid"));
 
@@ -52,7 +52,7 @@ test("a tenant build renders no page ahead of time but public files: the referen
 });
 
 test("no one signed in reaches anything: every screen and every download leads to signing in", async ({ request }) => {
-  for (const route of [...ROUTES, ...UTILITY_DOWNLOADS, ...MINIGRID_DOWNLOADS, "/dashboard/settings/people", "/dashboard/reports"]) {
+  for (const route of [...ROUTES, ...UTILITY_DOWNLOADS, ...MINIGRID_DOWNLOADS, "/dashboard/account/people", "/dashboard/reports"]) {
     const response = await request.get(route, { maxRedirects: 0 });
     expect(response.status(), route).toBe(307);
     expect(response.headers().location, route).toBe(`/login?next=${encodeURIComponent(route)}`);
@@ -93,7 +93,7 @@ test("the DisCo's administrator sees the DisCo only: no screen, download or name
   await expect(page.locator("[data-sector]")).toHaveCount(1);
   await expect(page.locator('[data-sector="utility"]')).toBeVisible();
   await expect(page.locator("[data-sector-bar]")).not.toContainText("Mini-grid");
-  await expect(page.locator('a[href^="/dashboard/intelligence/minigrid"], a[href^="/dashboard/minigrid"]')).toHaveCount(0);
+  await expect(page.locator('a[href^="/dashboard/intelligence/minigrid"], a[href^="/dashboard/intelligence/minigrid"]')).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(OPERATOR_NAME);
   // Every screen of the DisCo opens.
   for (const route of UTILITY_ROUTES) expect((await page.goto(route))?.status(), route).toBe(200);
@@ -108,7 +108,7 @@ test("the mini-grid operator's administrator sees the operator only, its map dra
   await expect(page.locator("[data-account-organization]").first()).toHaveText(OPERATOR_NAME);
   await expect(page.locator("[data-sector]")).toHaveCount(1);
   await expect(page.locator('[data-sector="minigrid"]')).toBeVisible();
-  await expect(page.locator('a[href^="/dashboard/intelligence/utility"], a[href^="/dashboard/utility"]')).toHaveCount(0);
+  await expect(page.locator('a[href^="/dashboard/intelligence/utility"], a[href^="/dashboard/intelligence/utility"]')).toHaveCount(0);
   for (const route of [...MINIGRID_ROUTES, "/dashboard/intelligence/minigrid/sites/MG-GRN"]) {
     expect((await page.goto(route))?.status(), route).toBe(200);
     await expect(page.locator("body"), route).not.toContainText(DISCO_NAME);
@@ -143,7 +143,7 @@ test("a member of the revenue department opens their three screens, and the link
   }
   await expect(page.locator("[data-account]").first()).not.toContainText("People");
   expect((await page.goto("/dashboard/intelligence/utility/revenue"))?.status()).toBe(200);
-  await refusedEverywhere(page, ["/dashboard", "/dashboard/intelligence/utility/executive", "/dashboard/intelligence/utility/operations/feeders/FD-OLD", "/dashboard/settings/people"], OPERATOR_NAME);
+  await refusedEverywhere(page, ["/dashboard", "/dashboard/intelligence/utility/executive", "/dashboard/intelligence/utility/operations/feeders/FD-OLD", "/dashboard/account/people"], OPERATOR_NAME);
   expect((await page.request.get(UTILITY_DOWNLOADS[0])).status()).toBe(403);
 });
 
@@ -164,7 +164,7 @@ test("a person with no authenticator app is asked to add one before anything ope
 test("an administrator invites someone: the link works once, and the person opens only what they were given until removed", async ({ page, browser }) => {
   await signIn(page, TEST_PEOPLE.discoAdmin);
   await page.locator("[data-account]").first().getByRole("link", { name: "People" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/settings\/people$/);
+  await expect(page).toHaveURL(/\/dashboard\/account\/people$/);
   // The DisCo's four seeded people: the administrator, the revenue member, the member with no grants (NAV-B) and the new member.
   await expect(page.locator("[data-member]")).toHaveCount(4);
   await expect(page.locator("[data-people]")).not.toContainText(TEST_PEOPLE.minigridAdmin.email);

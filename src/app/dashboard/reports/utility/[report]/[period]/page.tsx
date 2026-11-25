@@ -1,6 +1,6 @@
-import { reportPage } from "../../../../reportRoutes";
+import { reportPage } from "@/app/dashboard/reportRoutes";
 
-const route = reportPage("minigrid");
+const route = reportPage("utility");
 
 export const generateStaticParams = route.generateStaticParams;
 export const generateMetadata = route.generateMetadata;
