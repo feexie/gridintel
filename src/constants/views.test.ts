@@ -75,8 +75,8 @@ describe("the View catalogue: route resolution", () => {
     assert.equal(viewAt("/dashboard/intelligence/utility/operations/feeders/FD-OLD")?.id, "utility.operations");
     assert.equal(viewAt("/dashboard/intelligence/minigrid/sites/reference/rmg01")?.id, "minigrid.sites");
     assert.equal(viewAt("/dashboard/utility/reports/reliability/2026-09/data.csv")?.id, "utility.reports.reliability");
-    assert.equal(viewAt("/dashboard/planning/metering/allocation")?.id, "plan.metering-allocation");
-    assert.equal(viewAt("/dashboard/planning/metering")?.id, "finance.metering-fund");
+    assert.equal(viewAt("/dashboard/plan/metering-allocation")?.id, "plan.metering-allocation");
+    assert.equal(viewAt("/dashboard/finance/metering-fund")?.id, "finance.metering-fund");
     assert.equal(viewAt("/dashboard/intelligence/utility/")?.id, "utility.overview");
     assert.equal(viewAt("/dashboard/intelligence/utility/x"), null);
     assert.equal(hrefOf("utility.operations", "feeders", "FD 1"), "/dashboard/intelligence/utility/operations/feeders/FD%201");

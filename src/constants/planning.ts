@@ -43,6 +43,12 @@ export const plannerHref = (id: PlannerId) => hrefOf(PLANNERS.find((planner) => 
 
 export const plannerOf = (id: string): Planner | undefined => PLANNERS.find((planner) => planner.id === id);
 
+/** The planner whose page is at this last segment of its address (the catalogue's: "charging-hubs" for E-mobility). */
+export const plannerAt = (segment: string): Planner | undefined => PLANNERS.find((planner) => hrefOf(planner.view).split("/").at(-1) === segment);
+
+/** The last segment of a planner's address. */
+export const plannerSegment = (planner: Planner): string => hrefOf(planner.view).split("/").at(-1)!;
+
 /** How the Platform Overview describes the sector while only Metering is built. */
 export const PLANNING_STATUS = "Metering is built. The other planners are planned.";
 

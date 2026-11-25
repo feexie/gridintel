@@ -13,7 +13,7 @@ describe("one meter's journey", () => {
     );
     for (const step of view.steps) {
       assert.ok(step.who.length > 0, step.key);
-      assert.match(step.link.href, /^\/dashboard\/planning\/metering(\/marketplace|\/monitoring)?$/, step.key);
+      assert.match(step.link.href, /^\/dashboard\/(finance\/metering-fund|finance\/marketplace|oversight\/monitoring)$/, step.key);
     }
     assert.match(view.steps[2].what, /^₦200 a day, taken at each recharge, never more than 50% of the recharge, into escrow\./);
     assert.equal(view.sourcing.synthetic, true);

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 /* The Metering Fund (GEH sprint, docs/geh/DESIGN.md, section 3): the finding first, every figure
    labelled, the assumptions recalculating through the address, and a presentation mode. */
 
-const FUND = "/dashboard/planning/metering";
+const FUND = "/dashboard/finance/metering-fund";
 
 test("the Metering Fund states its finding first, with the charge, how it is calculated, and data that is not synthetic", async ({ page }) => {
   await page.goto(FUND);
@@ -120,9 +120,9 @@ test("DisCo allocation: the largest gap first, the two scores, the first million
 });
 
 test("DT sequencing: every DT ranked by revenue per naira, the revolving effect, all marked synthetic", async ({ page }) => {
-  await page.goto("/dashboard/planning/metering/allocation");
+  await page.goto("/dashboard/plan/metering-allocation");
   await page.locator("[data-metering-tabs]").getByRole("link", { name: /DT sequencing/ }).click();
-  await expect(page).toHaveURL(/\/dashboard\/planning\/metering\/dt$/);
+  await expect(page).toHaveURL(/\/dashboard\/plan\/dt-sequencing$/);
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^Metering the 5 highest-ranked DTs first recovers \d+% of the revenue for \d+% of the CAPEX\.$/);
   await expect(main.locator("[data-headline]")).toContainText("Synthetic");
@@ -135,7 +135,7 @@ test("DT sequencing: every DT ranked by revenue per naira, the revolving effect,
 });
 
 test("Monitoring: plan against synthetic actuals, tranches against verified installs, a later quarter not reported", async ({ page }) => {
-  await page.goto("/dashboard/planning/metering/monitoring");
+  await page.goto("/dashboard/oversight/monitoring");
   const main = page.getByRole("main");
   await expect(main.locator("[data-tranche-line]")).toHaveText(/^Fund money is released in tranches against verified installs/);
   await expect(main.locator("[data-monitoring-table] tbody tr")).toHaveCount(11);
@@ -145,7 +145,7 @@ test("Monitoring: plan against synthetic actuals, tranches against verified inst
 });
 
 test("Marketplace: pledges matched to approved meters, the daily charge by band, unmatched money queued, all marked synthetic", async ({ page }) => {
-  await page.goto("/dashboard/planning/metering/allocation");
+  await page.goto("/dashboard/plan/metering-allocation");
   await page.locator("[data-metering-tabs]").getByRole("link", { name: /Marketplace · Match/ }).click();
   await expect(page).toHaveURL(/\/metering\/marketplace$/);
   const main = page.getByRole("main");
@@ -160,20 +160,20 @@ test("Marketplace: pledges matched to approved meters, the daily charge by band,
 });
 
 test("One meter's journey: six steps for one household in Ibadan, each naming who acts and linking to its screen, the balance falling, marked synthetic", async ({ page }) => {
-  await page.goto("/dashboard/planning/metering/marketplace");
+  await page.goto("/dashboard/finance/marketplace");
   await page.locator("[data-metering-tabs]").getByRole("link", { name: /Journey/ }).click();
   await expect(page).toHaveURL(/\/metering\/journey$/);
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^On GridIntel one household in Ibadan applied/);
   await expect(main.locator("[data-headline]")).toContainText("Synthetic");
   await expect(main.locator("[data-step]")).toHaveCount(6);
-  await expect(main.locator('[data-step="funded"] [data-step-link]')).toHaveAttribute("href", "/dashboard/planning/metering/marketplace");
-  await expect(main.locator('[data-step="installed"] [data-step-link]')).toHaveAttribute("href", "/dashboard/planning/metering/monitoring");
+  await expect(main.locator('[data-step="funded"] [data-step-link]')).toHaveAttribute("href", "/dashboard/finance/marketplace");
+  await expect(main.locator('[data-step="installed"] [data-step-link]')).toHaveAttribute("href", "/dashboard/oversight/monitoring");
   await expect(main.locator("[data-schedule] tbody tr").last()).toContainText("Repaid");
 });
 
 test("About this build: the baseline, the sprint's commits with times, and the comparison link", async ({ page }) => {
-  await page.goto("/dashboard/planning/about-this-build");
+  await page.goto("/dashboard/about-this-build");
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText(/^The Metering planner was built in the sprint: \d+ commits after the tag geh-baseline\.$/);
   await expect(main.locator("[data-compare-link]")).toHaveAttribute("href", "https://github.com/feexie/gridintel/compare/geh-baseline...geh-sprint");
@@ -183,7 +183,7 @@ test("About this build: the baseline, the sprint's commits with times, and the c
 
 test("presentation mode on DisCo allocation, DT sequencing, Marketplace, Monitoring and About this build: no navigation, no tabs, a larger headline, kept through a form or a quarter", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  for (const path of ["/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/marketplace", "/dashboard/planning/metering/monitoring", "/dashboard/planning/metering/journey", "/dashboard/planning/about-this-build"]) {
+  for (const path of ["/dashboard/plan/metering-allocation", "/dashboard/plan/dt-sequencing", "/dashboard/finance/marketplace", "/dashboard/oversight/monitoring", "/dashboard/initiatives/meter-every-customer/journey", "/dashboard/about-this-build"]) {
     await page.goto(`${path}?present=1`);
     await expect(page.locator("[data-sidebar]"), path).toBeHidden();
     await expect(page.locator("[data-metering-tabs]"), path).toBeHidden();
@@ -191,10 +191,10 @@ test("presentation mode on DisCo allocation, DT sequencing, Marketplace, Monitor
     expect(size, path).toBeGreaterThanOrEqual(36);
     await expect(page.getByRole("link", { name: "Leave presentation mode" }), path).toBeVisible();
   }
-  await page.goto("/dashboard/planning/metering/allocation?present=1");
+  await page.goto("/dashboard/plan/metering-allocation?present=1");
   await page.locator("[data-allocation-form]").getByRole("button", { name: "Recalculate" }).click();
   await expect(page).toHaveURL(/present=1/);
-  await page.goto("/dashboard/planning/metering/monitoring?present=1");
+  await page.goto("/dashboard/oversight/monitoring?present=1");
   await page.locator("[data-quarters]").getByRole("link", { name: /2027 Q1/ }).click();
   await expect(page).toHaveURL(/quarter=.*present=1/);
   await expect(page.locator("[data-sidebar]")).toBeHidden();
@@ -203,31 +203,31 @@ test("presentation mode on DisCo allocation, DT sequencing, Marketplace, Monitor
 });
 
 test("the Planning overview says it shows no data", async ({ page }) => {
-  await page.goto("/dashboard/planning");
+  await page.goto("/dashboard/plan");
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("NO DATA ON THIS SCREEN");
 });
 
 test("each step is paired with its A, in the tabs and the screens' eyebrows", async ({ page }) => {
-  await page.goto("/dashboard/planning/metering/allocation");
+  await page.goto("/dashboard/plan/metering-allocation");
   const tabs = page.locator("[data-metering-tabs]");
   await expect(tabs.getByRole("link", { name: /DisCo allocation/ })).toContainText("Plan · Access");
   await expect(tabs.getByRole("link", { name: /Metering Fund/ })).toContainText("Fund · Affordability");
   await expect(tabs.getByRole("link", { name: /Monitoring/ })).toContainText("Monitor · Availability");
   await expect(page.locator("[data-headline]").first()).toContainText("Plan · Access · DisCo allocation");
-  await page.goto("/dashboard/planning/metering/monitoring");
+  await page.goto("/dashboard/oversight/monitoring");
   await expect(page.locator("[data-headline]").first()).toContainText("Monitor · Availability");
-  await page.goto("/dashboard/planning/metering");
+  await page.goto("/dashboard/finance/metering-fund");
   await expect(page.locator("[data-headline]").first()).toContainText("Fund · Affordability · Metering Fund");
 });
 
 test("the Metering Plan report: a Download report link on every Metering screen, six sections in order, the sources, and a print button", async ({ page }) => {
-  for (const path of ["/dashboard/planning/metering", "/dashboard/planning/metering/allocation", "/dashboard/planning/metering/dt", "/dashboard/planning/metering/marketplace", "/dashboard/planning/metering/monitoring", "/dashboard/planning/metering/journey", "/dashboard/planning/about-this-build"]) {
+  for (const path of ["/dashboard/finance/metering-fund", "/dashboard/plan/metering-allocation", "/dashboard/plan/dt-sequencing", "/dashboard/finance/marketplace", "/dashboard/oversight/monitoring", "/dashboard/initiatives/meter-every-customer/journey", "/dashboard/about-this-build"]) {
     await page.goto(path);
-    await expect(page.locator("[data-report-link]"), path).toHaveAttribute("href", /\/dashboard\/planning\/metering\/report/);
+    await expect(page.locator("[data-report-link]"), path).toHaveAttribute("href", /\/dashboard\/reports\/metering-plan/);
   }
   await expect(page.locator("[data-about-report]")).toContainText("The Metering Plan report");
   await expect(page.locator("[data-steps] li")).toHaveCount(3);
-  await page.goto("/dashboard/planning/metering?case=nigeria");
+  await page.goto("/dashboard/finance/metering-fund?case=nigeria");
   await page.locator("[data-report-link]").click();
   await expect(page).toHaveURL(/\/metering\/report\?case=nigeria/);
   const report = page.locator("[data-metering-report]");

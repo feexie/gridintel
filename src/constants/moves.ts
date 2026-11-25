@@ -31,6 +31,7 @@ export type Move = {
 
 const U = "/dashboard/utility";
 const M = "/dashboard/minigrid";
+const P = "/dashboard/planning";
 
 export const MOVES: readonly Move[] = [
   // Step 2: Intelligence, by domain.
@@ -48,6 +49,23 @@ export const MOVES: readonly Move[] = [
   { from: `${M}/ai`, view: "minigrid.ai", below: true, step: 2 },
   { from: `${M}/sites`, view: "minigrid.sites", below: true, step: 2 },
   { from: "/dashboard/der", view: "der.overview", below: false, step: 2 },
+  // Step 3: Plan, Finance, Oversight, the journey, the Metering Plan report and About this build.
+  { from: P, view: "plan.overview", below: false, step: 3 },
+  { from: `${P}/metering`, view: "finance.metering-fund", below: false, step: 3 },
+  { from: `${P}/metering/allocation`, view: "plan.metering-allocation", below: true, step: 3 },
+  { from: `${P}/metering/dt`, view: "plan.dt-sequencing", below: true, step: 3 },
+  { from: `${P}/metering/marketplace`, view: "finance.marketplace", below: true, step: 3 },
+  { from: `${P}/metering/monitoring`, view: "oversight.monitoring", below: true, step: 3 },
+  { from: `${P}/metering/journey`, view: "initiative.journey", below: true, step: 3 },
+  { from: `${P}/metering/report`, view: "plan.metering-report", below: true, step: 3 },
+  { from: `${P}/about-this-build`, view: "platform.about-this-build", below: true, step: 3 },
+  { from: `${P}/dt`, view: "plan.dt", below: true, step: 3 },
+  { from: `${P}/feeders`, view: "plan.feeders", below: true, step: 3 },
+  { from: `${P}/network-expansion`, view: "plan.network-expansion", below: true, step: 3 },
+  { from: `${P}/unserved`, view: "plan.unserved", below: true, step: 3 },
+  { from: `${P}/underserved`, view: "plan.underserved", below: true, step: 3 },
+  { from: `${P}/pue`, view: "plan.pue", below: true, step: 3 },
+  { from: `${P}/e-mobility`, view: "plan.charging-hubs", below: true, step: 3 },
 ];
 
 /** Where an old address now is, the rest of it carried; null when it did not move. */

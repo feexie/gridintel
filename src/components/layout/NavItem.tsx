@@ -6,7 +6,8 @@ import type { NavigationItem } from "@/constants/navigation";
 
 export default function NavItem({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const isActive = pathname === item.href || (!item.exact && pathname.startsWith(`${item.href}/`));
+  const within = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = pathname === item.href || (!item.exact && pathname.startsWith(`${item.href}/`)) || (item.also ?? []).some(within);
 
   return (
     <Link

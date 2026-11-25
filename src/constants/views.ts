@@ -140,8 +140,10 @@ const UTILITY = `${INTELLIGENCE}/utility`;
 const MINIGRID = `${INTELLIGENCE}/minigrid`;
 /** Where each domain's reports are until NAV-B step 4 moves them under /dashboard/reports. */
 const REPORTS_OF = (sector: "utility" | "minigrid") => `${DASHBOARD}/${sector}/reports`;
-const PLANNING = `${DASHBOARD}/planning`;
-const METERING = `${PLANNING}/metering`;
+/** Plan, Finance and Oversight, by rail item (NAV-B step 3). */
+const PLAN = `${DASHBOARD}/plan`;
+const FINANCE = `${DASHBOARD}/finance`;
+const OVERSIGHT = `${DASHBOARD}/oversight`;
 
 const NOT_BUILT = "Planned. Not built yet.";
 
@@ -177,7 +179,7 @@ const planner = (id: ViewId, plannerId: PlannerId, group: "utility" | "minigrid"
   label,
   question,
   domain: "planning",
-  address: `${PLANNING}/${plannerId}`,
+  address: `${PLAN}/${id.slice("plan.".length)}`,
   permission: "own",
   planned: true,
   menu: { sector: "planning", section: "views", label: plannerLabel, description: purpose, group: group === "utility" ? "Utility planning" : "Mini-grid planning" },
@@ -192,7 +194,7 @@ export const VIEWS: readonly View[] = [
   { id: "platform.home", label: "Home", question: "What am I working on?", domain: "platform", address: null, exact: true, permission: "own", planned: true },
   { id: "platform.reports", label: "Reports", question: "Which reports can I download, for which period?", domain: "platform", address: `${DASHBOARD}/reports`, exact: true, permission: "own" },
   { id: "platform.people", label: "People", question: "Who may sign in, and what may each open?", domain: "platform", address: `${DASHBOARD}/settings/people`, permission: "own" },
-  { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${PLANNING}/about-this-build`, permission: "viewer", inSector: "planning", metering: { id: "about", step: "", label: "About this build" } },
+  { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${DASHBOARD}/about-this-build`, permission: "viewer", inSector: "planning", metering: { id: "about", step: "", label: "About this build" } },
   { id: "platform.refused", label: "Not open to you", question: "This screen is not open to you.", domain: "platform", address: `${DASHBOARD}/refused`, exact: true, permission: "viewer" },
   // Phase 1 placeholders with no link to them; removed in NAV-B step 5 (Founder, 10 November 2026).
   { id: "platform.settings", label: "Settings (Phase 1 placeholder)", question: NOT_BUILT, domain: "platform", address: `${DASHBOARD}/settings`, permission: "domain", planned: true },
@@ -223,24 +225,24 @@ export const VIEWS: readonly View[] = [
   { id: "der.overview", label: "DER fleet", question: NOT_BUILT, domain: "der", address: `${INTELLIGENCE}/der`, exact: true, permission: "own", planned: true, menu: { sector: "der", section: "opening", label: "Overview", description: NOT_BUILT } },
 
   // Planning.
-  { id: "plan.overview", label: "Plan", question: "Which planners are built, and which are planned?", domain: "planning", address: PLANNING, exact: true, permission: "own", menu: { sector: "planning", section: "opening", label: "Overview", description: "Which planners are built, and which are planned?" } },
+  { id: "plan.overview", label: "Plan", question: "Which planners are built, and which are planned?", domain: "planning", address: PLAN, exact: true, permission: "own", menu: { sector: "planning", section: "opening", label: "Overview", description: "Which planners are built, and which are planned?" } },
   {
     id: "finance.metering-fund",
     label: "Metering Fund",
     question: "Who pays for the meters, and how is each repaid?",
     domain: "planning",
-    address: METERING,
+    address: `${FINANCE}/metering-fund`,
     permission: "own",
     menu: { sector: "planning", section: "views", label: "Metering", description: METERING_PURPOSE, group: "Utility planning" },
     planner: { id: "metering", group: "utility", label: "Metering", purpose: METERING_PURPOSE },
     metering: { id: "fund", step: "fund", label: "Metering Fund" },
   },
-  { id: "plan.metering-allocation", label: "Metering allocation", question: "Where do the first meters go, DisCo by DisCo?", domain: "planning", address: `${METERING}/allocation`, permission: "own", metering: { id: "allocation", step: "plan", label: "DisCo allocation" } },
-  { id: "plan.dt-sequencing", label: "DT sequencing", question: "Which DTs go first?", domain: "planning", address: `${METERING}/dt`, permission: "own", metering: { id: "dt", step: "plan", label: "DT sequencing" } },
-  { id: "finance.marketplace", label: "Marketplace · Match", question: "Which funders' money goes to which approved meters?", domain: "planning", address: `${METERING}/marketplace`, permission: "own", metering: { id: "marketplace", step: "fund", label: "Marketplace · Match" } },
-  { id: "oversight.monitoring", label: "Monitoring", question: "Is the rollout delivering against plan, operator by operator?", domain: "planning", address: `${METERING}/monitoring`, permission: "own", metering: { id: "monitoring", step: "monitor", label: "Monitoring" } },
-  { id: "initiative.journey", label: "One meter's journey", question: "How does one household get a meter, step by step?", domain: "planning", address: `${METERING}/journey`, permission: "own", metering: { id: "journey", step: "", label: "Journey" } },
-  { id: "plan.metering-report", label: "Metering Plan report", question: "Every step's figures on paper, ready to print or save as PDF.", domain: "planning", address: `${METERING}/report`, permission: "own" },
+  { id: "plan.metering-allocation", label: "Metering allocation", question: "Where do the first meters go, DisCo by DisCo?", domain: "planning", address: `${PLAN}/metering-allocation`, permission: "own", metering: { id: "allocation", step: "plan", label: "DisCo allocation" } },
+  { id: "plan.dt-sequencing", label: "DT sequencing", question: "Which DTs go first?", domain: "planning", address: `${PLAN}/dt-sequencing`, permission: "own", metering: { id: "dt", step: "plan", label: "DT sequencing" } },
+  { id: "finance.marketplace", label: "Marketplace · Match", question: "Which funders' money goes to which approved meters?", domain: "planning", address: `${FINANCE}/marketplace`, permission: "own", metering: { id: "marketplace", step: "fund", label: "Marketplace · Match" } },
+  { id: "oversight.monitoring", label: "Monitoring", question: "Is the rollout delivering against plan, operator by operator?", domain: "planning", address: `${OVERSIGHT}/monitoring`, permission: "own", metering: { id: "monitoring", step: "monitor", label: "Monitoring" } },
+  { id: "initiative.journey", label: "One meter's journey", question: "How does one household get a meter, step by step?", domain: "planning", address: `${DASHBOARD}/initiatives/meter-every-customer/journey`, permission: "own", metering: { id: "journey", step: "", label: "Journey" } },
+  { id: "plan.metering-report", label: "Metering Plan report", question: "Every step's figures on paper, ready to print or save as PDF.", domain: "planning", address: `${DASHBOARD}/reports/metering-plan`, permission: "own" },
   planner("plan.dt", "dt", "utility", "Distribution transformers (DT)", "Which DTs are overloaded or will be, and when to upgrade one or add another.", "Distribution transformers", "Which DTs are overloaded or will be?"),
   planner("plan.feeders", "feeders", "utility", "Feeders", "Which feeders need reinforcing or splitting to hold their supply band.", "Feeders", "Which feeders need reinforcing or splitting?"),
   planner("plan.network-expansion", "network-expansion", "utility", "Network expansion", "Where to extend the network to connect new customers, and the cost of each connection.", "Network expansion", "Where to extend the network, and at what cost?"),

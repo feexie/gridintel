@@ -38,9 +38,9 @@ const ROUTES = [
   "/dashboard/minigrid/reports",
   "/dashboard/minigrid/reports/compliance/2026-09-14",
   "/dashboard/intelligence/der",
-  "/dashboard/planning",
-  "/dashboard/planning/metering",
-  "/dashboard/planning/dt",
+  "/dashboard/plan",
+  "/dashboard/finance/metering-fund",
+  "/dashboard/plan/dt",
   "/dashboard/reports",
   "/dashboard/settings",
 ];
@@ -60,10 +60,10 @@ describe("which screens a viewer may open", () => {
     assert.equal(keyFor("/dashboard/utility/reports/reliability/2026-09/data.csv"), "utility.reports.reliability");
     assert.equal(keyFor("/dashboard/utility/reports"), "utility.reports");
     assert.equal(keyFor(REFUSED_PATH), "platform.refused");
-    assert.equal(keyFor("/dashboard/planning"), "plan.overview");
-    assert.equal(keyFor("/dashboard/planning/metering"), "finance.metering-fund");
-    assert.equal(keyFor("/dashboard/planning/metering/allocation"), "plan.metering-allocation");
-    assert.equal(keyFor("/dashboard/planning/e-mobility"), "plan.charging-hubs");
+    assert.equal(keyFor("/dashboard/plan"), "plan.overview");
+    assert.equal(keyFor("/dashboard/finance/metering-fund"), "finance.metering-fund");
+    assert.equal(keyFor("/dashboard/plan/metering-allocation"), "plan.metering-allocation");
+    assert.equal(keyFor("/dashboard/plan/charging-hubs"), "plan.charging-hubs");
   });
 
   it("opens everything to the public demonstration, whose menu is the whole catalogue", () => {
@@ -165,9 +165,9 @@ describe("a member's grant (Phase 8A, ADR 0020)", () => {
     // What the catalogue shows a Utility workspace, and the platform's own screens (Founder, 25 November 2026).
     assert.deepEqual(new Set(grant.keys), new Set([...PLATFORM_DEFAULT, ...workspaceViews("utility")]));
     assert.equal(canOpen(grant, "/dashboard/intelligence/utility/revenue"), true);
-    assert.equal(canOpen(grant, "/dashboard/planning/metering/allocation"), true);
-    assert.equal(canOpen(grant, "/dashboard/planning/unserved"), false, "a mini-grid planner stays with its own type");
-    assert.equal(canOpen(grant, "/dashboard/planning/metering/monitoring"), false, "Oversight is a regulator's");
+    assert.equal(canOpen(grant, "/dashboard/plan/metering-allocation"), true);
+    assert.equal(canOpen(grant, "/dashboard/plan/unserved"), false, "a mini-grid planner stays with its own type");
+    assert.equal(canOpen(grant, "/dashboard/oversight/monitoring"), false, "Oversight is a regulator's");
     assert.equal(canOpen(grant, "/dashboard/settings/people"), false, "People is an administrator's only");
     assert.equal(canOpen(grant, "/dashboard/intelligence/minigrid/sites"), false);
     assert.equal(holdsSector(grant, "utility"), true);

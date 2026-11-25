@@ -123,12 +123,17 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
 
   it("keeps every route that existed at step 0, at its old address or through a redirect", () => {
     const now = appRoutes();
-    const sample = (route: string) => route.replace(/\[[^\]]+\]/g, "x");
+    const pattern = (route: string) => new RegExp(`^${route.replace(/\[[^\]]+\]/g, "[^/]+")}$`);
     for (const route of frozenRoutes) {
       if (now.includes(route)) continue;
-      const to = destinationOf(sample(route));
-      assert.ok(to !== null, `the route ${route} is gone, with no redirect`);
-      assert.ok(now.some((one) => new RegExp(`^${one.replace(/\[[^\]]+\]/g, "[^/]+")}$`).test(to.split("?")[0])), `${route} redirects to ${to}, which no route answers`);
+      // Every real sample of the route (the fixture's) redirects to an address a route of today answers.
+      const samples = frozen.addresses.filter((address) => pattern(route).test(address));
+      assert.ok(samples.length > 0, `the route ${route} has no sample`);
+      for (const sample of samples) {
+        const to = destinationOf(sample);
+        assert.ok(to !== null, `${sample} (the route ${route}) is gone, with no redirect`);
+        assert.ok(now.some((one) => pattern(one).test(to.split("?")[0])), `${sample} redirects to ${to}, which no route answers`);
+      }
     }
   });
 });

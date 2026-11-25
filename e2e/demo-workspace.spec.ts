@@ -60,7 +60,7 @@ test("one rail item per workspace type shows its existing screen inside the fram
   }
   await page.goto("/preview/workspace/demo-utility/plan");
   await expect(page.locator("[data-filled]")).toHaveCount(0);
-  await expect(page.locator('[data-view="plan.metering-allocation"] a')).toHaveAttribute("href", "/dashboard/planning/metering/allocation");
+  await expect(page.locator('[data-view="plan.metering-allocation"] a')).toHaveAttribute("href", "/dashboard/plan/metering-allocation");
 });
 
 test("a rail item a workspace type does not have, and an unknown workspace, are not found", async ({ request }) => {

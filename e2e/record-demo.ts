@@ -21,8 +21,8 @@ const PORT = 3300;
 const BASE = `http://localhost:${PORT}`;
 const OUT = join(import.meta.dirname, "..", "docs", "geh", "recordings");
 const SIZE = { width: 1920, height: 1080 };
-const PLANNING = "/dashboard/planning";
-const FUND = `${PLANNING}/metering?case=nigeria&present=1`;
+const PLANNING = "/dashboard/plan";
+const FUND = "/dashboard/finance/metering-fund?case=nigeria&present=1";
 
 /** A scene. `dir` files it in a subfolder of the recordings; `caption` is drawn in a corner for the whole clip. */
 type Scene = { id: string; name: string; path: string; dir?: string; caption?: string; warm?: string[]; play: (page: Page, shot: (moment: string) => Promise<void>) => Promise<void> };
@@ -80,7 +80,7 @@ async function point(page: Page, selector: string, hold = 2500) {
 
 const SCENES: Scene[] = [
   {
-    id: "a", name: "about-this-build", path: `${PLANNING}/about-this-build?present=1`,
+    id: "a", name: "about-this-build", path: "/dashboard/about-this-build?present=1",
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -104,7 +104,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "c", name: "disco-allocation", path: `${PLANNING}/metering/allocation?present=1`,
+    id: "c", name: "disco-allocation", path: "/dashboard/plan/metering-allocation?present=1",
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -121,7 +121,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "d", name: "dt-sequencing", path: `${PLANNING}/metering/dt?present=1`,
+    id: "d", name: "dt-sequencing", path: "/dashboard/plan/dt-sequencing?present=1",
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -203,7 +203,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "i", name: "monitoring", path: `${PLANNING}/metering/monitoring?present=1`,
+    id: "i", name: "monitoring", path: "/dashboard/oversight/monitoring?present=1",
     play: async (page, shot) => {
       await wait(4000);
       await shot("headline");
@@ -221,7 +221,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "j", name: "marketplace", path: `${PLANNING}/metering/marketplace?present=1`,
+    id: "j", name: "marketplace", path: "/dashboard/finance/marketplace?present=1",
     play: async (page, shot) => {
       await wait(4500);
       await shot("headline");
@@ -237,7 +237,7 @@ const SCENES: Scene[] = [
     },
   },
   {
-    id: "k", name: "journey", path: `${PLANNING}/metering/journey?present=1`,
+    id: "k", name: "journey", path: "/dashboard/initiatives/meter-every-customer/journey?present=1",
     play: async (page, shot) => {
       await wait(5000);
       await shot("headline");

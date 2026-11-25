@@ -24,6 +24,8 @@ export type NavigationItem = {
   planned?: boolean;
   /** The heading the item is listed under in the menu, when a sector groups its views (Planning). */
   group?: string;
+  /** Other screens the item is marked on (Metering: the Metering planner's other screens, wherever they are). */
+  also?: string[];
 };
 
 export type SectorId = MenuSector;
@@ -50,6 +52,7 @@ const item = (view: View): NavigationItem => ({
   ...(view.exact ? { exact: true } : {}),
   ...(view.planned ? { planned: true } : {}),
   ...(view.menu!.group === undefined ? {} : { group: view.menu!.group }),
+  ...(view.planner?.id === "metering" ? { also: VIEWS.filter((one) => (one.metering !== undefined && one.metering.id !== "about" && one.id !== view.id) || one.id === "plan.metering-report").map((one) => hrefOf(one.id)) } : {}),
 });
 
 const menuOf = (sector: MenuSector, section: "opening" | "views") => VIEWS.filter((view) => view.menu?.sector === sector && view.menu.section === section).map(item);

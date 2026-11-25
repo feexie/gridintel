@@ -13,8 +13,10 @@ const UTILITY = "/dashboard/intelligence/utility";
 const MINIGRID = "/dashboard/intelligence/minigrid";
 const ASSISTANTS = [`${UTILITY}/ai`, `${MINIGRID}/ai`];
 const PLANNED_SECTORS = ["/dashboard/intelligence/der"];
-const PLANNING = "/dashboard/planning";
-const PLANNED_PLANNERS = ["dt", "feeders", "network-expansion", "unserved", "underserved", "pue", "e-mobility"].map((id) => `${PLANNING}/${id}`);
+const PLANNING = "/dashboard/plan";
+// The planned planners' addresses (NAV-B step 3: E-mobility's is charging-hubs).
+const PLANNED_PLANNERS = ["dt", "feeders", "network-expansion", "unserved", "underserved", "pue", "charging-hubs"].map((id) => `${PLANNING}/${id}`);
+const METERING_FUND = "/dashboard/finance/metering-fund";
 const REFUSED = "/dashboard/refused";
 
 test("the sectors are across the top, and the menu holds the screens of the sector the reader is in", async ({ page }) => {
@@ -57,7 +59,7 @@ test("the sectors are across the top, and the menu holds the screens of the sect
   expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().left)).toBe(0);
 
   // Every link in the menu and in the row of sectors leads to a screen that exists: none says "Coming Soon".
-  for (const href of [...visited, ...PLANNED_SECTORS, PLANNING, `${PLANNING}/metering`, ...PLANNED_PLANNERS]) {
+  for (const href of [...visited, ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS]) {
     await page.goto(href);
     await expect(page.getByText("Coming Soon"), href).toHaveCount(0);
   }
@@ -267,7 +269,7 @@ test("the old Map addresses lead to the Platform Overview", async ({ page }) => 
 });
 
 test("every page has exactly one h1", async ({ page }) => {
-  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, PLANNING, `${PLANNING}/metering`, ...PLANNED_PLANNERS, REFUSED, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
+  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS, REFUSED, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
   test.setTimeout(pages.length * 6_000);
   for (const route of pages) {
     await page.goto(route);
@@ -309,7 +311,7 @@ test("the site asks not to be indexed: a robots meta on every page and a robots.
 
 test("the public demonstration may open every screen, and the page a refused route is answered with says only that it is not open", async ({ page, request }) => {
   // The viewer of the demonstration holds everything: nothing in its menu or its routes is refused.
-  for (const route of ["/dashboard", UTILITY, `${UTILITY}/revenue`, `${OPERATIONS}/feeders/FD-OLD`, MINIGRID, `${MINIGRID}/sites/MG-DRY`, ...PLANNED_SECTORS, PLANNING, `${PLANNING}/metering`, ...PLANNED_PLANNERS]) {
+  for (const route of ["/dashboard", UTILITY, `${UTILITY}/revenue`, `${OPERATIONS}/feeders/FD-OLD`, MINIGRID, `${MINIGRID}/sites/MG-DRY`, ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS]) {
     const response = await request.get(route);
     expect(response.status(), route).toBe(200);
   }
