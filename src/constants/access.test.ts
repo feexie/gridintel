@@ -126,6 +126,15 @@ describe("which screens a viewer may open", () => {
     assert.equal(ROUTES.filter((route) => canOpen(none, route)).length, 0);
   });
 
+  it("starts a viewer without Home where the old menu did: their sector's first screen, or their sector's reports, never the list of every report", () => {
+    const at = (sectors: string[], keys: string[]) => landingFor(grantFor(sectors, keys, false));
+    assert.equal(at(["minigrid"], ["minigrid"]), "/dashboard/intelligence/minigrid");
+    assert.equal(at(["utility"], ["utility.revenue"]), "/dashboard/intelligence/utility/revenue");
+    assert.equal(at(["utility"], ["utility.overview", "utility.map", "utility.revenue"]), "/dashboard/intelligence/utility");
+    assert.equal(at(["utility"], ["utility.reports.reliability"]), "/dashboard/reports/utility");
+    assert.equal(at(["minigrid"], ["minigrid.reports.compliance"]), "/dashboard/reports/minigrid");
+  });
+
   it("gives every report its own key below its sector's Reports screen", () => {
     const keys = REPORTS.map((report) => report.key);
     assert.equal(new Set(keys).size, keys.length);

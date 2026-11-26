@@ -124,10 +124,12 @@ export function workspaceRail(type: WorkspaceType, grant: ScreenGrant): RailItem
   });
 }
 
-/** Where a viewer starts: Home when it opens to them, else the first screen of the catalogue they may open; null when there is none. */
+/** Where a viewer starts: Home when it opens to them, else the first screen of the catalogue they may open; null when there is none.
+    The list of every report is not a start: it opens to anyone who may open one report, whose own sector's list comes first
+    (as the old menu started them, before NAV-B step 6). */
 export function landingFor(grant: ScreenGrant): string | null {
   if (opensView(grant, viewOf("platform.home"))) return hrefOf("platform.home");
-  const first = VIEWS.find((view) => view.address !== null && view.permission === "own" && !view.planned && opensView(grant, view));
+  const first = VIEWS.find((view) => view.id !== "platform.reports" && view.address !== null && view.permission === "own" && !view.planned && opensView(grant, view));
   return first === undefined ? null : hrefOf(first.id);
 }
 
