@@ -52,12 +52,16 @@ export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrame
     if (asked !== null) {
       keep(type);
       url.searchParams.delete(DEMO_WORKSPACE_QUERY);
-      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      // Through the router, so that it takes the address as its own (a bare history.replaceState,
+      // carrying the router's state, was later undone by the router).
+      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
     }
     // Read once the page is in the browser: the page was built ahead of time with the default.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreferred(type);
-  }, []);
+    // The workspace is chosen and the switcher acts from here on (the browser tests wait for it).
+    document.documentElement.dataset.demoWorkspace = type;
+  }, [router]);
 
   const type = demoTypeFor(viewAt(pathname)?.id ?? null, preferred);
   const frame = frames.find((one) => one.workspace.type === type) ?? frames[0];

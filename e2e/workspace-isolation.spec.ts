@@ -35,6 +35,8 @@ test("any other value of ?workspace= or of the cookie is the default, never the 
 
 test("the switcher lists the other four demo workspaces, and choosing one opens its Home", async ({ page }) => {
   await page.goto("/dashboard");
+  // The switcher acts once the page runs in the browser.
+  await expect(page.locator("html")).toHaveAttribute("data-demo-workspace", /.+/);
   await page.locator("[data-switcher] summary").click();
   await expect(page.locator("[data-switch-to]")).toHaveCount(4);
   await page.locator('[data-switch-to="financier"]').click();

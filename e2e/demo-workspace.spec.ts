@@ -47,6 +47,9 @@ test("each demo workspace has its name, the fallback mark, DEMO, and the rail of
 
 test("the switcher changes the header's name and the rail", async ({ page }) => {
   await page.goto("/dashboard?workspace=utility");
+  // The query is taken out once the page runs in the browser: only then does the switcher act.
+  await expect(page.locator("html")).toHaveAttribute("data-demo-workspace", "utility");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.locator("[data-switcher] summary").click();
   await page.locator('[data-switch-to="regulator"]').click();
   // The address names the workspace now shown, never the one left.
