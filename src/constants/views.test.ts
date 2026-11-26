@@ -34,13 +34,12 @@ describe("the View catalogue: permission integrity (safeguard A)", () => {
     assert.equal(new Set(ids).size, ids.length);
   });
 
-  it("gives every view an explicit permission and a domain (A.2); 'viewer' and 'domain' only where named", () => {
+  it("gives every view an explicit permission and a domain (A.2); 'viewer' only where named", () => {
     for (const view of VIEWS) {
-      assert.ok(["own", "domain", "viewer"].includes(view.permission), view.id);
+      assert.ok(["own", "viewer"].includes(view.permission), view.id);
       assert.ok(DOMAINS.includes(view.domain), view.id);
     }
     assert.deepEqual(VIEWS.filter((view) => view.permission === "viewer").map((view) => view.id), ["platform.about-this-build", "platform.refused"]);
-    assert.deepEqual(VIEWS.filter((view) => view.permission === "domain").map((view) => view.id), ["platform.settings", "platform.intelligence-ai", "platform.intelligence-analytics"]);
   });
 
   it("denies by default (A.3): an unknown key opens nothing, an unmapped old key translates to nothing, an address that is no view opens to no one", () => {

@@ -3,6 +3,7 @@ import { OPERATIONS, ROUTES } from "./routes";
 
 /* The menu, the one heading per page, and the one bar that says what data a screen shows. */
 
+// The Phase 1 "Coming Soon" pages, removed in NAV-B step 5 (Founder, 10 November 2026): not found.
 const PLACEHOLDERS = [
   "/dashboard/settings",
   "/dashboard/intelligence/ai",
@@ -268,8 +269,12 @@ test("the old Map addresses lead to the Platform Overview", async ({ page }) => 
   }
 });
 
+test("the three Phase 1 placeholder pages are gone: each answers not found", async ({ request }) => {
+  for (const route of PLACEHOLDERS) expect((await request.get(route)).status(), route).toBe(404);
+});
+
 test("every page has exactly one h1", async ({ page }) => {
-  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS, REFUSED, `${OPERATIONS}/feeders/NOPE`, ...PLACEHOLDERS];
+  const pages = [...ROUTES, ...ASSISTANTS, ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS, REFUSED, `${OPERATIONS}/feeders/NOPE`];
   test.setTimeout(pages.length * 6_000);
   for (const route of pages) {
     await page.goto(route);

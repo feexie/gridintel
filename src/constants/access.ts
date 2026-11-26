@@ -54,8 +54,6 @@ export function opensView(grant: ScreenGrant, view: View): boolean {
   switch (view.permission) {
     case "viewer":
       return true;
-    case "domain":
-      return holdsDomain(grant, view.domain);
     case "own":
       return holdsOrAbove(grant, view.id) || holdsBelow(grant, view.id);
   }

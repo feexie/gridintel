@@ -42,7 +42,6 @@ const ROUTES = [
   "/dashboard/finance/metering-fund",
   "/dashboard/plan/dt",
   "/dashboard/reports",
-  "/dashboard/settings",
 ];
 
 const shape = (navigation: ReturnType<typeof navigationFor>) => navigation.map((sector) => ({ sector: sector.id, home: sector.home, items: [...sector.opening, ...sector.workspaces].map((item) => item.label) }));

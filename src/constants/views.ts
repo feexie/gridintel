@@ -22,9 +22,6 @@
    - "own": opened by a grant holding the view's id, a key above it
      ("utility" above "utility.revenue"), or a key below it (a
      report's key opens its sector's list of reports);
-   - "domain": opened by a grant holding any view of its domain. The
-     three Phase 1 placeholders, which answered to their sector's key
-     before (removed in NAV-B step 5);
    - "viewer": opened to every viewer the deployment lets in (on the
      tenant, everyone signed in). Only the refusal page and About this
      build (Founder's answer 5, 25 November 2026).
@@ -52,9 +49,6 @@ export type ViewId =
   | "platform.people"
   | "platform.about-this-build"
   | "platform.refused"
-  | "platform.settings"
-  | "platform.intelligence-ai"
-  | "platform.intelligence-analytics"
   | "utility.overview"
   | "utility.map"
   | "utility.ai"
@@ -100,7 +94,7 @@ export type ViewId =
   | "initiative.applications"
   | "initiative.journey";
 
-export type Permission = "own" | "domain" | "viewer";
+export type Permission = "own" | "viewer";
 
 export type MenuSector = "platform" | "utility" | "minigrid" | "der" | "planning";
 
@@ -196,10 +190,6 @@ export const VIEWS: readonly View[] = [
   { id: "platform.people", label: "People", question: "Who may sign in, and what may each open?", domain: "platform", address: `${DASHBOARD}/account/people`, permission: "own" },
   { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${DASHBOARD}/about-this-build`, permission: "viewer", inSector: "planning", metering: { id: "about", step: "", label: "About this build" } },
   { id: "platform.refused", label: "Not open to you", question: "This screen is not open to you.", domain: "platform", address: `${DASHBOARD}/refused`, exact: true, permission: "viewer" },
-  // Phase 1 placeholders with no link to them; removed in NAV-B step 5 (Founder, 10 November 2026).
-  { id: "platform.settings", label: "Settings (Phase 1 placeholder)", question: NOT_BUILT, domain: "platform", address: `${DASHBOARD}/settings`, permission: "domain", planned: true },
-  { id: "platform.intelligence-ai", label: "AI (Phase 1 placeholder)", question: NOT_BUILT, domain: "platform", address: `${DASHBOARD}/intelligence/ai`, permission: "domain", planned: true },
-  { id: "platform.intelligence-analytics", label: "Analytics (Phase 1 placeholder)", question: NOT_BUILT, domain: "platform", address: `${DASHBOARD}/intelligence/analytics`, permission: "domain", planned: true },
 
   // Utility.
   ...opening("utility", UTILITY, "Where is the network, what is wrong on it now, and where are the losses?", "Where is the network, and what is wrong on it now?"),

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { resolves } from "../src/constants/access";
 import { destinationOf } from "../src/constants/moves";
 
 /* NAV-B safeguard A, by direct URL request, for the public demonstration's one viewer (Founder,
@@ -18,7 +19,8 @@ test("the public viewer opens every address directly, and is refused none", asyn
     // Where the address is now: its new address when it moved (the redirect itself is old-addresses.spec.ts's).
     const address = destinationOf(old) ?? old;
     const status = (await request.get(address, { maxRedirects: 0 })).status();
-    const ok = NO_ACCOUNTS.includes(address) ? status === 404 : status !== 403 && status !== 404 && status < 500;
+    // People (no accounts here) and an address that is no view (a page NAV-B removed) are not found.
+    const ok = NO_ACCOUNTS.includes(address) || !resolves(address) ? status === 404 : status !== 403 && status !== 404 && status < 500;
     if (!ok) wrong.push(`${address}: answered ${status}`);
   }
   expect(wrong).toEqual([]);

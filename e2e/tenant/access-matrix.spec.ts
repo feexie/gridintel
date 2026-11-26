@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { TENANT_ORGANIZATIONS, TEST_PEOPLE } from "../../src/composition/identityFixture";
-import { canOpen, grantFor } from "../../src/constants/access";
+import { canOpen, grantFor, resolves } from "../../src/constants/access";
 import { destinationOf } from "../../src/constants/moves";
 import { totpCode } from "../../src/repositories/memory/totp";
 
@@ -47,8 +47,9 @@ async function answersExactly(request: APIRequestContext, person: Person) {
     const status = response.status();
     // Open: the page, a redirect it makes itself (a report to its default period), or "not found" from the page (People
     // answers it to anyone but an administrator). Refused: 403 and the refusal page.
-    const ok = open ? status !== 403 && status < 500 : status === 403;
-    if (!ok) wrong.push(`${address}: ${open ? "should open" : "should be refused"}, answered ${status}`);
+    // An address that is no view (a page NAV-B removed) is not found for everyone.
+    const ok = !resolves(address) ? status === 404 : open ? status !== 403 && status < 500 : status === 403;
+    if (!ok) wrong.push(`${address}: ${!resolves(address) ? "should be not found" : open ? "should open" : "should be refused"}, answered ${status}`);
   }
   expect(wrong, person.email).toEqual([]);
 }

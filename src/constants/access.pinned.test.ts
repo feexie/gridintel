@@ -66,6 +66,9 @@ const NARROWINGS: { reason: string; applies: (grant: string, view: ViewId) => bo
 ];
 const narrowing = (grant: string, view: ViewId | undefined) => (view === undefined ? undefined : NARROWINGS.find((one) => one.applies(grant, view)));
 
+/** The Phase 1 "Coming Soon" pages the Founder had removed (10 November 2026; NAV-B step 5): no view, no page, "not found" to everyone. */
+const REMOVED = ["/dashboard/settings", "/dashboard/intelligence/ai", "/dashboard/intelligence/analytics"];
+
 /** Every page and route handler under src/app, as an address pattern. */
 function appRoutes(): string[] {
   const root = new URL("../app/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
@@ -93,6 +96,10 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
     for (const [name, opened] of Object.entries(frozen.opens)) {
       const grant = grantOf(name);
       for (const address of frozen.addresses) {
+        if (REMOVED.includes(address)) {
+          if (canOpen(grant, address)) differences.push(`${name} at ${address}: a removed page still opens`);
+          continue;
+        }
         const before = opened.includes(address);
         const after = canOpen(grant, destination(address));
         if (before === after) continue;
@@ -106,7 +113,7 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
 
   it("opens no view newly to any viewer type, but for the approved widenings (safeguard A.4)", () => {
     for (const name of Object.keys(ROLES)) {
-      const before = new Set(frozen.opens[name].map((address) => viewAt(destination(address))?.id));
+      const before = new Set(frozen.opens[name].filter((address) => !REMOVED.includes(address)).map((address) => viewAt(destination(address))?.id));
       const grant = grantOf(name);
       const newly = VIEWS.filter((view) => view.address !== null && opensView(grant, view) && !before.has(view.id)).filter((view) => widening(name, view.id) === undefined);
       // Views that did not exist before NAV-B have no "before"; they have no page yet in step 1.
@@ -117,7 +124,7 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
   it("narrows no viewer type's views, but for the approved narrowing (People)", () => {
     for (const name of Object.keys(ROLES)) {
       const grant = grantOf(name);
-      for (const address of frozen.opens[name]) if (narrowing(name, viewAt(destination(address))?.id) === undefined) assert.ok(canOpen(grant, destination(address)), `${name}: ${address}`);
+      for (const address of frozen.opens[name].filter((one) => !REMOVED.includes(one))) if (narrowing(name, viewAt(destination(address))?.id) === undefined) assert.ok(canOpen(grant, destination(address)), `${name}: ${address}`);
     }
   });
 
@@ -125,7 +132,7 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
     const now = appRoutes();
     const pattern = (route: string) => new RegExp(`^${route.replace(/\[[^\]]+\]/g, "[^/]+")}$`);
     for (const route of frozenRoutes) {
-      if (now.includes(route)) continue;
+      if (now.includes(route) || REMOVED.includes(route)) continue;
       // Every real sample of the route (the fixture's) redirects to an address a route of today answers.
       const samples = frozen.addresses.filter((address) => pattern(route).test(address));
       assert.ok(samples.length > 0, `the route ${route} has no sample`);
