@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { demoSettled } from "./demo";
 
 /* The demo workspaces (ADR 0021 decision 6; NAV-B steps 6 and 7): one per workspace type, each the
    dashboard itself, read-only, synthetic, open without signing in and badged DEMO on every screen;
@@ -34,6 +35,7 @@ test("an organization role's 'Open the demo workspace' lands in the workspace at
 test("each demo workspace has its name, the fallback mark, DEMO, and the rail of its type, with no Deliver or Customers", async ({ page }) => {
   for (const workspace of WORKSPACES) {
     await page.goto(`/dashboard?workspace=${workspace.type}`);
+    await demoSettled(page);
     await expect(page.locator("[data-workspace-name]"), workspace.type).toHaveText(workspace.name);
     await expect(page.locator("[data-fallback-mark]").first(), workspace.type).toBeVisible();
     await expect(page.locator("[data-demo-badge]"), workspace.type).toBeVisible();
@@ -52,8 +54,9 @@ test("the switcher changes the header's name and the rail", async ({ page }) => 
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.locator("[data-switcher] summary").click();
   await page.locator('[data-switch-to="regulator"]').click();
-  // The address names the workspace now shown, never the one left.
-  await expect(page).toHaveURL(/\/dashboard\?workspace=regulator$/);
+  // Home, in the workspace chosen; the address names no other.
+  await expect(page.locator("html")).toHaveAttribute("data-demo-workspace", "regulator");
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.locator("[data-workspace-name]")).toHaveText("Demonstration Regulator (synthetic)");
   await expect(page.locator("[data-rail] [data-rail-item]")).toHaveText(["Home", "Oversight"]);
   // A reload keeps it.
@@ -64,6 +67,7 @@ test("the switcher changes the header's name and the rail", async ({ page }) => 
 test("every rail item of every demo workspace leads to a screen that exists, in that workspace's frame", async ({ page }) => {
   for (const workspace of WORKSPACES) {
     await page.goto(`/dashboard?workspace=${workspace.type}`);
+    await demoSettled(page);
     const hrefs = await page.locator("[data-rail] [data-rail-item]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
     for (const href of hrefs) {
       const response = await page.goto(href);
@@ -83,6 +87,7 @@ test("an unknown demo workspace or initiative is not found", async ({ request })
 test("a demo workspace carries out nothing: its Home has no form and no button that acts", async ({ page }) => {
   for (const workspace of WORKSPACES) {
     await page.goto(`/dashboard?workspace=${workspace.type}`);
+    await demoSettled(page);
     await expect(page.locator("main form"), workspace.type).toHaveCount(0);
   }
 });

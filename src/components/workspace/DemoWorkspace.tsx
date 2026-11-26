@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { DEMO_WORKSPACE_COOKIE, DEMO_WORKSPACE_QUERY, demoTypeFor, demoWorkspaceType, hrefOf, viewAt, type WorkspaceType } from "@/constants/views";
 import type { SignedInFrameView } from "@/services/initiatives/views";
@@ -14,15 +14,20 @@ import { WorkspaceMark } from "./WorkspaceFrame";
    Only on the public demonstration, whose pages are built ahead of
    time and are the same for everyone. The five demo workspaces'
    frames and page sections are all in the page; this shows one:
-   - the one a link names with ?workspace=, read once and then taken
-     out of the address, and kept in a cookie (the switcher leads to
-     Home with ?workspace= of the workspace chosen);
+   - the one a link names with ?workspace=, kept in a cookie, and the
+     same address then loaded without it;
    - else the one the cookie names;
    - else the default (Demonstration DisCo).
    Either value is validated against the catalogue's five types
    (views.ts, demoWorkspaceType): any other value is the default.
    When the page's view is not in that workspace's catalogue, the
    demo workspace that shows it is used (demoTypeFor).
+
+   Both the hand-over and the switcher load the page plainly (the
+   pages are built ahead, so it is quick) rather than through the
+   client router: the router keeps the address it started with and
+   wrote it back over a tidied one, so the address bar could name a
+   workspace other than the one shown.
 
    It holds no figure and decides nothing about access: every demo
    workspace is synthetic and the public viewer holds every screen.
@@ -42,29 +47,24 @@ function keep(type: WorkspaceType) {
 
 export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrameView[]; bar: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [preferred, setPreferred] = useState<WorkspaceType>(() => demoWorkspaceType(null));
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const asked = url.searchParams.get(DEMO_WORKSPACE_QUERY);
     const type = demoWorkspaceType(asked ?? cookieValue());
-    let tidy: ReturnType<typeof setTimeout> | undefined;
     if (asked !== null) {
+      // Kept, then the same address without it: the cookie chooses on that load.
       keep(type);
       url.searchParams.delete(DEMO_WORKSPACE_QUERY);
-      // Once the router has started (this effect runs before the router's own, which would write the
-      // address it started with over the tidied one), by the native history call Next folds into its
-      // router (node_modules/next/dist/docs, "Native History API"). router.replace does nothing on a
-      // page built ahead, whose router address is already the bare one.
-      tidy = setTimeout(() => window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`), 0);
+      window.location.replace(`${url.pathname}${url.search}${url.hash}`);
+      return;
     }
     // Read once the page is in the browser: the page was built ahead of time with the default.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreferred(type);
     // The workspace is chosen and the switcher acts from here on (the browser tests wait for it).
     document.documentElement.dataset.demoWorkspace = type;
-    return () => clearTimeout(tidy);
   }, []);
 
   const type = demoTypeFor(viewAt(pathname)?.id ?? null, preferred);
@@ -83,11 +83,9 @@ export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrame
                 className="flex w-full items-center gap-2 rounded-tile px-2 py-1.5 text-left text-sm text-ink-2 hover:bg-line/60"
                 data-switch-to={one.workspace.type}
                 onClick={() => {
+                  // Kept, then Home loaded: the cookie chooses on that load, and a reload keeps it.
                   keep(one.workspace.type);
-                  setPreferred(one.workspace.type);
-                  // The address names the workspace it leads to, so it says what the screen shows and a reload keeps it.
-                  // (Pushing the bare Home address after the query was taken out left the old ?workspace= in the bar.)
-                  router.push(`${hrefOf("platform.home")}?${DEMO_WORKSPACE_QUERY}=${one.workspace.type}`);
+                  window.location.assign(hrefOf("platform.home"));
                 }}
               >
                 <WorkspaceMark workspace={one.workspace} size="sm" />

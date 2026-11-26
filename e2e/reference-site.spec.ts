@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { demoSettled } from "./demo";
 
 /* Reference sites (Phase MG-REAL): a real mini-grid whose records its owners published (site
    RMG01, Kemabonta & Geoffrey 2026, CC BY 4.0). Shown beside the operator's sites and never among
@@ -74,6 +75,7 @@ test("the verification card and the public summary carry the reference site as a
 
 test("the mini-grid demo workspace's Sites view carries the reference site too", async ({ page }) => {
   await page.goto("/dashboard/intelligence/minigrid/sites?workspace=minigrid");
+  await demoSettled(page);
   await credited(page.locator('[data-reference-site="rmg01"]'));
 });
 
