@@ -199,17 +199,19 @@ test("on a phone the rail is across the top, the item's views a row below it, th
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar.getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();
     await expect(bar.getByText("Reporting period", { exact: true }), route).toBeVisible();
-    // The frame takes about a fifth of the screen at most: the page starts within 200 px of the top.
-    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(200);
+    // The frame takes less than a fifth of the screen: the page starts within 170 px of the top (as before NAV-B).
+    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(170);
   }
   // What the dataset is opens with one tap.
   const bar = page.getByRole("note", { name: "About the data on this screen" });
   await expect(bar.getByText("It describes no real network")).toBeHidden();
   await bar.locator("[data-about-data]").click();
   await expect(bar.getByText("It describes no real network")).toBeVisible();
-  // The rail and the row of the item's views are each no wider than the screen, and every screen is one tap away.
+  // The rail is one row no wider than the screen (it scrolls), and every screen is one tap away.
   const rail = page.locator("[data-rail]");
   expect(await rail.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  await expect(page.locator("[data-rail-narrow]")).toBeVisible();
+  await page.goto(UTILITY);
   await expect(page.locator("[data-rail-views-narrow]")).toBeVisible();
   await page.locator("[data-rail-views-narrow]").getByRole("link", { name: "Revenue" }).click();
   await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility\/revenue$/);
