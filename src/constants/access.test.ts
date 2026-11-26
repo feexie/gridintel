@@ -3,11 +3,11 @@ import { describe, it } from "node:test";
 import { NextRequest } from "next/server.js";
 import { accessProxy } from "../proxy.ts";
 import type { ScreenGrant, ViewerContext } from "../services/spatial/viewer.ts";
-import { admitsRead, canOpen, grantFor, holdsSector, homeFor, keyFor, navigationFor, REFUSED_PATH, reportsFor } from "./access.ts";
+import { admitsRead, canOpen, grantFor, holdsSector, homeFor, keyFor, landingFor, navigationFor, REFUSED_PATH, reportsFor, workspaceRail } from "./access.ts";
 import { departmentOf, departmentsFor } from "./departments.ts";
 import { PEOPLE_KEY, PEOPLE_PATH } from "./navigation.ts";
 import { REPORTS, sectors } from "./navigation.ts";
-import { PLATFORM_DEFAULT, RAILS, viewOf, workspaceViews } from "./views.ts";
+import { PLATFORM_DEFAULT, RAILS, viewOf, WORKSPACE_TYPES, workspaceViews } from "./views.ts";
 
 const EVERYTHING: ScreenGrant = { kind: "everything" };
 /** A viewer allowed only Utility > Revenue. */
@@ -68,7 +68,26 @@ describe("which screens a viewer may open", () => {
   it("opens everything to the public demonstration, whose menu is the whole catalogue", () => {
     for (const route of ROUTES) assert.equal(canOpen(EVERYTHING, route), true, route);
     assert.deepEqual(navigationFor(EVERYTHING), sectors);
-    assert.equal(homeFor(navigationFor(EVERYTHING)), "/dashboard");
+    // Where a viewer starts is Home (NAV-B step 6); the old menu's Platform item leads to the Overview, now under Intelligence.
+    assert.equal(landingFor(EVERYTHING), "/dashboard");
+    assert.equal(homeFor(navigationFor(EVERYTHING)), "/dashboard/intelligence");
+  });
+
+  it("gives each workspace type its rail, each view in one item only, cut to the grant (NAV-B step 6)", () => {
+    for (const type of WORKSPACE_TYPES) {
+      const rail = workspaceRail(type, EVERYTHING);
+      assert.equal(rail[0].item, "home", type);
+      const ids = rail.flatMap((item) => item.views.map((view) => view.id));
+      assert.equal(new Set(ids).size, ids.length, `${type}: a view listed twice`);
+      for (const item of rail) for (const view of item.views) assert.ok(canOpen(EVERYTHING, view.href), `${type}: ${view.id}`);
+    }
+    assert.deepEqual(workspaceRail("utility", EVERYTHING).map((item) => item.item), ["home", "intelligence", "plan", "finance"]);
+    assert.deepEqual(workspaceRail("regulator", EVERYTHING).map((item) => item.item), ["home", "oversight"]);
+    // The revenue department: Intelligence only, with its two views, and no link it would be refused at.
+    const revenue = workspaceRail("utility", REVENUE_DEPARTMENT);
+    assert.deepEqual(revenue.map((item) => [item.item, item.href, item.views.map((view) => view.id)]), [["intelligence", "/dashboard/intelligence/utility", ["utility.revenue", "utility.map"]]]);
+    assert.equal(landingFor(REVENUE_DEPARTMENT), "/dashboard/intelligence/utility");
+    assert.equal(landingFor({ kind: "listed", keys: [] }), null);
   });
 
   it("shows a viewer allowed only Utility > Revenue that one item, and refuses every other route", () => {

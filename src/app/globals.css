@@ -1214,6 +1214,8 @@ ol.gr-list {
 html[data-present] [data-sector-bar],
 html[data-present] [data-topbar],
 html[data-present] [data-sidebar],
+html[data-present] [data-workspace-header],
+html[data-present] [data-rail],
 html[data-present] [data-metering-tabs] {
   display: none !important;
 }

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import type { AccountsAdmin, AccountsReader, CookieJar, IdentitySession, Membership, MemberRole, SessionUser, TenantOrganization } from "../repositories/ports/index.ts";
 import type { ViewerContext } from "../services/spatial/viewer.ts";
-import { canOpen, grantFor, homeFor, navigationFor } from "../constants/access.ts";
+import { canOpen, grantFor, landingFor } from "../constants/access.ts";
 import { createMemoryIdentityStore, memoryAccountsAdmin, memoryAccountsReader, memoryIdentitySession, seedMemoryIdentity, type MemoryIdentityStore } from "../repositories/memory/identity.ts";
 import { supabaseAccountsAdmin, supabaseIdentitySession, type SupabaseSettings } from "../repositories/supabase/identity.ts";
 import { TENANT_ORGANIZATIONS, TEST_PEOPLE } from "./identityFixture.ts";
@@ -137,7 +137,7 @@ export async function startingPoint(next: string | null): Promise<string | null>
   const viewer = await tenantViewer();
   if (viewer === NO_ONE) return null;
   if (next !== null && canOpen(viewer.screens, next)) return next;
-  return homeFor(navigationFor(viewer.screens));
+  return landingFor(viewer.screens);
 }
 
 /* ---------------- An administrator's actions ----------------

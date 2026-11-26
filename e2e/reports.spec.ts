@@ -59,7 +59,8 @@ for (const [route, title, id] of [
     // page), and the sheet is on the page whose margins carry the label.
     await page.emulateMedia({ media: "print" });
     await expect(page.locator(".gr-toolbar")).toBeHidden();
-    await expect(page.locator("[data-sector-bar]")).toBeHidden();
+    await expect(page.locator("[data-workspace-header]")).toBeHidden();
+    await expect(page.locator("[data-rail]")).toBeHidden();
     expect(await page.locator(".gr-watermark").evaluate((node) => getComputedStyle(node).position)).toBe("fixed");
     expect(await page.locator(".gr-sheet").evaluate((node) => getComputedStyle(node).getPropertyValue("page"))).toBe("sample");
     const pageRule = await page.evaluate(() =>

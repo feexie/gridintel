@@ -70,6 +70,9 @@ export const MOVES: readonly Move[] = [
   { from: `${U}/reports`, view: "utility.reports", below: true, step: 4 },
   { from: `${M}/reports`, view: "minigrid.reports", below: true, step: 4 },
   { from: "/dashboard/settings/people", view: "platform.people", below: true, step: 4 },
+  // Step 6: the old map addresses lead to the Platform Overview, now under Intelligence with its map (they led to /dashboard before).
+  { from: "/dashboard/map", view: "platform.overview", below: false, step: 6 },
+  { from: "/dashboard/intelligence/gis", view: "platform.overview", below: false, step: 6 },
 ];
 
 /** Where an old address now is, the rest of it carried; null when it did not move. */

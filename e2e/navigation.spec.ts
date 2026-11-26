@@ -20,54 +20,48 @@ const PLANNED_PLANNERS = ["dt", "feeders", "network-expansion", "unserved", "und
 const METERING_FUND = "/dashboard/finance/metering-fund";
 const REFUSED = "/dashboard/refused";
 
-test("the sectors are across the top, and the menu holds the screens of the sector the reader is in", async ({ page }) => {
+test("the rail holds the workspace's items, and the item the reader is in lists its views", async ({ page }) => {
   await page.goto(UTILITY);
-  // The row of sectors: the same five on every screen, the one not built marked so in a word.
-  const sectors = page.locator("[data-sector-bar]").getByRole("navigation", { name: "Sectors" });
-  await expect(sectors.getByRole("link")).toHaveText(["Platform", "Utility", "Mini-grid", "DERPlanned", "Planning"]);
-  expect(await sectors.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")))).toEqual(["/dashboard", UTILITY, MINIGRID, ...PLANNED_SECTORS, PLANNING]);
-  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Utility"]);
-
-  const menu = page.getByRole("navigation", { name: "Main" });
-  const hrefs = () => menu.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
+  const rail = page.locator("[data-rail]");
+  const views = page.locator("[data-rail-views-wide]");
+  const hrefs = () => views.getByRole("link").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string));
   const visited: string[] = [];
-  // Utility: Overview, GIS Map, AI Assistant marked planned, then its six workspaces and Reports. Nothing of another sector.
-  await expect(menu).toContainText("Utility Intelligence");
-  expect(await hrefs()).toEqual([UTILITY, `${UTILITY}/map`, `${UTILITY}/ai`, `${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, "/dashboard/reports/utility"]);
-  await expect(menu.getByRole("link")).toContainText(["Overview", "GIS Map", "AI AssistantPlanned"]);
-  await expect(menu.locator("[data-planned]")).toHaveCount(1);
-  await expect(menu.locator("[data-workspaces]").getByRole("link")).toHaveCount(7);
-  visited.push(...(await hrefs()));
+  // The Demonstration DisCo: Home, Intelligence, Plan and Finance; no Oversight (a regulator's).
+  await expect(page.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "utility");
+  await expect(page.locator("[data-demo-badge]")).toBeVisible();
+  await expect(rail.locator("[data-rail-item]")).toHaveText(["Home", "Intelligence", "Plan", "Finance"]);
+  await expect(rail.locator("[data-rail-item][data-active]")).toHaveText(["Intelligence"]);
+  // Intelligence lists the utility's screens, the assistant marked planned; nothing of another domain.
+  expect(await hrefs()).toEqual([`${UTILITY}/executive`, OPERATIONS, `${UTILITY}/reliability`, `${UTILITY}/revenue`, `${UTILITY}/assets`, `${UTILITY}/events`, `${UTILITY}/map`, `${UTILITY}/ai`]);
+  await expect(views.locator("[data-planned]")).toHaveText(["AI AssistantPlanned"]);
+  await expect(rail.locator("[data-rail-reports]")).toHaveAttribute("href", "/dashboard/reports/utility");
+  visited.push(...(await hrefs()), ...(await rail.locator("[data-rail-item]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") as string))));
 
-  // Choosing a sector opens its Overview and changes the menu to its screens: the same structure.
-  await sectors.getByRole("link", { name: "Mini-grid" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid$/);
-  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
-  await expect(menu).toContainText("Mini-grid Intelligence");
-  expect(await hrefs()).toEqual([MINIGRID, `${MINIGRID}/map`, `${MINIGRID}/ai`, `${MINIGRID}/sites`, "/dashboard/reports/minigrid"]);
-  await expect(menu.getByRole("link")).toHaveText(["Overview", "GIS Map", "AI AssistantPlanned", "Sites", "Reports"]);
+  // A mini-grid screen is shown in the demo mini-grid operator's workspace, with its own rail.
+  await page.goto(MINIGRID);
+  await expect(page.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "minigrid");
+  await expect(rail.locator("[data-rail-item]")).toHaveText(["Home", "Intelligence", "Plan"]);
+  expect(await hrefs()).toEqual([`${MINIGRID}/sites`, `${MINIGRID}/map`, `${MINIGRID}/ai`]);
+  await expect(rail.locator("[data-rail-reports]")).toHaveAttribute("href", "/dashboard/reports/minigrid");
   visited.push(...(await hrefs()));
-  // A screen below a workspace is still in its sector.
+  // A screen below a view is still in its item.
   await page.goto(`${MINIGRID}/sites/MG-DRY`);
-  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Mini-grid"]);
+  await expect(rail.locator("[data-rail-item][data-active]")).toHaveText(["Intelligence"]);
 
-  // There is no top-level Map: the platform has an Overview only, so it has no sidebar and its page takes the full width.
-  await sectors.getByRole("link", { name: "Platform" }).click();
+  // Home is marked Home.
+  await rail.getByRole("link", { name: "Home" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(sectors.locator('[aria-current="true"]')).toHaveText(["Platform"]);
-  await expect(page.locator("aside")).toHaveCount(0);
-  await expect(menu).toHaveCount(0);
-  expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().left)).toBe(0);
+  await expect(rail.locator('[data-rail-item="home"]')).toHaveAttribute("aria-current", "page");
 
-  // Every link in the menu and in the row of sectors leads to a screen that exists: none says "Coming Soon".
-  for (const href of [...visited, ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS]) {
+  // Every link in the rail leads to a screen that exists: none says "Coming Soon".
+  for (const href of [...new Set(visited), ...PLANNED_SECTORS, PLANNING, METERING_FUND, ...PLANNED_PLANNERS]) {
     await page.goto(href);
     await expect(page.getByText("Coming Soon"), href).toHaveCount(0);
   }
   for (const href of PLACEHOLDERS) expect(visited, href).not.toContain(href);
 });
 
-test("a sector that is not built says so, in the row of sectors, in the menu and on its one page", async ({ page }) => {
+test("a sector that is not built says so, in the rail and on its one page", async ({ page }) => {
   for (const [route, name] of [["/dashboard/intelligence/der", "DER Intelligence"]]) {
     await page.goto(route);
     const main = page.getByRole("main");
@@ -77,10 +71,9 @@ test("a sector that is not built says so, in the row of sectors, in the menu and
     await expect(main.locator("[data-planned-structure] li"), route).toHaveText([/^Overview/, /^GIS Map/, /^AI Assistant/, /^Workspaces/]);
     // No figure, and nothing to operate.
     await expect(main.locator("[data-metric], [data-figure], input, textarea, select, button, form"), route).toHaveCount(0);
-    const menu = page.getByRole("navigation", { name: "Main" });
-    await expect(menu.getByRole("link"), route).toHaveText(["OverviewPlanned"]);
-    await expect(menu, route).toContainText("Not built yet.");
-    await expect(page.locator("[data-sector-bar] [aria-current=true]"), route).toContainText("Planned");
+    // The demo DER developer's workspace: its Intelligence lists the one planned view.
+    await expect(page.locator("[data-workspace-frame]"), route).toHaveAttribute("data-workspace-type", "der");
+    await expect(page.locator("[data-rail-views-wide] [data-planned]"), route).toHaveText(["DER fleetPlanned"]);
     await expect(page.getByRole("note", { name: "About the data on this screen" }), route).toContainText("SYNTHETIC DATA");
   }
 });
@@ -91,11 +84,9 @@ test("Planning lists its planners in two groups: Metering is built, the other se
   await expect(main.getByRole("heading", { level: 1 })).toHaveText("Overview");
   await expect(main.locator('[data-planning-group="utility"] [data-planner]')).toHaveText([/^Metering\s*Built/, /^Distribution transformers \(DT\)\s*Planned/, /^Feeders\s*Planned/, /^Network expansion\s*Planned/]);
   await expect(main.locator('[data-planning-group="minigrid"] [data-planner]')).toHaveText([/^Unserved\s*Planned/, /^Underserved\s*Planned/, /^Productive use of energy \(PUE\)\s*Planned/, /^E-mobility\s*Planned/]);
-  // The menu: the Overview, then the planners under their two groups, the planned ones marked so.
-  const menu = page.getByRole("navigation", { name: "Main" });
-  await expect(menu.locator("[data-menu-group]")).toHaveText(["Utility planning", "Mini-grid planning"]);
-  await expect(menu.getByRole("link")).toHaveText(["Overview", "Metering", ...["Distribution transformers (DT)", "Feeders", "Network expansion", "Unserved", "Underserved", "Productive use of energy (PUE)", "E-mobility"].map((label) => `${label}Planned`)]);
-  await expect(page.locator("[data-sector-bar] [aria-current=true]")).toHaveText("Planning");
+  // The rail: Plan, as the Demonstration DisCo's rail lists it, the planned ones marked so.
+  await expect(page.locator('[data-rail-item][data-active]')).toHaveText(["Plan"]);
+  await expect(page.locator("[data-rail-views-wide] a")).toHaveText(["Metering allocation", "DT sequencing", "FeedersPlanned", "Network expansionPlanned", "Charging hubs: siting and loadPlanned"]);
 
   for (const route of PLANNED_PLANNERS) {
     await page.goto(route);
@@ -126,8 +117,17 @@ test("an AI Assistant page says it is not built, gives example questions, and is
   await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility\/revenue$/);
 });
 
-test("the Platform Overview says what GridIntel does, shows every sector on one map and leads into each sector's findings", async ({ page }) => {
+test("Home holds the workspace's initiatives and a clear way to the Platform overview, now under Intelligence", async ({ page }) => {
   await page.goto("/dashboard");
+  await expect(page.locator("[data-workspace-home] [data-initiative-card]").first()).toBeVisible();
+  const link = page.locator("[data-platform-overview-link]").getByRole("link", { name: "Platform overview (now under Intelligence)" });
+  await link.click();
+  await expect(page).toHaveURL(/\/dashboard\/intelligence$/);
+  await expect(page.locator('[data-overview="platform"]')).toBeVisible();
+});
+
+test("the Platform Overview says what GridIntel does, shows every sector on one map and leads into each sector's findings", async ({ page }) => {
+  await page.goto("/dashboard/intelligence");
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { level: 1 })).toHaveText("Know what your network is really doing, not just what the report says.");
   // The hero is a brand area: it holds no figure.
@@ -190,7 +190,7 @@ test("a sector's Overview says what needs attention, in the fixed order of its r
   await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid\/sites\/MG-DRY$/);
 });
 
-test("on a phone the menu opens on request, the data bar stays in view and nothing is wider than the screen", async ({ page }) => {
+test("on a phone the rail is across the top, the item's views a row below it, the data bar stays in view and nothing is wider than the screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   for (const route of ["/dashboard", UTILITY, MINIGRID, `${UTILITY}/map`, `${MINIGRID}/map`, `${UTILITY}/ai`]) {
     await page.goto(route);
@@ -199,32 +199,23 @@ test("on a phone the menu opens on request, the data bar stays in view and nothi
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar.getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();
     await expect(bar.getByText("Reporting period", { exact: true }), route).toBeVisible();
-    // The frame takes less than a fifth of the screen: the page starts within 170 px of the top.
-    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(170);
+    // The frame takes about a fifth of the screen at most: the page starts within 200 px of the top.
+    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(200);
   }
   // What the dataset is opens with one tap.
   const bar = page.getByRole("note", { name: "About the data on this screen" });
   await expect(bar.getByText("It describes no real network")).toBeHidden();
   await bar.locator("[data-about-data]").click();
   await expect(bar.getByText("It describes no real network")).toBeVisible();
-  // The menu is closed until asked for, and closes when a screen is chosen.
-  await expect(page.locator("[data-menu]")).toHaveCount(0);
-  // It names the sector the reader is in, and holds the sectors and then this sector's screens.
-  await expect(page.locator("[data-menu-button]")).toHaveText(/Utility/);
-  await page.locator("[data-menu-button]").click();
-  const drawer = page.locator("[data-menu]");
-  await expect(drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link")).toHaveCount(5);
-  await expect(drawer.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(10);
-  // Nothing in the open menu is wider than the screen.
-  expect(await drawer.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
-  await drawer.getByRole("navigation", { name: "Sectors" }).getByRole("link", { name: "Mini-grid" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid$/);
-  await expect(drawer).toHaveCount(0);
-  await expect(page.locator("[data-menu-button]")).toHaveText(/Mini-grid/);
-  await page.locator("[data-menu-button]").click();
-  await drawer.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Sites" }).click();
+  // The rail and the row of the item's views are each no wider than the screen, and every screen is one tap away.
+  const rail = page.locator("[data-rail]");
+  expect(await rail.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  await expect(page.locator("[data-rail-views-narrow]")).toBeVisible();
+  await page.locator("[data-rail-views-narrow]").getByRole("link", { name: "Revenue" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility\/revenue$/);
+  await page.goto(MINIGRID);
+  await page.locator("[data-rail-views-narrow]").getByRole("link", { name: "Sites" }).click();
   await expect(page).toHaveURL(/\/dashboard\/intelligence\/minigrid\/sites$/);
-  await expect(drawer).toHaveCount(0);
 });
 
 test("the theme can be changed and is kept", async ({ page }) => {
@@ -233,7 +224,7 @@ test("the theme can be changed and is kept", async ({ page }) => {
   const html = page.locator("html");
   // Without a choice, the device's own setting.
   await expect(html).toHaveAttribute("data-theme", "light");
-  await page.locator("[data-sector-bar] [data-theme-toggle]").click();
+  await page.locator("[data-workspace-header] [data-theme-toggle]").click();
   await expect(html).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "dark");
@@ -241,29 +232,30 @@ test("the theme can be changed and is kept", async ({ page }) => {
   await expect(page.getByRole("note", { name: "About the data on this screen" })).toContainText("SYNTHETIC DATA");
 });
 
-test("the menu marks the workspace the reader is in, at any depth", async ({ page }) => {
-  const menu = page.getByRole("navigation", { name: "Main" });
+test("the rail marks the view the reader is in, at any depth", async ({ page }) => {
+  const views = page.locator("[data-rail-views-wide]");
   await page.goto(`${OPERATIONS}/feeders/FD-OLD`);
-  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Operations"]);
+  await expect(views.locator('[aria-current="page"]')).toHaveText(["Operations"]);
   await page.goto("/dashboard/intelligence/utility/revenue");
-  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Revenue"]);
+  await expect(views.locator('[aria-current="page"]')).toHaveText(["Revenue"]);
   await page.goto("/dashboard/intelligence/utility/events");
-  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Events / Alarms"]);
-  // A site's screen is inside the Sites workspace.
+  await expect(views.locator('[aria-current="page"]')).toHaveText(["Events / Alarms"]);
+  // A site's screen is inside the Sites view.
   await page.goto("/dashboard/intelligence/minigrid/sites/MG-PLM");
-  await expect(menu.locator('[aria-current="page"]')).toHaveText(["Sites"]);
-  // A sector's Overview is not marked on the screens below it, and each sector's own items are told apart.
+  await expect(views.locator('[aria-current="page"]')).toHaveText(["Sites"]);
+  // Each domain's own views are told apart; an item's landing marks the item.
   await page.goto(`${MINIGRID}/map`);
-  await expect(menu.locator('[aria-current="page"]')).toHaveText(["GIS Map"]);
-  expect(await menu.locator('[aria-current="page"]').getAttribute("href")).toBe(`${MINIGRID}/map`);
+  await expect(views.locator('[aria-current="page"]')).toHaveText(["GIS Map"]);
+  expect(await views.locator('[aria-current="page"]').getAttribute("href")).toBe(`${MINIGRID}/map`);
   await page.goto(UTILITY);
-  expect(await menu.locator('[aria-current="page"]').getAttribute("href")).toBe(UTILITY);
+  await expect(page.locator('[data-rail-item="intelligence"]')).toHaveAttribute("aria-current", "page");
+  await expect(views.locator('[aria-current="page"]')).toHaveCount(0);
 });
 
 test("the old Map addresses lead to the Platform Overview", async ({ page }) => {
   for (const old of ["/dashboard/map", "/dashboard/intelligence/gis"]) {
     await page.goto(old);
-    await expect(page, old).toHaveURL(/\/dashboard$/);
+    await expect(page, old).toHaveURL(/\/dashboard\/intelligence$/);
     await expect(page.locator('[data-overview="platform"]'), old).toBeVisible();
     await expect(page.getByText("Coming Soon"), old).toHaveCount(0);
   }
@@ -334,7 +326,7 @@ test("the public demonstration has no accounts: no sign-in, no people screen, no
   }
   expect((await request.get("/auth/confirm?token_hash=x&type=invite")).status()).toBe(404);
   expect((await request.post("/auth/signout")).status()).toBe(404);
-  await page.goto("/dashboard");
+  await page.goto("/dashboard/intelligence");
   await expect(page.locator("[data-account]")).toHaveCount(0);
   await expect(page.locator("[data-sector]")).toHaveCount(2);
 });

@@ -93,11 +93,11 @@ test("an assumption or a mitigation recalculates the screen through the address"
 test("presentation mode hides the navigation and keeps the finding", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(`${FUND}?present=1`);
-  await expect(page.locator("[data-sidebar]")).toBeHidden();
-  await expect(page.locator("[data-sector-bar]")).toBeHidden();
+  await expect(page.locator("[data-rail]")).toBeHidden();
+  await expect(page.locator("[data-workspace-header]")).toBeHidden();
   await expect(page.locator('[data-figure="charge"]')).toBeVisible();
   await page.getByRole("link", { name: "Leave presentation mode" }).click();
-  await expect(page.locator("[data-sidebar]")).toBeVisible();
+  await expect(page.locator("[data-rail]")).toBeVisible();
 });
 
 test("DisCo allocation: the largest gap first, the two scores, the first million against pro-rata, and a pilot", async ({ page }) => {
@@ -185,7 +185,7 @@ test("presentation mode on DisCo allocation, DT sequencing, Marketplace, Monitor
   await page.setViewportSize({ width: 1920, height: 1080 });
   for (const path of ["/dashboard/plan/metering-allocation", "/dashboard/plan/dt-sequencing", "/dashboard/finance/marketplace", "/dashboard/oversight/monitoring", "/dashboard/initiatives/meter-every-customer/journey", "/dashboard/about-this-build"]) {
     await page.goto(`${path}?present=1`);
-    await expect(page.locator("[data-sidebar]"), path).toBeHidden();
+    await expect(page.locator("[data-rail]"), path).toBeHidden();
     await expect(page.locator("[data-metering-tabs]"), path).toBeHidden();
     const size = await page.getByRole("main").getByRole("heading", { level: 1 }).evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
     expect(size, path).toBeGreaterThanOrEqual(36);
@@ -197,9 +197,9 @@ test("presentation mode on DisCo allocation, DT sequencing, Marketplace, Monitor
   await page.goto("/dashboard/oversight/monitoring?present=1");
   await page.locator("[data-quarters]").getByRole("link", { name: /2027 Q1/ }).click();
   await expect(page).toHaveURL(/quarter=.*present=1/);
-  await expect(page.locator("[data-sidebar]")).toBeHidden();
+  await expect(page.locator("[data-rail]")).toBeHidden();
   await page.getByRole("link", { name: "Leave presentation mode" }).click();
-  await expect(page.locator("[data-sidebar]")).toBeVisible();
+  await expect(page.locator("[data-rail]")).toBeVisible();
 });
 
 test("the Planning overview says it shows no data", async ({ page }) => {

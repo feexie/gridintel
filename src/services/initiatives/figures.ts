@@ -160,18 +160,19 @@ export function minigridSummary(portfolio: MinigridPortfolioView, reference: Ref
 type FigureInputs = {
   published: PublishedFiguresRepository;
   marketplace: MarketplaceRepository;
-  minigrid: () => Promise<MinigridPortfolioView>;
+  /** The mini-grid portfolio; null when the workspace may not read it (a DisCo on a tenant deployment): its figure is then not available, never zero. */
+  minigrid: (() => Promise<MinigridPortfolioView>) | null;
   reference: () => Promise<ReferenceSitesView>;
 };
 
 /** Every figure the initiative catalogue names, resolved, as the public Home shows them: every DisCo's queue. */
 export async function initiativeFigures(inputs: FigureInputs): Promise<Record<InitiativeFigureId, InitiativeFigureView>> {
-  const [rate, pending, portfolio, reference] = await Promise.all([nationalMeteringRate(inputs.published), pendingApplications(inputs.marketplace), inputs.minigrid(), inputs.reference()]);
+  const [rate, pending, portfolio, reference] = await Promise.all([nationalMeteringRate(inputs.published), pendingApplications(inputs.marketplace), inputs.minigrid === null ? null : inputs.minigrid(), inputs.reference()]);
   return {
     "metering.national-rate": rate,
     "metering.pending-applications": pending,
     "charging.hubs": chargingHubs(),
-    "minigrid.sites-agreeing": sitesAgreeing(portfolio),
+    "minigrid.sites-agreeing": portfolio === null ? notAvailable("minigrid.sites-agreeing", "Sites whose report agrees with their records", "Not read for this workspace.") : sitesAgreeing(portfolio),
     "minigrid.reference-meter-gap": referenceMeterGap(reference),
   };
 }

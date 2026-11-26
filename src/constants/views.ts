@@ -184,8 +184,9 @@ const METERING_PURPOSE = "Meter every customer in five years with no upfront pay
 
 export const VIEWS: readonly View[] = [
   // The platform's own screens.
-  { id: "platform.overview", label: "Platform overview", question: "What does GridIntel show, across every sector?", domain: "platform", address: DASHBOARD, exact: true, permission: "own", menu: { sector: "platform", section: "opening", label: "Overview" } },
-  { id: "platform.home", label: "Home", question: "What am I working on?", domain: "platform", address: null, exact: true, permission: "own", planned: true },
+  // Home is where a workspace lands (NAV-B step 6); the Platform Overview moved under Intelligence with its map.
+  { id: "platform.home", label: "Home", question: "What am I working on?", domain: "platform", address: DASHBOARD, exact: true, permission: "own" },
+  { id: "platform.overview", label: "Platform overview", question: "What does GridIntel show, across every sector?", domain: "platform", address: INTELLIGENCE, exact: true, permission: "own", menu: { sector: "platform", section: "opening", label: "Overview" } },
   { id: "platform.reports", label: "Reports", question: "Which reports can I download, for which period?", domain: "platform", address: `${DASHBOARD}/reports`, exact: true, permission: "own" },
   { id: "platform.people", label: "People", question: "Who may sign in, and what may each open?", domain: "platform", address: `${DASHBOARD}/account/people`, permission: "own" },
   { id: "platform.about-this-build", label: "About this build", question: "What existed before the sprint, and what was built during it?", domain: "platform", address: `${DASHBOARD}/about-this-build`, permission: "viewer", inSector: "planning", metering: { id: "about", step: "", label: "About this build" } },
@@ -242,14 +243,15 @@ export const VIEWS: readonly View[] = [
   planner("plan.charging-hubs", "e-mobility", "minigrid", "E-mobility", "Charging electric motorcycles and tricycles on a mini-grid: demand, tariff and battery size.", "Charging hubs: siting and load", "Where should charging hubs go, and can the network carry them?"),
 
   // New in NAV-B, with no page yet (they get theirs in later steps, or stay planned).
-  { id: "plan.rooftop-solar", label: "Rooftop and C&I solar", question: NOT_BUILT, domain: "planning", address: null, permission: "own", planned: true },
-  { id: "plan.storage", label: "Storage", question: NOT_BUILT, domain: "planning", address: null, permission: "own", planned: true },
-  { id: "finance.overview", label: "Finance", question: "Who pays, and how is it repaid?", domain: "planning", address: null, exact: true, permission: "own", planned: true },
-  { id: "finance.pipeline", label: "Funding pipeline", question: "Which approved applications and hub requests are ready to fund? (masked)", domain: "planning", address: null, permission: "own", planned: true },
-  { id: "oversight.overview", label: "Oversight", question: "Is the programme delivering, across operators?", domain: "planning", address: null, exact: true, permission: "own", planned: true },
-  { id: "oversight.regulator", label: "Regulator view", question: NOT_BUILT, domain: "planning", address: null, permission: "own", planned: true },
-  { id: "initiative.home", label: "Initiative", question: "The initiative as this workspace sees it.", domain: "platform", address: null, permission: "own", planned: true },
-  { id: "initiative.applications", label: "Applications", question: "Which meter applications wait for us, and what is each waiting for?", domain: "utility", address: null, permission: "own", planned: true },
+  // New in NAV-B (step 6): the rail items' indexes, an initiative inside a workspace, and the planned views' pages (no figure).
+  { id: "plan.rooftop-solar", label: "Rooftop and C&I solar", question: NOT_BUILT, domain: "planning", address: `${PLAN}/rooftop-solar`, permission: "own", planned: true },
+  { id: "plan.storage", label: "Storage", question: NOT_BUILT, domain: "planning", address: `${PLAN}/storage`, permission: "own", planned: true },
+  { id: "finance.overview", label: "Finance", question: "Who pays, and how is it repaid?", domain: "planning", address: FINANCE, exact: true, permission: "own" },
+  { id: "finance.pipeline", label: "Funding pipeline", question: "Which approved applications and hub requests are ready to fund? (masked)", domain: "planning", address: `${FINANCE}/pipeline`, permission: "own", planned: true },
+  { id: "oversight.overview", label: "Oversight", question: "Is the programme delivering, across operators?", domain: "planning", address: OVERSIGHT, exact: true, permission: "own" },
+  { id: "oversight.regulator", label: "Regulator view", question: NOT_BUILT, domain: "planning", address: `${OVERSIGHT}/regulator`, permission: "own", planned: true },
+  { id: "initiative.home", label: "Initiative", question: "The initiative as this workspace sees it.", domain: "platform", address: `${DASHBOARD}/initiatives`, permission: "own" },
+  { id: "initiative.applications", label: "Applications", question: "Which meter applications wait for us, and what is each waiting for?", domain: "utility", address: `${DASHBOARD}/initiatives/meter-every-customer/applications`, permission: "own", planned: true },
 ];
 
 /* ==========================================================
@@ -371,7 +373,38 @@ export function workspaceTypeOf(organizationSectors: readonly string[]): Workspa
 }
 
 /** The platform's own views every member of an organization holds by default; People is an administrator's only. */
-export const PLATFORM_DEFAULT: readonly ViewId[] = ["platform.overview", "platform.home", "platform.reports"];
+export const PLATFORM_DEFAULT: readonly ViewId[] = ["platform.overview", "platform.home", "platform.reports", "initiative.home"];
+
+/* ==========================================================
+   THE DEMO WORKSPACE (ADR 0021 decision 6; NAV-B safeguard C)
+
+   On the public demonstration a visitor looks at one of the five
+   synthetic demo workspaces, chosen by a cookie or by ?workspace= on
+   a link. Either value is only ever one of the catalogue's five
+   types; anything else falls back to the default. A tenant
+   deployment reads neither: its workspace is the organization of the
+   person signed in.
+========================================================== */
+
+export const DEMO_WORKSPACE_COOKIE = "gridintel-demo-workspace";
+export const DEMO_WORKSPACE_QUERY = "workspace";
+export const DEFAULT_DEMO_WORKSPACE: WorkspaceType = "utility";
+
+/** A demo workspace type from a cookie's or a query's value: one of the five, or the default; never the value as given. */
+export function demoWorkspaceType(value: string | null | undefined): WorkspaceType {
+  return WORKSPACE_TYPES.find((type) => type === value) ?? DEFAULT_DEMO_WORKSPACE;
+}
+
+/** The demo workspace that shows a view: the one preferred if its catalogue shows the view, else the first that does. */
+export function demoTypeFor(viewId: ViewId | null, preferred: WorkspaceType): WorkspaceType {
+  if (viewId === null || workspaceViews(preferred).includes(viewId) || VIEWS.find((view) => view.id === viewId)?.domain === "platform") return preferred;
+  return WORKSPACE_TYPES.find((type) => workspaceViews(type).includes(viewId)) ?? preferred;
+}
+
+/** Where each rail item of a workspace type opens: its landing page. */
+export function landingOf(type: WorkspaceType, item: RailItemId): ViewId | null {
+  return LANDINGS[type][item] ?? null;
+}
 
 const BY_ID = new Map<string, View>(VIEWS.map((view) => [view.id, view]));
 

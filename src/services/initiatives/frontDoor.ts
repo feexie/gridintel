@@ -1,3 +1,6 @@
+import type { ScreenGrant } from "../spatial/viewer.ts";
+import { opensScreen, workspaceRail } from "../../constants/access.ts";
+import { hrefOf } from "../../constants/views.ts";
 import { demoWorkspaceId, initiativeHref, railHref, roleHref, routeOf, workspaceHref, workspaceInitiativeHref } from "../../constants/frontDoor.ts";
 import { INITIATIVES, initiativeOf, initiativesFor, roleFor, type Initiative, type InitiativeFigureId } from "../../constants/initiatives.ts";
 import { railFor, reportsHrefFor, viewOf, WORKSPACE_TYPE_LABELS, type RailItemId, type ViewId, type WorkspaceType } from "../../constants/workspaces.ts";
@@ -7,6 +10,7 @@ import type {
   PublicRoleView,
   RailItemPageView,
   RolePickerView,
+  SignedInFrameView,
   SignInHandoffView,
   ViewLinkView,
   WorkspaceFrameView,
@@ -157,4 +161,44 @@ export function railItemPage(workspace: WorkspaceRecord, item: string): RailItem
   const entry = railFor(workspace.type).find((one) => one.item === item && one.item !== "home");
   if (entry === undefined) return null;
   return { workspace: summary(workspace), item: entry.item as RailItemId, label: entry.label, question: entry.question, views: entry.views.map(link), filled: entry.filled ?? null };
+}
+
+/* ==========================================================
+   THE SIGNED-IN FRAME AND PAGES OVER /dashboard (NAV-B step 6)
+
+   The same header and rail as the NAV-A shell, at the screens' own
+   addresses: the rail is the workspace type's, cut to what the grant
+   opens (constants/access.ts, workspaceRail). Home's cards and an
+   initiative's views lead to /dashboard addresses.
+========================================================== */
+
+/** The frame of a workspace for a grant. */
+export function signedInFrame(workspace: WorkspaceRecord, grant: ScreenGrant): SignedInFrameView {
+  const reports = opensScreen(grant, "platform.reports") ? reportsHrefFor(workspace.type) : null;
+  return {
+    workspace: { ...summary(workspace), href: hrefOf("platform.home") },
+    rail: workspaceRail(workspace.type, grant),
+    reportsHref: reports,
+    helpHref: opensScreen(grant, "platform.about-this-build") ? hrefOf("platform.about-this-build") : null,
+  };
+}
+
+/** A workspace's Home over /dashboard: its initiatives, each leading to the initiative inside the workspace. */
+export function dashboardHome(workspace: WorkspaceRecord, figures: Figures): WorkspaceHomeView {
+  return { workspace: summary(workspace), cards: initiativesFor(workspace.type).map((initiative) => card(initiative, figures, hrefOf("initiative.home", initiative.id))) };
+}
+
+/** An initiative inside a workspace over /dashboard; null when the type has no role in it. */
+export function dashboardInitiative(workspace: WorkspaceRecord, initiativeId: string, figures: Figures): WorkspaceInitiativeView | null {
+  const initiative = initiativeOf(initiativeId);
+  const role = initiative === undefined ? undefined : roleFor(initiative, workspace.type);
+  if (initiative === undefined || role === undefined) return null;
+  return { workspace: summary(workspace), card: card(initiative, figures, hrefOf("initiative.home", initiative.id)), roleLabel: role.label, views: role.views.map(link) };
+}
+
+/** A rail item's index over /dashboard: the views it lists for the workspace type, as the grant opens them; null when the type's rail has no such item. */
+export function dashboardRailIndex(workspace: WorkspaceRecord, item: RailItemId, grant: ScreenGrant): RailItemPageView | null {
+  const entry = workspaceRail(workspace.type, grant).find((one) => one.item === item);
+  if (entry === undefined) return null;
+  return { workspace: summary(workspace), item, label: entry.label, question: entry.question, views: entry.views.map((one) => link(one.id)), filled: null };
 }

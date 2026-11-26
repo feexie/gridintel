@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { homeFor, navigationFor } from "@/constants/access";
+import { landingFor } from "@/constants/access";
 import { getViewer } from "@/composition/runtime";
 
 /* What a viewer is shown, with 403, at an address their grant does not open (src/proxy.ts;
    ADR 0018). It says the screen is not theirs and nothing about what is on it. */
 export default async function RefusedPage() {
-  const home = homeFor(navigationFor((await getViewer()).screens));
+  const home = landingFor((await getViewer()).screens);
   return (
     <div className="rounded-panel border border-line bg-panel p-4 text-sm text-ink-3" data-refused>
       <h1 className="font-semibold text-ink">Not open to you</h1>

@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
 import { canOpen, grantFor, opensView } from "./access.ts";
 import { destinationOf } from "./moves.ts";
-import { translateKey, viewAt, VIEWS, workspaceViews, type ViewId } from "./views.ts";
+import { PLATFORM_DEFAULT, translateKey, viewAt, VIEWS, workspaceViews, type ViewId } from "./views.ts";
 
 /* ==========================================================
    THE ACCESS FIXTURE, FROZEN BEFORE NAV-B MOVED ANYTHING
@@ -66,6 +66,9 @@ const NARROWINGS: { reason: string; applies: (grant: string, view: ViewId) => bo
 ];
 const narrowing = (grant: string, view: ViewId | undefined) => (view === undefined ? undefined : NARROWINGS.find((one) => one.applies(grant, view)));
 
+/** The views new in NAV-B (no screen before it): no "before" to compare; each opens only where the catalogue says it does. */
+const NEW_IN_NAV_B: ViewId[] = ["platform.home", "initiative.home", "finance.overview", "oversight.overview", "plan.rooftop-solar", "plan.storage", "finance.pipeline", "oversight.regulator", "initiative.applications"];
+
 /** The Phase 1 "Coming Soon" pages the Founder had removed (10 November 2026; NAV-B step 5): no view, no page, "not found" to everyone. */
 const REMOVED = ["/dashboard/settings", "/dashboard/intelligence/ai", "/dashboard/intelligence/analytics"];
 
@@ -113,11 +116,27 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
 
   it("opens no view newly to any viewer type, but for the approved widenings (safeguard A.4)", () => {
     for (const name of Object.keys(ROLES)) {
-      const before = new Set(frozen.opens[name].filter((address) => !REMOVED.includes(address)).map((address) => viewAt(destination(address))?.id));
+      // Before, by identity: the views at the addresses it opened, and the screens it opened (frozen as old keys), translated.
+      const before = new Set<string | undefined>([
+        ...frozen.opens[name].filter((address) => !REMOVED.includes(address)).map((address) => viewAt(destination(address))?.id),
+        ...frozen.screens[name].flatMap(translateKey),
+      ]);
       const grant = grantOf(name);
-      const newly = VIEWS.filter((view) => view.address !== null && opensView(grant, view) && !before.has(view.id)).filter((view) => widening(name, view.id) === undefined);
+      const newly = VIEWS.filter((view) => view.address !== null && !NEW_IN_NAV_B.includes(view.id) && opensView(grant, view) && !before.has(view.id)).filter((view) => widening(name, view.id) === undefined);
       // Views that did not exist before NAV-B have no "before"; they have no page yet in step 1.
       assert.deepEqual(newly.map((view) => view.id), [], name);
+    }
+  });
+
+  it("opens a view new in NAV-B only to the public viewer, as a platform default, or where the workspace type's catalogue shows it", () => {
+    for (const name of Object.keys(ROLES)) {
+      const grant = grantOf(name);
+      for (const id of NEW_IN_NAV_B) {
+        const view = VIEWS.find((one) => one.id === id)!;
+        if (!opensView(grant, view)) continue;
+        const type = DEFAULT_TYPE[name];
+        assert.ok(grant.kind === "everything" || PLATFORM_DEFAULT.includes(id) || (type !== undefined && workspaceViews(type).includes(id)), `${name}: ${id}`);
+      }
     }
   });
 

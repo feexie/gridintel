@@ -148,3 +148,22 @@ export interface MinigridSummaryView {
   /** Published figures about reference sites: real, outside the figures above and never counted in them. */
   reference: InitiativeFigureView[];
 }
+
+/* ---------------- The signed-in frame over /dashboard (NAV-B step 6) ---------------- */
+
+/** One item of the signed-in rail: its landing and the views it lists, already cut to the grant. */
+export interface SignedInRailItemView {
+  item: RailItemId;
+  label: string;
+  question: string;
+  href: string;
+  views: { id: ViewId; label: string; href: string; planned: boolean }[];
+}
+
+/** The frame of every /dashboard page for one workspace: header, rail and foot. */
+export interface SignedInFrameView {
+  workspace: WorkspaceSummaryView;
+  rail: SignedInRailItemView[];
+  reportsHref: string | null;
+  helpHref: string | null;
+}

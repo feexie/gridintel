@@ -89,10 +89,15 @@ test("the DisCo's administrator sees the DisCo only: no screen, download or name
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.locator("[data-account-email]").first()).toHaveText(TEST_PEOPLE.discoAdmin.email);
   await expect(page.locator("[data-account-organization]").first()).toHaveText(DISCO_NAME);
-  // The Platform Overview holds the DisCo's sector only, with no way into the other.
+  // Home is the DisCo's workspace: its own rail, no item of another type, the workspace's own name.
+  await expect(page.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "utility");
+  await expect(page.locator("[data-workspace-name]")).toHaveText(DISCO_NAME);
+  await expect(page.locator("[data-rail]")).not.toContainText("Mini-grid");
+  await expect(page.locator('[data-rail-item="oversight"]')).toHaveCount(0);
+  // The Platform Overview, under Intelligence, holds the DisCo's sector only, with no way into the other.
+  await page.goto("/dashboard/intelligence");
   await expect(page.locator("[data-sector]")).toHaveCount(1);
   await expect(page.locator('[data-sector="utility"]')).toBeVisible();
-  await expect(page.locator("[data-sector-bar]")).not.toContainText("Mini-grid");
   await expect(page.locator('a[href^="/dashboard/intelligence/minigrid"], a[href^="/dashboard/intelligence/minigrid"]')).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(OPERATOR_NAME);
   // Every screen of the DisCo opens.
@@ -106,6 +111,8 @@ test("the DisCo's administrator sees the DisCo only: no screen, download or name
 test("the mini-grid operator's administrator sees the operator only, its map drawn from its own records", async ({ page }) => {
   await signIn(page, TEST_PEOPLE.minigridAdmin);
   await expect(page.locator("[data-account-organization]").first()).toHaveText(OPERATOR_NAME);
+  await expect(page.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "minigrid");
+  await page.goto("/dashboard/intelligence");
   await expect(page.locator("[data-sector]")).toHaveCount(1);
   await expect(page.locator('[data-sector="minigrid"]')).toBeVisible();
   await expect(page.locator('a[href^="/dashboard/intelligence/utility"], a[href^="/dashboard/intelligence/utility"]')).toHaveCount(0);
@@ -133,7 +140,7 @@ test("a member of the revenue department opens their three screens, and the link
   await signIn(page, TEST_PEOPLE.discoRevenue);
   // Their start is the Utility Overview: the Platform Overview is not theirs.
   await expect(page).toHaveURL(/\/dashboard\/intelligence\/utility$/);
-  const menu = page.locator("aside").first();
+  const menu = page.locator("[data-rail]");
   await expect(menu).toContainText("Revenue");
   await expect(menu).not.toContainText("Executive");
   // The ways in hold Revenue and the map; no link anywhere leads to a screen they may not open.

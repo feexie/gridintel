@@ -58,6 +58,14 @@ export { tenantSignInHref };
 const workspace = (id: string) => DEMO_WORKSPACES.find((one) => one.id === id) ?? null;
 
 /** The figures as one workspace sees them: a DisCo's own queue, the national rate labelled national (brief 3c.3). */
+export async function workspaceFiguresFor(found: WorkspaceRecord) {
+  if (deploymentMode() === "demo") return figuresFor(found);
+  // A tenant deployment: worked for this request alone, never kept for another; the mini-grid
+  // portfolio is read only for a mini-grid operator, whose own records it is (ADR 0020).
+  const own = await initiativeFigures({ published, marketplace, minigrid: found.type === "minigrid" ? minigrid.portfolioView : null, reference: reference.sitesView });
+  return workspaceFigures(own, marketplace, found.disco === null ? { kind: "all" } : { kind: "disco", disco: found.disco });
+}
+
 async function figuresFor(found: WorkspaceRecord) {
   const queue: QueueScope = found.disco === null ? { kind: "all" } : { kind: "disco", disco: found.disco };
   return workspaceFigures(await cardFigures(), marketplace, queue);

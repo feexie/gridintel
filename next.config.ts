@@ -49,10 +49,6 @@ const nextConfig: NextConfig = {
       ...fullList("utility.operations", "rows", "/transformers/:transformerId"),
       // Every address NAV-B moved answers 308 with its new one (src/constants/moves.ts).
       ...moveRedirects(),
-      // The map used to be one screen of the platform. Each sector now has its own GIS Map, and the
-      // Platform Overview shows every sector on one small map, so the old addresses lead there.
-      { source: "/dashboard/map", destination: "/dashboard", permanent: false },
-      { source: "/dashboard/intelligence/gis", destination: "/dashboard", permanent: false },
     ];
   },
 };

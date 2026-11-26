@@ -109,8 +109,8 @@ test("no public page links to a report, and none has a sign-in page of its own",
   }
 });
 
-test("the current front page and menu are unchanged: / still leads to the Platform Overview", async ({ page }) => {
+test("until the public layer moves to / (NAV-B step 7), / leads to the dashboard's Home, in the workspace's frame", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.locator("[data-sector-bar]")).toBeVisible();
+  await expect(page.locator("[data-workspace-frame]")).toBeVisible();
 });

@@ -1,6 +1,6 @@
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
 import { REPORTS, sectors, type NavigationItem, type ReportItem, type Sector } from "./navigation.ts";
-import { domainOfKey, hrefOf, isDomain, isViewId, PLATFORM_DEFAULT, translateKey, viewAt, viewOf, VIEWS, workspaceTypeOf, workspaceViews, type Domain, type View, type ViewId } from "./views.ts";
+import { domainOfKey, hrefOf, isDomain, isViewId, landingOf, PLATFORM_DEFAULT, RAIL_ITEMS, RAILS, translateKey, viewAt, viewOf, VIEWS, workspaceTypeOf, workspaceViews, type Domain, type RailItemId, type View, type ViewId, type WorkspaceType } from "./views.ts";
 
 /* ==========================================================
    WHICH SCREENS A VIEWER MAY OPEN (ADR 0018; NAV-B, ADR 0021
@@ -88,6 +88,47 @@ export function navigationFor(grant: ScreenGrant): Sector[] {
 export function homeFor(navigation: readonly Sector[]): string | null {
   const [first] = navigation;
   return first === undefined ? null : (first.opening[0] ?? first.workspaces[0]).href;
+}
+
+/* ==========================================================
+   THE SIGNED-IN RAIL (ADR 0021 decision 5; NAV-B step 6)
+
+   A workspace type's rail (views.ts, RAILS), cut to what the grant
+   opens: each item leads to its landing and lists its views; an item
+   left with nothing the grant opens is not shown. Every view is in
+   one item only. Reports, Help and the account are at its foot.
+========================================================== */
+
+export interface RailItemLinks {
+  item: RailItemId;
+  label: string;
+  question: string;
+  /** The item's landing page. */
+  href: string;
+  /** The views it lists, in the rail's order, with their addresses. */
+  views: { id: ViewId; label: string; href: string; planned: boolean }[];
+}
+
+/** The rail of a workspace type, as a grant opens it. */
+export function workspaceRail(type: WorkspaceType, grant: ScreenGrant): RailItemLinks[] {
+  return RAILS[type].flatMap((entry) => {
+    const meta = RAIL_ITEMS.find((one) => one.id === entry.item)!;
+    const landing = landingOf(type, entry.item);
+    const views = entry.views
+      .map((id) => viewOf(id))
+      .filter((view) => view.address !== null && opensView(grant, view))
+      .map((view) => ({ id: view.id, label: view.label, href: hrefOf(view.id), planned: view.planned === true }));
+    const lands = landing !== null && viewOf(landing).address !== null && opensView(grant, viewOf(landing));
+    if (!lands && views.length === 0) return [];
+    return [{ item: entry.item, label: meta.label, question: meta.question, href: lands ? hrefOf(landing!) : views[0].href, views }];
+  });
+}
+
+/** Where a viewer starts: Home when it opens to them, else the first screen of the catalogue they may open; null when there is none. */
+export function landingFor(grant: ScreenGrant): string | null {
+  if (opensView(grant, viewOf("platform.home"))) return hrefOf("platform.home");
+  const first = VIEWS.find((view) => view.address !== null && view.permission === "own" && !view.planned && opensView(grant, view));
+  return first === undefined ? null : hrefOf(first.id);
 }
 
 /** The key an address needs: the id of the view it is; null for an address that is no view. */
