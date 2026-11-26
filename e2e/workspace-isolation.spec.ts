@@ -38,7 +38,8 @@ test("the switcher lists the other four demo workspaces, and choosing one opens 
   await page.locator("[data-switcher] summary").click();
   await expect(page.locator("[data-switch-to]")).toHaveCount(4);
   await page.locator('[data-switch-to="financier"]').click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  // The address names the workspace now shown.
+  await expect(page).toHaveURL(/\/dashboard\?workspace=financier$/);
   await expect(page.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "financier");
   await expect(page.locator("[data-rail-item]")).toHaveText(["Home", "Finance"]);
 });
