@@ -65,6 +65,6 @@ for (const [build, base] of builds) {
     }
     // Home is where /dashboard leads, with its clear way to the former Platform Overview.
     await page.goto(`${base}/dashboard`);
-    await expect(page.locator("[data-platform-overview-link]")).toHaveAttribute("href", "/dashboard/intelligence");
+    await expect(page.locator("[data-platform-overview-link] a")).toHaveAttribute("href", "/dashboard/intelligence");
   });
 }

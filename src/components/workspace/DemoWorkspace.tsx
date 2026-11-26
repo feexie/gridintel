@@ -49,18 +49,20 @@ export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrame
     const url = new URL(window.location.href);
     const asked = url.searchParams.get(DEMO_WORKSPACE_QUERY);
     const type = demoWorkspaceType(asked ?? cookieValue());
+    let tidy: ReturnType<typeof setTimeout> | undefined;
     if (asked !== null) {
       keep(type);
       url.searchParams.delete(DEMO_WORKSPACE_QUERY);
-      // Through the router, so that it takes the address as its own (a bare history.replaceState,
-      // carrying the router's state, was later undone by the router).
-      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
+      // Through the router, once it has started: this effect runs before the router's own, which
+      // would otherwise write the address it started with, query and all, over the tidied one.
+      tidy = setTimeout(() => router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false }), 0);
     }
     // Read once the page is in the browser: the page was built ahead of time with the default.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreferred(type);
     // The workspace is chosen and the switcher acts from here on (the browser tests wait for it).
     document.documentElement.dataset.demoWorkspace = type;
+    return () => clearTimeout(tidy);
   }, [router]);
 
   const type = demoTypeFor(viewAt(pathname)?.id ?? null, preferred);
