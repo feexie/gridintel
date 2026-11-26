@@ -1,12 +1,13 @@
 import type { ScreenGrant } from "../spatial/viewer.ts";
 import { opensScreen, workspaceRail } from "../../constants/access.ts";
 import { hrefOf } from "../../constants/views.ts";
-import { demoWorkspaceId, initiativeHref, railHref, roleHref, routeOf, workspaceHref, workspaceInitiativeHref } from "../../constants/frontDoor.ts";
+import { demoWorkspaceId, takePartHref, initiativeHref, railHref, roleHref, routeOf, workspaceHref, workspaceInitiativeHref } from "../../constants/frontDoor.ts";
 import { INITIATIVES, initiativeOf, initiativesFor, roleFor, type Initiative, type InitiativeFigureId } from "../../constants/initiatives.ts";
 import { railFor, reportsHrefFor, viewOf, WORKSPACE_TYPE_LABELS, type RailItemId, type ViewId, type WorkspaceType } from "../../constants/workspaces.ts";
 import type {
   InitiativeCardView,
   InitiativeFigureView,
+  InitiativePageView,
   PublicRoleView,
   RailItemPageView,
   RolePickerView,
@@ -201,4 +202,25 @@ export function dashboardRailIndex(workspace: WorkspaceRecord, item: RailItemId,
   const entry = workspaceRail(workspace.type, grant).find((one) => one.item === item);
   if (entry === undefined) return null;
   return { workspace: summary(workspace), item, label: entry.label, question: entry.question, views: entry.views.map((one) => link(one.id)), filled: null };
+}
+
+/** An initiative's own public page; null for an unknown initiative. Who takes part is counted from the workspaces given (the demo workspaces: synthetic). */
+export function initiativePage(initiativeId: string, figures: Figures, workspaces: readonly WorkspaceRecord[]): InitiativePageView | null {
+  const initiative = initiativeOf(initiativeId);
+  if (initiative === undefined) return null;
+  const types = [...new Set(initiative.roles.flatMap((role) => (role.audience === "organization" ? [role.workspaceType] : [])))];
+  return {
+    id: initiative.id,
+    title: initiative.title,
+    summary: initiative.summary,
+    forWho: initiative.roles.map((role) => ({ label: role.label, description: role.description, audience: role.audience })),
+    statusFlow: initiative.statusFlow === null ? null : { steps: [...initiative.statusFlow.steps], note: initiative.statusFlow.note },
+    takingPart: types.map((type) => {
+      const taking = workspaces.filter((one) => one.type === type);
+      return { typeLabel: WORKSPACE_TYPE_LABELS[type], count: taking.length, synthetic: taking.every((one) => one.synthetic) };
+    }),
+    card: card(initiative, figures, initiativeHref(initiative.id)),
+    takePartHref: takePartHref(initiative.id),
+    hostedBy: initiative.hostedBy,
+  };
 }

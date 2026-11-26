@@ -57,7 +57,7 @@ test("the reference page sets each published figure beside GridIntel's calculati
 });
 
 test("the verification card and the public summary carry the reference site as a line of its own, credited", async ({ page }) => {
-  await page.goto("/preview");
+  await page.goto("/");
   const card = page.locator('[data-initiative-card="minigrid-verification"]');
   const line = card.locator("[data-card-reference]");
   await expect(line).toContainText("Reference site RMG01 (published data)");
@@ -66,14 +66,14 @@ test("the verification card and the public summary carry the reference site as a
   await expect(line).not.toContainText("Synthetic");
   await credited(line);
 
-  await page.goto("/preview/initiatives/minigrid-verification/public");
+  await page.goto("/initiatives/minigrid-verification/take-part/public");
   const reference = page.locator("[data-summary-reference]");
   await expect(reference).toContainText("Not one of the sites above");
   await credited(reference);
 });
 
 test("the mini-grid demo workspace's Sites view carries the reference site too", async ({ page }) => {
-  await page.goto("/preview/workspace/demo-minigrid/intelligence");
+  await page.goto("/dashboard/intelligence/minigrid?workspace=minigrid");
   await credited(page.locator('[data-reference-site="rmg01"]'));
 });
 

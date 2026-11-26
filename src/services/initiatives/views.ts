@@ -167,3 +167,20 @@ export interface SignedInFrameView {
   reportsHref: string | null;
   helpHref: string | null;
 }
+
+/** An initiative's own public page (brief 3c.1; NAV-B step 7): drawn from its catalogue entry, with its figures and one button, Take part. */
+export interface InitiativePageView {
+  id: string;
+  title: string;
+  summary: string;
+  /** Who it is for: its roles, as the role picker lists them. */
+  forWho: { label: string; description: string; audience: "public" | "organization" }[];
+  statusFlow: { steps: string[]; note: string } | null;
+  /** Who takes part, by organization type: synthetic until real organizations join. */
+  takingPart: { typeLabel: string; count: number; synthetic: boolean }[];
+  /** Its figures, with their status and source, as its card shows them. */
+  card: InitiativeCardView;
+  takePartHref: string;
+  /** The host organization (brief 3c.2): null until one agrees in writing. */
+  hostedBy: { name: string; logo: string | null } | null;
+}

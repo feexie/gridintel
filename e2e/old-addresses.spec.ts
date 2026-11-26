@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { destinationOf, MOVES } from "../src/constants/moves";
+import { destinationOf, ELSEWHERE, MOVES } from "../src/constants/moves";
 import { viewAt } from "../src/constants/views";
 import { LOCAL, REQUEST_BASE } from "./routes";
 
@@ -15,7 +15,9 @@ import { LOCAL, REQUEST_BASE } from "./routes";
    - reaches its page in that one step: the new address is not itself redirected by a move. */
 
 const FIXTURE = JSON.parse(readFileSync(new URL("../src/constants/__pinned__/access-before-nav-b.json", import.meta.url), "utf8")) as { addresses: string[] };
-const MOVED = FIXTURE.addresses.filter((address) => destinationOf(address) !== null);
+/** The prototype's /preview addresses (NAV-B step 7), each with real values. */
+const PREVIEW = ELSEWHERE.map((row) => row.from.replace(":initiative", "meter-every-customer").replace(":role", "customer"));
+const MOVED = [...FIXTURE.addresses.filter((address) => destinationOf(address) !== null), ...PREVIEW];
 const QUERY = "present=1&keep=this";
 
 const builds: [string, string | undefined][] = [["built ahead", undefined], ...(LOCAL ? [] : ([["on request", REQUEST_BASE]] as [string, string][]))];

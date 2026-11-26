@@ -3,9 +3,9 @@ import { BackLink, PublicFrame } from "@/components/front/PublicFrame";
 import { ChargingNetworkPlanned, MeterApplicationShell, MinigridSummary, SignInHandoff } from "@/components/front/PublicViews";
 import { PreparingData } from "@/components/system/PreparingData";
 import { frontDoor, tenantSignInHref } from "@/composition/initiatives";
-import { initiativeHref, NIGERIAN_STATES, TRACK_PATH } from "@/constants/frontDoor";
+import { NIGERIAN_STATES, takePartHref, TRACK_PATH } from "@/constants/frontDoor";
 import { INITIATIVES } from "@/constants/initiatives";
-import { frontDoorParams, frontDoorPreparing } from "../../../front";
+import { frontDoorParams, frontDoorPreparing } from "@/app/(public)/front";
 
 export const generateStaticParams = frontDoorParams(() => INITIATIVES.flatMap((initiative) => initiative.roles.map((role) => ({ initiative: initiative.id, role: role.id }))));
 
@@ -25,7 +25,7 @@ export default async function RolePage({ params }: { params: Promise<{ initiativ
   return (
     <PublicFrame signInHref={tenantSignInHref()}>
       <div className="space-y-4">
-        <BackLink href={initiativeHref(initiative)}>Who are you?</BackLink>
+        <BackLink href={takePartHref(initiative)}>Who are you?</BackLink>
         {await body(page)}
       </div>
     </PublicFrame>

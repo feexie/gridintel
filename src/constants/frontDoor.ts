@@ -1,9 +1,12 @@
 /* ==========================================================
-   THE FRONT DOOR'S ADDRESSES AND ROUTING (ADR 0021, draft)
+   THE FRONT DOOR'S ADDRESSES AND ROUTING (ADR 0021)
 
-   Phase NAV-A: the public layer and the demo workspaces live under
-   /preview, on the public demonstration only. Nothing here replaces
-   "/" or the dashboard.
+   NAV-B step 7: the public layer is at "/", on the public
+   demonstration only: Home, an initiative's own page with Take part,
+   "Who are you?" under it, and Track. The demo workspaces are the
+   dashboard itself, the demo workspace named by ?workspace= on the
+   link (views.ts, safeguard C). The prototype's /preview addresses
+   redirect here (moves.ts).
 
    Where a role is sent is decided here and nowhere else:
    - a public role goes straight to its public view;
@@ -16,19 +19,30 @@
 ========================================================== */
 
 import { initiativeOf, type Initiative, type InitiativeRole, type Landing, type PublicViewId } from "./initiatives.ts";
-import type { RailItemId, WorkspaceType } from "./workspaces.ts";
+import { DEMO_WORKSPACE_QUERY, demoWorkspaceType, hrefOf, landingOf, WORKSPACE_TYPES, type RailItemId, type WorkspaceType } from "./views.ts";
 
-export const PREVIEW_HOME = "/preview";
-export const TRACK_PATH = `${PREVIEW_HOME}/track`;
+/** Home of the public layer. */
+export const PUBLIC_HOME = "/";
+export const TRACK_PATH = "/track";
 
-export const initiativeHref = (initiativeId: string) => `${PREVIEW_HOME}/initiatives/${initiativeId}`;
-export const roleHref = (initiativeId: string, roleId: string) => `${initiativeHref(initiativeId)}/${roleId}`;
+/** An initiative's own public page (brief 3c.1). */
+export const initiativeHref = (initiativeId: string) => `/initiatives/${initiativeId}`;
+/** "Who are you?", one step from the initiative's page. */
+export const takePartHref = (initiativeId: string) => `${initiativeHref(initiativeId)}/take-part`;
+export const roleHref = (initiativeId: string, roleId: string) => `${takePartHref(initiativeId)}/${roleId}`;
 
 /** The id of the demo workspace of a type: one per type (ADR 0021, decision 6). */
 export const demoWorkspaceId = (type: WorkspaceType) => `demo-${type}`;
-export const workspaceHref = (workspaceId: string) => `${PREVIEW_HOME}/workspace/${workspaceId}`;
-export const railHref = (workspaceId: string, item: RailItemId) => (item === "home" ? workspaceHref(workspaceId) : `${workspaceHref(workspaceId)}/${item}`);
-export const workspaceInitiativeHref = (workspaceId: string, initiativeId: string) => `${workspaceHref(workspaceId)}/initiatives/${initiativeId}`;
+/** The type of a demo workspace's id; the default for any other id. */
+const typeOfWorkspace = (workspaceId: string): WorkspaceType => demoWorkspaceType(WORKSPACE_TYPES.find((type) => demoWorkspaceId(type) === workspaceId) ?? null);
+/** A dashboard address, shown in a demo workspace: ?workspace= names it (read only on the demonstration). */
+const inDemo = (href: string, workspaceId: string) => `${href}?${DEMO_WORKSPACE_QUERY}=${typeOfWorkspace(workspaceId)}`;
+export const workspaceHref = (workspaceId: string) => inDemo(hrefOf("platform.home"), workspaceId);
+export const railHref = (workspaceId: string, item: RailItemId) => {
+  const landing = landingOf(typeOfWorkspace(workspaceId), item);
+  return landing === null ? workspaceHref(workspaceId) : inDemo(hrefOf(landing), workspaceId);
+};
+export const workspaceInitiativeHref = (workspaceId: string, initiativeId: string) => inDemo(hrefOf("initiative.home", initiativeId), workspaceId);
 
 export function landingHref(workspaceId: string, initiativeId: string, landing: Landing): string {
   return landing.kind === "rail" ? railHref(workspaceId, landing.item) : workspaceInitiativeHref(workspaceId, initiativeId);

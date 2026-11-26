@@ -47,7 +47,7 @@ describe("the View catalogue: permission integrity (safeguard A)", () => {
     assert.deepEqual(VIEWS.filter((view) => opensView(unknown, view)).map((view) => view.id), ["platform.about-this-build", "platform.refused"]);
     for (const key of ["no-such-key", "utility.no-such-view", "planning.no-such-planner", "", "platform.no"]) assert.deepEqual(translateKey(key), [], key);
     assert.deepEqual(grantFor(["utility"], ["no-such-key"], false), { kind: "listed", keys: [] });
-    for (const path of ["/dashboard/no-such-screen", "/dashboard/intelligence/utility/no-such-screen", "/dashboard/planning/no-such-planner", "/preview", "/dashboard2"]) {
+    for (const path of ["/dashboard/no-such-screen", "/dashboard/intelligence/utility/no-such-screen", "/dashboard/planning/no-such-planner", "/", "/dashboard2"]) {
       assert.equal(resolves(path), false, path);
       assert.equal(canOpen({ kind: "everything" }, path), false, path);
     }

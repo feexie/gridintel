@@ -38,8 +38,9 @@ const nextConfig: NextConfig = {
     [hrefOf("platform.about-this-build")]: ["./docs/geh/CHANGELOG-GEH.md"],
     [`${hrefOf("minigrid.overview")}/**`]: ["./src/repositories/reference/*/data/*.csv"],
     [`${hrefOf("minigrid.reports")}/**`]: ["./src/repositories/reference/*/data/*.csv"],
-    "/preview/**": ["./src/repositories/reference/*/data/*.csv"],
-    "/preview": ["./src/repositories/reference/*/data/*.csv"],
+    // The public layer at "/" (NAV-B step 7): its cards and the mini-grid summary read the reference sites.
+    "/": ["./src/repositories/reference/*/data/*.csv"],
+    "/initiatives/**": ["./src/repositories/reference/*/data/*.csv"],
   },
   async redirects() {
     return [

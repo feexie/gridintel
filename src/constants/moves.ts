@@ -16,7 +16,8 @@
    Pure data and pure functions: no clock, no I/O.
 ========================================================== */
 
-import { hrefOf, type ViewId } from "./views.ts";
+import { demoWorkspaceId, PUBLIC_HOME, railHref, roleHref, takePartHref, TRACK_PATH, workspaceHref } from "./frontDoor.ts";
+import { DEMO_WORKSPACE_QUERY, hrefOf, RAILS, WORKSPACE_TYPES, type ViewId } from "./views.ts";
 
 export type Move = {
   /** The old address. */
@@ -75,11 +76,63 @@ export const MOVES: readonly Move[] = [
   { from: "/dashboard/intelligence/gis", view: "platform.overview", below: false, step: 6 },
 ];
 
+/* ==========================================================
+   THE NAV-A PROTOTYPE'S ADDRESSES (NAV-B step 7)
+
+   The public layer left /preview for "/", and the demo workspaces
+   are the dashboard itself, named by ?workspace=. These rows lead
+   to public pages, not to Views, so each destination is taken from
+   the front door's own addresses (frontDoor.ts), never written
+   again. A segment written ":name" stands for any one segment and
+   is carried to the same name in the destination.
+========================================================== */
+
+export type Elsewhere = { from: string; to: string; step: number };
+
+const param = (id: string) => `:${id}`;
+export const ELSEWHERE: readonly Elsewhere[] = [
+  { from: "/preview", to: PUBLIC_HOME, step: 7 },
+  { from: "/preview/track", to: TRACK_PATH, step: 7 },
+  // The prototype's initiative page was "Who are you?"; it is now one step under the initiative's own page.
+  { from: "/preview/initiatives/:initiative", to: takePartHref(param("initiative")), step: 7 },
+  { from: "/preview/initiatives/:initiative/:role", to: roleHref(param("initiative"), param("role")), step: 7 },
+  ...WORKSPACE_TYPES.flatMap((type) => {
+    const id = demoWorkspaceId(type);
+    return [
+      { from: `/preview/workspace/${id}`, to: workspaceHref(id), step: 7 },
+      ...RAILS[type].filter((entry) => entry.item !== "home").map((entry) => ({ from: `/preview/workspace/${id}/${entry.item}`, to: railHref(id, entry.item), step: 7 })),
+      { from: `/preview/workspace/${id}/initiatives/:initiative`, to: `${hrefOf("initiative.home")}/:initiative?${DEMO_WORKSPACE_QUERY}=${type}`, step: 7 },
+    ];
+  }),
+];
+
+/** The parameters of an address matched against a pattern with ":name" segments; null when it does not match. */
+function matchPattern(pattern: string, path: string): Record<string, string> | null {
+  const want = pattern.split("/");
+  const have = path.split("/");
+  if (want.length !== have.length) return null;
+  const found: Record<string, string> = {};
+  for (let i = 0; i < want.length; i++) {
+    if (want[i].startsWith(":")) {
+      if (have[i] === "") return null;
+      found[want[i].slice(1)] = have[i];
+    } else if (want[i] !== have[i]) return null;
+  }
+  return found;
+}
+
+/** A query added to an address that may already have one. */
+const withQuery = (to: string, query: string | undefined) => (query === undefined ? to : `${to}${to.includes("?") ? "&" : "?"}${query}`);
+
 /** Where an old address now is, the rest of it carried; null when it did not move. */
 export function destinationOf(address: string): string | null {
   const mark = address.indexOf("?");
   const path = mark < 0 ? address : address.slice(0, mark);
   const query = mark < 0 ? undefined : address.slice(mark + 1);
+  for (const row of [...ELSEWHERE].sort((a, b) => b.from.split("/").length - a.from.split("/").length)) {
+    const params = matchPattern(row.from, path);
+    if (params !== null) return withQuery(row.to.replace(/:([a-z]+)/g, (_, name: string) => params[name] ?? `:${name}`), query);
+  }
   for (const move of [...MOVES].sort((a, b) => b.from.length - a.from.length)) {
     const to = hrefOf(move.view);
     if (path === move.from) return query === undefined ? to : `${to}?${query}`;
@@ -93,7 +146,10 @@ export function destinationOf(address: string): string | null {
 
 /** The redirects next.config.ts answers with: one per row, permanent (308), most specific first. */
 export function moveRedirects(): { source: string; destination: string; permanent: true }[] {
-  return [...MOVES]
-    .sort((a, b) => b.from.length - a.from.length)
-    .map((move) => (move.below ? { source: `${move.from}/:path*`, destination: `${hrefOf(move.view)}/:path*`, permanent: true as const } : { source: move.from, destination: hrefOf(move.view), permanent: true as const }));
+  return [
+    ...[...ELSEWHERE].sort((a, b) => b.from.split("/").length - a.from.split("/").length).map((row) => ({ source: row.from, destination: row.to, permanent: true as const })),
+    ...[...MOVES]
+      .sort((a, b) => b.from.length - a.from.length)
+      .map((move) => (move.below ? { source: `${move.from}/:path*`, destination: `${hrefOf(move.view)}/:path*`, permanent: true as const } : { source: move.from, destination: hrefOf(move.view), permanent: true as const })),
+  ];
 }

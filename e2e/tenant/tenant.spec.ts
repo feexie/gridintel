@@ -217,13 +217,22 @@ test("signing out ends the session", async ({ page }) => {
   await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fintelligence%2Fminigrid$/);
 });
 
-test("a tenant deployment serves no front door: /preview leads to signing in, and is not found once signed in (ADR 0021)", async ({ page, request }) => {
-  const anonymous = await request.get("/preview", { maxRedirects: 0 });
-  expect(anonymous.status()).toBe(307);
-  expect(anonymous.headers().location).toBe(`/login?next=${encodeURIComponent("/preview")}`);
+test("a tenant deployment serves no front door: / leads to its dashboard, the public pages are not found, and the prototype's addresses redirect first (ADR 0021, NAV-B)", async ({ page, request }) => {
+  // "/" leads to the dashboard, and so to signing in.
+  const home = await request.get("/", { maxRedirects: 0 });
+  expect(home.status()).toBe(307);
+  expect(home.headers().location).toBe("/dashboard");
+  // The prototype's addresses redirect (308) before anything else, as on the demonstration.
+  const preview = await request.get("/preview", { maxRedirects: 0 });
+  expect(preview.status()).toBe(308);
+  expect(new URL(preview.headers().location!, "http://x").pathname).toBe("/");
   await signIn(page, TEST_PEOPLE.discoAdmin);
-  for (const route of ["/preview", "/preview/initiatives/meter-every-customer", "/preview/initiatives/meter-every-customer/customer", "/preview/track", "/preview/workspace/demo-utility", "/preview/workspace/demo-utility/intelligence"]) {
+  // Signed in, no public page exists here.
+  for (const route of ["/initiatives/meter-every-customer", "/initiatives/meter-every-customer/take-part", "/initiatives/meter-every-customer/take-part/customer", "/track"]) {
     const response = await page.goto(route);
     expect(response?.status(), route).toBe(404);
   }
+  // A demo workspace's link opens the person's own workspace: ?workspace= is ignored (safeguard C).
+  expect((await page.goto("/dashboard?workspace=minigrid"))?.status()).toBe(200);
+  await expect(page.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "utility");
 });

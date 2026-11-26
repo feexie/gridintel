@@ -57,6 +57,15 @@ export type Initiative = {
   /** A figure from published data about a site outside any portfolio, shown apart and never counted in the card's own figures. */
   reference?: InitiativeFigureId;
   roles: readonly InitiativeRole[];
+  /**
+   * The organization hosting the initiative, whose name and logo then show on its card and page
+   * (brief 3c.2). Never set without that organization's written agreement; no real agency,
+   * regulator or funder is shown as host, sponsor or partner until then. Null for every
+   * initiative today (a test holds it). The field belongs to the database brief; it is only read here.
+   */
+  hostedBy: { name: string; logo: string | null } | null;
+  /** The steps the initiative's work moves through, in order, on its page (brief 3c.1); null when it has none to show. */
+  statusFlow: { steps: readonly string[]; note: string } | null;
 };
 
 export const INITIATIVES: readonly Initiative[] = [
@@ -67,6 +76,8 @@ export const INITIATIVES: readonly Initiative[] = [
     headline: "metering.national-rate",
     progress: "metering.national-rate",
     secondary: "metering.pending-applications",
+    hostedBy: null,
+    statusFlow: { steps: ["Submitted", "Under review", "Verified", "Assigned (DT and feeder)", "Approved", "Funded", "Installed"], note: "An application can be rejected at any step, with the reason given." },
     roles: [
       { id: "customer", label: "Customer", description: "I want a meter for my home or business.", audience: "public", view: "meter-application" },
       {
@@ -112,6 +123,8 @@ export const INITIATIVES: readonly Initiative[] = [
     title: "Charging hubs",
     summary: "Charging and battery-swap hubs for electric motorcycles and tricycles, sited where the network can carry them.",
     headline: "charging.hubs",
+    hostedBy: null,
+    statusFlow: null,
     roles: [
       { id: "end-user", label: "Rider or fleet owner", description: "I want to find a charging or swap hub near me.", audience: "public", view: "charging-network" },
       {
@@ -141,6 +154,8 @@ export const INITIATIVES: readonly Initiative[] = [
     headline: "minigrid.sites-agreeing",
     progress: "minigrid.sites-agreeing",
     reference: "minigrid.reference-meter-gap",
+    hostedBy: null,
+    statusFlow: null,
     roles: [
       { id: "public", label: "Member of the public", description: "I want to see the summary figures.", audience: "public", view: "minigrid-summary" },
       {

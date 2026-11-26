@@ -5,7 +5,7 @@ import { initiativesFor } from "../constants/initiatives.ts";
 import { railFor } from "../constants/workspaces.ts";
 import { initiativeFigures, minigridSummary, workspaceFigures, type QueueScope } from "../services/initiatives/figures.ts";
 import { DISCO_NAMES } from "../services/planning/metering.ts";
-import { publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, workspaceHome, workspaceInitiative, type WorkspaceRecord } from "../services/initiatives/frontDoor.ts";
+import { initiativePage, publicCards, railItemPage, rolePage, rolePicker, workspaceFrame, workspaceHome, workspaceInitiative, type WorkspaceRecord } from "../services/initiatives/frontDoor.ts";
 import { TENANT_ORGANIZATIONS } from "./identityFixture.ts";
 import { minigrid } from "./minigrid.ts";
 import { reference } from "./reference.ts";
@@ -76,6 +76,8 @@ export const frontDoor = {
   available: () => deploymentMode() === "demo",
   cards: async () => publicCards(await cardFigures()),
   rolePicker: (initiativeId: string) => rolePicker(initiativeId),
+  /** An initiative's own page: its catalogue entry, its figures, who takes part (the demo workspaces, synthetic). */
+  initiativePage: async (initiativeId: string) => initiativePage(initiativeId, await cardFigures(), DEMO_WORKSPACES),
   rolePage: (initiativeId: string, roleId: string) => rolePage(initiativeId, roleId, DEMO_WORKSPACES, tenantSignInHref()),
   minigridSummary: async () => minigridSummary(await minigrid.portfolioView(), await reference.sitesView()),
   /** The DisCos a customer may choose on the meter application. */

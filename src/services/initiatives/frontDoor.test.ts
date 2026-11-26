@@ -166,7 +166,7 @@ describe("the front door's view models", async () => {
 
   it("gives the public Home three cards, each with its headline and the meter card its bar and pending count", () => {
     const cards = publicCards(figures);
-    assert.deepEqual(cards.map((one) => one.href), ["/preview/initiatives/meter-every-customer", "/preview/initiatives/charging-hubs", "/preview/initiatives/minigrid-verification"]);
+    assert.deepEqual(cards.map((one) => one.href), ["/initiatives/meter-every-customer", "/initiatives/charging-hubs", "/initiatives/minigrid-verification"]);
     assert.equal(cards[0].headline.value, "61.51%");
     assert.equal(cards[0].progress?.share, 0.6151);
     assert.equal(cards[0].secondary?.value, "7");
@@ -196,7 +196,7 @@ describe("the front door's view models", async () => {
     if (handoff?.kind !== "sign-in") return;
     assert.equal(handoff.view.signInHref, "https://tenant.example/login");
     assert.equal(handoff.view.demoName, "Demonstration Regulator (synthetic)");
-    assert.equal(handoff.view.demoHref, "/preview/workspace/demo-regulator/initiatives/minigrid-verification");
+    assert.equal(handoff.view.demoHref, "/dashboard/initiatives/minigrid-verification?workspace=regulator");
     assert.equal(rolePage("meter-every-customer", "nobody", WORKSPACES, null), null);
   });
 
@@ -206,7 +206,7 @@ describe("the front door's view models", async () => {
     assert.equal(frame?.current.initials, "DR");
     assert.equal(frame?.current.demo, true);
     assert.deepEqual(frame?.others.map((one) => one.id), ["demo-utility", "demo-financier"]);
-    assert.deepEqual(frame?.rail.map((item) => item.href), ["/preview/workspace/demo-regulator", "/preview/workspace/demo-regulator/oversight"]);
+    assert.deepEqual(frame?.rail.map((item) => item.href), ["/dashboard?workspace=regulator", "/dashboard/oversight?workspace=regulator"]);
     assert.equal(frame?.reportsHref, "/dashboard/reports");
     assert.equal(workspaceFrame("someone-else", WORKSPACES), null);
   });
@@ -218,7 +218,7 @@ describe("the front door's view models", async () => {
 
   it("shows a workspace its own initiatives, and an initiative's views for its type", () => {
     const utility = WORKSPACES[0];
-    assert.deepEqual(workspaceHome(utility, figures).cards.map((one) => one.href), ["/preview/workspace/demo-utility/initiatives/meter-every-customer", "/preview/workspace/demo-utility/initiatives/charging-hubs"]);
+    assert.deepEqual(workspaceHome(utility, figures).cards.map((one) => one.href), ["/dashboard/initiatives/meter-every-customer?workspace=utility", "/dashboard/initiatives/charging-hubs?workspace=utility"]);
     const meter = workspaceInitiative(utility, "meter-every-customer", figures);
     assert.equal(meter?.views[0].label, "Applications");
     assert.equal(meter?.views[0].planned, true);

@@ -152,8 +152,8 @@ describe("the access fixture frozen before NAV-B: every old key at every old add
     const pattern = (route: string) => new RegExp(`^${route.replace(/\[[^\]]+\]/g, "[^/]+")}$`);
     for (const route of frozenRoutes) {
       if (now.includes(route) || REMOVED.includes(route)) continue;
-      // Every real sample of the route (the fixture's) redirects to an address a route of today answers.
-      const samples = frozen.addresses.filter((address) => pattern(route).test(address));
+      // Every real sample of the route (the fixture's; for the prototype's /preview, real values) redirects to an address a route of today answers.
+      const samples = route.startsWith("/dashboard") ? frozen.addresses.filter((address) => pattern(route).test(address)) : [route.replace("[initiative]", "meter-every-customer").replace("[role]", "customer").replace("[workspace]", "demo-utility").replace("[item]", "intelligence")];
       assert.ok(samples.length > 0, `the route ${route} has no sample`);
       for (const sample of samples) {
         const to = destinationOf(sample);

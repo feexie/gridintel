@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { destinationOf, MOVES, moveRedirects } from "./moves.ts";
+import { destinationOf, ELSEWHERE, MOVES, moveRedirects } from "./moves.ts";
 import { viewAt } from "./views.ts";
 
 /* The table of moved addresses (NAV-B safeguard B): one row per old address, each leading in one
@@ -34,8 +34,10 @@ describe("the addresses NAV-B moved", () => {
 
   it("gives next.config.ts one permanent (308) redirect per row, most specific first", () => {
     const redirects = moveRedirects();
-    assert.equal(redirects.length, MOVES.length);
+    assert.equal(redirects.length, MOVES.length + ELSEWHERE.length);
     assert.ok(redirects.every((one) => one.permanent));
-    for (let i = 1; i < redirects.length; i++) assert.ok(redirects[i - 1].source.replace("/:path*", "").length >= redirects[i].source.replace("/:path*", "").length);
+    // The moved screens' rows, after the prototype's, most specific first.
+    const moved = redirects.slice(ELSEWHERE.length);
+    for (let i = 1; i < moved.length; i++) assert.ok(moved[i - 1].source.replace("/:path*", "").length >= moved[i].source.replace("/:path*", "").length);
   });
 });

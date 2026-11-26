@@ -2,10 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import Wordmark from "@/components/layout/Wordmark";
-import { PlannedTag } from "@/components/system/Brand";
-import { PREVIEW_HOME } from "@/constants/frontDoor";
+import { PUBLIC_HOME } from "@/constants/frontDoor";
 
-/* The frame of a public page (ADR 0021): the name, Sign in and the theme, and the page. There is
+/* The frame of a public page (ADR 0021): the name, Sign in and the theme, and the page. It carries
+   no "Prototype" tag (Founder, 26 November 2026): a form that cannot be sent says so itself, and
+   synthetic figures keep their own labels. There is
    no rail, no data bar and no link to a report: the public layer shows only what anyone may see.
    It is light on purpose: no map or chart library and no dataset is loaded on the client.
 
@@ -16,10 +17,7 @@ export function PublicFrame({ signInHref, children }: { signInHref: string | nul
     <div className="min-h-dvh bg-app text-ink" data-public-frame>
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2">
-          <div className="flex items-center gap-3">
-            <Wordmark href={PREVIEW_HOME} />
-            <PlannedTag>Prototype</PlannedTag>
-          </div>
+          <Wordmark href={PUBLIC_HOME} />
           <div className="flex items-center gap-3">
             <ThemeToggle compact />
             {signInHref ? (

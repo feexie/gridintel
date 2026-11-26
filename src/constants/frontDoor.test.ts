@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { demoWorkspaceId, railHref, routeFor, workspaceInitiativeHref } from "./frontDoor.ts";
+import { demoWorkspaceId, initiativeHref, railHref, roleHref, routeFor, takePartHref, workspaceInitiativeHref } from "./frontDoor.ts";
 import { INITIATIVES, initiativesFor, roleFor } from "./initiatives.ts";
 import { RAILS, railFor, reportsHrefFor, VIEWS, viewOf, WORKSPACE_TYPES } from "./workspaces.ts";
 
@@ -64,7 +64,7 @@ describe("the initiative catalogue (ADR 0021)", () => {
 
 describe("where a role is sent", () => {
   it("sends a public role straight to its public view", () => {
-    assert.deepEqual(routeFor("meter-every-customer", "customer"), { kind: "public", view: "meter-application", href: "/preview/initiatives/meter-every-customer/customer" });
+    assert.deepEqual(routeFor("meter-every-customer", "customer"), { kind: "public", view: "meter-application", href: "/initiatives/meter-every-customer/take-part/customer" });
     assert.equal(routeFor("charging-hubs", "end-user")?.kind, "public");
     assert.equal(routeFor("minigrid-verification", "public")?.kind, "public");
   });
@@ -75,15 +75,15 @@ describe("where a role is sent", () => {
     assert.equal(utility?.kind === "sign-in" && utility.demoHref, workspaceInitiativeHref("demo-utility", "meter-every-customer"));
 
     const financier = routeFor("meter-every-customer", "financier");
-    assert.equal(financier?.kind === "sign-in" && financier.demoHref, "/preview/workspace/demo-financier/finance");
+    assert.equal(financier?.kind === "sign-in" && financier.demoHref, "/dashboard/finance?workspace=financier");
 
     // Regulator on Meter every customer (brief 3c.4): to sign in, with the regulator's demo workspace.
     const regulator = routeFor("meter-every-customer", "regulator");
     assert.equal(regulator?.kind, "sign-in");
-    assert.equal(regulator?.kind === "sign-in" && regulator.demoHref, "/preview/workspace/demo-regulator/initiatives/meter-every-customer");
+    assert.equal(regulator?.kind === "sign-in" && regulator.demoHref, "/dashboard/initiatives/meter-every-customer?workspace=regulator");
 
     const operator = routeFor("minigrid-verification", "minigrid");
-    assert.equal(operator?.kind === "sign-in" && operator.demoHref, "/preview/workspace/demo-minigrid/intelligence");
+    assert.equal(operator?.kind === "sign-in" && operator.demoHref, "/dashboard/intelligence/minigrid?workspace=minigrid");
   });
 
   it("answers null for an unknown initiative or role", () => {
@@ -92,8 +92,8 @@ describe("where a role is sent", () => {
   });
 
   it("addresses a workspace's Home at the workspace itself", () => {
-    assert.equal(railHref(demoWorkspaceId("utility"), "home"), "/preview/workspace/demo-utility");
-    assert.equal(railHref(demoWorkspaceId("utility"), "plan"), "/preview/workspace/demo-utility/plan");
+    assert.equal(railHref(demoWorkspaceId("utility"), "home"), "/dashboard?workspace=utility");
+    assert.equal(railHref(demoWorkspaceId("utility"), "plan"), "/dashboard/plan?workspace=utility");
   });
 });
 
@@ -137,5 +137,17 @@ describe("the slimmed rail (ADR 0021)", () => {
 
   it("keeps reports inside the dashboard, never on a public address", () => {
     for (const type of WORKSPACE_TYPES) assert.match(reportsHrefFor(type), /^\/dashboard\/reports(\/(utility|minigrid))?$/);
+  });
+});
+
+describe("hosted by (brief 3c.2)", () => {
+  it("shows no host for any initiative: none has agreed in writing", () => {
+    for (const initiative of INITIATIVES) assert.equal(initiative.hostedBy, null, initiative.id);
+  });
+
+  it("gives each initiative its own page, and Take part one step under it", () => {
+    assert.equal(initiativeHref("meter-every-customer"), "/initiatives/meter-every-customer");
+    assert.equal(takePartHref("meter-every-customer"), "/initiatives/meter-every-customer/take-part");
+    assert.equal(roleHref("meter-every-customer", "customer"), "/initiatives/meter-every-customer/take-part/customer");
   });
 });
