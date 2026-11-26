@@ -64,7 +64,7 @@ test("the revenue member, after each redirect, gets exactly what a direct visit 
   const wrong: string[] = [];
   for (const old of MOVED) {
     const response = await page.request.get(old);
-    const open = canOpen(grant, destinationOf(old)!);
+    const open = canOpen(grant, destinationOf(old)!.split("?")[0]);
     const status = response.status();
     if (open ? status === 403 || status >= 500 : status !== 403) wrong.push(`${old}: ${open ? "should open" : "should be refused"}, answered ${status} at ${response.url()}`);
   }

@@ -42,3 +42,33 @@ test("?workspace= and the demo cookie change nothing in the DisCo's frame and op
     expect((await page.request.get(address)).status(), address).toBe(403);
   }
 });
+
+/* The isolation fix of NAV-B step 6 (accepted by the Founder, 26 November 2026; ADR 0021 amended):
+   a tenant's Home figures are worked for each request alone, never kept for another, and the
+   mini-grid portfolio is read only for a mini-grid operator. The operator signs in first, so a
+   figure kept from its request would show on the DisCo's Home after it. */
+test("one organization's figures never appear on another's Home, whoever signed in before", async ({ browser }) => {
+  const operator = await browser.newContext();
+  const operatorPage = await operator.newPage();
+  await signIn(operatorPage, TEST_PEOPLE.minigridAdmin);
+  await operatorPage.goto("/dashboard");
+  await expect(operatorPage.locator("[data-workspace-frame]")).toHaveAttribute("data-workspace-type", "minigrid");
+  await expect(operatorPage.locator("body")).not.toContainText("Savanna Electricity Distribution");
+  // The operator's own portfolio is read for the operator.
+  for (const figure of await operatorPage.locator('[data-figure="minigrid.sites-agreeing"]').all()) await expect(figure).not.toHaveAttribute("data-status", "not_available");
+  await operator.close();
+
+  const disco = await browser.newContext();
+  const discoPage = await disco.newPage();
+  await signIn(discoPage, TEST_PEOPLE.discoAdmin);
+  for (const address of ["/dashboard", "/dashboard/initiatives/meter-every-customer"]) {
+    await discoPage.goto(address);
+    await expect(discoPage.locator("[data-workspace-frame]"), address).toHaveAttribute("data-workspace-type", "utility");
+    await expect(discoPage.locator("body"), address).not.toContainText("Demonstration Mini-grid Operator");
+    // The operator's portfolio is never read for the DisCo: wherever the figure is named, it says so.
+    for (const figure of await discoPage.locator('[data-figure="minigrid.sites-agreeing"]').all()) await expect(figure, address).toHaveAttribute("data-status", "not_available");
+    // The applications queue counted is the DisCo's own.
+    for (const figure of await discoPage.locator('[data-figure="metering.pending-applications"]').all()) await expect(figure, address).toContainText("at this DisCo");
+  }
+  await disco.close();
+});
