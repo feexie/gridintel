@@ -199,8 +199,10 @@ test("on a phone the rail is across the top, the item's views a row below it, th
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar.getByText("SYNTHETIC DATA", { exact: true }), route).toBeVisible();
     await expect(bar.getByText("Reporting period", { exact: true }), route).toBeVisible();
-    // The frame takes less than a fifth of the screen: the page starts within 170 px of the top (as before NAV-B).
-    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(170);
+    // The signed-in frame starts the page within 200 px of the top on a phone. ADR 0021 requires the workspace
+    // header (the organization's mark and name), which the old menu did not carry; the Founder allowed 200 px
+    // for it (26 November 2026). The public pages keep their own, tighter budget.
+    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(200);
   }
   // What the dataset is opens with one tap.
   const bar = page.getByRole("note", { name: "About the data on this screen" });
