@@ -3,7 +3,11 @@
 Living document. Updated at the end of every phase. A phase starts only after
 the Founder approves it. Changing the order is a decision gate.
 
-Last updated: 2026-11-25. **Phase 8A is complete: merged and closed**
+Last updated: 2026-11-26. **Phase NAV-B is at checkpoint 2** (branch
+`phase-nav-b`, not merged; the Founder reviews the preview before any merge):
+every screen moved into ADR 0021's structure, permission keys are stable
+View IDs, every old address answers 308, and the public layer is at `/` on
+the demonstration. **Phase 8A is complete: merged and closed**
 (2026-11-25; tag `phase-8a`): the Founder signed in on the real Supabase
 project (`gridintel-pilot`, eu-west-1) at the pilot,
 https://gridintel-pilot.vercel.app, with a password and an authenticator
@@ -2338,7 +2342,31 @@ by a GitHub billing lock).
 rate limiting, captcha and SMS as stubs); the Applications queue (MTR-B);
 action permissions (the database brief).
 
-### Phase NAV-B, MTR-A, MTR-B, EMOB-B (planned)
+### Phase NAV-B: the screens move into the new structure (checkpoint 2, 2026-11-26; branch `phase-nav-b`, not merged)
+
+Plan `docs/design/NAV-B-PLAN.md`, approved 2026-11-25 with a scope guard, the View ID change and
+safeguards A, B and C; checkpoint 1 approved 2026-11-25 with one correction; answers of 26
+November. Recorded as an amendment to ADR 0021.
+
+- **Keys.** One View catalogue (`src/constants/views.ts`, 50 views) is the source for
+  navigation, permissions, workspace visibility, route resolution and the tests. Old keys are
+  translated on read; the access before NAV-B is a frozen fixture, every difference named.
+- **Addresses.** Intelligence under `/dashboard/intelligence/{utility,minigrid,der}`; Plan,
+  Finance, Oversight, the initiatives and the reports by domain; People at
+  `/dashboard/account/people`. Each of the 35 moves and the prototype's 23 `/preview`
+  addresses answers 308, on all three builds, held by `e2e/old-addresses.spec.ts`, its tenant
+  copy and `e2e/geh-links.spec.ts` (the 21 GEH addresses).
+- **Frame.** The signed-in rail and workspace header over `/dashboard`; Home at `/dashboard` with
+  a link to the Platform Overview (now `/dashboard/intelligence`); on the demonstration the five
+  demo workspaces, chosen in the browser within safeguard C; on a tenant, the organization from
+  the session only.
+- **Public layer.** At `/` on the demonstration: Home, each initiative's own page, Take part, the
+  role picker and `/track`; no host shown; no "Prototype" tag. None on a tenant.
+- **Removed.** The three Phase 1 "Coming Soon" pages, PlatformCapabilities and five of its
+  images, and the old menu's code.
+- **Figures.** The 101 GEH figures identical at every step (`npm run geh:compare`).
+
+### Phase MTR-A, MTR-B, EMOB-B (planned)
 
 As in the Founder's briefs of 5 and 8 November 2026 (kept outside the
 repository) and ADR 0021.

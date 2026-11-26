@@ -140,3 +140,12 @@ test("the public Home and the initiative pages carry no Prototype tag; a form th
     await expect(page.getByText("not open yet").first(), route).toBeVisible();
   }
 });
+
+test("on a phone a public page starts within 170 px of the top, nothing wider than the screen (the public frame's own budget, tighter than the signed-in frame's 200)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const route of ["/", "/initiatives/meter-every-customer", "/initiatives/meter-every-customer/take-part", "/initiatives/meter-every-customer/take-part/customer", "/track"]) {
+    await page.goto(route);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
+    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).getBoundingClientRect().top), route).toBeLessThan(170);
+  }
+});

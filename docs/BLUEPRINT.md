@@ -63,6 +63,29 @@ changes. The plan is in `ROADMAP.md`; the vision is in
 > tariffs from the published NERC orders; `composition/emobility.ts`. See
 > `docs/emobility/DESIGN.md`.
 
+> **State at the Phase NAV-B checkpoint 2 (2026-11-26; branch `phase-nav-b`, not merged;
+> ADR 0021 amended).**
+>
+> - **The View catalogue** (`src/constants/views.ts`) is the one list of screens: each View has
+>   a stable id (its permission key), a domain, an address (`hrefOf`, `viewAt`), a permission
+>   (`own` or `viewer`) and where it is listed (rails, reports, planners). `navigation.ts`,
+>   `planning.ts` and `workspaces.ts` are derived from it; `moves.ts` holds every old address
+>   and its 308.
+> - **What a viewer may open** (`src/constants/access.ts`): `grantFor` translates old keys and
+>   cuts them to the organization's allowed views (a type's default is its rail); `canOpen`
+>   answers an address; `workspaceRail` cuts a type's rail to the grant; `landingFor` says where
+>   a viewer starts. `src/proxy.ts` answers an address that is no view "not found".
+> - **Shell.** The old sector menu (`DashboardShell`, `Sidebar`, `Topbar`, `Menu`,
+>   `SectorSwitcher`) is removed. Every `/dashboard` page is drawn in `RailFrame`
+>   (`src/components/workspace`): the workspace's mark and name, the rail, Reports, Help and the
+>   account at its foot. On the demonstration `DemoWorkspace` chooses one of five synthetic
+>   workspaces in the browser; on a tenant `src/composition/workspace.ts` takes the organization
+>   from the session alone.
+> - **Public layer.** `src/app/(public)` at `/` on the demonstration only; `PublicFrame` and
+>   `InitiativePage` in `src/components/front`.
+> - **Isolation.** A tenant's Home figures are worked per request
+>   (`workspaceFiguresFor`); the mini-grid portfolio is read only for a mini-grid operator.
+
 > **State at the Phase REPORTS-B checkpoint (2026-10-20; branch
 > `phase-reports-b`, not merged; ADR 0019 and its REPORTS-B amendment).**
 > All five reports are built, each a configuration of the one service:

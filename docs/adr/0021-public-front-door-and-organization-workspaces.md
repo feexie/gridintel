@@ -6,6 +6,8 @@ the fixes recorded below). The scope is the Founder's (briefs of 5 and 8
 November 2026, and section 3c of the front-door brief, 10 November). The
 plan was approved and the gates answered on 8 November; the checkpoint
 answers and section 3c are recorded at the end of this record.
+**Amended** by NAV-B (Founder, 25 and 26 November 2026): see "Amendment:
+NAV-B" at the end.
 
 ## Context
 
@@ -276,3 +278,153 @@ and its card carries no link to itself.
 - ADR 0017 and ADR 0018 stand, with "workspace" read as "View" in them.
 - ADR 0020 stands: organizations kept apart, the switcher lists only the
   person's organizations, branding decides nothing.
+
+## Amendment: NAV-B (Founder, 25 and 26 November 2026)
+
+NAV-B moved every screen into the structure of decisions 1, 5 and 9 (plan:
+`docs/design/NAV-B-PLAN.md`). The Founder approved the plan on 25 November
+with a scope guard, one change and three safeguards, and answered its open
+questions on 25 and 26 November. This amendment records them; where it
+differs from decisions 8 and 9 above, it replaces them.
+
+### The scope guard
+
+"No existing functionality, data model, API contract, dashboard figure or
+working integration may be removed, weakened or silently redesigned as part
+of NAV-B. Any change outside the approved plan must be written up and
+approved by me before it is implemented." The 101 GEH figures were compared
+line by line at every step (`npm run geh:compare`, baseline `8445269`): all
+101 identical.
+
+### The View ID rule (the Founder's change)
+
+- **A permission key is a stable View ID, never an address.**
+  `utility.revenue` stays `utility.revenue` wherever its screen lives.
+- **One catalogue**, `src/constants/views.ts`, is the only source for
+  navigation, permissions, workspace visibility, route resolution
+  (`hrefOf`, `viewAt`) and the tests. A unit test fails when another module
+  writes a `/dashboard` address of its own or builds one from a home.
+- **Old keys** are translated on read (`translateKey`), and the access of
+  the six roles before NAV-B is frozen in a fixture
+  (`src/constants/__pinned__/access-before-nav-b.json`). The fixture test
+  names every difference:
+  - widened: About this build, and each type's default views;
+  - narrowed: People, for anyone not an administrator;
+  - removed: the three placeholder pages.
+- "Workspace" means an organization's environment only. A screen is a
+  View, in code as well: a grep test fails if the old names come back.
+
+### Safeguard A: permission integrity
+
+- Every View ID is unique.
+- Every view has an explicit permission (`own` or `viewer`).
+- An unknown key opens nothing.
+- An address that is no view is not found.
+- No role's open views widened by a move.
+
+Tests:
+
+- unit tests in `access.test.ts`, `access.pinned.test.ts` and `views.test.ts`;
+- browser tests by direct address for five viewers (`e2e/access-matrix.spec.ts`,
+  `e2e/tenant/access-matrix.spec.ts`): not signed in, signed in with no
+  grant, a partial grant, an organization administrator, and the
+  demonstration's public viewer.
+
+**A workspace type's default access** is exactly the views in that type's
+rail, read from the catalogue's workspace visibility (`workspaceViews`), not
+a whole sector (Founder, checkpoint 1). A Utility therefore gets no
+mini-grid planner and no Oversight.
+
+### Safeguard B: redirect integrity
+
+Every legacy address answers **308** with its new address, on all three
+builds, with real ids. The table is `src/constants/moves.ts`: 35 moves, and
+23 rows for the prototype's `/preview` addresses.
+
+- There are no loops and no chains: a new address is never itself moved.
+- The query is carried: parameters are compared as a set, since a redirect
+  puts the carried query before a destination's own `?workspace=`.
+- Access still applies after the redirect: a member gets at the new
+  address exactly what a direct visit gives.
+
+Tests:
+
+- `e2e/old-addresses.spec.ts` (both demonstration builds);
+- `e2e/tenant/old-addresses.spec.ts`;
+- `e2e/geh-links.spec.ts`, which walks the 21 addresses in the GEH material,
+  each with and without `?present=1`.
+
+### Safeguard C: workspace isolation
+
+- **On a tenant deployment** the workspace is the signed-in person's
+  organization, from the session only. `?workspace=` and the demo cookie
+  are ignored entirely, and the workspace type comes from the
+  organization's sectors (answer 3).
+- **On the public demonstration** they are validated to one of the five
+  demo types, else the default. The switcher leads to Home with
+  `?workspace=` of the workspace chosen, so the address always names what
+  the screen shows.
+- The `unsafeConfiguration` checks stay.
+
+Tests: `e2e/workspace-isolation.spec.ts` and
+`e2e/tenant/workspace-isolation.spec.ts`.
+
+**The isolation fix (accepted by the Founder, 26 November 2026).** Step 6
+found that a tenant's Home cards read the mini-grid portfolio through a
+cache shared by every request. The fix:
+
+- a tenant's Home figures are worked for each request alone and never kept
+  for another (`workspaceFiguresFor`, `src/composition/initiatives.ts`);
+- the mini-grid portfolio is read only for a mini-grid operator, whose own
+  records it is.
+
+Test: in `e2e/tenant/workspace-isolation.spec.ts`, "one organization's
+figures never appear on another's Home, whoever signed in before". The
+operator signs in first. The DisCo's Home and initiative page must then
+name no other organization, read none of the operator's portfolio, and
+count the applications queue of that DisCo only.
+
+### The answers (25 and 26 November)
+
+1. **The demo workspace** is chosen by cookie and `?workspace=`, within
+   safeguard C.
+2. **Default access** is the type's rail, as above.
+3. **A tenant's workspace type** comes from the organization's sectors,
+   until the database brief records it.
+4. **There is no public layer on the tenant.** `/` leads to its
+   dashboard, and the public addresses are not found there.
+5. **About this build** is open to every signed-in viewer.
+6. **No further list of GEH links.** Every old address and the 21 GEH
+   addresses are walked.
+7. **`/dashboard` is Home,** with a clear link to the former Platform
+   Overview, now `/dashboard/intelligence`.
+8. **This amendment.**
+9. **The phone (26 November).** The signed-in frame may start the page
+   within 200 px of the top, since this ADR requires the workspace header
+   (the organization's mark and name). The public pages had no budget of
+   their own in a test, so one was added at 170 px, the limit before NAV-B
+   (`e2e/front-door.spec.ts`).
+10. **The public pages carry no "Prototype" tag (26 November).** A form
+    that cannot be sent still says it is not open yet, and every SYNTHETIC
+    and DEMO label stays.
+11. **Removed in step 8:** the old menu's code, and the PlatformCapabilities
+    images nothing references.
+
+### Addresses after NAV-B
+
+Decision 9's NAV-B line is now built.
+
+- **The public demonstration's public layer:** `/`,
+  `/initiatives/[id]`, `/initiatives/[id]/take-part`,
+  `/initiatives/[id]/take-part/[role]` and `/track`.
+- **The signed-in layer:**
+  - `/dashboard` (Home);
+  - `/dashboard/intelligence/{utility,minigrid,der}/...`;
+  - `/dashboard/plan/...`;
+  - `/dashboard/finance/...`;
+  - `/dashboard/oversight/...`;
+  - `/dashboard/initiatives/...`;
+  - `/dashboard/reports/{utility,minigrid}/...`;
+  - `/dashboard/account/people`;
+  - `/dashboard/about-this-build`.
+

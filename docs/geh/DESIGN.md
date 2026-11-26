@@ -87,6 +87,17 @@ price. The fund replaces the upfront payment; it does not use MAP's terms.
 A planned page states its purpose in one line and that it is not built. It
 holds no figure.
 
+**Addresses since NAV-B (ADR 0021, amended 26 November 2026).** The addresses in this
+document are those of the sprint; each answers 308 to its new place, query carried
+(`src/constants/moves.ts`, walked by `e2e/geh-links.spec.ts`).
+
+- The planners are under `/dashboard/plan/...`; E-mobility is `/dashboard/plan/charging-hubs`.
+- The Metering Fund is `/dashboard/finance/metering-fund`, and its Marketplace
+  `/dashboard/finance/marketplace`.
+- The Journey is `/dashboard/initiatives/meter-every-customer/journey`.
+- The report is `/dashboard/reports/metering-plan`.
+- About this build is `/dashboard/about-this-build`.
+
 The Metering planner's screens (revised after M2, Founder, 30 October 2026):
 
 | Screen | Step | Milestone | Question it answers |
