@@ -8,7 +8,22 @@ import { test } from "@playwright/test";
 const target = process.env.SCREENSHOTS;
 const OPERATIONS = "/dashboard/intelligence/utility/operations";
 const SHOTS: [string, string][] = [
-  ["platform-overview", "/dashboard"],
+  // NAV-B: the public layer at "/", Home, the Platform Overview under Intelligence, each demo workspace.
+  ["public-home", "/"],
+  ["public-initiative", "/initiatives/meter-every-customer"],
+  ["public-take-part", "/initiatives/meter-every-customer/take-part"],
+  ["public-apply-for-a-meter", "/initiatives/meter-every-customer/take-part/customer"],
+  ["home-utility", "/dashboard?workspace=utility"],
+  ["home-minigrid", "/dashboard?workspace=minigrid"],
+  ["home-der", "/dashboard?workspace=der"],
+  ["home-financier", "/dashboard?workspace=financier"],
+  ["home-regulator", "/dashboard?workspace=regulator"],
+  ["initiative-in-workspace", "/dashboard/initiatives/meter-every-customer?workspace=utility"],
+  ["plan", "/dashboard/plan?workspace=utility"],
+  ["finance-metering-fund", "/dashboard/finance/metering-fund?workspace=utility"],
+  ["oversight-monitoring", "/dashboard/oversight/monitoring?workspace=regulator"],
+  ["about-this-build", "/dashboard/about-this-build"],
+  ["platform-overview", "/dashboard/intelligence"],
   ["utility-overview", "/dashboard/intelligence/utility"],
   ["utility-map", "/dashboard/intelligence/utility/map"],
   ["utility-assistant-planned", "/dashboard/intelligence/utility/ai"],
