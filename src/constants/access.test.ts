@@ -3,11 +3,11 @@ import { describe, it } from "node:test";
 import { NextRequest } from "next/server.js";
 import { accessProxy } from "../proxy.ts";
 import type { ScreenGrant, ViewerContext } from "../services/spatial/viewer.ts";
-import { admitsRead, canOpen, grantFor, holdsSector, homeFor, keyFor, landingFor, navigationFor, REFUSED_PATH, reportsFor, workspaceRail } from "./access.ts";
+import { admitsRead, canOpen, grantFor, holdsSector, keyFor, landingFor, REFUSED_PATH, reportsFor, workspaceRail } from "./access.ts";
 import { departmentOf, departmentsFor } from "./departments.ts";
 import { PEOPLE_KEY, PEOPLE_PATH } from "./navigation.ts";
-import { REPORTS, sectors } from "./navigation.ts";
-import { PLATFORM_DEFAULT, RAILS, viewOf, WORKSPACE_TYPES, workspaceViews } from "./views.ts";
+import { REPORTS } from "./navigation.ts";
+import { PLATFORM_DEFAULT, RAILS, VIEWS, WORKSPACE_TYPES, workspaceViews } from "./views.ts";
 
 const EVERYTHING: ScreenGrant = { kind: "everything" };
 /** A viewer allowed only Utility > Revenue. */
@@ -44,13 +44,12 @@ const ROUTES = [
   "/dashboard/reports",
 ];
 
-const shape = (navigation: ReturnType<typeof navigationFor>) => navigation.map((sector) => ({ sector: sector.id, home: sector.home, items: [...sector.opening, ...sector.workspaces].map((item) => item.label) }));
+const rail = (type: Parameters<typeof workspaceRail>[0], grant: ScreenGrant) => workspaceRail(type, grant).map((item) => [item.item, item.href, item.views.map((view) => view.id)]);
 
 describe("which screens a viewer may open", () => {
   it("gives every screen its own permission key, its View ID, in its sector's domain", () => {
-    const keys = sectors.flatMap((sector) => [...sector.opening, ...sector.workspaces].map((item) => item.key));
+    const keys = VIEWS.map((view) => view.id);
     assert.equal(new Set(keys).size, keys.length);
-    for (const sector of sectors) for (const item of [...sector.opening, ...sector.workspaces]) assert.equal(viewOf(item.key).domain, sector.id, item.key);
     assert.equal(keyFor("/dashboard/intelligence/utility/operations/feeders/FD-OLD"), "utility.operations");
     assert.equal(keyFor("/dashboard/intelligence/minigrid/sites/MG-DRY"), "minigrid.sites");
     assert.equal(keyFor("/dashboard/intelligence/utility"), "utility.overview");
@@ -65,12 +64,11 @@ describe("which screens a viewer may open", () => {
     assert.equal(keyFor("/dashboard/plan/charging-hubs"), "plan.charging-hubs");
   });
 
-  it("opens everything to the public demonstration, whose menu is the whole catalogue", () => {
+  it("opens everything to the public demonstration, whose rail is each workspace type's whole rail", () => {
     for (const route of ROUTES) assert.equal(canOpen(EVERYTHING, route), true, route);
-    assert.deepEqual(navigationFor(EVERYTHING), sectors);
-    // Where a viewer starts is Home (NAV-B step 6); the old menu's Platform item leads to the Overview, now under Intelligence.
+    for (const type of WORKSPACE_TYPES) assert.deepEqual(workspaceRail(type, EVERYTHING).map((item) => item.item), RAILS[type].map((entry) => entry.item), type);
+    // Where a viewer starts is Home (NAV-B step 6).
     assert.equal(landingFor(EVERYTHING), "/dashboard");
-    assert.equal(homeFor(navigationFor(EVERYTHING)), "/dashboard/intelligence");
   });
 
   it("gives each workspace type its rail, each view in one item only, cut to the grant (NAV-B step 6)", () => {
@@ -91,8 +89,8 @@ describe("which screens a viewer may open", () => {
   });
 
   it("shows a viewer allowed only Utility > Revenue that one item, and refuses every other route", () => {
-    assert.deepEqual(shape(navigationFor(REVENUE_ONLY)), [{ sector: "utility", home: "/dashboard/intelligence/utility/revenue", items: ["Revenue"] }]);
-    assert.equal(homeFor(navigationFor(REVENUE_ONLY)), "/dashboard/intelligence/utility/revenue");
+    assert.deepEqual(rail("utility", REVENUE_ONLY), [["intelligence", "/dashboard/intelligence/utility/revenue", ["utility.revenue"]]]);
+    assert.equal(landingFor(REVENUE_ONLY), "/dashboard/intelligence/utility/revenue");
     for (const route of ROUTES) assert.equal(canOpen(REVENUE_ONLY, route), route === "/dashboard/intelligence/utility/revenue", route);
     // The screens below Revenue are Revenue's; the refusal page is open to anyone.
     assert.equal(canOpen(REVENUE_ONLY, "/dashboard/intelligence/utility/revenue/anything-below"), true);
@@ -100,7 +98,7 @@ describe("which screens a viewer may open", () => {
   });
 
   it("gives a department its set of screens: the revenue department sees the Utility Overview, GIS Map and Revenue", () => {
-    assert.deepEqual(shape(navigationFor(REVENUE_DEPARTMENT)), [{ sector: "utility", home: "/dashboard/intelligence/utility", items: ["Overview", "GIS Map", "Revenue"] }]);
+    assert.deepEqual(rail("utility", REVENUE_DEPARTMENT), [["intelligence", "/dashboard/intelligence/utility", ["utility.revenue", "utility.map"]]]);
     assert.deepEqual(
       ROUTES.filter((route) => canOpen(REVENUE_DEPARTMENT, route)),
       ["/dashboard/intelligence/utility", "/dashboard/intelligence/utility/map", "/dashboard/intelligence/utility/revenue"],
@@ -109,7 +107,8 @@ describe("which screens a viewer may open", () => {
 
   it("opens a whole sector with the sector's key, and nothing with an empty list", () => {
     const minigrid: ScreenGrant = { kind: "listed", keys: ["minigrid"] };
-    assert.deepEqual(shape(navigationFor(minigrid)), [{ sector: "minigrid", home: "/dashboard/intelligence/minigrid", items: ["Overview", "GIS Map", "AI Assistant", "Sites", "Reports"] }]);
+    assert.deepEqual(rail("minigrid", minigrid), [["intelligence", "/dashboard/intelligence/minigrid", ["minigrid.sites", "minigrid.map", "minigrid.ai"]]]);
+    assert.equal(landingFor(minigrid), "/dashboard/intelligence/minigrid");
     assert.deepEqual(ROUTES.filter((route) => canOpen(minigrid, route)), [
       "/dashboard/intelligence/minigrid",
       "/dashboard/intelligence/minigrid/map",
@@ -121,8 +120,8 @@ describe("which screens a viewer may open", () => {
       "/dashboard/reports",
     ]);
     const none: ScreenGrant = { kind: "listed", keys: [] };
-    assert.deepEqual(navigationFor(none), []);
-    assert.equal(homeFor(navigationFor(none)), null);
+    for (const type of WORKSPACE_TYPES) assert.deepEqual(workspaceRail(type, none), [], type);
+    assert.equal(landingFor(none), null);
     assert.equal(ROUTES.filter((route) => canOpen(none, route)).length, 0);
   });
 
@@ -143,7 +142,9 @@ describe("which screens a viewer may open", () => {
 
   it("shows a regulator given only the reliability report that report, under Utility > Reports, and refuses everything else", () => {
     const regulator: ScreenGrant = { kind: "listed", keys: ["utility.reports.reliability"] };
-    assert.deepEqual(shape(navigationFor(regulator)), [{ sector: "utility", home: "/dashboard/reports/utility", items: ["Reports"] }]);
+    // The rail shows no item; the report is reached from Reports at the rail's foot.
+    assert.deepEqual(rail("regulator", regulator), []);
+    assert.equal(landingFor(regulator), "/dashboard/reports/utility");
     assert.deepEqual(reportsFor(regulator).map((report) => report.key), ["utility.reports.reliability"]);
     assert.deepEqual(ROUTES.filter((route) => canOpen(regulator, route)), [
       "/dashboard/reports/utility",
@@ -157,7 +158,8 @@ describe("which screens a viewer may open", () => {
 
   it("shows a mini-grid regulator or funder given only the compliance report that report and nothing of the utility's", () => {
     const funder: ScreenGrant = { kind: "listed", keys: ["minigrid.reports.compliance"] };
-    assert.deepEqual(shape(navigationFor(funder)), [{ sector: "minigrid", home: "/dashboard/reports/minigrid", items: ["Reports"] }]);
+    assert.deepEqual(rail("financier", funder), []);
+    assert.equal(landingFor(funder), "/dashboard/reports/minigrid");
     assert.deepEqual(reportsFor(funder).map((report) => report.key), ["minigrid.reports.compliance"]);
     assert.equal(canOpen(funder, "/dashboard/reports/utility/reliability/2026-09"), false);
     assert.equal(canOpen(funder, "/dashboard/intelligence/minigrid/sites"), false);

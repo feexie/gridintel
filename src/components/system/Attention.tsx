@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReportedComparisonView } from "@/services/operations/views";
-import type { AttentionItemView, AttentionTarget, AttentionTone, WorkspaceKey } from "@/services/overview/views";
-import { MINIGRID_WORKSPACES, UTILITY_WORKSPACES } from "@/constants/navigation";
+import type { AttentionItemView, AttentionTarget, AttentionTone, SectorViewKey } from "@/services/overview/views";
+import { MINIGRID_VIEWS, UTILITY_VIEWS } from "@/constants/navigation";
 import { MetricCell, OriginTag, SourceAndMethod, StatusBadge } from "./Metric";
 import { formatMetric, formatNumber, formatSigned, levelHref } from "./format";
 import { siteHref } from "./map/links";
@@ -19,18 +19,18 @@ const TONE: Record<AttentionTone, { mark: string; word: string; text: string; ed
   note: { mark: "●", word: "Note", text: "text-ink-3", edge: "border-l-line-bold", ground: "bg-well/40" },
 };
 
-const WORKSPACE_ROUTE: Record<WorkspaceKey, string> = {
-  "utility.executive": UTILITY_WORKSPACES[0].href,
-  "utility.operations": UTILITY_WORKSPACES[1].href,
-  "utility.reliability": UTILITY_WORKSPACES[2].href,
-  "utility.revenue": UTILITY_WORKSPACES[3].href,
-  "utility.assets": UTILITY_WORKSPACES[4].href,
-  "utility.events": UTILITY_WORKSPACES[5].href,
-  "minigrid.sites": MINIGRID_WORKSPACES[0].href,
+const VIEW_ROUTE: Record<SectorViewKey, string> = {
+  "utility.executive": UTILITY_VIEWS[0].href,
+  "utility.operations": UTILITY_VIEWS[1].href,
+  "utility.reliability": UTILITY_VIEWS[2].href,
+  "utility.revenue": UTILITY_VIEWS[3].href,
+  "utility.assets": UTILITY_VIEWS[4].href,
+  "utility.events": UTILITY_VIEWS[5].href,
+  "minigrid.sites": MINIGRID_VIEWS[0].href,
 };
 
-export function workspaceHref(workspace: WorkspaceKey): string {
-  return WORKSPACE_ROUTE[workspace];
+export function sectorViewHref(view: SectorViewKey): string {
+  return VIEW_ROUTE[view];
 }
 
 /** The address a line leads to; null when it leads nowhere the viewer may open. */
@@ -39,7 +39,7 @@ export function targetHref(target: AttentionTarget): string | null {
   if (target.type === "level") return levelHref(target.kind, target.id);
   if (target.type === "site") return siteHref(target.id);
   if (target.type === "section") return `#${target.id}`;
-  return workspaceHref(target.workspace);
+  return sectorViewHref(target.view);
 }
 
 /** Calculated less reported, with its sign and unit, as the read model gives it. */

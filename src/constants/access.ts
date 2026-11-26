@@ -1,5 +1,5 @@
 import type { ScreenGrant } from "../services/spatial/viewer.ts";
-import { REPORTS, sectors, type NavigationItem, type ReportItem, type Sector } from "./navigation.ts";
+import { REPORTS, type ReportItem } from "./navigation.ts";
 import { domainOfKey, hrefOf, isDomain, isViewId, landingOf, PLATFORM_DEFAULT, RAIL_ITEMS, RAILS, translateKey, viewAt, viewOf, VIEWS, workspaceTypeOf, workspaceViews, type Domain, type RailItemId, type View, type ViewId, type WorkspaceType } from "./views.ts";
 
 /* ==========================================================
@@ -13,7 +13,7 @@ import { domainOfKey, hrefOf, isDomain, isViewId, landingOf, PLATFORM_DEFAULT, R
    utility.* view), and the view above it when that view lists what
    is below (a report's key opens its sector's list of reports).
 
-   The menu and the routes are decided here, from the one grant, so
+   The rail and the routes are decided here, from the one grant, so
    they cannot disagree: what a viewer is not shown, they are refused
    at its address. Nothing is open by default:
    - a key the catalogue does not know opens nothing;
@@ -66,28 +66,6 @@ function opensKey(grant: ScreenGrant, key: string): boolean {
 /** The reports a viewer may open, in the catalogue's order; of one sector when it is given. A planned report is listed with the others. */
 export function reportsFor(grant: ScreenGrant, sector?: ReportItem["sector"]): ReportItem[] {
   return REPORTS.filter((report) => (sector === undefined || report.sector === sector) && holdsOrAbove(grant, report.key));
-}
-
-function opens(grant: ScreenGrant, item: NavigationItem): boolean {
-  return opensKey(grant, item.key);
-}
-
-/** The sectors and screens a viewer may open, in the menu's order. A sector with none is left out. */
-export function navigationFor(grant: ScreenGrant): Sector[] {
-  return sectors.flatMap((sector) => {
-    const opening = sector.opening.filter((item) => opens(grant, item));
-    const workspaces = sector.workspaces.filter((item) => opens(grant, item));
-    if (opening.length + workspaces.length === 0) return [];
-    // A sector the viewer cannot open the Overview of is entered at its first screen they can.
-    const home = (opening[0] ?? workspaces[0]).href;
-    return [{ ...sector, home, opening, workspaces }];
-  });
-}
-
-/** Where a viewer's GridIntel starts: the first screen they may open; null when there is none. */
-export function homeFor(navigation: readonly Sector[]): string | null {
-  const [first] = navigation;
-  return first === undefined ? null : (first.opening[0] ?? first.workspaces[0]).href;
 }
 
 /* ==========================================================

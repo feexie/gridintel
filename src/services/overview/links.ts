@@ -8,7 +8,7 @@ import type { AttentionItemView, AttentionTarget, PlatformOverviewView, SectorOv
    overview is handed to the screen its links are cut to what the
    viewer may open:
 
-   - the "Go to" ways in: a workspace, the sector's map or its
+   - the "Go to" ways in: a view, the sector's map or its
      assistant the viewer may not open is left out;
    - a line's link: the line is kept, with no link, when the screen
      it leads to is not open to the viewer;
@@ -29,8 +29,8 @@ export function targetKey(target: AttentionTarget): string | null {
       return "utility.operations";
     case "site":
       return "minigrid.sites";
-    case "workspace":
-      return target.workspace;
+    case "view":
+      return target.view;
     case "section":
     case "none":
       return null;
@@ -46,7 +46,7 @@ export function cutSectorOverview<T extends SectorOverviewView>(view: T, opens: 
   return {
     ...view,
     attention: view.attention.map((item) => cutItem(item, opens)),
-    workspaces: view.workspaces.filter((link) => opens(link.workspace)),
+    views: view.views.filter((link) => opens(link.view)),
     waysIn: { map: opens(`${view.sector}.map`), assistant: opens(`${view.sector}.ai`) },
   };
 }

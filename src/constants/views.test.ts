@@ -4,7 +4,7 @@ import { join, relative, sep } from "node:path";
 import { describe, it } from "node:test";
 import { canOpen, grantFor, opensView, resolves } from "./access.ts";
 import { INITIATIVES } from "./initiatives.ts";
-import { REPORTS, sectors } from "./navigation.ts";
+import { MINIGRID_VIEWS, REPORTS, UTILITY_VIEWS } from "./navigation.ts";
 import { METERING_SCREENS, PLANNERS, plannerHref } from "./planning.ts";
 import { DOMAINS, hrefOf, reportPeriodAt, OLD_KEYS, RAILS, translateKey, viewAt, viewOf, VIEWS, WORKSPACE_TYPES } from "./views.ts";
 
@@ -100,13 +100,20 @@ describe("the View catalogue is the single source of screens and addresses", () 
     assert.equal(reportPeriodAt(`${hrefOf("utility.revenue")}/2026-09`), null);
   });
 
+  it("calls a screen a view in code: no name says \"workspace\" for one (NAV-B plan, section 5)", () => {
+    // "Workspace" stays where it means an organization's environment (WorkspaceType, the demo workspaces, the frame).
+    const screenAsWorkspace = /(?<![A-Z_])(?!DEMO_)[A-Z]+_WORKSPACES\b|WORKSPACE_LINKS|\bWorkspaceKey\b|\bWorkspaceLinkView\b|type: "workspace"/;
+    const found = sources().filter((file) => file.path !== "constants/views.test.ts" && screenAsWorkspace.test(file.text)).map((file) => file.path);
+    assert.deepEqual(found, []);
+  });
+
   it("is the only module that builds a screen's address from a home: everything else asks hrefOf", () => {
     const builders = sources().filter((file) => /(PLATFORM|UTILITY|MINIGRID|DER|PLANNING)_HOME\}\//.test(file.text)).map((file) => file.path);
     assert.deepEqual(builders, []);
   });
 
-  it("gives the old menu, the reports, the planners and the Metering screens their ids and addresses from it", () => {
-    for (const sector of sectors) for (const item of [...sector.opening, ...sector.workspaces]) assert.equal(item.href, hrefOf(item.key), item.key);
+  it("gives the linked lists of views, the reports, the planners and the Metering screens their ids and addresses from it", () => {
+    for (const item of [...UTILITY_VIEWS, ...MINIGRID_VIEWS]) assert.equal(item.href, hrefOf(item.key), item.key);
     for (const report of REPORTS) assert.equal(report.href, hrefOf(report.key), report.key);
     for (const planner of PLANNERS) assert.equal(plannerHref(planner.id), hrefOf(planner.view), planner.id);
     for (const screen of METERING_SCREENS) assert.equal(screen.href, hrefOf(screen.view), screen.id);

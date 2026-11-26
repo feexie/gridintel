@@ -45,7 +45,7 @@ describe("the Utility overview", () => {
     assert.equal(fault.figure, events.now.interruptions.inProgress[0].customers);
     assert.equal(fault.figure?.value, 1015);
     assert.match(fault.statement, /Farm Road 11 kV feeder, 10 transformers still without supply\.$/);
-    assert.deepEqual(fault.target, { type: "workspace", workspace: "utility.events" });
+    assert.deepEqual(fault.target, { type: "view", view: "utility.events" });
     // Asset risk: the Executive read model's finding, and a link to the transformer itself.
     assert.equal(riverbank.figure, executive.assetRisk[0].findings[0].metric);
     assert.equal(riverbank.figureNote, "69 hours over rating");
@@ -64,7 +64,7 @@ describe("the Utility overview", () => {
     assert.equal(Number(hillcrest.calculated.value?.toFixed(1)), 23.1);
     for (const row of reliability.comparisons) assert.ok(Math.abs(row.relativeVariance ?? 0) <= Math.abs(hillcrest.relativeVariance ?? 0), `${row.statedFor} ${row.label}`);
     assert.equal(report.statement, "Hillcrest 33/11 kV injection substation: the SAIDI its report states is furthest from the outage log. 11 of the 12 reliability figures reported differ.");
-    assert.deepEqual(report.target, { type: "workspace", workspace: "utility.reliability" });
+    assert.deepEqual(report.target, { type: "view", view: "utility.reliability" });
     // The two counts are the lengths of lists their own screens show.
     assert.equal(alarms.figure?.value, events.now.alarms.length);
     assert.equal(alarms.figure?.value, 4);
@@ -81,7 +81,7 @@ describe("the Utility overview", () => {
     assert.equal(utility.lossSplit?.parts[1].metric, executive.losses.parts.commercial);
     assert.deepEqual(utility.headline, [executive.losses.atcc, executive.losses.collectionEfficiency, executive.revenueGap.notRealised]);
     assert.equal(utility.sourcing.synthetic, true);
-    assert.deepEqual(utility.workspaces.map((link) => link.label), ["Executive", "Operations", "Reliability", "Revenue", "Assets", "Events / Alarms"]);
+    assert.deepEqual(utility.views.map((link) => link.label), ["Executive", "Operations", "Reliability", "Revenue", "Assets", "Events / Alarms"]);
   });
 
   it("on a source that holds almost nothing, lists nothing and does not read that as nothing wrong", async () => {

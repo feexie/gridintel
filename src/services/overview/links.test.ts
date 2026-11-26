@@ -15,12 +15,12 @@ const UTILITY: SectorOverviewView = {
   sector: "utility",
   title: "Utility Intelligence",
   organization: "Savanna (synthetic)",
-  attention: [line("a", { type: "workspace", workspace: "utility.revenue" }), line("b", { type: "level", kind: "feeder", id: "FD-OLD" }), line("c", { type: "section", id: "x" })],
+  attention: [line("a", { type: "view", view: "utility.revenue" }), line("b", { type: "level", kind: "feeder", id: "FD-OLD" }), line("c", { type: "section", id: "x" })],
   attentionNote: null,
   headline: [],
-  workspaces: [
-    { workspace: "utility.revenue", label: "Revenue", question: "?" },
-    { workspace: "utility.events", label: "Events", question: "?" },
+  views: [
+    { view: "utility.revenue", label: "Revenue", question: "?" },
+    { view: "utility.events", label: "Events", question: "?" },
   ],
   sourcing: SOURCING,
 };
@@ -38,8 +38,8 @@ describe("links cut to the viewer's grant", () => {
 
   it("keeps every line, without a link where its screen is not open, and leaves out the ways in that are not", () => {
     const cut = cutSectorOverview(UTILITY, opens);
-    assert.deepEqual(cut.attention.map((item) => item.target.type), ["workspace", "none", "section"]);
-    assert.deepEqual(cut.workspaces.map((link) => link.workspace), ["utility.revenue"]);
+    assert.deepEqual(cut.attention.map((item) => item.target.type), ["view", "none", "section"]);
+    assert.deepEqual(cut.views.map((link) => link.view), ["utility.revenue"]);
     assert.deepEqual(cut.waysIn, { map: true, assistant: false });
   });
 
@@ -52,6 +52,6 @@ describe("links cut to the viewer's grant", () => {
     const cut = cutPlatformOverview(platform, (key) => key === "utility.revenue", ["utility"]);
     assert.equal(cut.sectors[0].overviewOpen, false);
     assert.deepEqual(cut.openSectors, ["utility"]);
-    assert.deepEqual(cut.sectors[0].findings.map((item) => item.target.type), ["workspace", "none", "section"]);
+    assert.deepEqual(cut.sectors[0].findings.map((item) => item.target.type), ["view", "none", "section"]);
   });
 });

@@ -1,4 +1,4 @@
-import type { AttentionItemView, MinigridOverviewView, WorkspaceLinkView } from "../overview/views.ts";
+import type { AttentionItemView, MinigridOverviewView, SectorViewLinkView } from "../overview/views.ts";
 import type { MinigridPortfolioView } from "./views.ts";
 
 /* ==========================================================
@@ -10,8 +10,8 @@ import type { MinigridPortfolioView } from "./views.ts";
    finds nothing itself and adds no figure.
 ========================================================== */
 
-export const MINIGRID_WORKSPACE_LINKS: WorkspaceLinkView[] = [
-  { workspace: "minigrid.sites", label: "Sites", question: "Which sites are underperforming and why, and do their reports match the records?" },
+export const MINIGRID_VIEW_LINKS: SectorViewLinkView[] = [
+  { view: "minigrid.sites", label: "Sites", question: "Which sites are underperforming and why, and do their reports match the records?" },
 ];
 
 export function minigridOverviewView(portfolio: MinigridPortfolioView): MinigridOverviewView {
@@ -29,7 +29,7 @@ export function minigridOverviewView(portfolio: MinigridPortfolioView): Minigrid
       more,
       comparisons: found.comparisons,
       ruleText: found.ruleText,
-      target: found.site === null ? { type: "workspace", workspace: "minigrid.sites" } : { type: "site", id: found.site.id },
+      target: found.site === null ? { type: "view", view: "minigrid.sites" } : { type: "site", id: found.site.id },
       targetLabel: found.site === null ? "Open Sites" : `Open ${found.site.name}`,
     };
   });
@@ -57,7 +57,7 @@ export function minigridOverviewView(portfolio: MinigridPortfolioView): Minigrid
       availability: site.availability,
       collectionEfficiency: site.collectionEfficiency,
     })),
-    workspaces: MINIGRID_WORKSPACE_LINKS,
+    views: MINIGRID_VIEW_LINKS,
     sourcing: portfolio.sourcing,
   };
 }

@@ -17,8 +17,8 @@ import type { LevelKind, MetricView, ReportedComparisonView, SourcingView } from
 /** How a line is to be marked: a meaning, which the design system turns into a mark, a word and a colour. */
 export type AttentionTone = "alert" | "watch" | "note";
 
-/** A workspace of a sector, by a stable key the UI turns into an address. */
-export type WorkspaceKey =
+/** A view of a sector (ADR 0017 called it a "workspace"), by its View ID, which the UI turns into an address. */
+export type SectorViewKey =
   | "utility.executive"
   | "utility.operations"
   | "utility.reliability"
@@ -31,7 +31,7 @@ export type WorkspaceKey =
 export type AttentionTarget =
   | { type: "level"; kind: LevelKind; id: string }
   | { type: "site"; id: string }
-  | { type: "workspace"; workspace: WorkspaceKey }
+  | { type: "view"; view: SectorViewKey }
   /** A section of the same screen, by its anchor. */
   | { type: "section"; id: string }
   /** No link: the screen behind the line is not open to the viewer (links.ts). */
@@ -78,9 +78,9 @@ export interface AttentionFindingView {
   context: { figure: MetricView; note: string } | null;
 }
 
-/** A workspace of the sector, with the question it answers and how much of the attention list it holds. */
-export interface WorkspaceLinkView {
-  workspace: WorkspaceKey;
+/** A view of the sector, with the question it answers and how much of the attention list it holds. */
+export interface SectorViewLinkView {
+  view: SectorViewKey;
   label: string;
   question: string;
 }
@@ -93,9 +93,9 @@ export interface SectorOverviewView {
   attention: AttentionItemView[];
   /** Said when nothing is listed, and why that can or cannot be read as "nothing is wrong". */
   attentionNote: string | null;
-  /** The few figures that say how the sector stands, each from the workspace that owns it. */
+  /** The few figures that say how the sector stands, each from the view that owns it. */
   headline: MetricView[];
-  workspaces: WorkspaceLinkView[];
+  views: SectorViewLinkView[];
   /** Whether the sector's map and its assistant are open to the viewer; absent when every way in is. */
   waysIn?: { map: boolean; assistant: boolean };
   sourcing: SourcingView;

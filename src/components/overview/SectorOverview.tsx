@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { MinigridOverviewView, SectorOverviewView, UtilityOverviewView } from "@/services/overview/views";
-import { AttentionList, workspaceHref } from "@/components/system/Attention";
+import { AttentionList, sectorViewHref } from "@/components/system/Attention";
 import { KeyFold, PlannedTag, SectorBand } from "@/components/system/Brand";
 import { MetricTile, Panel } from "@/components/system/Metric";
 import { LossSplit, SiteMix } from "@/components/system/Visuals";
@@ -9,7 +9,7 @@ import { hrefOf } from "@/constants/views";
 
 /* A sector's Overview: "what needs attention here?" in a few lines, with links in. Every sector
    has the same screen: the lines, a small visual of how the sector stands, and the ways in (its
-   GIS Map, its workspaces, its assistant). Everything is laid out from the read model; nothing
+   GIS Map, its views, its assistant). Everything is laid out from the read model; nothing
    is found, ranked or calculated here. */
 
 function WaysIn({ view, sector }: { view: SectorOverviewView; sector: "utility" | "minigrid" }) {
@@ -24,9 +24,9 @@ function WaysIn({ view, sector }: { view: SectorOverviewView; sector: "utility" 
             </Link>
           </li>
         )}
-        {view.workspaces.map((link) => (
-          <li key={link.workspace}>
-            <Link href={workspaceHref(link.workspace)} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
+        {view.views.map((link) => (
+          <li key={link.view}>
+            <Link href={sectorViewHref(link.view)} className="gi-tap block rounded-tile border border-line px-3 py-2 hover:border-brand">
               <span className="text-sm font-semibold text-link">{link.label}</span>
               <span className="mt-0.5 block text-caption leading-snug text-ink-4">{link.question}</span>
             </Link>

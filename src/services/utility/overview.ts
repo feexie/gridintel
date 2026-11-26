@@ -1,7 +1,7 @@
 import type { AssetsWorkspaceView } from "../assets/views.ts";
 import type { EventsWorkspaceView } from "../events/views.ts";
 import type { ExecutiveView } from "../executive/views.ts";
-import type { AttentionItemView, UtilityOverviewView, WorkspaceLinkView } from "../overview/views.ts";
+import type { AttentionItemView, UtilityOverviewView, SectorViewLinkView } from "../overview/views.ts";
 import type { ReliabilityWorkspaceView } from "../reliability/views.ts";
 import { AGREEMENT_TOLERANCE, byLargestDifference, rowDiffers } from "../operations/comparison.ts";
 import { mergeSourcing, registryCount } from "../operations/metric.ts";
@@ -28,7 +28,7 @@ import { mergeSourcing, registryCount } from "../operations/metric.ts";
                        measured against the reported figure, when
                        any differs by more than the tolerance;
    5. standing_alarms  one line when a source alarm is standing;
-   6. assets_listed    one line when the Assets workspace lists any
+   6. assets_listed    one line when the Assets view lists any
                        asset for attention.
 
    Lines 4 and 5 state how long a list on another screen is. A count
@@ -36,13 +36,13 @@ import { mergeSourcing, registryCount } from "../operations/metric.ts";
    Events / Alarms screen gives per place; it is not a KPI.
 ========================================================== */
 
-export const UTILITY_WORKSPACE_LINKS: WorkspaceLinkView[] = [
-  { workspace: "utility.executive", label: "Executive", question: "What is happening across the portfolio, and where should I look first?" },
-  { workspace: "utility.operations", label: "Operations", question: "What does the network look like, level by level, from region to service point?" },
-  { workspace: "utility.reliability", label: "Reliability", question: "Which feeders fail their customers, why, and is it ours to fix?" },
-  { workspace: "utility.revenue", label: "Revenue", question: "Where is revenue not realised, who is not paying, and is the loss commercial or collection?" },
-  { workspace: "utility.assets", label: "Assets", question: "Which assets require attention?" },
-  { workspace: "utility.events", label: "Events / Alarms", question: "What is wrong now, where, and who is affected?" },
+export const UTILITY_VIEW_LINKS: SectorViewLinkView[] = [
+  { view: "utility.executive", label: "Executive", question: "What is happening across the portfolio, and where should I look first?" },
+  { view: "utility.operations", label: "Operations", question: "What does the network look like, level by level, from region to service point?" },
+  { view: "utility.reliability", label: "Reliability", question: "Which feeders fail their customers, why, and is it ours to fix?" },
+  { view: "utility.revenue", label: "Revenue", question: "Where is revenue not realised, who is not paying, and is the loss commercial or collection?" },
+  { view: "utility.assets", label: "Assets", question: "Which assets require attention?" },
+  { view: "utility.events", label: "Events / Alarms", question: "What is wrong now, where, and who is affected?" },
 ];
 
 const RULES = {
@@ -71,7 +71,7 @@ export function utilityOverviewView(input: { executive: ExecutiveView; events: E
       more: [],
       comparisons: [],
       ruleText: RULES.in_progress,
-      target: { type: "workspace", workspace: "utility.events" },
+      target: { type: "view", view: "utility.events" },
       targetLabel: "Open Events / Alarms",
     });
   }
@@ -110,7 +110,7 @@ export function utilityOverviewView(input: { executive: ExecutiveView; events: E
       more: topFeeder.findings.map((finding) => finding.metric),
       comparisons: [],
       ruleText: RULES.revenue,
-      target: { type: "workspace", workspace: "utility.revenue" },
+      target: { type: "view", view: "utility.revenue" },
       targetLabel: "Open Revenue",
     });
   }
@@ -131,7 +131,7 @@ export function utilityOverviewView(input: { executive: ExecutiveView; events: E
       more: [],
       comparisons: [largest],
       ruleText: RULES.report_differs,
-      target: { type: "workspace", workspace: "utility.reliability" },
+      target: { type: "view", view: "utility.reliability" },
       targetLabel: "Open Reliability",
     });
   }
@@ -151,7 +151,7 @@ export function utilityOverviewView(input: { executive: ExecutiveView; events: E
       more: [],
       comparisons: [],
       ruleText: RULES.standing_alarms,
-      target: { type: "workspace", workspace: "utility.events" },
+      target: { type: "view", view: "utility.events" },
       targetLabel: "Open Events / Alarms",
     });
   }
@@ -169,7 +169,7 @@ export function utilityOverviewView(input: { executive: ExecutiveView; events: E
       more: [],
       comparisons: [],
       ruleText: `${RULES.assets_listed} ${assets.attentionRule}`,
-      target: { type: "workspace", workspace: "utility.assets" },
+      target: { type: "view", view: "utility.assets" },
       targetLabel: "Open Assets",
     });
   }
@@ -201,7 +201,7 @@ export function utilityOverviewView(input: { executive: ExecutiveView; events: E
             scopeNote: losses.scopeNote,
           },
     lossSplitNote: losses === null ? executive.lossesNote : null,
-    workspaces: UTILITY_WORKSPACE_LINKS,
+    views: UTILITY_VIEW_LINKS,
     sourcing: [events.sourcing, assets.sourcing, executive.revenueGap.sourcing, reliability.sourcing].reduce(mergeSourcing),
   };
 }
