@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { TENANT_ORGANIZATIONS, TEST_PEOPLE } from "../../src/composition/identityFixture";
 import { canOpen, grantFor } from "../../src/constants/access";
-import { destinationOf } from "../../src/constants/moves";
+import { destinationOf, ELSEWHERE } from "../../src/constants/moves";
 import { totpCode } from "../../src/repositories/memory/totp";
 
 /* NAV-B safeguard B on a tenant deployment (Founder, 25 November 2026): every legacy address
@@ -11,11 +11,21 @@ import { totpCode } from "../../src/repositories/memory/totp";
    sign in, and refuses a view a grant does not hold, exactly as a direct visit would. */
 
 const FIXTURE = JSON.parse(readFileSync(new URL("../../src/constants/__pinned__/access-before-nav-b.json", import.meta.url), "utf8")) as { addresses: string[] };
-const MOVED = FIXTURE.addresses.filter((address) => destinationOf(address) !== null);
+/** The prototype's /preview workspace addresses (NAV-B step 7) lead into the dashboard here too; ?workspace= is then ignored (safeguard C). */
+const PREVIEW = ELSEWHERE.filter((row) => row.to.startsWith("/dashboard")).map((row) => row.from.replace(":initiative", "meter-every-customer").replace(":role", "customer"));
+const MOVED = [...FIXTURE.addresses.filter((address) => destinationOf(address) !== null), ...PREVIEW];
 
 const located = (location: string | undefined) => {
   const url = new URL(location ?? "", "http://x");
   return `${url.pathname}${url.search}`;
+};
+
+/** True when two addresses are the same page with the same query, whatever the order of its parameters
+    (a redirect puts the carried query first and the destination's own ?workspace= after it). */
+const same = (a: string, b: string) => {
+  const [x, y] = [new URL(a, "http://x"), new URL(b, "http://x")];
+  const params = (url: URL) => [...url.searchParams].map(([key, value]) => `${key}=${value}`).sort().join("&");
+  return x.pathname === y.pathname && params(x) === params(y);
 };
 
 type Person = (typeof TEST_PEOPLE)[keyof typeof TEST_PEOPLE] & { totpSecret: string };
@@ -39,7 +49,7 @@ test("someone not signed in: every moved address answers 308 to its new one, que
     const address = `${old}?present=1`;
     const first = await request.get(address, { maxRedirects: 0 });
     const to = located(first.headers().location);
-    if (first.status() !== 308 || to !== destinationOf(address)) wrong.push(`${address}: ${first.status()} to ${to}`);
+    if (first.status() !== 308 || !same(to, destinationOf(address)!)) wrong.push(`${address}: ${first.status()} to ${to}`);
     const second = await request.get(to, { maxRedirects: 0 });
     if (second.status() !== 307 || !located(second.headers().location).startsWith("/login?next=")) wrong.push(`${to}: ${second.status()}, not the sign-in page`);
   }

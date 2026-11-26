@@ -49,9 +49,13 @@ test("the switcher changes the header's name and the rail", async ({ page }) => 
   await page.goto("/dashboard?workspace=utility");
   await page.locator("[data-switcher] summary").click();
   await page.locator('[data-switch-to="regulator"]').click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  // The address names the workspace now shown, never the one left.
+  await expect(page).toHaveURL(/\/dashboard\?workspace=regulator$/);
   await expect(page.locator("[data-workspace-name]")).toHaveText("Demonstration Regulator (synthetic)");
   await expect(page.locator("[data-rail] [data-rail-item]")).toHaveText(["Home", "Oversight"]);
+  // A reload keeps it.
+  await page.reload();
+  await expect(page.locator("[data-workspace-name]")).toHaveText("Demonstration Regulator (synthetic)");
 });
 
 test("every rail item of every demo workspace leads to a screen that exists, in that workspace's frame", async ({ page }) => {

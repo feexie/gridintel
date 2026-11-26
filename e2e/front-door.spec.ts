@@ -68,7 +68,7 @@ test("a card opens the initiative's own page, Take part opens 'Who are you?', an
   await expect(form.locator("[data-map-placeholder]")).toHaveText("Map for your pin: not open yet. It opens with the application form.");
 
   await form.getByRole("link", { name: "Track my application →" }).click();
-  await expect(page).toHaveURL(/\/\/track$/);
+  await expect(page).toHaveURL(/localhost:\d+\/track$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Track my application");
 });
 
@@ -131,7 +131,7 @@ test("every initiative's page shows no host, and its Take part opens its role pi
 test("the public Home and the initiative pages carry no Prototype tag; a form that cannot be sent still says it is not open yet (Founder, 26 November 2026)", async ({ page }) => {
   for (const route of ["/", "/initiatives/meter-every-customer", "/initiatives/charging-hubs", "/initiatives/minigrid-verification"]) {
     await page.goto(route);
-    await expect(page.locator("[data-public-frame] header"), route).not.toContainText("Prototype");
+    await expect(page.locator("[data-public-frame] > header"), route).not.toContainText("Prototype");
     await expect(page.locator("main"), route).not.toContainText("Prototype");
   }
   for (const route of ["/initiatives/meter-every-customer/take-part/customer", "/track"]) {

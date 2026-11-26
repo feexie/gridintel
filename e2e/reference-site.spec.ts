@@ -73,7 +73,7 @@ test("the verification card and the public summary carry the reference site as a
 });
 
 test("the mini-grid demo workspace's Sites view carries the reference site too", async ({ page }) => {
-  await page.goto("/dashboard/intelligence/minigrid?workspace=minigrid");
+  await page.goto("/dashboard/intelligence/minigrid/sites?workspace=minigrid");
   await credited(page.locator('[data-reference-site="rmg01"]'));
 });
 

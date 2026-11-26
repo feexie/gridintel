@@ -279,8 +279,8 @@ test("every page has exactly one h1", async ({ page }) => {
 });
 
 test("the reporting period and the SYNTHETIC DATA label are in one bar, once, on every dashboard page", async ({ page }) => {
-  // "/" is where a visitor lands; it leads to the overview, which carries the bar like every other screen.
-  for (const route of ["/", "/dashboard", "/dashboard/intelligence/utility", "/dashboard/intelligence/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/intelligence/utility/reliability", "/dashboard/intelligence/utility/revenue", "/dashboard/intelligence/utility/assets", "/dashboard/intelligence/utility/events", "/dashboard/intelligence/utility/map", "/dashboard/intelligence/utility/ai", "/dashboard/intelligence/minigrid", "/dashboard/intelligence/minigrid/map", "/dashboard/intelligence/minigrid/sites", "/dashboard/intelligence/minigrid/sites/MG-GRN", "/dashboard/reports"]) {
+  // "/" is the public Home since NAV-B step 7: a public page carries no data bar (front-door.spec.ts).
+  for (const route of ["/dashboard", "/dashboard/intelligence/utility", "/dashboard/intelligence/utility/executive", `${OPERATIONS}/feeders/FD-MKT`, "/dashboard/intelligence/utility/reliability", "/dashboard/intelligence/utility/revenue", "/dashboard/intelligence/utility/assets", "/dashboard/intelligence/utility/events", "/dashboard/intelligence/utility/map", "/dashboard/intelligence/utility/ai", "/dashboard/intelligence/minigrid", "/dashboard/intelligence/minigrid/map", "/dashboard/intelligence/minigrid/sites", "/dashboard/intelligence/minigrid/sites/MG-GRN", "/dashboard/reports"]) {
     await page.goto(route);
     const bar = page.getByRole("note", { name: "About the data on this screen" });
     await expect(bar, route).toHaveCount(1);

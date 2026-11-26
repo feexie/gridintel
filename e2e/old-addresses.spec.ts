@@ -28,6 +28,14 @@ const located = (location: string | undefined) => {
   return `${url.pathname}${url.search}`;
 };
 
+/** True when two addresses are the same page with the same query, whatever the order of its parameters
+    (a redirect puts the carried query first and the destination's own ?workspace= after it). */
+const same = (a: string, b: string) => {
+  const [x, y] = [new URL(a, "http://x"), new URL(b, "http://x")];
+  const params = (url: URL) => [...url.searchParams].map(([key, value]) => `${key}=${value}`).sort().join("&");
+  return x.pathname === y.pathname && params(x) === params(y);
+};
+
 async function walk(request: APIRequestContext, base: string) {
   const wrong: string[] = [];
   for (const old of MOVED) {
@@ -39,7 +47,7 @@ async function walk(request: APIRequestContext, base: string) {
         continue;
       }
       const to = located(response.headers().location);
-      if (to !== expected) wrong.push(`${address}: led to ${to}, not ${expected}`);
+      if (!same(to, expected)) wrong.push(`${address}: led to ${to}, not ${expected}`);
       const landed = await request.get(`${base}${to}`, { maxRedirects: 0 });
       // One step: the page itself (a report may still send a bare address on to its default period, the page's own redirect).
       // People answers "not found" on the public demonstration, which has no accounts (ADR 0020).

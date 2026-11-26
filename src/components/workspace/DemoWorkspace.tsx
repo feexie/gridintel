@@ -15,7 +15,8 @@ import { WorkspaceMark } from "./WorkspaceFrame";
    time and are the same for everyone. The five demo workspaces'
    frames and page sections are all in the page; this shows one:
    - the one a link names with ?workspace=, read once and then taken
-     out of the address, and kept in a cookie;
+     out of the address, and kept in a cookie (the switcher leads to
+     Home with ?workspace= of the workspace chosen);
    - else the one the cookie names;
    - else the default (Demonstration DisCo).
    Either value is validated against the catalogue's five types
@@ -76,7 +77,9 @@ export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrame
                 onClick={() => {
                   keep(one.workspace.type);
                   setPreferred(one.workspace.type);
-                  router.push(hrefOf("platform.home"));
+                  // The address names the workspace it leads to, so it says what the screen shows and a reload keeps it.
+                  // (Pushing the bare Home address after the query was taken out left the old ?workspace= in the bar.)
+                  router.push(`${hrefOf("platform.home")}?${DEMO_WORKSPACE_QUERY}=${one.workspace.type}`);
                 }}
               >
                 <WorkspaceMark workspace={one.workspace} size="sm" />
