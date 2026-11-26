@@ -53,9 +53,11 @@ export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrame
     if (asked !== null) {
       keep(type);
       url.searchParams.delete(DEMO_WORKSPACE_QUERY);
-      // Through the router, once it has started: this effect runs before the router's own, which
-      // would otherwise write the address it started with, query and all, over the tidied one.
-      tidy = setTimeout(() => router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false }), 0);
+      // Once the router has started (this effect runs before the router's own, which would write the
+      // address it started with over the tidied one), by the native history call Next folds into its
+      // router (node_modules/next/dist/docs, "Native History API"). router.replace does nothing on a
+      // page built ahead, whose router address is already the bare one.
+      tidy = setTimeout(() => window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`), 0);
     }
     // Read once the page is in the browser: the page was built ahead of time with the default.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -63,7 +65,7 @@ export function DemoWorkspace({ frames, bar, children }: { frames: SignedInFrame
     // The workspace is chosen and the switcher acts from here on (the browser tests wait for it).
     document.documentElement.dataset.demoWorkspace = type;
     return () => clearTimeout(tidy);
-  }, [router]);
+  }, []);
 
   const type = demoTypeFor(viewAt(pathname)?.id ?? null, preferred);
   const frame = frames.find((one) => one.workspace.type === type) ?? frames[0];
